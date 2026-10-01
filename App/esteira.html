@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#fdfaf6">
+<title>Esteira de peças · Brechó Digital</title>
+<link rel="stylesheet" href="css/esteira.css">
+</head>
+<body>
+<header class="es-topo">
+  <a class="es-voltar" href="./#/closet" title="Voltar ao jogo">←</a>
+  <h1>Esteira de peças</h1>
+  <span class="es-conta" id="es-conta"></span>
+</header>
+
+<main class="es-main" id="es-main" hidden>
+  <!-- Entrada: soltar arquivos (computador) ou fotografar (celular). -->
+  <section class="es-entrada" id="es-solta" tabindex="0">
+    <p class="es-entrada-titulo">Solte as fotos aqui</p>
+    <p class="es-entrada-dica">Foto com fundo serve: o recorte, a prévia e o palpite da ficha
+      são feitos na nuvem. Pode fechar a página enquanto processa.</p>
+    <div class="es-entrada-botoes">
+      <label class="es-btn escuro">
+        Fotografar
+        <input type="file" accept="image/*" capture="environment" id="es-camera" hidden>
+      </label>
+      <label class="es-btn">
+        Escolher fotos
+        <input type="file" accept="image/jpeg,image/png,image/webp" multiple id="es-arquivos" hidden>
+      </label>
+    </div>
+    <ul class="es-envios" id="es-envios"></ul>
+  </section>
+
+  <!-- Ações em lote sobre as selecionadas. -->
+  <section class="es-lote" id="es-lote" hidden>
+    <label class="es-marcar"><input type="checkbox" id="es-todas"> <span id="es-sel-conta">0 selecionadas</span></label>
+    <select id="es-lote-cat" aria-label="Categoria para as selecionadas"><option value="">Categoria…</option></select>
+    <select id="es-lote-rar" aria-label="Raridade para as selecionadas"><option value="">Raridade…</option></select>
+    <input id="es-lote-marca" placeholder="Marca…" list="es-marcas" aria-label="Marca para as selecionadas">
+    <button class="es-btn" id="es-lote-aplicar">Aplicar</button>
+    <button class="es-btn escuro" id="es-lote-publicar">Publicar selecionadas</button>
+  </section>
+
+  <p class="es-vazio" id="es-vazio" hidden>Nada na esteira. As fotos que você mandar aparecem aqui.</p>
+  <section class="es-grade" id="es-grade"></section>
+  <p class="es-atalhos">Atalhos no cartão: <kbd>Ctrl</kbd>+<kbd>Enter</kbd> publica ·
+    <kbd>Ctrl</kbd>+<kbd>M</kbd> mede · <kbd>Ctrl</kbd>+<kbd>Del</kbd> descarta</p>
+</main>
+
+<section class="es-aviso" id="es-sem-acesso" hidden></section>
+
+<datalist id="es-marcas"></datalist>
+<datalist id="es-cores"></datalist>
+
+<!-- Medida no molde: a mesma de "+ Adicionar peça", agora por cartão. -->
+<div class="es-modal" id="es-molde-modal" hidden>
+  <div class="es-modal-caixa">
+    <p class="es-modal-dica">Arraste a peça sobre o corpo e use as quinas (ou a roda do mouse)
+      para o tamanho. É o tamanho real dela no jogo.</p>
+    <div class="es-molde" id="es-molde">
+      <div class="es-avatar" id="es-avatar"></div>
+      <div class="es-peca" id="es-peca">
+        <img id="es-peca-img" alt="" draggable="false">
+        <span class="es-alca no" data-alca="1"></span>
+        <span class="es-alca ne" data-alca="1"></span>
+        <span class="es-alca so" data-alca="1"></span>
+        <span class="es-alca se" data-alca="1"></span>
+      </div>
+    </div>
+    <p class="es-medida" id="es-medida"></p>
+    <footer class="es-modal-rodape">
+      <button class="es-btn" id="es-molde-padrao">Tamanho padrão</button>
+      <button class="es-btn" id="es-molde-irmas">Usar nas da mesma categoria</button>
+      <button class="es-btn escuro" id="es-molde-ok">Pronto</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toast-stack" id="toasts"></div>
+<script type="module" src="js/esteira.js"></script>
+</body>
+</html>

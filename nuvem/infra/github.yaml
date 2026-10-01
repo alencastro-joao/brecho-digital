@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Brecho Digital - deixa o GitHub Actions publicar sem chave de acesso
+  guardada no GitHub. O Actions troca o token OIDC dele (assinado pelo GitHub,
+  valido por minutos) por credenciais temporarias deste papel, e so do branch
+  main do repositorio informado.
+
+  aws cloudformation deploy --stack-name brecho-github \
+    --template-file nuvem/infra/github.yaml --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides Repositorio=<dono>/<repo>
+
+Parameters:
+  Repositorio:
+    Type: String
+    Description: dono/repo no GitHub
+  ProvedorExistente:
+    Type: String
+    Default: ''
+    Description: ARN do provedor OIDC do GitHub, se a conta ja tiver um (so pode existir um).
+
+Conditions:
+  CriarProvedor: !Equals [!Ref ProvedorExistente, '']
+
+Resources:
+  ProvedorGithub:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CriarProvedor
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  PapelDeDeploy:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: brecho-github-deploy
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [CriarProvedor, !Ref ProvedorGithub, !Ref ProvedorExistente]
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub repo:${Repositorio}:ref:refs/heads/main
+      Policies:
+        - PolicyName: publicar
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Site
+                Effect: Allow
+                Action: [s3:PutObject, s3:GetObject, s3:DeleteObject, s3:ListBucket]
+                Resource:
+                  - arn:aws:s3:::brecho-site-108826053014
+                  - arn:aws:s3:::brecho-site-108826053014/*
+              - Sid: PacotesEMestres
+                Effect: Allow
+                Action: [s3:PutObject, s3:GetObject, s3:ListBucket,
+                         s3:PutBucketCORS, s3:PutLifecycleConfiguration,
+                         s3:GetLifecycleConfiguration, s3:PutBucketNotification]
+                Resource:
+                  - arn:aws:s3:::brecho-dados-108826053014
+                  - arn:aws:s3:::brecho-dados-108826053014/deploy/*
+                  - arn:aws:s3:::brecho-dados-108826053014/mestres/*
+              - Sid: Api
+                Effect: Allow
+                Action: [lambda:UpdateFunctionCode, lambda:GetFunction, lambda:GetFunctionConfiguration]
+                Resource: !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:brecho-*
+              - Sid: PilhaDaEsteira
+                Effect: Allow
+                Action: [cloudformation:*]
+                Resource: !Sub arn:aws:cloudformation:us-east-1:${AWS::AccountId}:stack/brecho-esteira/*
+              - Sid: OQueAPilhaCria
+                # O CloudFormation age com as credenciais de quem chama: o que a
+                # pilha da esteira cria, este papel precisa poder criar.
+                Effect: Allow
+                Action: [lambda:*, sqs:*, events:*, logs:*]
+                Resource:
+                  - !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:function:brecho-esteira
+                  - !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:layer:brecho-*
+                  - !Sub arn:aws:lambda:us-east-1:${AWS::AccountId}:event-source-mapping:*
+                  - !Sub arn:aws:sqs:us-east-1:${AWS::AccountId}:brecho-esteira*
+                  - !Sub arn:aws:events:us-east-1:${AWS::AccountId}:rule/brecho-esteira-*
+                  - !Sub arn:aws:logs:us-east-1:${AWS::AccountId}:log-group:/aws/lambda/brecho-esteira*
+              - Sid: MapeamentoDaFila
+                Effect: Allow
+                Action: [lambda:CreateEventSourceMapping, lambda:GetEventSourceMapping,
+                         lambda:UpdateEventSourceMapping, lambda:DeleteEventSourceMapping,
+                         lambda:GetLayerVersion]
+                Resource: '*'
+              - Sid: PapeisDaEsteira
+                Effect: Allow
+                Action: [iam:GetRole, iam:CreateRole, iam:DeleteRole, iam:PassRole,
+                         iam:PutRolePolicy, iam:GetRolePolicy, iam:DeleteRolePolicy,
+                         iam:AttachRolePolicy, iam:DetachRolePolicy, iam:TagRole]
+                Resource:
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/brecho-esteira
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/brecho-lambda
+
+Outputs:
+  Papel:
+    Description: Vai no secret AWS_ROLE_ARN do repositorio (ou direto no workflow).
+    Value: !GetAtt PapelDeDeploy.Arn

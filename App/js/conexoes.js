@@ -12,7 +12,6 @@
 import { ADMIN, SERVICOS } from './config.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
-import { abrirAdicionar } from './adicionar.js';
 
 let servicoAtual = null;
 let aoMudar = null;
@@ -88,8 +87,8 @@ function importarPins() {
   if (!ADMIN) {
     return toast('Com o backend ligado, os pins do board viriam sozinhos.');
   }
-  toast('Com o backend ligado, os pins do board viriam sozinhos. Por ora, suba a peça à mão.');
-  abrirAdicionar(() => aoMudar?.());
+  toast('Com o backend ligado, os pins do board viriam sozinhos. Por ora, suba a peça pela esteira.');
+  location.href = 'esteira.html';
 }
 
 function desligar(id) {

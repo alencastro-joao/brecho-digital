@@ -1,0 +1,87 @@
+# Publica na AWS a cada push no main, só o pedaço que mudou:
+#   App/**                     -> nuvem/infra/publicar.sh          (site)
+#   nuvem/lambda/**            -> nuvem/infra/publicar-api.sh      (API)
+#   nuvem/esteira/**, ...      -> nuvem/infra/publicar-esteira.sh  (esteira)
+#
+# Sem chave de acesso guardada aqui: o papel vem de nuvem/infra/github.yaml,
+# e o GitHub troca o token OIDC dele por credenciais que vencem em 1 h.
+name: publicar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write      # OIDC com a AWS
+  contents: read
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+jobs:
+  o-que-mudou:
+    runs-on: ubuntu-latest
+    outputs:
+      site: ${{ steps.f.outputs.site }}
+      api: ${{ steps.f.outputs.api }}
+      esteira: ${{ steps.f.outputs.esteira }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            site:
+              - 'App/index.html'
+              - 'App/esteira.html'
+              - 'App/css/**'
+              - 'App/js/**'
+              - 'App/assets/catalog.json'
+              - 'App/assets/cloths/**'
+              - 'nuvem/infra/publicar.sh'
+            api:
+              - 'nuvem/lambda/**'
+              - 'App/tools/pipeline.py'
+              - 'nuvem/infra/publicar-api.sh'
+            esteira:
+              - 'nuvem/esteira/**'
+              - 'App/tools/bgbatch.py'
+              - 'App/tools/pipeline.py'
+              - 'nuvem/infra/esteira.yaml'
+              - 'nuvem/infra/publicar-esteira.sh'
+
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - run: pip install pyflakes
+      - name: Python sem nome indefinido nem import morto
+        run: python -m pyflakes nuvem/lambda nuvem/esteira App/tools
+      - name: JS sem erro de sintaxe
+        run: for f in App/js/*.js; do node --check "$f" || exit 1; done
+
+  publicar:
+    needs: [o-que-mudou, verificar]
+    runs-on: ubuntu-latest
+    environment: producao
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Esteira
+        if: needs.o-que-mudou.outputs.esteira == 'true'
+        run: bash nuvem/infra/publicar-esteira.sh
+      - name: API
+        if: needs.o-que-mudou.outputs.api == 'true'
+        run: bash nuvem/infra/publicar-api.sh
+      - name: Site
+        if: needs.o-que-mudou.outputs.site == 'true'
+        run: bash nuvem/infra/publicar.sh

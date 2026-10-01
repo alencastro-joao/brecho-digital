@@ -18,7 +18,9 @@ DADOS=brecho-dados-108826053014
 
 # O aws.exe é binário do Windows: ele não entende o /c/Users/... do Git Bash.
 # cygpath traduz, e MSYS_NO_PATHCONV impede o Git Bash de traduzir de volta.
-APP="$(cygpath -w "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../App" && pwd)")"
+# No Linux (GitHub Actions) não há cygpath, e o caminho já serve como está.
+win() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else echo "$1"; fi; }
+APP="$(win "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../App" && pwd)")"
 
 REVALIDA='no-cache, must-revalidate'
 ETERNO='public, max-age=31536000, immutable'
@@ -37,11 +39,14 @@ aws s3 sync "$APP/css" "s3://$SITE/css" --delete \
 aws s3 sync "$APP/js" "s3://$SITE/js" --delete \
   --cache-control "$REVALIDA" --content-type 'text/javascript; charset=utf-8'
 
-for J in catalog.json acervo.json; do
-  [ -f "$APP/assets/$J" ] || continue
-  aws s3 cp "$APP/assets/$J" "s3://$SITE/assets/$J" \
-    --cache-control "$REVALIDA" --content-type 'application/json; charset=utf-8'
-done
+aws s3 cp "$APP/esteira.html" "s3://$SITE/esteira.html" \
+  --cache-control "$REVALIDA" --content-type 'text/html; charset=utf-8'
+
+# Só o catalog.json (gerado pelo pipeline). O acervo.json NÃO sobe daqui: quem
+# escreve nele é a Lambda, quando a esteira publica uma peça. Subir o do disco
+# apagaria as peças publicadas desde o último `tools/sincronizar.py`.
+aws s3 cp "$APP/assets/catalog.json" "s3://$SITE/assets/catalog.json" \
+  --cache-control "$REVALIDA" --content-type 'application/json; charset=utf-8'
 
 # --- O que não muda ------------------------------------------------------
 aws s3 sync "$APP/assets/cloths" "s3://$SITE/assets/cloths" \

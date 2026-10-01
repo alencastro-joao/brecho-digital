@@ -42,16 +42,66 @@ valendo em `js/auth.js`: site e API na mesma origem significa **sem CORS**, sem
 bash nuvem/infra/publicar.sh
 ```
 
-Sobe só o que mudou. Não precisa invalidar cache: HTML, CSS, JS e os dois
-`.json` vão com `no-cache`, então o CloudFront revalida por ETag e a mudança
-aparece na hora. As imagens das peças vão imutáveis por um ano, porque o nome
-do arquivo é o id da peça.
+Sobe só o que mudou. Não precisa invalidar cache: HTML, CSS, JS e o
+`catalog.json` vão com `no-cache`, então o CloudFront revalida por ETag e a
+mudança aparece na hora. As imagens das peças vão imutáveis por um ano, porque
+o nome do arquivo é o id da peça.
+
+O `acervo.json` **não** sobe daqui: quem escreve nele é a Lambda, quando a
+esteira publica uma peça. Subir o do disco apagaria as peças publicadas depois
+do último `python App/tools/sincronizar.py`.
 
 ## Publicar uma mudança da API
 
 ```bash
 bash nuvem/infra/publicar-api.sh
 ```
+
+## A esteira de peças
+
+Pilha CloudFormation `brecho-esteira` (`infra/esteira.yaml`): a fila, a fila de
+mortas, a regra do EventBridge, a função `brecho-esteira` (arm64, 6 GB, 5 min,
+camadas `brecho-pillow` + `brecho-ciencia`) e as permissões novas do papel da
+API. Publicar:
+
+```bash
+bash nuvem/infra/publicar-esteira.sh
+```
+
+O script empacota `nuvem/esteira/` com o `bgbatch.py` e o `pipeline.py` do App
+(o mesmo recorte e o mesmo contorno da máquina do admin), monta a camada de
+numpy + onnxruntime para Linux arm64 a partir de wheels prontos, liga o
+EventBridge e o CORS no bucket de dados e faz o `cloudformation deploy`. Os
+pacotes levam o hash no nome: sem mudança, nada é trocado.
+
+O modelo de recorte (`modelos/birefnet-general.onnx`, ~1 GB) vem do Hugging
+Face na primeira foto e fica guardado no bucket de dados. Cada função nova o
+copia para o `/tmp` (alguns segundos, mesma região).
+
+O palpite da ficha é o Claude Haiku 4.5 no Bedrock (`nuvem/esteira/ficha_ia.py`).
+Se o Bedrock recusar, a peça entra sem palpite e nada trava.
+
+**Custo**: ~US$ 0,005 de Lambda por foto (6 GB × ~40 s), coberto pela franquia
+gratuita de 400 mil GB-s/mês até umas mil fotos por mês; ~US$ 0,001 de Bedrock
+por foto; ~US$ 0,02/mês para guardar o modelo.
+
+**Foto que falhou três vezes** vai para a fila `brecho-esteira-mortas` e aparece
+com erro na tela, com o botão "Tentar de novo". O log está em
+`/aws/lambda/brecho-esteira` (30 dias).
+
+## Publicar sozinho pelo GitHub
+
+`.github/workflows/publicar.yml` publica a cada push no `main`, só o pedaço que
+mudou (site, API ou esteira), depois de checar Python e JS. As credenciais vêm
+de um papel da AWS assumido por OIDC (`infra/github.yaml`): nenhuma chave fica
+guardada no GitHub, e o papel só aceita o branch `main` do repositório
+informado. Para ligar:
+
+1. Criar o repositório no GitHub e dar push.
+2. `aws cloudformation deploy --stack-name brecho-github --template-file nuvem/infra/github.yaml --capabilities CAPABILITY_NAMED_IAM --parameter-overrides Repositorio=<dono>/<repo>`
+3. Pôr o ARN que sai em `Outputs.Papel` no secret `AWS_ROLE_ARN` do
+   repositório, e criar o environment `producao` (dá para exigir aprovação
+   antes de cada publicação).
 
 ## As contas
 
@@ -112,12 +162,6 @@ Sem ela a Lambda responde 500 em `GET /api/usuarios` e o front segue só com os
 perfis de exemplo — nada quebra, mas ninguém acha uma conta real.
 
 ## O que ficou de fora
-
-**`POST /api/fundo`** (o recorte automático de fundo) responde **503**. O
-modelo BiRefNet tem 927 MB e pediria uma Lambda de container só para ele
-(~US$ 0,12/mês de ECR, ~20 s de cold start). O `adicionar.js` já trata 503 como
-"siga sem recorte", então nada trava: o recorte continua saindo do
-`tools/bgbatch.py` na máquina do admin, que é onde ele sempre rodou.
 
 **O feed de uma conta ainda não chega às outras.** Achar, seguir e ver a página
 de alguém funciona de verdade, mas as colagens de cada um continuam no save

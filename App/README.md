@@ -14,8 +14,11 @@ python tools/servidor.py 5173
 
 (É o `http.server` com `Cache-Control: no-store` — sem isso o navegador guarda os
 módulos JS e você edita um arquivo mas continua vendo a versão antiga na tela.
-Ele também atende as contas — `/api/auth/*` —, o `POST /api/pecas` e o
-`POST /api/fundo`, a rota que tira o fundo das fotos no "+ Adicionar peça".)
+Ele também atende as contas, pessoas e estoque num SQLite local.)
+
+Para **colocar peça no jogo**, dois cliques em **`esteira.bat`** (ou
+`python tools/servidor.py --nuvem`): a página é servida daqui e a `/api/*` vai
+para a nuvem, com a sua conta de verdade. Ver "Esteira de peças" abaixo.
 
 **A primeira conta criada é a do administrador.** É ela que vê "+ Adicionar
 peça", "Repor loja" e "Devolver roupas"; as seguintes entram como usuário comum,
@@ -973,7 +976,40 @@ O que depende do acervo da pasta e se comporta bem sem ele: a vitrine avisa que 
 está sem estoque, os perfis fictícios só postam quando houver roupa para vestir, e a
 cápsula do mês explica que as peças dela vêm da pasta desligada.
 
-## Adicionar peça (ferramenta do administrador)
+## Esteira de peças (como a peça entra no jogo)
+
+O caminho único para peça nova. Abre pelo **+ Adicionar peça** do guarda-roupa,
+ou direto em `esteira.html` (no ar: <https://dufkck3bmeh9v.cloudfront.net/esteira.html>,
+que funciona no celular).
+
+```
+foto ──► S3 entrada/ ──► EventBridge ──► fila SQS ──► Lambda brecho-esteira
+  (POST assinado,            (foto nova)    (2 por vez,     recorta o fundo (BiRefNet),
+   direto do navegador)                      3 tentativas)  prévia WebP + contorno,
+                                                            ficha palpitada pelo Claude
+                                     ◄── esteira.html revisa, mede e publica ◄──┘
+```
+
+- **Entrada**: soltar arquivos, colar (Ctrl+V), "Fotografar" no celular, ou uma
+  pasta inteira com `python tools/enviar.py <pasta> [--vigiar]`.
+- **Revisão**: cada foto vira um cartão com a prévia já recortada e a ficha
+  (categoria, cor, nome, marca) preenchida pela IA. Edite no cartão. A edição é
+  guardada na nuvem: dá para fotografar no celular e revisar no computador.
+- **Lote**: selecione as prontas, aplique categoria, raridade ou marca a todas,
+  e publique de uma vez. Peça sem medida entra com a medida padrão da categoria.
+- **Medir**: o molde do avatar, por cartão. "Usar nas da mesma categoria" leva a
+  medida para as outras.
+- **Atalhos no cartão**: Ctrl+Enter publica, Ctrl+M mede, Ctrl+Del descarta.
+
+Quem escreve o `assets/acervo.json` é só a Lambda. Para trazer as peças
+publicadas para o disco (jogo local sem `--nuvem`): `python tools/sincronizar.py`.
+O código da nuvem está em `nuvem/esteira/` e `nuvem/lambda/esteira.py`.
+
+## Editar peça (ferramenta do administrador)
+
+O modal descrito abaixo continua sendo o de **editar** uma peça que já existe
+(botão Editar no guarda-roupa e na vitrine). A parte de subir peça nova por ele
+foi substituída pela esteira, acima.
 
 Subir peça **não é função do jogo**: é ferramenta de administração. O usuário final não vê
 o botão. Ele só aparece com o modo admin ligado:

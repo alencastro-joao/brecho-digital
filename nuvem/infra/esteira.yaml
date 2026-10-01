@@ -1,0 +1,219 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Brecho Digital - esteira de pecas. Foto sobe direto para o S3 (entrada/),
+  o EventBridge avisa a fila, a fila chama o trabalhador, que tira o fundo,
+  gera previa + contorno e pede o palpite da ficha ao Claude (Bedrock).
+  Publicado por nuvem/infra/publicar-esteira.sh.
+
+Parameters:
+  BucketDados:
+    Type: String
+    Default: brecho-dados-108826053014
+  BucketSite:
+    Type: String
+    Default: brecho-site-108826053014
+  PapelDaApi:
+    Type: String
+    Default: brecho-lambda
+    Description: Papel da Lambda brecho-api (criado fora desta pilha).
+  CamadaPillow:
+    Type: String
+    Default: arn:aws:lambda:us-east-1:108826053014:layer:brecho-pillow:1
+  CodigoChave:
+    Type: String
+    Description: deploy/trabalhador-<hash>.zip no bucket de dados.
+  CamadaChave:
+    Type: String
+    Description: deploy/camada-ciencia-<hash>.zip no bucket de dados.
+  MemoriaMb:
+    Type: Number
+    Default: 6144
+    Description: Mais memoria = mais vCPU. O BiRefNet fp32 pede uns 3 GB de pico.
+  ModeloFundo:
+    Type: String
+    Default: birefnet-general
+    AllowedValues: [birefnet-general, birefnet-lite, isnet]
+  ModeloIa:
+    Type: String
+    Default: us.anthropic.claude-haiku-4-5-20251001-v1:0
+
+Resources:
+  # --- Fila ----------------------------------------------------------------
+  FilaMortas:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: brecho-esteira-mortas
+      MessageRetentionPeriod: 1209600          # 14 dias para olhar o que falhou
+
+  Fila:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: brecho-esteira
+      VisibilityTimeout: 1800                  # 6x o timeout do trabalhador
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt FilaMortas.Arn
+        maxReceiveCount: 3
+
+  PoliticaDaFila:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref Fila]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EventBridgeEntrega
+            Effect: Allow
+            Principal: { Service: events.amazonaws.com }
+            Action: sqs:SendMessage
+            Resource: !GetAtt Fila.Arn
+            Condition:
+              ArnEquals: { aws:SourceArn: !GetAtt RegraFotoNova.Arn }
+
+  # O bucket de dados precisa estar com "EventBridge: ligado" (o
+  # publicar-esteira.sh liga). Copiar a foto sobre ela mesma tambem gera
+  # "Object Created": e assim que o "refazer" da API funciona.
+  RegraFotoNova:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: brecho-esteira-foto-nova
+      EventPattern:
+        source: [aws.s3]
+        detail-type: [Object Created]
+        detail:
+          bucket: { name: [!Ref BucketDados] }
+          object: { key: [{ prefix: entrada/ }] }
+      Targets:
+        - Id: fila
+          Arn: !GetAtt Fila.Arn
+
+  # --- Trabalhador ---------------------------------------------------------
+  CamadaCiencia:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: brecho-ciencia
+      Description: numpy + onnxruntime (arm64, python 3.13)
+      CompatibleArchitectures: [arm64]
+      CompatibleRuntimes: [python3.13]
+      Content:
+        S3Bucket: !Ref BucketDados
+        S3Key: !Ref CamadaChave
+
+  PapelDoTrabalhador:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: brecho-esteira
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: esteira
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Fila
+                Effect: Allow
+                Action: [sqs:ReceiveMessage, sqs:DeleteMessage, sqs:GetQueueAttributes]
+                Resource: !GetAtt Fila.Arn
+              - Sid: LerFotoEModelo
+                Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketDados}/entrada/*
+                  - !Sub arn:aws:s3:::${BucketDados}/modelos/*
+                  - !Sub arn:aws:s3:::${BucketDados}/esteira/*
+              - Sid: GravarResultado
+                Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketDados}/esteira/*
+                  - !Sub arn:aws:s3:::${BucketDados}/modelos/*
+              - Sid: Saber404DeVerdade
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub arn:aws:s3:::${BucketDados}
+              - Sid: MarcasDoAcervo
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub arn:aws:s3:::${BucketSite}/assets/acervo.json
+              - Sid: PalpiteDaFicha
+                Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:Converse]
+                Resource:
+                  - !Sub arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*
+                  - arn:aws:bedrock:*::foundation-model/anthropic.*
+
+  RegistroDoTrabalhador:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/brecho-esteira
+      RetentionInDays: 30
+
+  Trabalhador:
+    Type: AWS::Lambda::Function
+    DependsOn: RegistroDoTrabalhador
+    Properties:
+      FunctionName: brecho-esteira
+      Description: Esteira de pecas - recorte, previa, contorno e palpite da ficha
+      Runtime: python3.13
+      Architectures: [arm64]
+      Handler: trabalhador.handler
+      Role: !GetAtt PapelDoTrabalhador.Arn
+      MemorySize: !Ref MemoriaMb
+      Timeout: 300
+      EphemeralStorage: { Size: 3072 }          # o modelo (~1 GB) mora no /tmp
+      Layers: [!Ref CamadaPillow, !Ref CamadaCiencia]
+      Code:
+        S3Bucket: !Ref BucketDados
+        S3Key: !Ref CodigoChave
+      Environment:
+        Variables:
+          BD_BUCKET_DADOS: !Ref BucketDados
+          BD_BUCKET_SITE: !Ref BucketSite
+          BD_MODELO_FUNDO: !Ref ModeloFundo
+          BD_MODELO_IA: !Ref ModeloIa
+          BGBATCH_MODELOS: /tmp/modelos
+          OMP_NUM_THREADS: '0'
+      Tags:
+        - { Key: projeto, Value: brecho }
+
+  # Duas fotos por vez: o recorte come a CPU inteira de cada instancia, e a
+  # conta tem 10 de concorrencia no total - a API precisa do resto.
+  FilaChamaTrabalhador:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt Fila.Arn
+      FunctionName: !Ref Trabalhador
+      BatchSize: 1
+      ScalingConfig: { MaximumConcurrency: 2 }
+      FunctionResponseTypes: [ReportBatchItemFailures]
+
+  # --- O que a API (brecho-api) passa a precisar ----------------------------
+  PermissoesDaApi:
+    Type: AWS::IAM::RolePolicy
+    Properties:
+      RoleName: !Ref PapelDaApi
+      PolicyName: brecho-esteira-api
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AssinarEnvioEReprocessar
+            Effect: Allow
+            Action: [s3:PutObject, s3:GetObject, s3:DeleteObject]
+            Resource: !Sub arn:aws:s3:::${BucketDados}/entrada/*
+          - Sid: FichasEPrevias
+            Effect: Allow
+            Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+            Resource: !Sub arn:aws:s3:::${BucketDados}/esteira/*
+
+Outputs:
+  Fila:
+    Value: !Ref Fila
+  FilaMortas:
+    Value: !Ref FilaMortas
+  Trabalhador:
+    Value: !Ref Trabalhador

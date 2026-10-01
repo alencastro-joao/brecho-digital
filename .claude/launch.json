@@ -4,7 +4,19 @@
     {
       "name": "brecho",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["App/tools/servidor.py"],
+      "runtimeArgs": [
+        "App/tools/servidor.py"
+      ],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "brecho-nuvem",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "App/tools/servidor.py",
+        "--nuvem"
+      ],
       "port": 5173,
       "autoPort": true
     }

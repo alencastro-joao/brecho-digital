@@ -44,6 +44,15 @@ ACERVO = 'assets/acervo.json'
 CATS = {'tops', 'pants', 'shoes', 'dresses', 'coats',
         'hats', 'bags', 'watches', 'rings', 'acc'}
 RARIDADES = {'common', 'uncommon', 'rare', 'epic', 'legendary'}
+# Medida padrão de cada categoria no molde 600×1200 — espelho do `anchor` de
+# CATEGORIAS em App/js/config.js. Vale para peça publicada sem ser medida.
+ANCORAS = {
+    'tops': {'x': 300, 'y': 358, 'w': 250}, 'pants': {'x': 300, 'y': 796, 'w': 236},
+    'shoes': {'x': 300, 'y': 1096, 'w': 248}, 'dresses': {'x': 300, 'y': 486, 'w': 272},
+    'coats': {'x': 300, 'y': 436, 'w': 310}, 'hats': {'x': 300, 'y': 84, 'w': 176},
+    'bags': {'x': 440, 'y': 646, 'w': 152}, 'watches': {'x': 172, 'y': 652, 'w': 72},
+    'rings': {'x': 168, 'y': 700, 'w': 44}, 'acc': {'x': 300, 'y': 116, 'w': 124},
+}
 ID_OK = re.compile(r'^[a-z0-9_-]{1,40}$')
 TOKEN_OK = re.compile(r'^[a-f0-9]{16}$')
 
@@ -149,50 +158,79 @@ def invalidar(caminhos):
 
 # --- Peças ----------------------------------------------------------------
 def nova_peca(corpo):
-    cat = corpo.get('cat')
-    if cat not in CATS:
-        raise ValueError('categoria desconhecida')
-    raridade = corpo.get('raridade', 'common')
-    if raridade not in RARIDADES:
-        raise ValueError('raridade desconhecida')
+    validar(corpo)
+    cat = corpo['cat']
 
     item_id = str(corpo.get('id') or '').strip().lower()
     if not ID_OK.match(item_id):
         raise ValueError('id inválido')
 
-    src = None
+    if any(i['id'] == item_id for i in ler_acervo()[0]['items']):
+        raise ValueError('já existe peça com esse id')
+
+    src, peso = salvar_imagem(item_id, corpo.get('src', ''))
+    item = ficha_da_peca(item_id, corpo, src, contorno(src))
+    mestre = promover_mestre(corpo.get('mestre'), item_id)
+    if mestre:
+        item['mestre'] = mestre
+    anexar(item)
+    print('peça gravada: %s (%s) %.0f KB' % (item_id, cat, peso / 1024))
+    return item
+
+
+def ficha_da_peca(item_id, corpo, src, path):
+    """O item do acervo.json, a partir da ficha que veio da tela."""
+    ancora = corpo.get('ancora') or {}
+    return {
+        'id': item_id,
+        'cat': corpo['cat'],
+        'src': src,
+        'w': int(corpo.get('w') or 1),
+        'h': int(corpo.get('h') or 1),
+        'path': path,
+        'nome': str(corpo.get('nome') or '').strip()[:60],
+        'marca': str(corpo.get('marca') or '').strip()[:40],
+        'cor': str(corpo.get('cor') or '').strip()[:24],
+        'raridade': corpo.get('raridade', 'common'),
+        'ancora': {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')},
+        'criadoEm': _agora(),
+    }
+
+
+def validar(corpo):
+    if corpo.get('cat') not in CATS:
+        raise ValueError('categoria desconhecida')
+    if corpo.get('raridade', 'common') not in RARIDADES:
+        raise ValueError('raridade desconhecida')
+
+
+def anexar(item):
+    """Põe a peça no acervo.json. Só a lista pode precisar de nova tentativa:
+    a imagem já subiu antes de chegar aqui."""
     for _ in range(5):
         acervo, etag = ler_acervo()
-        if any(i['id'] == item_id for i in acervo['items']):
+        if any(i['id'] == item['id'] for i in acervo['items']):
             raise ValueError('já existe peça com esse id')
-
-        # A imagem sobe uma vez; só a lista é que pode precisar de nova tentativa.
-        if src is None:
-            src, peso = salvar_imagem(item_id, corpo.get('src', ''))
-            ancora = corpo.get('ancora') or {}
-            mestre = promover_mestre(corpo.get('mestre'), item_id)
-            item = {
-                'id': item_id,
-                'cat': cat,
-                'src': src,
-                'w': int(corpo.get('w') or 1),
-                'h': int(corpo.get('h') or 1),
-                'path': contorno(src),
-                'nome': str(corpo.get('nome') or '').strip()[:60],
-                'marca': str(corpo.get('marca') or '').strip()[:40],
-                'cor': str(corpo.get('cor') or '').strip()[:24],
-                'raridade': raridade,
-                'ancora': {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')},
-                'criadoEm': _agora(),
-            }
-            if mestre:
-                item['mestre'] = mestre
-
         acervo['items'].append(item)
         if gravar_acervo(acervo, etag):
-            print('peça gravada: %s (%s) %.0f KB' % (item_id, cat, peso / 1024))
             return item
     raise RuntimeError('o acervo está sendo escrito por outra aba; tente de novo')
+
+
+def gerar_id(ficha):
+    """Id estável e legível: 'jaqueta-corta-vento-mg2k9x1a'. O sufixo é o
+    relógio em base 36 mais sorte, para um lote publicado no mesmo segundo."""
+    import secrets as _sorte
+    import unicodedata
+    base = ficha.get('nome') or ficha.get('marca') or ficha.get('cat') or 'peca'
+    base = unicodedata.normalize('NFD', base).encode('ascii', 'ignore').decode()
+    base = re.sub(r'[^a-z0-9]+', '-', base.lower()).strip('-')[:24] or 'peca'
+    agora = int(datetime.now(timezone.utc).timestamp() * 1000)
+    sufixo = ''
+    while agora:
+        agora, r = divmod(agora, 36)
+        sufixo = '0123456789abcdefghijklmnopqrstuvwxyz'[r] + sufixo
+    return '%s-%s%s' % (base, sufixo, _sorte.token_hex(1))
 
 
 def editar_peca(item_id, corpo):

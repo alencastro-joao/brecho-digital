@@ -13,7 +13,9 @@ export MSYS_NO_PATHCONV=1
 
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Caminho no formato do Windows: o aws.exe e o python.exe não entendem /c/Users.
-export ZIP="$(cygpath -w "$AQUI/..")\\.brecho-funcao.zip"
+# No Linux (GitHub Actions) não há cygpath, e o caminho já serve como está.
+win() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else echo "$1"; fi; }
+export ZIP="$(win "$AQUI/..")/.brecho-funcao.zip"
 
 # pipeline.py é do App — a Lambda usa o mesmo contour_of da geração das peças,
 # então a cópia é feita na hora de empacotar e nunca diverge do original.
@@ -23,7 +25,7 @@ cp "$AQUI/../App/tools/pipeline.py" "$AQUI/lambda/pipeline.py"
 import os, zipfile
 alvo = os.environ['ZIP']
 with zipfile.ZipFile(alvo, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-    for nome in ('app.py', 'contas.py', 'estado.py', 'pessoas.py', 'estoque.py', 'acervo.py', 'pipeline.py'):
+    for nome in ('app.py', 'contas.py', 'estado.py', 'pessoas.py', 'estoque.py', 'acervo.py', 'esteira.py', 'pipeline.py'):
         z.write(nome)
 print('empacotado: %.1f KB' % (os.path.getsize(alvo) / 1024))
 " )

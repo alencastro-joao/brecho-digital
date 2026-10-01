@@ -8,7 +8,7 @@ import { ADMIN, CATEGORIAS, ORDEM_CATEGORIAS, RARIDADE, RARIDADES, escalaGrade }
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
-import { abrirAdicionar, abrirEditar } from './adicionar.js';
+import { abrirEditar } from './adicionar.js';
 import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
 import { vestirPeca } from './stylist.js';
@@ -82,17 +82,9 @@ export function montarCloset() {
   // nem existe.
   const btnAdd = $('#btn-add-peca');
   btnAdd.hidden = !ADMIN;
-  btnAdd.addEventListener('click', () => {
-    abrirAdicionar((peca) => {
-      categoriaAtual = 'todas';
-      montarRail();
-      carregarCategoria('todas');
-      montarVitrine();          // o acervo mudou: a loja precisa saber
-      // deixa a peça nova em destaque
-      const nova = db.pecaDoInventario(peca.id);
-      if (nova) document.querySelector(`.item-slot[data-id="${peca.id}"]`)?.click();
-    });
-  });
+  // Peça nova entra pela esteira (esteira.html): sobe a foto, a nuvem recorta
+  // e preenche a ficha, e a peça publicada lá aparece aqui na próxima carga.
+  btnAdd.addEventListener('click', () => { location.href = 'esteira.html'; });
   // Editar também é ferramenta de administrador, e só vale para peça do
   // acervo (as do pipeline não têm ficha em disco para reescrever).
   $('#btn-editar-peca').addEventListener('click', () => {

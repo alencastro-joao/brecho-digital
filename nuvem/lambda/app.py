@@ -24,7 +24,8 @@ esta função só responde `/api/*`.
     GET  /api/estoque          quantas cópias de cada peça já saíram (ver estoque.py)
     POST /api/estoque/levar    reserva uma cópia (409 se esgotou)
     POST /api/estoque/devolver admin: a cópia volta para a loja
-    POST /api/fundo            503 por enquanto (ver nota no fim do arquivo)
+    POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
+    /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
 
 **Por que a Function URL não é pública de verdade.** Ela nasce com
 `AuthType NONE` — precisa ser, porque quem chama é o CloudFront, e a assinatura
@@ -60,6 +61,7 @@ LIMITE_ESTADO = 5 * 1024 * 1024
 
 ROTA_PECA = re.compile(r'^/api/pecas/([^/]+)$')
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
+ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$')
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil')
 
 
@@ -259,6 +261,34 @@ def rotas_de_acervo(pedido):
     return None
 
 
+def rotas_de_esteira(pedido):
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    if usuario['papel'] != 'admin':
+        return responder(403, {'erro': 'só o administrador mexe no acervo'})
+
+    import esteira
+    item_id, acao = ROTA_ESTEIRA.match(pedido.rota).groups()
+    metodo = pedido.metodo
+
+    if not item_id:
+        if metodo == 'GET':
+            return responder(200, esteira.listar())
+        if metodo == 'POST':
+            return responder(200, esteira.reservar(pedido.corpo(LIMITE_LOGIN * 8)))
+        return None
+    if acao == 'publicar' and metodo == 'POST':
+        return responder(201, esteira.publicar(item_id, pedido.corpo(LIMITE_LOGIN)))
+    if acao == 'refazer' and metodo == 'POST':
+        return responder(200, esteira.refazer(item_id))
+    if not acao and metodo == 'PUT':
+        return responder(200, esteira.guardar(item_id, pedido.corpo(LIMITE_LOGIN)))
+    if not acao and metodo == 'DELETE':
+        return responder(200, esteira.descartar(item_id))
+    return None
+
+
 def rotas_de_estoque(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -291,16 +321,15 @@ def despachar(pedido):
         return rotas_de_estoque(pedido)
     if rota == '/api/pecas' or ROTA_PECA.match(rota):
         return rotas_de_acervo(pedido)
+    if ROTA_ESTEIRA.match(rota):
+        return rotas_de_esteira(pedido)
 
-    # O recorte automático de fundo ainda não subiu: o modelo tem centenas de
-    # MB e pede uma Lambda de container só para ele. 503 é de propósito — é o
-    # que o `adicionar.js` já trata como "siga sem recorte", em vez de travar a
-    # tela. Enquanto isso o recorte continua saindo do `tools/bgbatch.py` na
-    # máquina do admin, que é onde ele sempre rodou.
+    # O recorte de fundo saiu do pedido-resposta: foto nova entra pela esteira
+    # (fila + trabalhador). 503 é o que o modal de edição trata como "siga sem
+    # recorte" quando se troca a imagem de uma peça por uma foto com fundo.
     if rota == '/api/fundo':
-        return responder(503, {'erro': 'o recorte automático não está ligado na '
-                                       'nuvem: suba a foto já recortada, ou use '
-                                       'tools/bgbatch.py na sua máquina'})
+        return responder(503, {'erro': 'o recorte automático agora é feito na '
+                                       'esteira: use "+ Adicionar peça"'})
     return None
 
 
