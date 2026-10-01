@@ -1,0 +1,73 @@
+/* Editar personagem: prévia grande à esquerda, escolhas à direita. */
+
+.view-personagem { background: #fbf8f4; }
+
+.pg-palco {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 30px 34px; gap: 12px;
+}
+.pg-moldura {
+  flex: 1; min-height: 0;
+  display: grid; place-items: center;
+  background: var(--papel);
+  background-image: radial-gradient(#e7e2da 1px, transparent 1px);
+  background-size: 26px 26px;
+  border: 1px solid var(--linha); border-radius: 20px;
+  padding: 22px; width: 100%;
+}
+.pg-previa { height: min(560px, 62vh); }
+.pg-previa svg { height: 100%; width: auto; display: block; }
+.pg-resumo { font-size: 12.5px; color: var(--tinta-suave); }
+
+.pg-painel {
+  width: 320px; flex: none;
+  background: var(--branco); border-left: 1px solid var(--linha);
+  padding: 26px 22px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 24px;
+}
+.pg-painel h1 { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
+.pg-painel .tool-label { margin-bottom: 2px; }
+.pg-bloco { display: flex; flex-direction: column; gap: 10px; }
+
+/* Amostras de cor */
+.pg-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.pg-swatch {
+  width: 40px; height: 40px; border-radius: 12px;
+  border: 2px solid var(--linha);
+  transition: transform .15s, box-shadow .15s;
+}
+.pg-swatch.redonda { width: 32px; height: 32px; border-radius: 50%; border-color: rgba(0, 0, 0, .12); }
+.pg-swatch:hover { transform: translateY(-2px); }
+.pg-swatch.ativa {
+  box-shadow: 0 0 0 2px var(--branco), 0 0 0 4px var(--tinta);
+}
+
+/* Cortes e narizes: cada opção mostra o próprio desenho */
+.pg-cortes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pg-corte {
+  border: 1px solid var(--linha); border-radius: 14px; background: #fff;
+  padding: 6px 4px 5px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: border-color .15s, transform .15s;
+}
+.pg-corte:hover { transform: translateY(-2px); }
+.pg-corte.ativa { border-color: var(--tinta); }
+.pg-corte small {
+  font-size: 9px; color: var(--tinta-suave); line-height: 1.15;
+  text-align: center; hyphens: auto;
+}
+/* A miniatura é o avatar inteiro; quem recorta é o viewBox (ver personagem.js),
+   então aqui basta deixar o SVG ocupar a largura do botão. */
+.pg-corte-arte { width: 100%; display: block; }
+.pg-corte-arte svg { width: 100%; height: auto; display: block; }
+
+/* Só duas opções de corpo: tiles maiores, porque a diferença está na cintura. */
+.pg-corpos { grid-template-columns: repeat(3, 1fr); }
+
+.pg-acoes { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.pg-acoes .btn-dark, .pg-acoes .btn-ghost { margin: 0; }
+
+@media (max-width: 1120px) {
+  .view-personagem .pg-painel { width: 280px; }
+}

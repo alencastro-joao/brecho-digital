@@ -1,0 +1,285 @@
+/* Inventário: a coleção de roupinhas e o corpo que as veste.
+   Duas metades — o personagem no meio da esquerda, com uma coluna de lugares
+   do corpo de cada lado dele; a mochila à direita, em páginas de casas. É o
+   desenho do gênero (o corpo no centro, o que se veste em volta, a grade de
+   itens do lado), mas no papel do brechó, não no couro escuro: a cor que
+   informa aqui é a raridade, a mesma do guarda-roupa. */
+
+.view-vestiario { background: var(--branco); }
+
+/* --------------- Esquerda: o personagem entre as duas colunas ------------ */
+.vs-palco {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  gap: 14px; padding: 22px 26px 20px;
+}
+
+.vs-palco-topo { flex: none; display: flex; align-items: center; gap: 12px; }
+.vs-palco-topo h1 {
+  flex: 1;
+  font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.vs-palco-topo .btn-ghost { margin: 0; flex: none; width: auto; background: var(--branco); }
+
+/* As três faixas da metade da esquerda. As colunas têm largura fixa e quem
+   cede espaço é o personagem: caixa de slot que encolhe junto com a janela
+   vira um selo ilegível, e o desenho do corpo aguenta qualquer largura. */
+.vs-corpo {
+  --col: 108px;
+  flex: 1; min-height: 0;
+  display: grid; gap: 16px;
+  grid-template-columns: var(--col) minmax(0, 1fr) var(--col);
+}
+
+/* Cada coluna distribui as suas caixas na altura toda: a da Cabeça acaba na
+   altura da cabeça e a dos Pés na altura dos pés, sem ninguém posicionar nada
+   à mão. */
+.vs-coluna { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+
+/* `min-height: 0` porque item de grid não encolhe abaixo do conteúdo sozinho:
+   sem ele o SVG do avatar sai no tamanho natural e passa por cima da ficha. */
+.vs-previa {
+  min-width: 0; min-height: 0; overflow: hidden;
+  display: grid; place-items: center;
+  background: var(--papel);
+  background-image: radial-gradient(#e9e4dc 1px, transparent 1px);
+  background-size: 26px 26px;
+  border: 1px solid var(--linha); border-radius: 22px;
+  padding: 18px;
+}
+.vs-previa svg { height: 100%; width: auto; display: block; }
+
+/* Um lugar do corpo. Vazio é tracejado com o ícone; cheio, mostra a peça
+   vestida — o próprio avatar, recortado naquele pedaço. */
+.vs-slot {
+  flex: 1; min-height: 76px; max-height: 132px; width: 100%;
+  position: relative; padding: 0; overflow: hidden;
+  border: 2px solid var(--rar-borda, var(--linha)); border-radius: 16px;
+  background: var(--rar-bg, var(--branco));
+  display: grid; place-items: center;
+  transition: transform .18s, box-shadow .18s;
+}
+.vs-slot:hover { transform: translateY(-2px); box-shadow: var(--sombra); }
+.vs-slot.vazio { border-style: dashed; border-color: #e6ded2; background: #fbf8f3; }
+.vs-slot.selecionado { box-shadow: 0 0 0 2px var(--branco), 0 0 0 4px var(--tinta); }
+.vs-slot svg { width: 100%; height: 100%; display: block; }
+.vs-slot-icone { font-size: 22px; line-height: 1; opacity: .45; }
+.vs-slot-nome {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  font-size: 8.5px; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--tinta-suave);
+  background: linear-gradient(transparent, rgba(255, 255, 255, .94) 45%);
+  padding: 8px 0 3px;
+}
+
+/* A ficha da peça vive embaixo do personagem: ela é sobre o que você está
+   provando, e o que se prova aparece logo acima. */
+/* A caixa cresce com o conteúdo (em janela estreita o nome e as etiquetas
+   quebram em duas linhas), e quem cede espaço é o palco do personagem, que é
+   flexível. Mas a arte tem altura própria, em px: o SVG é dimensionado pela
+   altura da caixa, e caixa de altura automática devolve a pergunta para ele —
+   o desenho sairia no tamanho natural e comeria a tela. */
+.vs-ficha {
+  flex: none; width: 100%; min-height: 128px;
+  border: 1px solid var(--linha); border-radius: 18px;
+  background: var(--branco);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px;
+}
+.vs-ficha-vazia {
+  font-size: 12.5px; line-height: 1.6; color: var(--tinta-suave);
+  align-self: center; max-width: 62ch;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.vs-ficha-vazia strong { color: var(--tinta); }
+
+.vs-ficha-arte {
+  flex: none; width: 100px; height: 100px;
+  border: 1px solid var(--linha); border-radius: 14px;
+  background: var(--papel);
+  background-image: radial-gradient(#e9e4dc 1px, transparent 1px);
+  background-size: 18px 18px;
+  display: grid; place-items: center; overflow: hidden;
+}
+.vs-ficha-arte svg { height: 100%; width: auto; display: block; }
+
+.vs-ficha-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 9px; justify-content: center;
+}
+.vs-ficha-topo { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.vs-ficha-topo h2 { font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
+
+.vs-ficha-acoes {
+  flex: none; width: 126px;
+  display: flex; flex-direction: column; justify-content: center; gap: 8px;
+}
+.vs-dica { font-size: 11.5px; line-height: 1.5; color: var(--tinta-suave); }
+.vs-dica strong { color: var(--tinta); }
+.vs-ficha-acoes .btn-dark, .vs-ficha-acoes .btn-ghost { margin: 0; }
+
+.vs-tag {
+  font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px;
+  border: 1px solid var(--linha); color: var(--tinta-suave); white-space: nowrap;
+}
+.vs-tag.raridade { border-color: var(--rar-borda); background: var(--rar-bg); color: var(--tinta); }
+.vs-tag.vestida { border-color: #9ae0b5; background: #f4fbf6; color: #2f8a55; }
+
+.vs-condicao { display: flex; flex-direction: column; gap: 5px; max-width: 46ch; }
+.vs-condicao strong { font-size: 12.5px; font-weight: 700; }
+.vs-condicao small { font-size: 11px; color: var(--tinta-suave); }
+.vs-condicao.ok strong { color: #2f9e5c; }
+
+/* ------------------------- Direita: a mochila --------------------------- */
+/* O lado da casa da grade. Ele precisa ser um número, não 1fr: a linha do grid
+   não sabe deduzir a altura de um `aspect-ratio`, e o item transborda por cima
+   da fileira de baixo. Com os dois eixos em px o quadrado é quadrado, e a
+   página tem sempre a mesma altura — virar a página não mexe no layout. */
+.vs-painel {
+  --casa: 78px;
+  width: calc(var(--casa) * 5 + 4 * 8px + 36px); flex: none;
+  border-left: 1px solid var(--linha);
+  background: var(--papel);
+  padding: 20px 18px 18px;
+  display: flex; flex-direction: column; gap: 14px;
+  overflow: hidden;
+}
+
+/* O título com as réguas dos dois lados é o "INVENTORY" da referência: é ele
+   que diz que daqui para baixo é uma peça só, e não mais uma seção da página. */
+.vs-painel-topo { flex: none; display: flex; align-items: center; gap: 12px; }
+.vs-painel-topo::before, .vs-painel-topo::after {
+  content: ''; flex: 1; height: 1px; background: var(--linha);
+}
+.vs-painel-topo h1 {
+  font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--tinta-suave); white-space: nowrap;
+}
+
+.vs-abas { flex: none; display: flex; flex-wrap: wrap; gap: 5px; }
+.vs-aba {
+  border: 1px solid var(--linha); border-radius: 99px;
+  background: var(--branco); padding: 4px 10px;
+  font-size: 11px; font-weight: 700; color: var(--tinta-suave);
+  display: flex; align-items: center; gap: 4px;
+  transition: all .18s;
+}
+.vs-aba:hover { border-color: var(--tinta); }
+.vs-aba.ativa { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.vs-aba b { font-weight: 800; }
+
+/* Quantas colunas e quantas fileiras vêm do JS (--colunas, --linhas), que é
+   quem corta a lista em páginas — se os dois palpitassem, sobraria peça fora
+   da página ou casa fora da conta. */
+.vs-grade {
+  flex: none;
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(var(--colunas, 5), var(--casa));
+  grid-template-rows: repeat(var(--linhas, 5), var(--casa));
+  justify-content: space-between;
+}
+
+.vs-item {
+  position: relative; padding: 0; overflow: hidden;
+  border: 2px solid var(--rar-borda, var(--linha)); border-radius: 14px;
+  background: var(--rar-bg, var(--branco));
+  display: grid; place-items: center;
+  transition: transform .18s, box-shadow .18s;
+}
+.vs-item:hover { transform: translateY(-3px); box-shadow: var(--sombra); }
+.vs-item svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+.vs-item.selecionado { box-shadow: 0 0 0 2px var(--papel), 0 0 0 4px var(--tinta); }
+
+/* Casa vazia: o saco tem tamanho, e página pela metade não lê como
+   inventário. Ela não recebe clique — mas recebe peça solta, que é como se
+   manda alguma coisa para o fim da fila. */
+.vs-item.vaga {
+  border-style: dashed; border-color: #ece5da; background: #fbf9f5;
+  cursor: default;
+}
+
+/* Lendária: a borda é o arco-íris, com o mesmo truque do guarda-roupa —
+   dois fundos empilhados, o de dentro cobrindo a área da peça. */
+.vs-item.r-legendary, .vs-slot.r-legendary {
+  border-color: transparent;
+  background-image:
+    linear-gradient(var(--rar-bg, #fffdf2), var(--rar-bg, #fffdf2)),
+    conic-gradient(from 0deg,
+      #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.vs-item.vestida::after {
+  content: '✓'; position: absolute; top: 3px; right: 6px;
+  font-size: 11px; font-weight: 800; color: #2fbf63;
+}
+.vs-item .vs-novo {
+  position: absolute; top: 4px; left: 5px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #e8543f; box-shadow: 0 0 0 2px var(--papel);
+}
+
+/* ------------------------------ Páginas --------------------------------- */
+/* O passador fica sempre na tela, mesmo com uma página só: some a seta, não o
+   rodapé — rodapé que aparece e desaparece empurra a grade para cima e para
+   baixo a cada aba trocada. */
+.vs-paginacao {
+  flex: none; margin-top: auto;
+  display: flex; align-items: center; gap: 8px;
+  border-top: 1px solid var(--linha); padding-top: 12px;
+}
+.vs-pag-seta {
+  width: 30px; height: 30px; flex: none;
+  border: 1px solid var(--linha); border-radius: 10px; background: var(--branco);
+  font-size: 15px; font-weight: 800; line-height: 1; color: var(--tinta);
+  display: grid; place-items: center;
+  transition: border-color .18s, background .18s;
+}
+.vs-pag-seta:hover:not(:disabled) { border-color: var(--tinta); }
+.vs-pag-pontos { flex: 1; display: flex; justify-content: center; gap: 6px; }
+.vs-pag-ponto {
+  width: 8px; height: 8px; padding: 0; border-radius: 50%;
+  border: 1px solid #d9d1c5; background: transparent;
+  transition: background .18s, border-color .18s, transform .18s;
+}
+.vs-pag-ponto:hover { transform: scale(1.3); }
+.vs-pag-ponto.ativa { background: var(--tinta); border-color: var(--tinta); }
+.vs-pag-conta {
+  flex: none; font-size: 11px; font-weight: 700; color: var(--tinta-suave);
+}
+
+/* ------------------------------ Arrastar -------------------------------- */
+/* Tudo se arrasta, e nos dois sentidos: a peça do saco vai para o corpo, a
+   peça do corpo volta para o saco, e dentro do saco ela muda de casa. Quem
+   está com uma peça na mão vê aceso só onde ela pode pousar. */
+.vs-item[draggable='true'], .vs-slot[draggable='true'] { cursor: grab; }
+.vs-item[draggable='true']:active, .vs-slot[draggable='true']:active { cursor: grabbing; }
+
+/* Saindo do saco: os lugares do corpo que não servem para a peça apagam. */
+body[data-vestindo] .vs-slot { opacity: .38; }
+body[data-vestindo] .vs-slot.alvo-possivel {
+  opacity: 1; border-style: solid; border-color: #9ae0b5;
+}
+
+/* Saindo do corpo: o saco inteiro é o alvo — soltar ali é tirar a roupa, e a
+   peça pousa na casa onde você soltou. */
+body[data-arrastando='corpo'] .vs-grade {
+  outline: 2px dashed #9ae0b5; outline-offset: 8px; border-radius: 12px;
+}
+
+.vs-slot.alvo, .vs-previa.alvo, .vs-item.alvo {
+  border-color: #2fbf63; border-style: solid;
+  box-shadow: 0 0 0 3px #e4f6ea;
+}
+.vs-slot, .vs-previa, .vs-item, .vs-grade {
+  transition: transform .18s, opacity .15s, border-color .15s, box-shadow .15s,
+              outline-color .15s;
+}
+
+@media (max-width: 1240px) {
+  .vs-painel { --casa: 64px; }
+  .vs-corpo { --col: 92px; }
+  .vs-ficha-acoes { width: 112px; }
+}

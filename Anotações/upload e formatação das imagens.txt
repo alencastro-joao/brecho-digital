@@ -1,0 +1,38 @@
+1. O Fluxo no Backend (Processamento na AWS)
+Quando uma imagem PNG é enviada, ela não é apenas armazenada; ela passa por uma "esteira" de inteligência para que o servidor entenda o seu formato real.
+
+Identificação do Canal Alpha: O script analisa a transparência da imagem original. Ele ignora tudo o que é invisível e foca apenas nos pixels que contêm cor e forma.
+
+Vetorização (Tracing): O sistema traça uma linha imaginária ao redor do objeto (como se estivesse contornando um desenho com uma caneta). Esse contorno é transformado em uma expressão matemática vetorial (o padrão SVG).
+
+Simplificação de Pontos: Para garantir que o site carregue instantaneamente, o script simplifica esse contorno. Em vez de milhares de pontos seguindo cada detalhe minúsculo, ele cria uma silhueta otimizada com apenas os pontos necessários para definir a área de clique.
+
+Conversão de Formato: A imagem original é convertida para um formato moderno (como WebP), que mantém a transparência mas ocupa muito menos espaço no servidor.
+
+2. Armazenamento no Banco de Dados
+O banco de dados não guarda apenas um link para a imagem. Ele guarda a "identidade geométrica" de cada item.
+
+Registro Único: Cada item (um sapato, um óculos, etc.) possui uma entrada no banco.
+
+A "String" do Caminho: O contorno vetorial gerado (aquela sequência de coordenadas matemáticas do SVG) é salvo como um texto simples dentro do banco de dados, junto com a URL da imagem.
+
+Proporção de Tela: O sistema também salva as dimensões originais, para que o frontend saiba como escalar esse contorno se a imagem for aumentada ou diminuída no site.
+
+3. Integração e Entrega (API)
+Quando o usuário acessa o site, a comunicação entre as partes é feita de forma leve:
+
+Resposta Consolidada: O backend envia um pacote de informações para o frontend. Esse pacote contém o link da imagem otimizada e o texto do contorno matemático que foi extraído no passo 1.
+
+Carregamento em Lote: Como o contorno é apenas um texto curto, o navegador consegue baixar as informações de centenas de imagens simultaneamente sem pesar a conexão.
+
+4. Interpretação no Frontend (O Navegador)
+A fase final é onde a interatividade acontece de fato, unindo a imagem ao seu mapa de clique.
+
+Aplicação do Recorte: O navegador recebe a imagem retangular comum, mas recebe também a instrução do "Caminho SVG". Ele aplica esse caminho como uma máscara invisível sobre a imagem.
+
+Adoção da Geometria: A partir desse momento, para o navegador, os "pixels transparentes" deixam de existir para fins de interação. O mouse só reconhece que o objeto existe quando ele entra na área definida pelo vetor.
+
+Independência de Tamanho: Se o site decidir que uma bota deve ocupar metade da tela ou apenas um canto pequeno, o navegador recalcula o contorno vetorial proporcionalmente. Isso garante que a área de clique nunca fique "deslocada" do desenho real, independentemente do dispositivo ou zoom utilizado.
+
+Resumo do Conceito
+O PNG entra como uma imagem pesada e "burra" (que o navegador só entende como um quadrado). O processo o transforma em um par de informações: uma imagem leve para os olhos e um mapa matemático para o mouse. O banco de dados serve como a ponte que guarda e entrega esses dois dados unidos.

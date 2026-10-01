@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brechó Digital</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/vitrine.css">
+<link rel="stylesheet" href="css/closet.css">
+<link rel="stylesheet" href="css/stylist.css">
+<link rel="stylesheet" href="css/board.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="css/adicionar.css">
+<link rel="stylesheet" href="css/personagem.css">
+<link rel="stylesheet" href="css/usuario.css">
+<link rel="stylesheet" href="css/tarefas.css">
+<link rel="stylesheet" href="css/vestiario.css">
+<link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+<!-- Aviso de file:// (o app precisa de http para ler o catálogo e exportar imagem) -->
+<div id="file-warning" hidden>
+  <div class="fw-card">
+    <h1>Abra pelo servidor local</h1>
+    <p>Este protótipo carrega <code>assets/catalog.json</code> e exporta imagens via canvas —
+       as duas coisas são bloqueadas quando o arquivo é aberto direto do disco
+       (<code>file://</code>).</p>
+    <p>Na pasta <code>App</code>, rode:</p>
+    <pre>python -m http.server 5173</pre>
+    <p>e acesse <a href="http://localhost:5173">http://localhost:5173</a>
+       (ou dê dois cliques em <code>iniciar.bat</code>).</p>
+  </div>
+</div>
+
+<!-- ====================== ENTRAR / CRIAR CONTA ======================
+     Primeira tela de quem abre o brechó. Fica fora de .app de propósito: o app
+     inteiro (vitrine, guarda-roupa, feed) só é montado depois que o servidor
+     diz quem entrou — ver js/app.js. -->
+<div class="auth" id="tela-auth" hidden>
+  <div class="auth-caixa">
+    <div class="auth-marca">
+      <span class="auth-logo">BD</span>
+      <div>
+        <h1>Brechó Digital</h1>
+        <p>A vitrine muda todo dia. Entre para guardar o que você garimpar.</p>
+      </div>
+    </div>
+
+    <div class="auth-abas" role="tablist">
+      <button class="auth-aba ativa" id="aba-entrar" data-aba="entrar" role="tab">Entrar</button>
+      <button class="auth-aba" id="aba-criar" data-aba="criar" role="tab">Criar conta</button>
+    </div>
+
+    <form class="auth-form" id="form-entrar" novalidate>
+      <label>E-mail
+        <input type="email" id="entrar-email" autocomplete="username email"
+               placeholder="voce@email.com" required>
+      </label>
+      <label>Senha
+        <input type="password" id="entrar-senha" autocomplete="current-password"
+               placeholder="sua senha" required>
+      </label>
+      <p class="auth-erro" id="entrar-erro" hidden></p>
+      <button type="submit" class="btn-dark auth-enviar" id="entrar-enviar">Entrar</button>
+    </form>
+
+    <form class="auth-form" id="form-criar" novalidate hidden>
+      <label>Como te chamam
+        <input type="text" id="criar-nome" maxlength="28" autocomplete="nickname"
+               placeholder="seu nome no brechó">
+      </label>
+      <label>E-mail
+        <input type="email" id="criar-email" autocomplete="username email"
+               placeholder="voce@email.com" required>
+      </label>
+      <!-- Confirmar e-mail e senha: é o único momento em que os dois são
+           digitados às cegas. E-mail com letra trocada é conta que não recebe
+           recuperação nenhuma; senha com letra trocada é conta em que ninguém
+           entra mais — e as duas só apareceriam no próximo login. -->
+      <label>Confirmar e-mail
+        <input type="email" id="criar-email2" autocomplete="off"
+               placeholder="repita o e-mail" required>
+      </label>
+      <label>Senha
+        <input type="password" id="criar-senha" autocomplete="new-password"
+               placeholder="pelo menos 8 caracteres" required>
+      </label>
+      <label>Confirmar senha
+        <input type="password" id="criar-senha2" autocomplete="new-password"
+               placeholder="repita a senha" required>
+      </label>
+      <label class="auth-opcional">Arroba <small>(opcional — sai do seu e-mail)</small>
+        <input type="text" id="criar-handle" maxlength="20" autocomplete="off"
+               placeholder="@voce">
+      </label>
+      <p class="auth-erro" id="criar-erro" hidden></p>
+      <button type="submit" class="btn-dark auth-enviar" id="criar-enviar">Criar minha conta</button>
+    </form>
+
+    <p class="auth-rodape" id="auth-rodape">
+      A senha vai para o servidor e volta como hash — ninguém aqui, nem você,
+      consegue lê-la depois.
+    </p>
+  </div>
+</div>
+
+<div class="app" id="app" hidden>
+
+  <!-- ====================== VITRINE ====================== -->
+  <section class="view view-vitrine" data-view="vitrine">
+    <header class="vitrine-head">
+      <div>
+        <h1 class="vitrine-title">Vitrine do dia</h1>
+        <p class="vitrine-sub" id="vitrine-data"></p>
+      </div>
+      <div class="vitrine-acoes">
+        <!-- Administração (?admin=1): mexer no estoque sem esperar a virada do dia -->
+        <button class="btn-admin" id="btn-devolver" hidden
+                title="Tira as peças do guarda-roupa e devolve para a arara (não apaga nada do acervo)">↩ Devolver roupas</button>
+        <button class="btn-admin" id="btn-repor" hidden
+                title="Repor a loja: estoque novo e resgates liberados">↻ Repor loja</button>
+        <div class="picks-badge" id="picks-badge" title="Resgates restantes hoje">
+          <span id="picks-left">3</span><span class="picks-total">/3</span>
+          <small>resgates hoje</small>
+        </div>
+      </div>
+    </header>
+
+    <div class="mural-area" id="vitrine-mural"></div>
+
+    <!-- Ficha da peça: abre ao clicar numa roupa do mural -->
+    <aside class="ficha" id="ficha-peca" hidden>
+      <button class="ficha-x" id="ficha-x" title="Fechar">✕</button>
+      <div class="ficha-img"><img id="ficha-img" alt=""></div>
+      <span class="ficha-rar" id="ficha-rar"></span>
+      <h3 class="ficha-nome" id="ficha-nome"></h3>
+      <p class="ficha-meta" id="ficha-meta"></p>
+      <p class="ficha-chance" id="ficha-chance"></p>
+      <button class="btn-dark" id="ficha-acao"></button>
+      <button class="btn-ghost btn-editar" id="ficha-editar" hidden>Editar peça</button>
+    </aside>
+
+    <!-- NPC dono da loja -->
+    <div class="npc" id="npc">
+      <div class="npc-bubble" id="npc-bubble"><p id="npc-fala"></p></div>
+      <div class="npc-art" id="npc-art"></div>
+    </div>
+  </section>
+
+  <!-- ====================== CLOSET ====================== -->
+  <section class="view view-closet" data-view="closet" hidden>
+    <nav class="cat-rail" id="cat-rail"></nav>
+
+    <div class="grid-wrapper">
+      <header class="closet-head">
+        <div>
+          <h1 class="grid-title">Guarda-roupa</h1>
+          <p class="closet-sub" id="closet-sub"></p>
+        </div>
+        <div class="closet-acoes">
+          <label class="closet-ordem" title="Como organizar as peças">
+            <span>Organizar</span>
+            <select id="closet-ordem">
+              <option value="manual">Minha ordem</option>
+              <option value="raridade">Raridade (maior primeiro)</option>
+              <option value="recentes">Mais recentes</option>
+              <option value="antigas">Mais antigas</option>
+              <option value="favoritas">Favoritas primeiro</option>
+              <option value="cor">Por cor</option>
+              <option value="marca">Por marca</option>
+              <option value="categoria">Por categoria</option>
+              <option value="origem">Por origem</option>
+            </select>
+          </label>
+          <button class="btn-dark btn-adicionar" id="btn-add-peca">+ Adicionar peça</button>
+        </div>
+      </header>
+      <div class="grid-container" id="inventory-grid"></div>
+    </div>
+
+    <aside class="display-section">
+      <div class="preview-wrapper">
+        <div class="preview-moldura" id="preview-moldura" hidden>
+          <img id="big-preview-img" alt="Peça em destaque">
+        </div>
+        <span id="placeholder" class="placeholder-text">Selecione uma peça</span>
+      </div>
+      <div class="preview-meta" id="preview-meta" hidden>
+        <span class="rarity-tag" id="preview-rarity"></span>
+        <h3 id="preview-nome"></h3>
+        <p id="preview-info"></p>
+        <button class="btn-ghost fav-estrela" id="btn-favorita-peca"></button>
+        <button class="btn-dark" id="btn-para-stylist">Levar para o Stylist</button>
+        <button class="btn-ghost" id="btn-para-board">Levar para a Colagem</button>
+        <button class="btn-ghost btn-editar" id="btn-editar-peca" hidden>Editar peça</button>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ====================== STYLIST ====================== -->
+  <section class="view view-stylist" data-view="stylist" hidden>
+    <aside class="stylist-palette">
+      <h2>Peças</h2>
+      <div class="palette-cats" id="palette-cats"></div>
+      <div class="palette-grid" id="palette-grid"></div>
+      <p class="palette-hint">Clique para vestir. Arraste no palco para ajustar.</p>
+    </aside>
+
+    <div class="stylist-stage-area">
+      <div class="stage-frame">
+        <div class="stage" id="stage">
+          <div class="stage-avatar" id="stage-avatar"></div>
+          <div class="stage-layers" id="stage-layers"></div>
+        </div>
+      </div>
+      <div class="stage-caption">
+        <input id="outfit-nome" type="text" placeholder="Nome do look" maxlength="40">
+        <span class="stage-sig">ASSINATURA</span>
+      </div>
+    </div>
+
+    <aside class="stylist-tools">
+      <h2>Ferramentas</h2>
+      <div class="tool-block" id="layer-tools">
+        <p class="tool-label">Camada selecionada</p>
+        <div class="tool-row">
+          <button class="tool-btn" data-act="up" title="Trazer para frente">↑</button>
+          <button class="tool-btn" data-act="down" title="Enviar para trás">↓</button>
+          <button class="tool-btn" data-act="flip" title="Espelhar">⇄</button>
+          <button class="tool-btn" data-act="reset" title="Voltar ao encaixe padrão">⟲</button>
+          <button class="tool-btn danger" data-act="del" title="Remover">✕</button>
+        </div>
+        <label class="tool-slider">Tamanho
+          <input type="range" id="sld-escala" min="20" max="220" value="100">
+        </label>
+        <label class="tool-slider">Rotação
+          <input type="range" id="sld-rot" min="-180" max="180" value="0">
+        </label>
+        <p class="tool-empty" id="tool-empty">Nenhuma peça selecionada.</p>
+      </div>
+
+      <div class="tool-block">
+        <p class="tool-label">Look</p>
+        <button class="btn-ghost destaque" id="btn-sortear"
+                title="Monta um look com as suas peças">🎲 Gerar look</button>
+        <button class="btn-dark" id="btn-salvar">Salvar look</button>
+        <button class="btn-ghost" id="btn-publicar">Publicar no feed</button>
+        <button class="btn-ghost" id="btn-limpar">Limpar palco</button>
+        <button class="btn-ghost" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
+      </div>
+
+      <div class="tool-block">
+        <p class="tool-label">Exportar</p>
+        <button class="btn-ghost" data-export="story">Story 1080×1920</button>
+        <button class="btn-ghost" data-export="post">Post 1080×1350</button>
+        <p class="tool-hint">Gera o PNG pronto para o Instagram.</p>
+      </div>
+
+      <div class="tool-block">
+        <p class="tool-label">Meus looks</p>
+        <div class="saved-list" id="saved-list"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ====================== COLAGEM (BOARD) ====================== -->
+  <section class="view view-board" data-view="board" hidden>
+    <aside class="board-palette">
+      <h2>Peças</h2>
+      <div class="pal-busca">
+        <input type="search" id="board-busca" placeholder="filtrar por nº">
+      </div>
+      <div class="palette-cats" id="board-cats"></div>
+      <div class="palette-grid" id="board-grid"></div>
+      <p class="palette-hint">Clique para soltar na colagem.</p>
+    </aside>
+
+    <div class="board-main">
+      <div class="board-bar">
+        <div class="bar-grupo">
+          <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)">↶</button>
+          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Shift+Z)">↷</button>
+        </div>
+        <div class="bar-grupo">
+          <button class="bar-btn largo" id="bd-add-texto" title="Soltar uma etiqueta de texto">+ texto</button>
+        </div>
+        <div class="bar-grupo">
+          <button class="bar-btn" data-zoom="-" title="Diminuir">−</button>
+          <span class="bar-zoom" id="bd-zoom">100%</span>
+          <button class="bar-btn" data-zoom="+" title="Aumentar">+</button>
+          <button class="bar-btn" data-zoom="fit" title="Encaixar na tela">⤢</button>
+        </div>
+        <div class="bar-grupo">
+          <label class="bar-check"><input type="checkbox" id="bd-reguas" checked> réguas</label>
+          <label class="bar-check"><input type="checkbox" id="bd-ima" checked> ímã</label>
+          <label class="bar-check"><input type="checkbox" id="bd-grade"> grade</label>
+          <label class="bar-check"><input type="checkbox" id="bd-margem"> margem</label>
+        </div>
+        <div class="bar-grupo bar-dir">
+          <span class="bar-info" id="bd-info">0 peças</span>
+        </div>
+      </div>
+
+      <div class="board-scroll" id="board-scroll">
+        <div class="prancheta-wrap" id="prancheta-wrap">
+          <div class="regua regua-h" id="regua-h"></div>
+          <div class="regua regua-v" id="regua-v"></div>
+          <div class="regua-canto"></div>
+          <div class="prancheta" id="prancheta">
+            <div class="pr-grade" id="pr-grade"></div>
+            <div class="pr-itens" id="pr-itens"></div>
+            <div class="pr-assinatura" id="pr-assinatura"></div>
+            <div class="pr-margem" id="pr-margem"></div>
+            <div class="pr-guias" id="pr-guias"></div>
+            <div class="pr-imas" id="pr-imas"></div>
+            <div class="pr-marquee" id="pr-marquee" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações da colagem: sempre à mão, sem precisar rolar o painel. -->
+      <div class="board-rodape">
+        <input id="board-nome" type="text" placeholder="Nome da colagem" maxlength="46">
+        <span class="board-dica">Shift+clique soma à seleção · laço no vazio · setas movem · Del remove</span>
+        <div class="rodape-acoes">
+          <button class="acao-btn" id="bd-nova" title="Começar do zero">nova</button>
+          <button class="acao-btn" id="bd-sortear"
+                  title="Monta uma colagem com as suas peças (Ctrl+Z desfaz)">🎲 gerar</button>
+          <button class="acao-btn" id="bd-salvar">salvar</button>
+          <button class="acao-btn forte" id="bd-publicar">publicar</button>
+          <button class="acao-btn" data-bd-export="formato" title="PNG 1080×1350">PNG</button>
+          <button class="acao-btn" data-bd-export="alta" title="PNG 2160×2700">2×</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="board-tools">
+      <div class="tool-block" id="bd-selecao">
+        <p class="tool-label">Seleção <span id="bd-qtd-sel"></span></p>
+        <div class="tool-row">
+          <button class="tool-btn" data-bd="frente" title="Trazer para frente">⤒</button>
+          <button class="tool-btn" data-bd="subir"  title="Uma camada acima">↑</button>
+          <button class="tool-btn" data-bd="descer" title="Uma camada abaixo">↓</button>
+          <button class="tool-btn" data-bd="fundo"  title="Enviar para o fundo">⤓</button>
+        </div>
+        <div class="tool-row">
+          <button class="tool-btn" data-bd="espelhar"  title="Espelhar">⇄</button>
+          <button class="tool-btn" data-bd="duplicar"  title="Duplicar (Ctrl+D)">⧉</button>
+          <button class="tool-btn" data-bd="travar"    title="Travar/destravar">🔒</button>
+          <button class="tool-btn danger" data-bd="remover" title="Remover">✕</button>
+        </div>
+        <label class="tool-slider">Tamanho <input type="range" id="bd-escala" min="4" max="100" value="26"></label>
+        <label class="tool-slider">Rotação <input type="range" id="bd-rot" min="-180" max="180" value="0"></label>
+        <label class="tool-slider">Opacidade <input type="range" id="bd-opacidade" min="10" max="100" value="100"></label>
+        <label class="tool-check" title="Vale para a seleção e fica como padrão das próximas peças">
+          <input type="checkbox" id="bd-sombra" checked> sombra
+        </label>
+        <div id="bd-texto-campos" hidden>
+          <input type="text" id="bd-texto" placeholder="texto da etiqueta" maxlength="60">
+          <div class="tool-duo">
+            <label class="tool-campo">Fonte
+              <select id="bd-texto-fonte"></select>
+            </label>
+            <label class="tool-campo">Cor
+              <input type="color" id="bd-texto-cor" value="#1a1a1a">
+            </label>
+          </div>
+        </div>
+        <p class="tool-empty" id="bd-vazio">Nada selecionado. Clique numa peça ou lace várias.</p>
+      </div>
+
+      <div class="tool-block">
+        <p class="tool-label">Arranjo</p>
+        <div class="tool-row">
+          <button class="tool-btn largo" data-arranjo="grade">organizar em grade</button>
+          <button class="tool-btn largo" data-arranjo="leque">espalhar</button>
+        </div>
+      </div>
+
+      <details class="tool-block dobra">
+        <summary class="tool-label">Enquadramento</summary>
+        <label class="tool-campo">Margem
+          <input type="range" id="bd-margem-val" min="0" max="140" value="60">
+        </label>
+        <button class="tool-btn largo" id="bd-limpar-guias">limpar guias</button>
+      </details>
+
+      <details class="tool-block dobra">
+        <summary class="tool-label">Assinatura</summary>
+        <input type="text" id="bd-assinatura" placeholder="sua assinatura" maxlength="30">
+        <div class="tool-duo">
+          <label class="tool-campo">Fonte
+            <select id="bd-fonte"></select>
+          </label>
+          <label class="tool-campo">Posição
+            <select id="bd-pos-assinatura"></select>
+          </label>
+        </div>
+        <div class="tool-duo">
+          <label class="tool-campo">Tamanho
+            <input type="range" id="bd-tam-assinatura" min="20" max="120" value="52">
+          </label>
+          <label class="tool-campo">Espaço
+            <input type="range" id="bd-esp-assinatura" min="0" max="18" value="2">
+          </label>
+        </div>
+        <div class="tool-duo">
+          <label class="tool-campo">Cor
+            <input type="color" id="bd-cor-assinatura" value="#1a1a1a">
+          </label>
+          <label class="tool-check">
+            <input type="checkbox" id="bd-ver-assinatura" checked> mostrar
+          </label>
+        </div>
+        <button class="btn-ghost" id="bd-salvar-assinatura">Usar como minha assinatura</button>
+      </details>
+
+      <details class="tool-block dobra" id="bd-bloco-lista">
+        <summary class="tool-label">Minhas colagens <span id="bd-qtd-boards"></span></summary>
+        <div class="saved-list" id="bd-lista"></div>
+      </details>
+    </aside>
+  </section>
+
+  <!-- ====================== PERSONAGEM ====================== -->
+  <section class="view view-personagem" data-view="personagem" hidden>
+    <div class="pg-palco">
+      <div class="pg-moldura">
+        <div class="pg-previa" id="pg-previa"></div>
+      </div>
+      <p class="pg-resumo" id="pg-resumo"></p>
+    </div>
+
+    <aside class="pg-painel">
+      <div>
+        <h1>Personagem</h1>
+        <p class="closet-sub">É este boneco que veste os seus looks.</p>
+      </div>
+
+      <div class="pg-bloco">
+        <p class="tool-label">Corpo</p>
+        <div class="pg-cortes pg-corpos" id="pg-corpos"></div>
+      </div>
+
+      <div class="pg-bloco">
+        <p class="tool-label">Tom de pele</p>
+        <div class="pg-swatches" id="pg-peles"></div>
+      </div>
+
+      <div class="pg-bloco">
+        <p class="tool-label">Cabelo</p>
+        <div class="pg-cortes" id="pg-cortes"></div>
+      </div>
+
+      <div class="pg-bloco">
+        <p class="tool-label">Cor do cabelo</p>
+        <div class="pg-swatches" id="pg-cores"></div>
+      </div>
+
+      <div class="pg-bloco">
+        <p class="tool-label">Nariz</p>
+        <div class="pg-cortes" id="pg-narizes"></div>
+      </div>
+
+      <div class="pg-acoes">
+        <button class="btn-dark" id="pg-salvar">Salvar personagem</button>
+        <button class="btn-ghost" id="pg-padrao">Voltar ao padrão</button>
+        <button class="btn-ghost" id="pg-voltar">← Voltar ao perfil</button>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ====================== SOCIAL ====================== -->
+  <section class="view view-social" data-view="social" hidden>
+    <div class="feed-wrapper">
+      <header class="feed-head">
+        <h1>Feed</h1>
+        <p id="feed-sub"></p>
+        <div class="feed-abas" id="feed-abas"></div>
+      </header>
+      <div class="feed" id="feed"></div>
+    </div>
+    <aside class="feed-side">
+      <!-- A busca de pessoas (js/busca.js): sem termo a coluna mostra sugestões.
+           Numa seção só porque a coluna é um flex com gap entre os filhos. -->
+      <section class="quem-seguir">
+        <h2>Quem seguir</h2>
+        <div class="busca-caixa">
+          <input type="text" id="busca-pessoas" placeholder="procurar por nome ou @"
+                 autocomplete="off" maxlength="40" aria-label="Procurar pessoas">
+          <button type="button" class="busca-limpar" id="busca-limpar" title="Limpar a busca" hidden>✕</button>
+        </div>
+        <p class="busca-resumo" id="busca-resumo"></p>
+        <div class="sugestoes" id="sugestoes"></div>
+      </section>
+      <div class="player" id="player">
+        <h2>Trilha do mês</h2>
+        <div class="player-box">
+          <button class="play-btn" id="play-btn">▶</button>
+          <div class="player-info">
+            <strong id="track-nome">Tema base</strong>
+            <small id="track-sub">—</small>
+          </div>
+        </div>
+        <div class="player-skins" id="player-skins"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ================ PERFIL DE OUTRA PESSOA ================ -->
+  <!-- Aberto por #/usuario/<id>, clicando em quem assina um post, um
+       comentário ou uma sugestão do feed. -->
+  <section class="view view-usuario" data-view="usuario" hidden>
+    <div class="perfil-wrapper up-wrapper">
+      <button class="link-btn up-voltar" id="up-voltar">← Voltar ao feed</button>
+
+      <header class="perfil-head">
+        <div class="perfil-avatar" id="up-avatar"></div>
+        <div class="up-identidade">
+          <h1 id="up-nome"></h1>
+          <p class="perfil-handle" id="up-handle"></p>
+          <p class="up-bio" id="up-bio"></p>
+          <div class="perfil-redes" id="up-redes"></div>
+          <div class="perfil-stats" id="up-stats"></div>
+          <div class="up-acoes" id="up-acoes"></div>
+        </div>
+      </header>
+
+      <section class="up-secao">
+        <h2>Colagens</h2>
+        <p class="missoes-sub" id="up-posts-sub"></p>
+        <div class="up-posts" id="up-posts"></div>
+      </section>
+
+      <section class="up-secao">
+        <h2>Peças do guarda-roupa</h2>
+        <p class="missoes-sub" id="up-pecas-sub"></p>
+        <div class="up-pecas" id="up-pecas"></div>
+      </section>
+
+      <section class="up-secao">
+        <h2>Outros perfis</h2>
+        <p class="missoes-sub">Quem mais está garimpando por aqui.</p>
+        <div class="up-outros" id="up-outros"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ====================== TAREFAS ====================== -->
+  <!-- As missões do dia, a trilha de níveis e a cápsula: o que o app pede de
+       você. Quem você é fica no perfil. -->
+  <section class="view view-tarefas" data-view="tarefas" hidden>
+    <div class="tarefas-wrapper">
+      <header class="tarefas-head">
+        <h1>Tarefas</h1>
+        <p class="missoes-sub" id="tarefas-sub"></p>
+        <div id="tarefas-nivel"></div>
+        <div class="tarefas-stats" id="tarefas-stats"></div>
+      </header>
+
+      <section class="missoes">
+        <h2>Missões de hoje</h2>
+        <p class="missoes-sub" id="missoes-sub"></p>
+        <div class="missao-list" id="missao-list"></div>
+      </section>
+
+      <section class="ferramentas">
+        <h2>Ferramentas</h2>
+        <p class="missoes-sub">O que cada nível abre no app.</p>
+        <div id="ferramenta-box"></div>
+      </section>
+
+      <section class="collab" id="collab-box"></section>
+    </div>
+  </section>
+
+  <!-- ====================== PERFIL ====================== -->
+  <!-- A sua página: a mesma da view-usuario, montada com os seus dados, mais o
+       que só o dono da conta vê (editar, contas conectadas, testes). -->
+  <!-- ====================== INVENTARIO ====================== -->
+  <!-- Duas metades. Na da esquerda o personagem fica no meio, com uma coluna
+       de lugares do corpo de cada lado dele — tres e tres, como inventario de
+       RPG: o corpo vestido e o centro, e o que se veste esta em volta.
+       Na da direita, a mochila: uma pagina de casas de cima a baixo, com o
+       passador embaixo quando as pecas nao cabem todas numa pagina so.
+       O id da tela continua `vestiario`: `inventario` ja e o guarda-roupa das
+       pecas de verdade, em db.state (ver js/vestiario.js). -->
+  <section class="view view-vestiario" data-view="vestiario" hidden>
+
+    <div class="vs-palco">
+      <header class="vs-palco-topo">
+        <h1>Inventário</h1>
+        <button class="btn-ghost" id="vs-despir">Tirar tudo</button>
+      </header>
+
+      <!-- Coluna de slots · personagem · coluna de slots -->
+      <div class="vs-corpo">
+        <div class="vs-coluna" id="vs-coluna-esq"></div>
+        <div class="vs-previa" id="vs-previa"></div>
+        <div class="vs-coluna" id="vs-coluna-dir"></div>
+      </div>
+
+      <div class="vs-ficha" id="vs-ficha"></div>
+    </div>
+
+    <aside class="vs-painel">
+      <header class="vs-painel-topo">
+        <h1>Mochila</h1>
+      </header>
+
+      <div class="vs-abas" id="vs-abas"></div>
+      <div class="vs-grade" id="vs-grade"></div>
+      <footer class="vs-paginacao" id="vs-paginacao"></footer>
+    </aside>
+  </section>
+
+  <section class="view view-perfil" data-view="perfil" hidden>
+    <div class="perfil-wrapper up-wrapper">
+      <header class="perfil-head">
+        <div class="perfil-avatar" id="perfil-avatar"></div>
+        <div class="up-identidade">
+          <h1 id="perfil-nome">Você</h1>
+          <p class="perfil-handle" id="perfil-handle">@voce</p>
+          <p class="up-bio" id="perfil-bio"></p>
+          <div class="perfil-redes" id="perfil-redes"></div>
+          <div class="perfil-stats" id="perfil-stats"></div>
+          <div class="up-acoes" id="perfil-acoes"></div>
+
+          <form class="perfil-editar" id="perfil-editar" hidden>
+            <label>Nome
+              <input type="text" id="pf-nome" maxlength="28" autocomplete="off">
+            </label>
+            <label>Arroba
+              <input type="text" id="pf-handle" maxlength="20" autocomplete="off">
+            </label>
+            <label>Bio
+              <input type="text" id="pf-bio" maxlength="70" autocomplete="off"
+                     placeholder="uma linha sobre o seu garimpo">
+            </label>
+            <div class="pf-acoes">
+              <button type="submit" class="btn-dark">Salvar</button>
+              <button type="button" class="btn-ghost" id="pf-cancelar">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </header>
+
+      <!-- As três vitrines do perfil mostram só o que você favoritou com a
+           estrela no Stylist, na Colagem e no guarda-roupa. -->
+      <section class="up-secao">
+        <h2>Stylists</h2>
+        <p class="missoes-sub" id="perfil-looks-sub"></p>
+        <div class="fav-grid" id="perfil-looks"></div>
+      </section>
+
+      <section class="up-secao">
+        <h2>Colagens</h2>
+        <p class="missoes-sub" id="perfil-colagens-sub"></p>
+        <div class="fav-grid" id="perfil-colagens"></div>
+      </section>
+
+      <section class="up-secao">
+        <h2>Roupas favoritas</h2>
+        <p class="missoes-sub" id="perfil-pecas-sub"></p>
+        <div class="up-pecas" id="perfil-pecas"></div>
+      </section>
+
+      <section class="up-secao">
+        <h2>Amigos</h2>
+        <p class="missoes-sub" id="perfil-amigos-sub"></p>
+        <button type="button" class="btn-dark btn-buscar" id="btn-buscar-pessoas">+ Procurar pessoas</button>
+        <div class="up-outros" id="perfil-amigos"></div>
+      </section>
+
+      <section class="conexoes">
+        <h2>Contas conectadas</h2>
+        <p class="missoes-sub">De onde vêm as peças e para onde vão as colagens.</p>
+        <div class="conexao-lista" id="conexao-lista"></div>
+      </section>
+
+      <section class="up-secao conta-secao">
+        <h2>Sua conta</h2>
+        <p class="missoes-sub" id="conta-resumo"></p>
+        <div class="tool-row">
+          <button class="btn-ghost" id="btn-trocar-senha">Trocar a senha</button>
+          <button class="btn-ghost" id="btn-sair">Sair da conta</button>
+        </div>
+        <form class="conta-senha" id="form-senha" hidden>
+          <label>Senha atual
+            <input type="password" id="senha-atual" autocomplete="current-password">
+          </label>
+          <label>Senha nova
+            <input type="password" id="senha-nova" autocomplete="new-password"
+                   placeholder="pelo menos 8 caracteres">
+          </label>
+          <p class="auth-erro" id="senha-erro" hidden></p>
+          <div class="pf-acoes">
+            <button type="submit" class="btn-dark">Trocar</button>
+            <button type="button" class="btn-ghost" id="senha-cancelar">Cancelar</button>
+          </div>
+        </form>
+        <p class="tool-hint">Trocar a senha encerra as outras sessões: quem
+          estiver logado como você em outro computador cai fora.</p>
+      </section>
+
+      <section class="perfil-dev">
+        <h2>Testes</h2>
+        <div class="tool-row">
+          <button class="btn-ghost" id="btn-reset-dia">Liberar resgates de hoje</button>
+          <button class="btn-ghost" id="btn-dar-pecas">+10 peças aleatórias</button>
+          <button class="btn-ghost" id="btn-posts">+3 posts fictícios</button>
+          <button class="btn-ghost" id="btn-xp">+50 XP</button>
+          <button class="btn-ghost" id="btn-fonte"></button>
+          <button class="btn-ghost danger" id="btn-reset">Apagar meus dados</button>
+          <button class="btn-ghost danger" id="btn-apagar-acervo">Apagar peças guardadas aqui</button>
+        </div>
+        <p class="tool-hint">Tudo é salvo no localStorage do navegador
+          (o lugar do DynamoDB no protótipo). “Apagar meus dados” zera a partida
+          (inventário, looks, feed, XP) e preserva o cadastro — peças adicionadas,
+          marcas e cores —, que vai migrar para a base oficial do site.</p>
+      </section>
+    </div>
+  </section>
+
+  <!-- ====================== SIDEBAR ====================== -->
+  <aside class="sidebar">
+    <div class="sidebar-icons">
+      <button class="sidebar-btn loja"       data-goto="vitrine" title="Vitrine"><span>Loja</span></button>
+      <button class="sidebar-btn inventario" data-goto="closet"  title="Guarda-roupa"><span>Closet</span></button>
+      <button class="sidebar-btn stylist"     data-goto="stylist"  title="Stylist (avatar)"><span>Stylist</span></button>
+      <button class="sidebar-btn board"      data-goto="board"   title="Colagem"><span>Colagem</span></button>
+      <button class="sidebar-btn social"     data-goto="social"  title="Feed"><span>Feed</span></button>
+      <button class="sidebar-btn tarefas"    data-goto="tarefas" title="Missões do dia"><span>Tarefas</span></button>
+      <button class="sidebar-btn vestiario"  data-goto="vestiario" title="Inventário (roupinhas)"><span>Roupas</span></button>
+      <button class="sidebar-btn perfil"     data-goto="perfil"  title="Perfil"><span>Perfil</span></button>
+    </div>
+    <div class="sidebar-rodape">
+      <div class="nivel-selo" id="nivel-selo" title="Seu nível"></div>
+      <div class="logo-mini">BD</div>
+    </div>
+  </aside>
+
+
+  <!-- ====================== PROCURAR PESSOAS ====================== -->
+  <!-- Aberto pelo botão da seção Amigos do perfil (js/busca.js). -->
+  <div class="modal" id="modal-busca" hidden>
+    <div class="modal-caixa estreita bp-caixa">
+      <header class="modal-topo">
+        <h2>Procurar pessoas</h2>
+        <button class="modal-x" id="bp-fechar" title="Fechar">✕</button>
+      </header>
+      <div class="cx-corpo bp-corpo">
+        <input type="text" id="bp-campo" placeholder="nome, sobrenome ou @"
+               autocomplete="off" maxlength="40" aria-label="Procurar pessoas">
+        <p class="missoes-sub" id="bp-resumo"></p>
+        <div class="bp-lista" id="bp-lista"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== CONECTAR CONTA ====================== -->
+  <div class="modal" id="modal-conexao" hidden>
+    <div class="modal-caixa estreita">
+      <header class="modal-topo">
+        <h2 id="cx-titulo">Conectar</h2>
+        <button class="modal-x" id="cx-fechar" title="Fechar">✕</button>
+      </header>
+      <div class="cx-corpo">
+        <p class="cx-resumo" id="cx-resumo"></p>
+        <ul class="cx-beneficios" id="cx-beneficios"></ul>
+        <label class="tool-campo">Seu usuário lá
+          <input type="text" id="cx-usuario" placeholder="@seuusuario" maxlength="30">
+        </label>
+        <p class="cx-nota">
+          Ligação simulada: nada sai do navegador e nenhuma senha é pedida. Quando o
+          backend existir, é este passo que vira o login oficial do serviço.
+        </p>
+      </div>
+      <footer class="modal-rodape">
+        <span class="mp-aviso"></span>
+        <button class="btn-ghost" id="cx-cancelar">Cancelar</button>
+        <button class="btn-dark" id="cx-confirmar">Conectar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ====================== ADICIONAR PEÇA ====================== -->
+  <div class="modal" id="modal-peca" hidden>
+    <div class="modal-caixa" id="mp-caixa">
+      <header class="modal-topo">
+        <h2 id="mp-titulo">Adicionar peça</h2>
+        <button class="modal-x" id="mp-fechar" title="Fechar">✕</button>
+      </header>
+
+      <section class="mp-passo" id="mp-passo1">
+        <div class="mp-fila" id="mp-fila" hidden></div>
+        <div class="mp-colunas">
+          <div class="mp-imagem">
+            <div class="mp-solta" id="mp-solta">
+              <input type="file" id="mp-arquivo" accept="image/*" multiple hidden>
+              <div class="mp-solta-vazio" id="mp-solta-vazio">
+                <span class="mp-icone">⬚</span>
+                <strong>Solte as fotos aqui</strong>
+                <span>ou clique para escolher — pode ser uma ou várias</span>
+                <small id="mp-solta-dica">foto com fundo serve · o recorte é feito sozinho</small>
+              </div>
+              <img id="mp-previa" alt="Prévia da peça" hidden>
+            </div>
+            <label class="tool-check mp-fundo">
+              <input type="checkbox" id="mp-tirar-fundo" checked>
+              tirar o fundo automaticamente
+            </label>
+            <p class="tool-hint" id="mp-fundo-dica">
+              A foto vai para o servidor, volta recortada, e o recorte em alta fica
+              guardado em assets/mestres/. Demora alguns segundos por peça.
+            </p>
+          </div>
+
+          <div class="mp-campos">
+            <label class="tool-campo">Categoria
+              <select id="mp-cat"></select>
+            </label>
+            <label class="tool-campo">Marca
+              <input type="text" id="mp-marca" placeholder="ex.: Maison Margiela"
+                     maxlength="40" list="mp-marcas-lista" autocomplete="off">
+              <datalist id="mp-marcas-lista"></datalist>
+            </label>
+            <div class="mp-marcas" id="mp-marcas"></div>
+            <label class="tool-campo">Cor
+              <input type="text" id="mp-cor" placeholder="ex.: Verde musgo"
+                     maxlength="24" list="mp-cores-lista" autocomplete="off">
+              <datalist id="mp-cores-lista"></datalist>
+            </label>
+            <div class="mp-marcas mp-cores" id="mp-cores"></div>
+            <p class="tool-hint mp-cor-dica" id="mp-cor-dica" hidden></p>
+            <label class="tool-campo">Nome da peça
+              <input type="text" id="mp-nome" placeholder="opcional — ex.: Tabi metálica" maxlength="40">
+            </label>
+            <p class="tool-label">Raridade</p>
+            <div class="mp-raridades" id="mp-raridades"></div>
+
+            <label class="tool-check mp-destino">
+              <input type="checkbox" id="mp-para-mim" checked>
+              já entra no meu guarda-roupa
+            </label>
+            <p class="tool-hint" id="mp-destino-dica">
+              Desmarque para a peça ficar só como estoque da loja, para ser garimpada.
+              Numa fila, vale para todas.
+            </p>
+          </div>
+        </div>
+
+        <footer class="modal-rodape">
+          <span class="mp-aviso" id="mp-aviso"></span>
+          <button class="btn-ghost" id="mp-cancelar">Cancelar</button>
+          <button class="btn-ghost" id="mp-ficha-demais" hidden>Usar esta ficha nas outras</button>
+          <button class="btn-ghost" id="mp-salvar-todas" hidden>Salvar todas</button>
+          <button class="btn-dark" id="mp-continuar" disabled>Dimensionar →</button>
+        </footer>
+      </section>
+
+      <section class="mp-passo" id="mp-passo2" hidden>
+        <p class="mp-dica">
+          Arraste a peça sobre o molde e use as quinas para o tamanho. Essa medida é
+          o tamanho real dela: define como entra no Stylist e o tamanho nas grades.
+        </p>
+        <div class="mp-molde-area">
+          <div class="mp-molde" id="mp-molde">
+            <div class="mp-avatar" id="mp-avatar"></div>
+            <div class="mp-peca" id="mp-peca">
+              <img id="mp-peca-img" alt="Peça sendo dimensionada" draggable="false">
+              <span class="mp-alca no" data-alca="1"></span>
+              <span class="mp-alca ne" data-alca="1"></span>
+              <span class="mp-alca so" data-alca="1"></span>
+              <span class="mp-alca se" data-alca="1"></span>
+            </div>
+          </div>
+        </div>
+        <footer class="modal-rodape">
+          <span class="mp-aviso" id="mp-medida"></span>
+          <button class="btn-ghost" id="mp-voltar">← Voltar</button>
+          <button class="btn-ghost" id="mp-padrao">Tamanho padrão</button>
+          <button class="btn-ghost" id="mp-aplicar-demais" hidden>Aplicar às demais</button>
+          <button class="btn-dark" id="mp-salvar">Salvar peça</button>
+        </footer>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toasts"></div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+<script>
+  // Quem revela o app agora e o js/app.js, depois de saber quem entrou: mostrar
+  // a vitrine antes disso seria mostrar o guarda-roupa de ninguem.
+  if (location.protocol === 'file:') {
+    document.getElementById('file-warning').hidden = false;
+  }
+</script>
+</body>
+</html>

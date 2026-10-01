@@ -1,0 +1,347 @@
+/* Feed, sugestões, player e perfil. */
+
+.view-social { background: #fbf8f4; }
+
+.feed-wrapper { flex: 1; min-width: 0; overflow-y: auto; padding: 30px 34px; }
+.feed-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -.4px; }
+.feed-head p { font-size: 12.5px; color: var(--tinta-suave); margin: 2px 0 14px; }
+
+.feed-abas { display: flex; gap: 6px; margin-bottom: 18px; }
+.feed-aba {
+  border: 1px solid var(--linha); background: #fff;
+  border-radius: 20px; padding: 6px 15px;
+  font-size: 12px; color: var(--tinta-suave);
+}
+.feed-aba.ativa { background: var(--tinta); border-color: var(--tinta); color: #fff; font-weight: 700; }
+
+.feed {
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(288px, 1fr));
+  align-items: start;
+}
+.feed-vazio { color: var(--tinta-suave); font-size: 14px; }
+
+.post {
+  background: #fff; border: 1px solid var(--linha); border-radius: var(--raio);
+  overflow: hidden; transition: box-shadow .2s, transform .2s;
+}
+.post:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
+.post-head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; }
+.post-head strong { display: block; font-size: 13px; }
+.post-head small { font-size: 11px; color: var(--tinta-suave); }
+.tag-meu {
+  margin-left: auto; font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  background: var(--tinta); color: #fff; border-radius: 20px; padding: 2px 8px;
+}
+/* Retrato: o avatar da pessoa recortado num círculo. */
+.retrato {
+  border-radius: 50%; flex: none;
+  position: relative; overflow: hidden;
+  display: block;
+}
+.retrato svg { display: block; pointer-events: none; }
+
+.avatar-bolha {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 13px; color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+}
+.post-thumb { background: var(--papel); display: grid; place-items: center; }
+.post-thumb img { width: 100%; display: block; }
+.post-thumb .sem-thumb { padding: 60px 0; font-size: 12px; }
+
+.post-autor { flex: 1; min-width: 0; }
+.post-acoes { display: flex; align-items: center; gap: 10px; padding: 10px 14px 8px; }
+.btn-seguir.mini { padding: 4px 10px; font-size: 10px; }
+
+/* ------------------------------ Comentários ------------------------------ */
+.post-thread {
+  border-top: 1px solid var(--linha);
+  padding: 10px 14px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.comentario {
+  font-size: 12px; line-height: 1.5; color: var(--tinta);
+  position: relative; padding-right: 16px;
+}
+.comentario strong { font-weight: 700; margin-right: 3px; }
+.comentario small { color: #b3aaa0; font-size: 10.5px; margin-left: 6px; }
+.apagar-com {
+  position: absolute; right: 0; top: 1px;
+  border: 0; background: none; color: #cfc6b9; font-size: 10px;
+}
+.apagar-com:hover { color: #c0392b; }
+.ver-todos { align-self: flex-start; font-size: 11.5px; }
+
+.comentar-linha { display: flex; gap: 6px; margin-top: 4px; }
+.campo-comentario {
+  flex: 1; min-width: 0;
+  border: 1px solid var(--linha); border-radius: 20px;
+  padding: 7px 12px; font-family: inherit; font-size: 12px; background: #fdfcfa;
+}
+.campo-comentario:focus { outline: none; border-color: var(--tinta); background: #fff; }
+.enviar-com {
+  border: 1px solid var(--linha); background: #fff;
+  border-radius: 20px; padding: 0 13px; font-size: 11.5px; font-weight: 600;
+}
+.enviar-com:hover { border-color: var(--tinta); }
+
+.comentar-btn {
+  border: 0; background: none; font-size: 13px; color: var(--tinta-suave);
+  display: flex; align-items: center; gap: 5px;
+}
+.comentar-btn span { font-size: 12px; }
+.comentar-btn:hover { color: var(--tinta); }
+
+/* ---------------------------- Menu compartilhar -------------------------- */
+.menu-compartilhar {
+  position: fixed; z-index: 700;
+  background: var(--branco); border: 1px solid var(--linha);
+  border-radius: 14px; box-shadow: 0 14px 34px rgba(0, 0, 0, .16);
+  padding: 6px; min-width: 176px;
+}
+.menu-item {
+  width: 100%; display: flex; align-items: center; gap: 9px;
+  border: 0; background: none; border-radius: 10px;
+  padding: 8px 10px; font-size: 12.5px; text-align: left; color: var(--tinta);
+}
+.menu-item:hover { background: #f6f3ee; }
+.menu-item .ponto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.menu-aviso { font-size: 11px; color: var(--tinta-suave); padding: 8px 10px; line-height: 1.5; }
+
+.post-foot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+.curtir {
+  border: 0; background: none; font-size: 15px; color: var(--tinta-suave);
+  display: flex; align-items: center; gap: 5px;
+}
+.curtir span { font-size: 12px; }
+.curtir.on { color: #d1345b; }
+.post-nome {
+  flex: 1; font-size: 12px; color: var(--tinta-suave);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ------------------------- Coluna direita do feed ----------------------- */
+.feed-side {
+  width: 280px; flex: none;
+  background: #fff; border-left: 1px solid var(--linha);
+  padding: 30px 22px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 26px;
+}
+.feed-side h2 {
+  font-size: 12px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tinta-suave); margin-bottom: 12px;
+}
+.sugestao { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.sug-info { flex: 1; min-width: 0; }
+.sug-info .autor-link.nome { text-align: left; }
+.sug-info strong { display: block; font-size: 13px; }
+.sug-info small {
+  font-size: 11px; color: var(--tinta-suave);
+  /* A bio de uma conta real é texto livre (até 140 letras): duas linhas, e o
+     resto some, senão uma bio longa estica a coluna inteira. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.btn-seguir {
+  border: 1px solid var(--tinta); background: var(--tinta); color: #fff;
+  font-size: 11px; font-weight: 700; border-radius: 20px; padding: 5px 12px;
+}
+.btn-seguir.seguindo { background: transparent; color: var(--tinta-suave); border-color: var(--linha); }
+
+/* ----------------------------- Busca de pessoas -------------------------- */
+/* O campo da coluna do feed e o do modal do perfil são o mesmo desenho. */
+.busca-caixa { position: relative; }
+.busca-caixa input, .bp-corpo input[type="text"] {
+  width: 100%; border: 1px solid var(--linha); border-radius: 20px;
+  padding: 8px 32px 8px 14px; font-family: inherit; font-size: 12.5px;
+  background: #fdfcfa; color: var(--tinta);
+}
+.busca-caixa input:focus, .bp-corpo input[type="text"]:focus {
+  outline: none; border-color: var(--tinta); background: #fff;
+}
+.busca-limpar {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 0; background: none; font-size: 10px; color: var(--tinta-suave);
+}
+.busca-limpar:hover { color: var(--tinta); background: #f0ece6; }
+.busca-resumo { font-size: 11px; color: var(--tinta-suave); margin: 8px 0 4px; }
+.busca-vazio { font-size: 12.5px; color: var(--tinta-suave); line-height: 1.5; padding: 10px 0; }
+
+/* O selo de quem segue você de volta, ao lado do nome. */
+.chip-amigo {
+  margin-left: 6px; vertical-align: 1px;
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  background: #e8f3e6; color: #3d7a3a; border-radius: 20px; padding: 2px 7px;
+}
+
+/* Modal do perfil: a lista rola por dentro, o cabeçalho e o campo ficam. */
+.bp-caixa { max-height: min(86vh, 640px); }
+.bp-corpo { flex: 1; min-height: 0; padding-bottom: 8px; }
+.bp-corpo .missoes-sub { margin: 0; }
+.bp-lista { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+.bp-lista .sugestao { border-bottom: 1px solid var(--linha); }
+.bp-lista .sugestao:last-child { border-bottom: 0; }
+.btn-buscar { width: auto; margin: 0 0 14px; padding: 8px 18px; font-size: 12px; }
+
+.player-box {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--papel); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px;
+}
+.play-btn {
+  width: 38px; height: 38px; flex: none; border-radius: 50%;
+  border: 0; background: var(--tinta); color: #fff; font-size: 13px;
+}
+.player-info strong { display: block; font-size: 13px; }
+.player-info small { font-size: 11px; color: var(--tinta-suave); }
+.player-skins { display: flex; flex-wrap: wrap; gap: 6px; }
+.skin {
+  border: 1px solid var(--linha); background: #fff; border-radius: 20px;
+  padding: 5px 12px; font-size: 11.5px;
+}
+.skin.ativa { border-color: var(--tinta); font-weight: 700; }
+.skin.off { opacity: .45; }
+
+/* --------------------------------- Perfil ------------------------------- */
+.view-perfil { background: #fbf8f4; overflow-y: auto; }
+.perfil-wrapper {
+  flex: 1; max-width: 860px; margin: 0 auto;
+  padding: 36px 34px 60px; display: flex; flex-direction: column; gap: 30px;
+}
+.perfil-head { display: flex; gap: 22px; align-items: center; }
+.perfil-avatar {
+  width: 120px; height: 190px; flex: none;
+  background: #fff; border: 1px solid var(--linha); border-radius: 18px;
+  display: grid; place-items: center; overflow: hidden; padding: 8px;
+}
+.perfil-avatar img, .avatar-svg { max-width: 100%; max-height: 100%; }
+.avatar-svg svg { width: auto; height: 172px; }
+.perfil-head h1 { font-size: 24px; letter-spacing: -.5px; }
+.perfil-handle { font-size: 13px; color: var(--tinta-suave); margin-bottom: 14px; }
+.perfil-stats { display: flex; flex-wrap: wrap; gap: 10px; }
+.stat {
+  background: #fff; border: 1px solid var(--linha); border-radius: 14px;
+  padding: 9px 14px; min-width: 76px;
+}
+.stat strong { display: block; font-size: 18px; }
+.stat small { font-size: 10.5px; color: var(--tinta-suave); }
+
+/* Redes de fora, embaixo da bio. Selo, não link: ver chipsDeRedes. */
+.perfil-redes { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 14px; }
+.perfil-redes:empty { display: none; }
+.rede-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px 5px 10px; border-radius: 20px;
+  background: color-mix(in srgb, var(--servico) 8%, #fff);
+  border: 1px solid color-mix(in srgb, var(--servico) 30%, var(--linha));
+}
+.rede-chip .conexao-ponto { width: 8px; height: 8px; box-shadow: none; }
+.rede-chip strong { font-size: 11px; font-weight: 700; }
+.rede-chip small { font-size: 11px; color: var(--tinta-suave); }
+
+/* Vitrines do perfil: os looks e as colagens que você favoritou. O clique
+   devolve a peça ao editor de onde ela saiu. */
+.fav-grid {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.fav-card {
+  display: flex; flex-direction: column; gap: 5px; padding: 10px;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 16px;
+  text-align: left; transition: border-color .15s, transform .15s;
+}
+.fav-card:hover { border-color: var(--tinta); transform: translateY(-2px); }
+.fav-thumb {
+  aspect-ratio: 3 / 4; border-radius: 12px; background: #faf7f2;
+  display: grid; place-items: center; overflow: hidden;
+}
+.fav-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.fav-card strong {
+  font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fav-card small { font-size: 10.5px; color: var(--tinta-suave); }
+
+/* Editar nome, @ e bio: o cadastro que os outros leem na sua página. */
+.perfil-editar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
+  margin-top: 16px; padding: 14px 16px; max-width: 520px;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: var(--raio);
+}
+.perfil-editar label {
+  display: flex; flex-direction: column; gap: 5px; flex: 1 1 140px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.perfil-editar input {
+  border: 1px solid var(--linha); border-radius: 12px; padding: 8px 11px;
+  font-family: inherit; font-size: 13px; color: var(--tinta);
+}
+.perfil-editar input:focus { outline: none; border-color: var(--tinta); }
+.perfil-editar label:last-of-type { flex-basis: 100%; }
+.pf-acoes { display: flex; gap: 8px; }
+.pf-acoes .btn-dark, .pf-acoes .btn-ghost { width: auto; margin: 0; padding: 9px 18px; }
+
+.conexoes h2, .perfil-dev h2 { font-size: 16px; margin-bottom: 4px; }
+/* Subtítulo de seção — perfil, perfil público e tarefas usam o mesmo. */
+.missoes-sub { font-size: 12.5px; color: var(--tinta-suave); margin-bottom: 14px; }
+/* ---------------------------- Contas conectadas -------------------------- */
+.conexoes h2 { font-size: 16px; margin-bottom: 4px; }
+.conexao-lista {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 14px;
+}
+.conexao {
+  background: #fff; border: 1px solid var(--linha); border-radius: var(--raio);
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.conexao.ligada { border-color: color-mix(in srgb, var(--servico) 45%, var(--linha)); }
+.conexao-topo { display: flex; align-items: center; gap: 10px; }
+.conexao-ponto {
+  width: 12px; height: 12px; border-radius: 50%; flex: none;
+  background: var(--servico);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--servico) 18%, transparent);
+}
+.conexao-nome { flex: 1; min-width: 0; }
+.conexao-nome strong { display: block; font-size: 14px; }
+.conexao-nome small {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.conexao-selo {
+  font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  background: color-mix(in srgb, var(--servico) 14%, #fff);
+  color: var(--servico); border-radius: 20px; padding: 3px 9px;
+}
+.conexao-resumo { font-size: 12px; color: var(--tinta-suave); line-height: 1.55; flex: 1; }
+.conexao-acoes { display: flex; gap: 8px; }
+.conexao-acoes .btn-dark, .conexao-acoes .btn-ghost { margin: 0; padding: 8px 14px; font-size: 12px; }
+
+/* Modal de conexão */
+.modal-caixa.estreita { width: min(460px, 100%); }
+.cx-corpo { padding: 20px 26px; display: flex; flex-direction: column; gap: 14px; }
+.cx-resumo { font-size: 13px; color: var(--tinta); }
+.cx-beneficios { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cx-beneficios li {
+  font-size: 12.5px; color: var(--tinta-suave); line-height: 1.5;
+  padding-left: 18px; position: relative;
+}
+.cx-beneficios li::before {
+  content: '→'; position: absolute; left: 0; top: 0;
+  color: var(--servico, var(--tinta)); font-weight: 700;
+}
+.cx-corpo input[type="text"] {
+  border: 1px solid var(--linha); border-radius: 12px;
+  padding: 9px 12px; font-family: inherit; font-size: 13px; width: 100%;
+}
+.cx-corpo input:focus { outline: none; border-color: var(--tinta); }
+.cx-nota {
+  font-size: 11px; color: #a9a196; line-height: 1.55;
+  background: #faf7f2; border-radius: 12px; padding: 10px 12px;
+}
+
+.perfil-dev .tool-row { max-width: 560px; margin: 10px 0; }
+.perfil-dev .btn-ghost { width: auto; flex: 1; }

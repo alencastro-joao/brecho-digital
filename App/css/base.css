@@ -1,0 +1,340 @@
+/* Base: variáveis, layout geral, sidebar, botões, toasts. */
+
+:root {
+  --papel: #fdfaf6;
+  --tinta: #1a1a1a;
+  --tinta-suave: #6b6560;
+  --linha: #ebe5dd;
+  --branco: #ffffff;
+
+  --perfil: #ffccbc;
+  --inventario: #b2ebf2;
+  --stylist: #fff9c4;
+  --social: #d1c4e9;
+  --board: #f8bbd0;
+  --loja: #c8e6c9;
+  --tarefas: #ffe0b2;
+  --vestiario: #dcedc8;
+
+  /* Tamanho da célula onde uma peça aparece — guarda-roupa, paleta do Stylist,
+     paleta da Colagem, cápsula do perfil. Uma medida só, para a peça ter
+     sempre o mesmo tamanho. O que muda entre as telas é quantas colunas cabem;
+     mexer neste número aumenta as peças em todos os lugares de uma vez. */
+  --cel-peca: 140px;
+
+  --raio: 18px;
+  --sombra: 0 10px 30px rgba(0, 0, 0, .07);
+  --fonte: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  /* O protótipo é desktop-first: em janela estreita a página rola na horizontal
+     em vez de espremer as colunas até ficarem inutilizáveis. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  font-family: var(--fonte);
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+button { font-family: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .4; }
+
+.app { display: flex; width: 100%; height: 100%; min-width: 960px; }
+
+
+.view { flex: 1; position: relative; min-width: 0; overflow: hidden; display: flex; }
+.view[hidden] { display: none; }
+
+/* ------------------------------- Sidebar ------------------------------- */
+.sidebar {
+  width: 90px;
+  flex: none;
+  background: var(--branco);
+  border-left: 1px solid var(--linha);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 34px 0 26px;
+  z-index: 200;
+}
+
+.sidebar-icons { display: flex; flex-direction: column; gap: 14px; }
+
+.sidebar-btn {
+  width: 54px; height: 54px;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  background: #f4f4f4;
+  display: grid; place-items: center;
+  transition: transform .25s, box-shadow .25s, border-color .25s;
+  position: relative;
+}
+.sidebar-btn span {
+  font-size: 9px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: rgba(0, 0, 0, .55);
+}
+.sidebar-btn:hover { transform: translateY(-2px) scale(1.06); }
+.sidebar-btn.ativa { border-color: var(--tinta); box-shadow: var(--sombra); }
+.sidebar-btn.recebeu { animation: pulso .7s ease; }
+
+.sidebar-btn.loja { background: var(--loja); }
+.sidebar-btn.inventario { background: var(--inventario); }
+.sidebar-btn.stylist { background: var(--stylist); }
+.sidebar-btn.board { background: var(--board); }
+.sidebar-btn.social { background: var(--social); }
+.sidebar-btn.tarefas { background: var(--tarefas); }
+.sidebar-btn.vestiario { background: var(--vestiario); }
+.sidebar-btn.perfil { background: var(--perfil); }
+
+.sidebar-btn.travada { filter: grayscale(1); opacity: .45; }
+.sidebar-btn.travada::after {
+  content: '🔒'; position: absolute; font-size: 13px;
+  transform: translate(16px, -16px);
+}
+.sidebar-btn { position: relative; }
+
+/* ------------------------------ Nível ---------------------------------- */
+.sidebar-rodape { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+.nivel-selo {
+  width: 54px; padding: 6px 4px 5px;
+  border: 1px solid var(--linha); border-radius: 14px;
+  background: var(--papel);
+  display: grid; justify-items: center; gap: 1px;
+  cursor: default;
+}
+.nivel-selo strong { font-size: 17px; line-height: 1; font-weight: 800; }
+.nivel-selo small {
+  font-size: 8px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.nivel-barra {
+  width: 100%; height: 7px; border-radius: 99px;
+  background: #ededed; overflow: hidden;
+}
+.nivel-barra.mini { height: 4px; width: 38px; margin-top: 3px; }
+.nivel-barra > span {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #f0c674, #c8a24a);
+  transition: width .4s ease;
+}
+
+.nivel-chip {
+  margin-left: 6px; padding: 1px 7px;
+  border-radius: 99px; background: #f1e7cf; border: 1px solid #e0cfa6;
+  font-size: 10px; font-weight: 800; letter-spacing: .03em;
+  color: #6b5620; vertical-align: middle;
+}
+
+@keyframes pulso {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+.logo-mini {
+  font-weight: 900; font-size: 20px; letter-spacing: -1px;
+  color: #ddd6cc; cursor: pointer; user-select: none;
+}
+.logo-mini:hover { color: var(--tinta); }
+
+/* ------------------------------- Botões -------------------------------- */
+.btn-dark, .btn-ghost {
+  display: block; width: 100%;
+  padding: 11px 16px;
+  border-radius: 30px;
+  font-size: 13px; font-weight: 600;
+  border: 1px solid var(--tinta);
+  transition: all .2s;
+}
+.btn-dark { background: var(--tinta); color: #fff; }
+.btn-dark:hover { background: #000; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--tinta); border-color: var(--linha); }
+.btn-ghost:hover { border-color: var(--tinta); }
+.btn-ghost.ativo { background: var(--stylist); border-color: #e2d47a; }
+.btn-ghost.destaque { background: #fbf6e2; border-color: #e7dcb2; font-weight: 700; }
+.btn-ghost.destaque:hover { border-color: var(--tinta); }
+.btn-ghost.danger, .tool-btn.danger { color: #c0392b; }
+.btn-ghost + .btn-ghost, .btn-dark + .btn-ghost { margin-top: 8px; }
+
+/* ------------------------------ Favoritar ------------------------------- */
+/* A estrela que escolhe o que aparece no perfil (js/favoritos.js). No painel
+   do guarda-roupa ela é um .btn-ghost com rótulo; nas listas do Stylist e da
+   Colagem é só a estrela, encostada na linha. */
+.fav-estrela.on { border-color: #e7c96a; background: #fffaea; color: #8a6d24; }
+
+.fav-estrela.mini {
+  flex: none; width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 9px; background: transparent;
+  color: #cfc7bb; font-size: 15px; line-height: 1;
+  display: grid; place-items: center;
+  transition: color .15s, background .15s;
+}
+.fav-estrela.mini:hover { background: #f6f1e8; color: #8a6d24; }
+.fav-estrela.mini.on { background: #fff6d6; color: #d6a81f; }
+
+/* Nome ou retrato de quem assina algo: leva ao perfil da pessoa. Continua
+   parecendo texto (e o retrato, um retrato) — só o cursor e o sublinhado no
+   hover contam que dá para clicar. */
+.autor-link {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: inherit; font: inherit; display: inline-flex; align-items: center;
+}
+.autor-link.nome { font-weight: inherit; }
+.autor-link.forte { font-weight: 700; margin-right: 3px; }
+.autor-link.nome:hover { text-decoration: underline; }
+.autor-link:hover .retrato { box-shadow: 0 0 0 2px var(--tinta); }
+.retrato { transition: box-shadow .15s; }
+
+.link-btn {
+  background: none; border: 0; padding: 0;
+  font-size: 12px; color: var(--tinta-suave); text-decoration: underline;
+}
+.link-btn:hover { color: var(--tinta); }
+
+/* ------------------------------- Toasts -------------------------------- */
+.toast-stack {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  z-index: 900; pointer-events: none;
+}
+.toast {
+  background: rgba(26, 26, 26, .94); color: #fff;
+  padding: 11px 20px; border-radius: 30px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(14px);
+  transition: all .3s cubic-bezier(.2, .9, .3, 1.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.aviso { background: #8a6d1f; }
+.toast.uncommon { background: #2f7a4a; }
+.toast.rare { background: #3b6ea5; }
+.toast.epic { background: #6b4fa5; }
+.toast.legendary { background: #9a7b13; }
+
+/* --------------------------- Aviso de file:// --------------------------- */
+#file-warning {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  background: var(--papel); padding: 24px; z-index: 1000;
+}
+.fw-card {
+  max-width: 560px; background: #fff; border: 1px solid var(--linha);
+  border-radius: 22px; padding: 34px; box-shadow: var(--sombra);
+}
+.fw-card h1 { font-size: 22px; margin-bottom: 14px; }
+.fw-card p { font-size: 14px; line-height: 1.7; color: var(--tinta-suave); margin-bottom: 10px; }
+.fw-card pre, .fw-card code {
+  font-family: ui-monospace, Consolas, monospace; font-size: 13px;
+  background: #f6f2ec; border-radius: 8px; padding: 2px 6px;
+}
+.fw-card pre { padding: 12px 16px; margin: 6px 0 14px; }
+
+/* --------------------------- Caixa da peça ------------------------------ */
+/* Dentro de uma célula, a peça mora nesta caixa. A escala da categoria é
+   aplicada aqui: imagem e aura encolhem juntas e seguem centradas, então um
+   relógio ocupa menos espaço que uma calça na mesma célula. */
+.peca-caixa {
+  position: absolute;
+  transform: scale(var(--esc, 1));
+}
+.peca-caixa > img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  position: relative; z-index: 1;
+  -webkit-user-drag: none;
+}
+.peca-caixa > .aura { inset: 0; }
+
+/* ------------------------------- Aura ----------------------------------- */
+/* A silhueta da peça é recortada da própria imagem (mask-image) e pintada com a
+   cor da raridade: o brilho segue o contorno da roupa, não um retângulo.
+   Só aparece na vitrine e no guarda-roupa. */
+.aura {
+  position: absolute;
+  pointer-events: none;
+  background: var(--aura-cor, transparent);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  filter: blur(7px);
+  opacity: .72;
+  transform: scale(1.06);
+  animation: aura-respira 2.6s ease-in-out infinite alternate;
+  animation-delay: var(--aura-atraso, 0s);
+}
+
+/* Lendária: em vez de uma cor, um leque que gira de matiz. */
+.aura-legendary {
+  background: conic-gradient(from 0deg,
+    #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
+  animation: aura-respira 2.2s ease-in-out infinite alternate,
+             aura-cores 5s linear infinite;
+}
+.aura-epic { opacity: .8; }
+.aura-legendary { opacity: .88; }
+
+@keyframes aura-respira {
+  from { transform: scale(1.03); opacity: .5; }
+  to   { transform: scale(1.11); opacity: .9; }
+}
+@keyframes aura-cores {
+  from { filter: blur(9px) hue-rotate(0deg); }
+  to   { filter: blur(9px) hue-rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura { animation: none; opacity: .62; transform: scale(1.06); }
+}
+
+/* --------------------------- Painéis ajustáveis -------------------------- */
+/* Puxador fino na borda interna de cada coluna lateral. */
+.divisor {
+  position: absolute; top: 0; bottom: 0; width: 9px;
+  z-index: 60; cursor: col-resize;
+  display: flex; align-items: center; justify-content: center;
+}
+.divisor-dir { right: -5px; }
+.divisor-esq { left: -5px; }
+.divisor::after {
+  content: ''; width: 2px; height: 46px; border-radius: 2px;
+  background: transparent; transition: background .18s, height .18s;
+}
+.divisor:hover::after { background: #cfc6b9; height: 76px; }
+.divisor.ativo::after { background: var(--tinta); height: 100%; border-radius: 0; }
+body.redimensionando { cursor: col-resize; user-select: none; }
+body.redimensionando .divisor::after { background: var(--tinta); }
+
+/* ------------------------- Scrollbars discretas ------------------------- */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: #e2dbd1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #cfc6b9; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* --------------------------- Janelas mais estreitas ---------------------
+   Vem por último e com seletor mais específico para ganhar da cascata dos
+   arquivos de tela, que são carregados depois deste. */
+@media (max-width: 1120px) {
+  .view-closet .display-section { width: 266px; }
+  .view-social .feed-side { width: 238px; }
+  .view-stylist .stylist-palette { width: 186px; }
+  .view-stylist .stylist-tools { width: 206px; }
+  .app > .sidebar { width: 76px; }
+  .app > .sidebar .sidebar-btn { width: 48px; height: 48px; border-radius: 15px; }
+}
+
+/* São sete botões na coluna: em janela baixa eles encolhem, senão o selo de
+   nível e a logo do rodapé sairiam pela borda (o body não rola na vertical). */
+@media (max-height: 760px) {
+  .app > .sidebar { padding: 22px 0 18px; }
+  .app > .sidebar .sidebar-icons { gap: 10px; }
+  .app > .sidebar .sidebar-btn { width: 46px; height: 46px; border-radius: 14px; }
+  .app > .sidebar .sidebar-btn span { font-size: 8px; }
+}

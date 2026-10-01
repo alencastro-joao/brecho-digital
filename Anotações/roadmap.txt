@@ -1,0 +1,110 @@
+Fase 1: Fundação e Arquitetura (Mês 1-2)
+O foco aqui é preparar o terreno na AWS e definir como os avatares e roupas serão processados.
+
+Arquitetura Cloud (AWS):
+
+Frontend: Hospedagem no AWS Amplify ou S3 + CloudFront (para baixa latência).
+
+Backend: Node.js ou Python rodando em AWS Lambda (Serverless) para reduzir custos iniciais.
+
+Banco de Dados: Amazon DynamoDB (para dados dos usuários e inventário) e PostgreSQL (RDS) para relações sociais complexas (seguidores/feed).
+
+Storage: Amazon S3 organizado por pastas (estático/curadoria vs. colaborações limitadas).
+
+Engine de Lookbook: Desenvolvimento da lógica de "camadas" (z-index) para que as roupas 2D encaixem perfeitamente no avatar de corpo inteiro.
+
+Fase 2: O Core Loop (Mês 3-4)
+Desenvolvimento das mecânicas diárias que mantêm o usuário voltando.
+
+Sistema de Inventário: Logica de "resgate diário" (o limite X de peças) e persistência no banco de dados.
+
+O "Dono da Loja" (NPC): Implementação da interface de diálogo e curadoria da vitrine.
+
+Ferramenta de Colagem: Criação de um canvas interativo (usando bibliotecas como Fabric.js ou Konva.js) onde o usuário manipula as peças sobre o avatar.
+
+Sistema de Missões: Gamificação simples (ex: "Siga 3 pessoas", "Crie 2 outfits") para liberar as peças exclusivas de ilustradores.
+
+Fase 3: Social & Integrações (Mês 5)
+Transformar a ferramenta individual em uma rede social.
+
+Social Graph: Sistema de follow/unfollow e feed de colagens.
+
+Gerador de Assets para Social Media: Integração com APIs de geração de imagem ou apenas exportação de canvas para formatos otimizados para Instagram Stories/Feed.
+
+Player de Música Adaptável: Implementação do sistema de áudio que permite a troca da "skin" sonora (a track base vs. a collab do mês).
+
+Fase 4: Lançamento e Ciclo de Collabs (Mês 6+)
+Preparação para a primeira grande colaboração.
+
+Pipeline de Ativos de Artistas: Criar um padrão técnico (tamanho de tela, pontos de ancoragem no corpo do avatar) para que os ilustradores convidados entreguem as artes prontas para o sistema.
+
+Estratégia de Lançamento (Go-to-Market): Lançamento da primeira coleção cápsula com o ilustrador convidado para gerar hype.
+
+Monitoramento: Uso do AWS CloudWatch para garantir que o site não caia durante os picos de acesso nos dias de drop.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+tenho um projeto de um site que vai funcionar da seguinte forma:
+
+vai ser como se fosse um brechó e vai ter um personagem que vai ser o dono da loja. 
+
+todo dia vai aparecer uma quantidade de roupas na vitrini, essas roupas sao tiradas do pinterest, ja tenho uma grande quantidade, 
+
+o usuario vai poder pegar X numero de roupas todos os dias. 
+
+as roupas vao para o guarda roupas da pessoa.
+
+a pessoa vai poder usar essar roupas para criar colagens de outfits. 
+
+cada usuario vai ter um avatar 2d de corpo inteiro. 
+
+uma vez por mes vou fazer uma colaboração com um ilustrador que vai ilustrar uma coleção de roupas 2d para esses avatares, com a estetica do propio ilustrador. 
+
+essas roupas vao ser conquistadas completando missoes 
+
+estou criando a trilha sonora base para que uma vez por mes tambem, possamos fazer uma colabvoração com algum produtor musical que fará uma versão dessa música com a cara dele. 
+
+as pessoas vao poder se seguir e acopmanhar os posts das colagens das outras
+
+voce podera compartilhar a sua colagem diretamente no instagram. 
+
+vou hospedar esse site na aws e preciso de ajuda pra criar um roadmap muito profissional para esse projetoi 

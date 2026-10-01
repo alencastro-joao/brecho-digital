@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closet Digital - Minimalist White</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <button class="cat-btn active" onclick="loadCategory('tops', event)">👕</button>
+        <button class="cat-btn" onclick="loadCategory('pants', event)">👖</button>
+        <button class="cat-btn" onclick="loadCategory('shoes', event)">👟</button>
+        <button class="cat-btn" onclick="loadCategory('dresses', event)">👗</button>
+        <button class="cat-btn" onclick="loadCategory('coats', event)">🧥</button>
+        <button class="cat-btn" onclick="loadCategory('hats', event)">👒</button>
+        <button class="cat-btn" onclick="loadCategory('bags', event)">👜</button>
+        <button class="cat-btn" onclick="loadCategory('watches', event)">⌚</button>
+        <button class="cat-btn" onclick="loadCategory('rings', event)">💍</button>
+        <button class="cat-btn" onclick="loadCategory('acc', event)">🕶️</button>
+    </div>
+
+    <div class="grid-wrapper">
+        <h1 class="grid-title">Inventory</h1>
+        <div class="grid-container" id="inventory-grid"></div>
+    </div>
+
+    <div class="display-section">
+        <div class="preview-wrapper">
+            <img id="big-preview-img" src="" alt="Destaque">
+            <span id="placeholder" class="placeholder-text">Selecione uma peça</span>
+        </div>
+    </div>
+
+    <div class="colors">
+        <div class="dot" style="background: #ff3b3b;"></div>
+        <div class="dot" style="background: #4a4ae6;"></div>
+        <div class="dot" style="background: #c08a6b;"></div>
+        <div class="dot" style="background: #ffb6c1;"></div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

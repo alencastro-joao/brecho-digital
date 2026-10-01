@@ -1,0 +1,84 @@
+/* Tarefas (#/tarefas): missões do dia, trilha de níveis e a cápsula.
+   Veio do perfil, que ficou só com quem você é. Reaproveita o .stat e o
+   .missoes-sub definidos em social.css, que as três telas dividem. */
+
+.view-tarefas { background: #fbf8f4; overflow-y: auto; }
+.tarefas-wrapper {
+  flex: 1; max-width: 860px; margin: 0 auto;
+  padding: 36px 34px 60px; display: flex; flex-direction: column; gap: 30px;
+}
+.tarefas-head h1 { font-size: 24px; letter-spacing: -.5px; margin-bottom: 4px; }
+.tarefas-head .missoes-sub { margin-bottom: 8px; }
+.tarefas-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.missoes h2, .collab h2, .ferramentas h2 { font-size: 16px; margin-bottom: 4px; }
+
+.missao-list { display: flex; flex-direction: column; gap: 8px; }
+.missao {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border: 1px solid var(--linha); border-radius: 14px; padding: 12px 16px;
+}
+.missao.ok { border-color: #cfe3c0; background: #fbfdf9; }
+.missao-check {
+  width: 22px; height: 22px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--linha); display: grid; place-items: center;
+  font-size: 12px; color: #6b8f4e;
+}
+.missao.ok .missao-check { border-color: #9fc47f; }
+.missao-info { flex: 1; }
+.missao-info strong { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+.barra { height: 5px; background: #f1ece4; border-radius: 4px; overflow: hidden; }
+.barra span { display: block; height: 100%; background: var(--tinta); transition: width .4s; }
+.missao small { font-size: 11px; color: var(--tinta-suave); }
+
+.collab {
+  background: #fff; border: 1px solid var(--linha);
+  border-radius: var(--raio); padding: 22px 24px;
+}
+.collab-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.collab-head p { font-size: 12.5px; color: var(--tinta-suave); margin: 4px 0 16px; max-width: 460px; }
+.collab-selo {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  background: #f2ede5; color: var(--tinta-suave); border-radius: 20px; padding: 4px 11px; flex: none;
+}
+.collab-selo.on { background: #fff6d6; color: #8a6d1f; }
+.collab-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.collab-item {
+  position: relative; width: var(--cel-peca); height: var(--cel-peca);
+  border: 2px solid #f0e7cd; border-radius: 16px; background: #fffdf5;
+  padding: 13px;
+}
+.collab-item .peca-caixa { inset: 13px; }
+.collab-item.travado img { filter: grayscale(1) brightness(1.15); opacity: .3; }
+.cadeado { position: absolute; font-size: 17px; }
+.collab .btn-dark, .collab .btn-ghost { max-width: 240px; }
+
+/* ------------------------------ Nível ----------------------------------- */
+.nivel-box { margin: 10px 0 12px; max-width: 420px; }
+.nivel-topo { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.nivel-num { font-size: 14px; font-weight: 800; }
+.nivel-titulo { font-size: 12.5px; color: var(--tinta-suave); flex: 1; }
+.nivel-xp { font-size: 11.5px; font-weight: 700; color: #8a6d24; }
+.nivel-nota { display: block; margin-top: 5px; font-size: 11px; color: var(--tinta-suave); }
+
+.missao-xp {
+  margin-left: 8px; font-size: 10.5px; font-weight: 800;
+  color: #8a6d24; letter-spacing: .02em;
+}
+
+/* --------------------------- Ferramentas -------------------------------- */
+.ferramentas { margin-top: 22px; }
+.ferramenta-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.ferramenta {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1px solid var(--linha);
+  border-radius: 12px; background: var(--branco);
+}
+.ferramenta.ok { border-color: #cfe3c0; background: #fbfdf9; }
+.ferramenta-nivel {
+  min-width: 38px; text-align: center;
+  font-size: 11px; font-weight: 800; color: var(--tinta-suave);
+}
+.ferramenta.ok .ferramenta-nivel { color: #5f8a3f; }
+.ferramenta-info { flex: 1; }
+.ferramenta-info strong { display: block; font-size: 13px; font-weight: 600; }
+.ferramenta-info small { font-size: 11px; color: var(--tinta-suave); }

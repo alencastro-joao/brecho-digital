@@ -1,0 +1,55 @@
+/* Perfil de outra pessoa (#/usuario/<id>).
+   Reaproveita o esqueleto do perfil próprio — .perfil-wrapper, .perfil-head,
+   .perfil-avatar, .stat — e acrescenta só o que é de página pública: a bio, as
+   ações, a grade de colagens e as peças. */
+
+.view-usuario { background: #fbf8f4; overflow-y: auto; }
+
+.up-wrapper { max-width: 900px; }
+.up-voltar { align-self: flex-start; font-size: 12.5px; }
+
+.up-identidade { min-width: 0; }
+.up-identidade h1 { display: flex; align-items: center; gap: 8px; }
+.up-bio {
+  font-size: 13.5px; color: var(--tinta-suave);
+  margin: -6px 0 14px; max-width: 46ch; line-height: 1.5;
+  /* A bio é texto livre de quem escreveu: uma palavra comprida sem espaço não
+     pode empurrar o cabeçalho para fora da tela. */
+  overflow-wrap: anywhere;
+}
+.up-acoes { display: flex; gap: 8px; margin-top: 16px; }
+.up-acoes .btn-dark, .up-acoes .btn-ghost { width: auto; padding: 9px 20px; margin: 0; }
+
+.up-secao h2 { font-size: 16px; margin-bottom: 4px; }
+
+/* Colagens: os mesmos cards do feed, em duas colunas. */
+.up-posts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
+.up-posts .post { margin: 0; }
+
+/* Peças: a mesma célula do guarda-roupa, sem aura nem arrastar. */
+.up-pecas {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cel-peca), 1fr));
+}
+.up-peca {
+  position: relative; aspect-ratio: 1;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 16px;
+  transition: border-color .15s, transform .15s;
+}
+.up-peca:hover { border-color: var(--tinta); transform: translateY(-2px); }
+.up-peca .peca-caixa { inset: 13px; }
+
+/* Rodapé: pular para outra pessoa sem voltar ao feed. */
+.up-outros { display: flex; flex-wrap: wrap; gap: 10px; }
+.up-outro {
+  width: 86px; padding: 10px 6px;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transition: border-color .15s, transform .15s;
+}
+.up-outro:hover { border-color: var(--tinta); transform: translateY(-2px); }
+.up-outro small { font-size: 11px; color: var(--tinta-suave); }
+
+@media (max-width: 900px) {
+  .up-posts { grid-template-columns: 1fr; }
+}

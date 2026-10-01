@@ -1,0 +1,72 @@
+Documentação Técnica e Operacional: Projeto Brechó Digital (Codinome: BD)
+1. Visão Geral do Conceito
+O projeto consiste em uma plataforma de moda social e gamificada baseada em curadoria e colaboração artística. O fluxo principal gira em torno de um Brechó Digital gerido por um NPC (personagem dono da loja).
+
+Mecânica Core: Resgate diário limitado (X peças) de roupas curadas (inicialmente do Pinterest).
+
+Engajamento: As roupas são armazenadas em um guarda-roupa pessoal para a criação de colagens de outfits sobre um avatar 2D de corpo inteiro.
+
+Ciclo de Colaboração: Mensalmente, o projeto integra coleções exclusivas de ilustradores convidados (estéticas autorais) e trilhas sonoras produzidas por colaboradores (versões da música base).
+
+Social: Sistema de seguidores, feed de colagens e compartilhamento direto para Instagram Stories/Feed.
+
+2. Infraestrutura AWS (Implementada e Validada)
+A arquitetura foi desenhada seguindo o modelo Serverless para garantir escalabilidade e baixo custo inicial.
+
+A. Armazenamento (Amazon S3)
+Foram configurados dois buckets distintos para separar preocupações de segurança e cache:
+
+Bucket de Assets (all-clothing/): Destinado ao "pool" de roupas.
+
+Configuração de Acesso: Público (Bloqueio de Acesso Público desativado).
+
+Política de Bucket (S3 Policy): Implementada para permitir s3:GetObject em todos os objetos.
+
+CORS: Configurado para aceitar GET e HEAD de qualquer origem (*), permitindo que o navegador carregue imagens sem bloqueios de segurança.
+
+Bucket de Resources (ui/, npc/, avatars/, audio-stems/): Armazena a identidade visual fixa do sistema.
+
+Contém o personagem "Dono da Loja" e os ícones da interface (Sidebar).
+
+B. Distribuição (Amazon CloudFront) - Planejado/Iniciado
+Utilizado como CDN para servir os assets do S3 com baixa latência e HTTPS mandatório.
+
+Os links no código devem priorizar o domínio do CloudFront em vez da URL direta do S3 para performance.
+
+C. Hospedagem (AWS Amplify)
+O frontend está configurado para deploy contínuo ou manual via Amplify, permitindo o teste de versões live do protótipo.
+
+3. Arquitetura do Frontend e Protótipo de UI
+O protótipo atual foi desenvolvido em HTML5, CSS3 (Flexbox/Grid) e JavaScript Vanila, focando na "Vitrine Diária".
+
+A. Layout e UX
+Mural Orgânico: Diferente de um e-commerce tradicional, a vitrine utiliza posicionamento absoluto aleatório. As roupas aparecem "soltas" e flutuando na tela, criando uma estética de mural criativo/moodboard.
+
+Sidebar Funcional: Uma barra lateral à direita (90px) contém os gatilhos para Perfil, Inventário, Ateliê e Social.
+
+Sistema de Personagem: O NPC "Dono da Loja" ocupa o canto inferior esquerdo, possuindo um balão de fala dinâmico que interage com o usuário.
+
+B. Lógica de Programação (JavaScript)
+Pool de Roupas Dinâmico: O sistema não possui roupas "fixas" no HTML. Existe um array (poolDeRoupas) que contém os nomes dos arquivos presentes no S3.
+
+Algoritmo de Sorteio: Uma função carregarVitrine() embaralha o array (Fisher-Yates ou sort aleatório) e seleciona um subconjunto (ex: 4 peças) para exibição.
+
+Gerador de Coordenadas: Para cada peça sorteada, o script calcula valores de top e left em porcentagem (%), garantindo que as roupas não fiquem coladas nas bordas (margem de segurança de 10% a 15%).
+
+Tratamento de Erros: Implementada a construção de URLs via objeto new URL(), prevenindo o erro ERR_UNKNOWN_URL_SCHEME. Inclui também um fallback onerror para ocultar imagens que falhem no carregamento.
+
+4. Padronização de Ativos (Assets)
+Roupas: Devem ser arquivos .png com fundo transparente.
+
+Nomenclatura: Padronizada (ex: 05.png, 06.png) para facilitar a iteração via script.
+
+Hierarquia de Camadas (Z-Index): * Fundo (Mural/Grid) < Roupas < NPC < Balão de Fala < Sidebar.
+
+5. Próximos Passos (Roadmap Pendente)
+Fase de Ateliê: Implementar o Canvas (Konva.js ou Fabric.js) para permitir o drag-and-drop das roupas sobre o avatar base.
+
+Sistema de Inventário Real: Migrar o "Pegar" (que hoje é um alert) para um salvamento no Amazon DynamoDB via AWS Lambda.
+
+Template de Avatar: Definir o guia técnico (medidas e proporções) para o primeiro ilustrador convidado.
+
+Mecânica de Missões: Lógica para desbloqueio das roupas da colaboração mensal.

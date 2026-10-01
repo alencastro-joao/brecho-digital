@@ -1,0 +1,152 @@
+/* Entrar / criar conta.
+   A tela que vem antes do app: ocupa a janela inteira, não tem sidebar e não
+   sabe nada do jogo. Usa as variáveis de base.css para nascer com a mesma cara
+   do resto (papel, tinta, raio, sombra). */
+
+.auth {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: auto;
+  background:
+    radial-gradient(900px 600px at 15% -10%, var(--loja), transparent 60%),
+    radial-gradient(800px 500px at 110% 110%, var(--perfil), transparent 55%),
+    var(--papel);
+}
+
+.auth-caixa {
+  width: min(420px, 100%);
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 30px 28px 22px;
+}
+
+/* ------------------------------- Marca ---------------------------------- */
+.auth-marca { display: flex; gap: 14px; align-items: center; margin-bottom: 22px; }
+
+.auth-logo {
+  flex: none;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: 14px;
+  background: var(--tinta);
+  color: var(--papel);
+  font-weight: 700; letter-spacing: .5px;
+}
+
+.auth-marca h1 { font-size: 1.15rem; letter-spacing: -.2px; }
+.auth-marca p { font-size: .82rem; color: var(--tinta-suave); line-height: 1.4; }
+
+/* -------------------------------- Abas ---------------------------------- */
+.auth-abas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+}
+
+.auth-aba {
+  padding: 9px 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--tinta-suave);
+  font-size: .88rem; font-weight: 600;
+  transition: background .15s, color .15s;
+}
+.auth-aba:hover { color: var(--tinta); }
+.auth-aba.ativa { background: var(--branco); color: var(--tinta); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* ------------------------------ Formulário ------------------------------ */
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+
+.auth-form label {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: .78rem; font-weight: 600; color: var(--tinta-suave);
+}
+.auth-form label small { font-weight: 400; }
+
+.auth-form input {
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 400;
+  color: var(--tinta);
+  padding: 11px 13px;
+  border: 1px solid var(--linha);
+  border-radius: 11px;
+  background: var(--papel);
+  transition: border-color .15s, background .15s;
+}
+.auth-form input:focus {
+  outline: none;
+  background: var(--branco);
+  border-color: var(--tinta);
+}
+.auth-form input::placeholder { color: #b9b2ab; }
+
+/* O erro vem do servidor ("E-mail ou senha incorretos", "Esse @ já está em
+   uso"): é a única coisa que a tela tem a dizer, então aparece junto do botão
+   e não como toast, que sumiria. */
+.auth-erro {
+  margin: -4px 0 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #fff1f0;
+  border: 1px solid #f6c8c4;
+  color: #a02a20;
+  font-size: .82rem; line-height: 1.4;
+}
+
+.auth-enviar {
+  margin-top: 4px;
+  padding: 12px;
+  font-size: .95rem;
+  border-radius: 12px;
+  width: 100%;
+}
+
+.auth-rodape {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--linha);
+  font-size: .74rem; line-height: 1.5;
+  color: var(--tinta-suave);
+}
+
+/* Enquanto o pedido está no ar: o botão vira texto e para de aceitar clique
+   (senão dois Enter viram duas contas). */
+.auth-form.enviando .auth-enviar { opacity: .5; pointer-events: none; }
+
+/* --------------------- Bloco "Sua conta", no perfil --------------------- */
+.conta-secao .tool-row { margin-top: 10px; }
+
+.conta-senha {
+  display: flex; flex-direction: column; gap: 12px;
+  max-width: 340px;
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+}
+.conta-senha label {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: .78rem; font-weight: 600; color: var(--tinta-suave);
+}
+.conta-senha input {
+  font: inherit; font-size: .9rem; font-weight: 400; color: var(--tinta);
+  padding: 9px 11px;
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  background: var(--branco);
+}
+.conta-senha input:focus { outline: none; border-color: var(--tinta); }

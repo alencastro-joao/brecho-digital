@@ -1,0 +1,281 @@
+/* Modal de adicionar peça: ficha + dimensionamento no molde. */
+
+.modal {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(26, 22, 18, .42);
+  backdrop-filter: blur(3px);
+  display: grid; place-items: center;
+  padding: 26px;
+}
+body.com-modal { overflow: hidden; }
+
+.modal-caixa {
+  width: min(880px, 100%);
+  max-height: min(94vh, 820px);
+  background: var(--branco);
+  border-radius: 24px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .28);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-topo {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid var(--linha);
+}
+.modal-topo h2 { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
+.modal-x {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--linha); background: #fff;
+  font-size: 13px; color: var(--tinta-suave);
+}
+.modal-x:hover { border-color: var(--tinta); color: var(--tinta); }
+
+.mp-passo { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mp-passo[hidden] { display: none; }
+
+.modal-rodape {
+  flex: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 26px;
+  border-top: 1px solid var(--linha);
+  background: #fdfcfa;
+}
+.modal-rodape .btn-dark,
+.modal-rodape .btn-ghost { width: auto; margin: 0; padding: 10px 20px; }
+.mp-aviso {
+  flex: 1; min-width: 0;
+  font-size: 11.5px; color: var(--tinta-suave);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mp-aviso.alerta { color: #b26a00; font-weight: 600; }
+
+/* --------------------------- A fila de arquivos -------------------------- */
+/* Com mais de um arquivo a tira aparece no alto do passo 1: cada miniatura é
+   um item com a ficha dele. Clicar troca o item em edição; o ✕ tira da fila. */
+.mp-fila {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 26px 0;
+  overflow-x: auto; scrollbar-width: thin;
+}
+.mp-fila[hidden] { display: none; }
+.mp-fila-item {
+  position: relative; flex: none;
+  width: 58px; height: 58px; padding: 5px;
+  border: 1px solid var(--linha); border-radius: 12px;
+  background: #fdfcfa; cursor: pointer;
+  transition: border-color .18s, transform .18s;
+}
+.mp-fila-item:hover { border-color: #cfc6b9; transform: translateY(-1px); }
+.mp-fila-item.ativa { border-color: var(--tinta); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tinta) 18%, transparent); }
+.mp-fila-item.erro { border-color: #d98b3a; background: #fdf4e8; }
+.mp-fila-item.salva { opacity: .45; }
+.mp-fila-item img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mp-fila-vazio {
+  display: grid; place-items: center; height: 100%;
+  font-size: 15px; color: #b6ad9f;
+}
+.mp-fila-x {
+  position: absolute; top: -6px; right: -6px;
+  width: 17px; height: 17px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; border: 1px solid var(--linha);
+  font-size: 9px; color: var(--tinta-suave);
+  opacity: 0; transition: opacity .15s;
+}
+.mp-fila-item:hover .mp-fila-x { opacity: 1; }
+.mp-fila-x:hover { border-color: #d05a5a; color: #d05a5a; }
+/* Sinais discretos de estado: já medida, já gravada. */
+.mp-fila-medida, .mp-fila-ok {
+  position: absolute; bottom: -5px; left: -5px;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 9px; background: var(--tinta); color: #fff;
+}
+.mp-fila-ok { background: #3f9a6b; }
+.mp-fila-conta {
+  flex: none; margin-left: 4px;
+  font-size: 11px; color: var(--tinta-suave); white-space: nowrap;
+}
+
+/* ------------------------------- Passo 1 -------------------------------- */
+.mp-colunas {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 300px; gap: 24px;
+  padding: 24px 26px;
+}
+
+/* A coluna da imagem: a área de soltar ocupa o que sobra e a chave do
+   recorte automático fica logo abaixo dela, junto do que ela controla. */
+.mp-imagem {
+  display: grid; grid-template-rows: 1fr auto auto; gap: 8px; min-height: 0;
+}
+.mp-fundo { margin-top: 2px; }
+.mp-fundo:has(input:disabled) { opacity: .5; cursor: default; }
+#mp-fundo-dica { margin: 0; }
+
+.mp-solta {
+  border: 2px dashed var(--linha); border-radius: 20px;
+  background:
+    linear-gradient(45deg, #f6f3ee 25%, transparent 25%, transparent 75%, #f6f3ee 75%),
+    linear-gradient(45deg, #f6f3ee 25%, #fff 25%, #fff 75%, #f6f3ee 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 9px 9px;
+  min-height: 300px;
+  display: grid; place-items: center; padding: 20px;
+  cursor: pointer; transition: border-color .2s, transform .2s;
+  position: relative;
+}
+.mp-solta:hover, .mp-solta.sobre { border-color: var(--tinta); }
+.mp-solta.sobre { transform: scale(1.01); }
+.mp-solta-vazio {
+  display: grid; justify-items: center; gap: 5px; text-align: center;
+  font-size: 13px; color: var(--tinta-suave); pointer-events: none;
+}
+.mp-solta-vazio strong { font-size: 15px; color: var(--tinta); }
+.mp-solta-vazio small { font-size: 11px; color: #a9a196; margin-top: 4px; }
+.mp-icone { font-size: 30px; color: #cfc6b9; line-height: 1; }
+#mp-previa {
+  max-width: 100%; max-height: 320px; object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .16));
+}
+
+.mp-campos { display: flex; flex-direction: column; gap: 14px; }
+.mp-campos .tool-campo { font-size: 11px; }
+.mp-campos input[type="text"], .mp-campos select {
+  border: 1px solid var(--linha); border-radius: 12px;
+  padding: 9px 12px; font-family: inherit; font-size: 13px;
+  background: #fff; color: var(--tinta); width: 100%;
+}
+.mp-campos input:focus, .mp-campos select:focus {
+  outline: none; border-color: var(--tinta);
+}
+
+/* Marcas já usadas: um toque em vez de digitar de novo. */
+.mp-marcas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -6px; }
+.mp-marca-chip {
+  border: 1px solid var(--linha); background: #fdfcfa;
+  border-radius: 20px; padding: 4px 11px;
+  font-size: 11.5px; color: var(--tinta-suave);
+}
+.mp-marca-chip:hover { border-color: var(--tinta); color: var(--tinta); }
+.mp-marca-chip.ativa { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+
+/* Cor: mesmo chip da marca, com a bolinha da cor quando ela é conhecida. */
+.mp-cor-chip { display: inline-flex; align-items: center; gap: 6px; }
+.mp-cor-bolha {
+  width: 11px; height: 11px; border-radius: 50%; flex: none;
+  background: var(--cor, #e4ded5);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+}
+.mp-cor-bolha.estampa {
+  background: conic-gradient(from 0deg,
+    #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
+}
+/* Cor fora da paleta: bolinha vazia, para não fingir uma amostra que não tem. */
+.mp-cor-bolha.livre {
+  background:
+    linear-gradient(45deg, transparent 45%, #bdb5a8 45%, #bdb5a8 55%, transparent 55%),
+    #fff;
+}
+
+/* A cor que veio da imagem: a linha fica colada nos chips, que são o jeito
+   mais rápido de trocar o palpite. */
+.mp-cor-dica { margin-top: -8px; }
+
+.mp-raridades { display: flex; flex-direction: column; gap: 6px; }
+.mp-rar {
+  display: flex; align-items: center; gap: 9px;
+  border: 1px solid var(--linha); border-radius: 12px;
+  background: #fff; padding: 8px 12px;
+  font-size: 12.5px; text-align: left; color: var(--tinta);
+  transition: border-color .18s, background .18s;
+}
+.mp-rar:hover { border-color: #cfc6b9; }
+.mp-rar.ativa { border-color: var(--tinta); font-weight: 700; }
+.mp-rar-bolha {
+  width: 14px; height: 14px; border-radius: 50%; flex: none;
+  background: var(--rar, #e4ded5);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rar, #e4ded5) 30%, transparent);
+}
+.mp-rar-bolha.arco {
+  background: conic-gradient(from 0deg,
+    #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
+  box-shadow: 0 0 0 3px rgba(255, 180, 77, .3);
+}
+
+/* ------------------------------- Passo 2 -------------------------------- */
+/* No passo 2 a caixa deixa de ser a da ficha: o molde tem proporção 1:2, então
+   quem manda é a altura da tela — e a largura acompanha sozinha. */
+.modal-caixa.medindo {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 28px);
+}
+.modal:has(.modal-caixa.medindo) { padding: 14px; }
+
+.mp-dica {
+  flex: none;
+  font-size: 12.5px; color: var(--tinta-suave); line-height: 1.6;
+  padding: 16px 26px 0;
+}
+.medindo .mp-dica { padding: 12px 26px 0; font-size: 12px; }
+.medindo .mp-molde-area { padding: 10px 26px 12px; }
+.medindo .mp-molde { height: min(1000px, calc(100vh - 206px)); }
+.mp-molde-area {
+  flex: 1; min-height: 0;
+  display: grid; place-items: center;
+  padding: 16px 26px;
+}
+.mp-molde {
+  position: relative;
+  /* Altura ancorada em vh: porcentagem aqui dentro não tem contra o que
+     resolver (a faixa do grid é automática) e o molde colapsaria. */
+  height: min(430px, 54vh); aspect-ratio: 1 / 2;
+  background: var(--papel);
+  background-image: radial-gradient(#e7e2da 1px, transparent 1px);
+  background-size: 22px 22px;
+  border: 1px solid var(--linha); border-radius: 10px;
+  touch-action: none; user-select: none;
+}
+.mp-avatar { position: absolute; inset: 0; opacity: .85; }
+.mp-avatar svg { width: 100%; height: 100%; display: block; }
+
+.mp-peca {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  outline: 1.5px dashed rgba(255, 46, 99, .55); outline-offset: 3px;
+}
+.mp-peca.manipulando { cursor: grabbing; }
+.mp-peca img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .16));
+  -webkit-user-drag: none;
+}
+.mp-alca {
+  position: absolute; width: 13px; height: 13px; border-radius: 50%;
+  background: #fff; border: 2px solid #ff2e63;
+}
+.mp-alca.no { top: -8px;    left: -8px;  cursor: nwse-resize; }
+.mp-alca.ne { top: -8px;    right: -8px; cursor: nesw-resize; }
+.mp-alca.so { bottom: -8px; left: -8px;  cursor: nesw-resize; }
+.mp-alca.se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+
+@media (max-width: 900px) {
+  .mp-colunas { grid-template-columns: 1fr; }
+}
+
+/* Modo edição: a peça já existe, então o destino ("entra no meu guarda-roupa")
+   não se aplica — ela já está onde está. Fica só a ficha, o molde e o aviso de
+   que soltar um PNG troca a imagem. */
+.modal-caixa.editando .mp-destino,
+.modal-caixa.editando .tool-hint#mp-destino-dica { display: none; }
+.modal-caixa.editando .mp-solta::after {
+  content: 'solte um PNG aqui para trocar a imagem';
+  position: absolute; left: 0; right: 0; bottom: 6px;
+  text-align: center; font-size: 11px; color: #a9a196; pointer-events: none;
+}
+.modal-caixa.editando .mp-solta { position: relative; }

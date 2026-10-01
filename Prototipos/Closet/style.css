@@ -1,0 +1,194 @@
+:root {
+    --empty-border: 2px dashed #eee;
+}
+
+body {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    overflow: hidden; 
+    height: 100vh;
+    width: 100vw;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 60px 1fr 400px 60px; 
+    height: 100vh;
+    width: 100vw;
+}
+
+.sidebar { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; 
+    padding: 64px 5px 20px 5px; 
+    background: #ffffff;
+    align-items: center;
+    justify-content: flex-start; 
+    overflow-y: auto;
+    border-right: none;
+    box-sizing: border-box;
+}
+
+.sidebar::-webkit-scrollbar { width: 0; }
+
+.cat-btn {
+    width: 45px; height: 45px; 
+    border: 1px solid #eee; 
+    border-radius: 0; 
+    background: #fff; 
+    cursor: pointer;
+    font-size: 22px; 
+    transition: 0.2s;
+    display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0;
+}
+.cat-btn:hover { background: #f8f8f8; transform: scale(1.05); }
+.cat-btn.active { background: #a2d2ff; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+.grid-wrapper {
+    padding: 20px 10px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+    box-sizing: border-box;
+    justify-content: flex-start;
+}
+
+.grid-title {
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    margin-top: 0;
+    flex-shrink: 0;
+    height: 24px; 
+    line-height: 24px;
+}
+
+.grid-container {
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    align-content: start; 
+    flex-grow: 1;
+}
+
+.item-slot {
+    aspect-ratio: 1 / 1;
+    border-radius: 0; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    background: #fff;
+    overflow: hidden; 
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+    cursor: grab;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    /* Borda base padrão cinza suave */
+    border: 3px solid #eee; 
+    box-sizing: border-box;
+}
+
+.item-slot:active { cursor: grabbing; }
+
+.item-slot.empty {
+    border: var(--empty-border);
+    cursor: default;
+    box-shadow: none;
+    background: #fafafa;
+}
+
+.item-slot img {
+    width: 85%; 
+    height: 85%; 
+    object-fit: contain; 
+    pointer-events: none;
+}
+
+/* Hover: Apenas aplica o fundo amarelo suave se não houver um fundo de raridade definido */
+.item-slot:not(.empty):hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+}
+/* Seletor específico para garantir que o hover padrão não sobrescreva raridades */
+.item-slot:not(.empty)[style*="background"]:hover {
+    background-color: inherit; /* Mantém a cor de fundo da raridade */
+}
+.item-slot:not(.empty):not([style*="background"]):hover {
+    background: #fffbe6; /* Fundo padrão de hover para comuns */
+}
+
+.display-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.preview-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#big-preview-img {
+    width: 80%; 
+    height: 80%;
+    max-height: 70vh; 
+    object-fit: contain;
+    display: none;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+}
+
+@keyframes idleFloat {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0); }
+}
+
+.idle-animation {
+    animation: idleFloat 2.5s ease-in-out infinite;
+}
+
+.placeholder-text { 
+    color: #ccc; 
+    font-size: 18px; 
+    text-align: center; 
+    font-weight: bold;
+}
+
+.colors { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+    padding: 64px 5px 20px 5px; 
+    align-items: center;
+    box-sizing: border-box;
+    justify-content: flex-start;
+}
+
+.dot { 
+    width: 30px; height: 30px; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: 0.2s;
+}
+.dot:hover { transform: scale(1.1); }
+
+@media (max-width: 900px) {
+    .container {
+        grid-template-columns: 60px 1fr;
+        grid-template-rows: 1fr 220px;
+    }
+    .display-section { grid-column: span 2; }
+    .colors { display: none; }
+    .sidebar, .colors { padding-top: 64px; }
+}

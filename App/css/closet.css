@@ -1,0 +1,135 @@
+/* Guarda-roupa: trilho de categorias + grade + destaque. */
+
+.view-closet { background: var(--branco); }
+
+.cat-rail {
+  width: 78px; flex: none;
+  border-right: 1px solid var(--linha);
+  display: flex; flex-wrap: wrap; justify-content: center;
+  align-content: flex-start;
+  gap: 6px; padding: 26px 8px; overflow-y: auto;
+}
+.cat-btn {
+  position: relative;
+  width: 50px; height: 50px; flex: none;
+  border: 1px solid transparent; border-radius: 15px;
+  background: transparent; font-size: 21px; line-height: 1;
+  display: grid; place-items: center;
+  transition: all .2s;
+}
+.cat-btn:hover { background: #faf7f2; transform: scale(1.06); }
+.cat-btn.active { background: #f4efe7; border-color: var(--linha); }
+.cat-qtd {
+  position: absolute; right: 2px; bottom: 2px;
+  background: var(--tinta); color: #fff;
+  font-size: 9px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 9px;
+  display: grid; place-items: center; padding: 0 4px;
+}
+
+.grid-wrapper {
+  flex: 1; min-width: 0;
+  padding: 30px 34px; display: flex; flex-direction: column; overflow: hidden;
+}
+.closet-head {
+  margin-bottom: 18px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.closet-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.closet-ordem { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tinta-suave); }
+.closet-ordem select {
+  font: inherit; font-size: 12.5px; color: inherit;
+  padding: 6px 10px; border: 1px solid #ddd6cc; border-radius: 8px; background: #fff; cursor: pointer;
+}
+.grupo-rotulo {
+  grid-column: 1 / -1; font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; color: var(--tinta-suave); margin-top: 4px;
+}
+.btn-adicionar { width: auto; flex: none; padding: 9px 18px; }
+.grid-title { font-size: 21px; font-weight: 800; letter-spacing: -.4px; }
+.closet-sub { font-size: 12.5px; color: var(--tinta-suave); margin-top: 2px; }
+
+.grid-container {
+  flex: 1; overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fill, var(--cel-peca));
+  justify-content: start;
+  align-content: start;
+}
+
+.item-slot {
+  width: var(--cel-peca); height: var(--cel-peca);
+  border: 2px solid var(--rar-borda, var(--linha)); border-radius: 18px;
+  background: var(--rar-bg, #fff); position: relative;
+  padding: 13px;
+  cursor: grab; transition: transform .2s, box-shadow .2s;
+}
+.item-slot .peca-caixa { inset: 13px; }
+.item-slot img { pointer-events: none; }
+.item-slot:hover { transform: translateY(-3px); box-shadow: var(--sombra); }
+.item-slot.arrastando { opacity: .35; cursor: grabbing; }
+.item-slot.alvo { border-style: dashed; transform: scale(1.04); }
+.item-slot.vazio {
+  border-style: dashed; border-color: #f0ebe3; background: #fdfcfa;
+  cursor: default; pointer-events: none;
+}
+/* Lendária: a borda é o arco-íris. Dois fundos empilhados — o de dentro cobre
+   a área da peça, o de fora aparece só na faixa da borda. */
+.item-slot.r-legendary {
+  border-color: transparent;
+  background-image:
+    linear-gradient(var(--rar-bg, #fffdf2), var(--rar-bg, #fffdf2)),
+    conic-gradient(from 0deg,
+      #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+.selo-collab {
+  position: absolute; top: 6px; right: 8px;
+  font-size: 12px; color: #c9a227;
+}
+/* Peça favoritada: marca do lado oposto ao selo da cápsula, para as duas
+   caberem na mesma peça. */
+.item-slot.favorita::after {
+  content: '★'; position: absolute; top: 6px; left: 8px;
+  font-size: 12px; color: #d6a81f;
+}
+.closet-vazio {
+  grid-column: 1 / -1; padding: 40px 0;
+  color: var(--tinta-suave); font-size: 14px;
+}
+
+/* ------------------------------ Destaque ------------------------------- */
+.display-section {
+  width: 330px; flex: none;
+  border-left: 1px solid var(--linha);
+  background: #fdfcfa;
+  display: flex; flex-direction: column;
+  padding: 30px 26px; gap: 18px;
+}
+.preview-wrapper {
+  flex: 1; display: grid; place-items: center;
+  background: var(--papel); border-radius: 20px; padding: 22px;
+  min-height: 220px;
+}
+.preview-moldura { position: relative; display: inline-block; line-height: 0; }
+.cat-btn.todas { font-size: 15px; font-weight: 800; color: var(--tinta-suave); }
+.cat-btn.todas.active { background: #efe9df; }
+.preview-moldura img { position: relative; z-index: 1; }
+.preview-wrapper img { max-width: 100%; max-height: 300px; object-fit: contain; }
+.placeholder-text { color: #bdb5aa; font-size: 13px; }
+/* A animação vai no invólucro, não na imagem: assim a aura flutua junto. */
+.flutua { animation: flutuar 4s ease-in-out infinite; }
+@keyframes flutuar {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.preview-meta h3 { font-size: 16px; margin: 8px 0 4px; }
+.preview-meta p { font-size: 12px; color: var(--tinta-suave); margin-bottom: 14px; }
+.rarity-tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  border: 1.5px solid var(--linha); border-radius: 20px; padding: 3px 11px;
+}

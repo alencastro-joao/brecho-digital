@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+
+# Contas e sessões locais (dados de gente de verdade, nunca vão para o git)
+App/dados/*.sqlite
+App/dados/*.sqlite.bak
+App/dados/*.sqlite-*
+
+# Másters em alta: 50+ MB de PNG. A cópia de verdade mora em
+# s3://brecho-dados-108826053014/mestres/ (publicar.sh sobe)
+App/assets/mestres/
+App/assets/_diag_*
+
+# Gerados na hora de empacotar a Lambda
+nuvem/lambda/pipeline.py
+.brecho-funcao.zip
+*.zip
+nuvem/**/cdk.out/
+nuvem/**/.aws-sam/
+node_modules/
+
+# Configuração local do Claude Code
+.claude/settings.local.json
+
+# SO
+Thumbs.db
+desktop.ini
+.DS_Store
