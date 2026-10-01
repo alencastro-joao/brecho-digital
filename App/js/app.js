@@ -24,7 +24,7 @@ import { montarTarefas, aoEntrarNasTarefas } from './tarefas.js';
 import { montarPerfil, aoEntrarNoPerfil } from './perfil.js';
 import { montarPlayer } from './player.js';
 import { montarPaineis } from './paineis.js';
-import { montarAdicionar } from './adicionar.js';
+import { montarEditar } from './editar.js';
 import { montarConexoes } from './conexoes.js';
 import { montarBusca, montarBuscaNoFeed } from './busca.js';
 import { sincronizarSocial, agendarPerfil } from './pessoas.js';
@@ -124,7 +124,7 @@ async function iniciar() {
   montarBoard();
   montarTarefas();
   montarPerfil();
-  montarAdicionar();
+  montarEditar();
   montarConexoes();
   montarPersonagem();
   montarVestiario();

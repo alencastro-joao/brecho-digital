@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="css/stylist.css">
 <link rel="stylesheet" href="css/board.css">
 <link rel="stylesheet" href="css/social.css">
-<link rel="stylesheet" href="css/adicionar.css">
+<link rel="stylesheet" href="css/editar.css">
 <link rel="stylesheet" href="css/personagem.css">
 <link rel="stylesheet" href="css/usuario.css">
 <link rel="stylesheet" href="css/tarefas.css">
@@ -789,31 +789,20 @@
   <div class="modal" id="modal-peca" hidden>
     <div class="modal-caixa" id="mp-caixa">
       <header class="modal-topo">
-        <h2 id="mp-titulo">Adicionar peça</h2>
+        <h2 id="mp-titulo">Editar peça</h2>
         <button class="modal-x" id="mp-fechar" title="Fechar">✕</button>
       </header>
 
       <section class="mp-passo" id="mp-passo1">
-        <div class="mp-fila" id="mp-fila" hidden></div>
         <div class="mp-colunas">
           <div class="mp-imagem">
             <div class="mp-solta" id="mp-solta">
-              <input type="file" id="mp-arquivo" accept="image/*" multiple hidden>
-              <div class="mp-solta-vazio" id="mp-solta-vazio">
-                <span class="mp-icone">⬚</span>
-                <strong>Solte as fotos aqui</strong>
-                <span>ou clique para escolher — pode ser uma ou várias</span>
-                <small id="mp-solta-dica">foto com fundo serve · o recorte é feito sozinho</small>
-              </div>
-              <img id="mp-previa" alt="Prévia da peça" hidden>
+              <input type="file" id="mp-arquivo" accept="image/png,image/webp" hidden>
+              <img id="mp-previa" alt="Prévia da peça">
             </div>
-            <label class="tool-check mp-fundo">
-              <input type="checkbox" id="mp-tirar-fundo" checked>
-              tirar o fundo automaticamente
-            </label>
-            <p class="tool-hint" id="mp-fundo-dica">
-              A foto vai para o servidor, volta recortada, e o recorte em alta fica
-              guardado em assets/mestres/. Demora alguns segundos por peça.
+            <p class="tool-hint">
+              Para trocar a imagem, solte um PNG de fundo transparente sobre ela.
+              Foto com fundo vai pela esteira, que recorta sozinha.
             </p>
           </div>
 
@@ -839,24 +828,13 @@
             </label>
             <p class="tool-label">Raridade</p>
             <div class="mp-raridades" id="mp-raridades"></div>
-
-            <label class="tool-check mp-destino">
-              <input type="checkbox" id="mp-para-mim" checked>
-              já entra no meu guarda-roupa
-            </label>
-            <p class="tool-hint" id="mp-destino-dica">
-              Desmarque para a peça ficar só como estoque da loja, para ser garimpada.
-              Numa fila, vale para todas.
-            </p>
           </div>
         </div>
 
         <footer class="modal-rodape">
           <span class="mp-aviso" id="mp-aviso"></span>
           <button class="btn-ghost" id="mp-cancelar">Cancelar</button>
-          <button class="btn-ghost" id="mp-ficha-demais" hidden>Usar esta ficha nas outras</button>
-          <button class="btn-ghost" id="mp-salvar-todas" hidden>Salvar todas</button>
-          <button class="btn-dark" id="mp-continuar" disabled>Dimensionar →</button>
+          <button class="btn-dark" id="mp-continuar">Conferir o tamanho →</button>
         </footer>
       </section>
 
@@ -881,8 +859,7 @@
           <span class="mp-aviso" id="mp-medida"></span>
           <button class="btn-ghost" id="mp-voltar">← Voltar</button>
           <button class="btn-ghost" id="mp-padrao">Tamanho padrão</button>
-          <button class="btn-ghost" id="mp-aplicar-demais" hidden>Aplicar às demais</button>
-          <button class="btn-dark" id="mp-salvar">Salvar peça</button>
+          <button class="btn-dark" id="mp-salvar">Salvar alterações</button>
         </footer>
       </section>
     </div>

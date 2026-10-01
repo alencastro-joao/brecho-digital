@@ -8,7 +8,7 @@ import { ADMIN, CATEGORIAS, ORDEM_CATEGORIAS, RARIDADE, RARIDADES, escalaGrade }
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
-import { abrirEditar } from './adicionar.js';
+import { abrirEditar } from './editar.js';
 import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
 import { vestirPeca } from './stylist.js';

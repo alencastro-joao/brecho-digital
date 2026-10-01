@@ -54,6 +54,7 @@ MAX_FOTO = 40 * 1024 * 1024
 MAX_LOTE = 60
 ID_OK = re.compile(r'^e[a-z0-9]{8,24}$')
 ENVIO_ABANDONADO = 3600      # "enviando" há mais de 1 h: o upload não chegou
+TRAVADO = 15 * 60            # "processando" há mais disso: o trabalhador morreu
 
 
 def _agora():
@@ -94,18 +95,25 @@ def _apagar(*chaves):
             'Objects': [{'Key': c} for c in chaves], 'Quiet': True})
 
 
+def _idade(iso):
+    """Segundos desde `iso`; 0 se não houver data."""
+    if not iso:
+        return 0
+    return (datetime.now(timezone.utc) - datetime.fromisoformat(iso)).total_seconds()
+
+
 def _para_tela(dados):
     """O que a tela recebe: sem caminhos internos, com a prévia assinada."""
     saida = {k: dados.get(k) for k in (
         'id', 'estado', 'arquivo', 'erro', 'criadoEm', 'processadoEm', 'w', 'h',
         'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'origem')}
-    if dados.get('estado') == 'enviando':
-        criado = dados.get('criadoEm') or _agora()
-        idade = (datetime.now(timezone.utc)
-                 - datetime.fromisoformat(criado)).total_seconds()
-        if idade > ENVIO_ABANDONADO:
-            saida['estado'] = 'erro'
-            saida['erro'] = 'a foto não chegou ao servidor (envio interrompido)'
+    if dados.get('estado') == 'enviando' and _idade(dados.get('criadoEm')) > ENVIO_ABANDONADO:
+        saida['estado'] = 'erro'
+        saida['erro'] = 'a foto não chegou ao servidor (envio interrompido)'
+    # Morte por memória ou tempo não deixa o trabalhador gravar "erro".
+    if dados.get('estado') == 'processando' and _idade(dados.get('iniciadoEm')) > TRAVADO:
+        saida['estado'] = 'erro'
+        saida['erro'] = 'o processamento travou; tente de novo'
     if dados.get('previa'):
         saida['previa'] = _s3.generate_presigned_url(
             'get_object', Params={'Bucket': DADOS, 'Key': dados['previa']},

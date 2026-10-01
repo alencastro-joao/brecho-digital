@@ -984,7 +984,7 @@ que funciona no celular).
 
 ```
 foto ──► S3 entrada/ ──► EventBridge ──► fila SQS ──► Lambda brecho-esteira
-  (POST assinado,            (foto nova)    (2 por vez,     recorta o fundo (BiRefNet),
+  (POST assinado,            (foto nova)    (2 por vez,     recorta o fundo (isnet/BiRefNet),
    direto do navegador)                      3 tentativas)  prévia WebP + contorno,
                                                             ficha palpitada pelo Claude
                                      ◄── esteira.html revisa, mede e publica ◄──┘

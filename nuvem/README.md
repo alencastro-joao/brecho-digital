@@ -60,30 +60,49 @@ bash nuvem/infra/publicar-api.sh
 ## A esteira de peças
 
 Pilha CloudFormation `brecho-esteira` (`infra/esteira.yaml`): a fila, a fila de
-mortas, a regra do EventBridge, a função `brecho-esteira` (arm64, 6 GB, 5 min,
-camadas `brecho-pillow` + `brecho-ciencia`) e as permissões novas do papel da
-API. Publicar:
+mortas, a regra do EventBridge, a função `brecho-esteira` (x86_64, 3 GB, 5 min,
+camada `brecho-ciencia` com numpy + onnxruntime + Pillow) e as permissões
+novas do papel da API. Publicar:
 
 ```bash
 bash nuvem/infra/publicar-esteira.sh
 ```
 
 O script empacota `nuvem/esteira/` com o `bgbatch.py` e o `pipeline.py` do App
-(o mesmo recorte e o mesmo contorno da máquina do admin), monta a camada de
-numpy + onnxruntime para Linux arm64 a partir de wheels prontos, liga o
-EventBridge e o CORS no bucket de dados e faz o `cloudformation deploy`. Os
-pacotes levam o hash no nome: sem mudança, nada é trocado.
+(o mesmo recorte e o mesmo contorno da máquina do admin), monta a camada a
+partir de wheels prontos, liga o EventBridge e o CORS no bucket de dados e faz
+o `cloudformation deploy`. Os pacotes levam o hash no nome: sem mudança, nada
+é trocado.
 
-O modelo de recorte (`modelos/birefnet-general.onnx`, ~1 GB) vem do Hugging
-Face na primeira foto e fica guardado no bucket de dados. Cada função nova o
-copia para o `/tmp` (alguns segundos, mesma região).
+**Por que x86_64 e não arm64 como a API.** Em ARM o onnxruntime descobre a CPU
+lendo `/sys/devices/system/cpu`, que a Lambda não expõe, e o processo morre com
+"Attempt to use DefaultLogger but none has been registered". Em x86 ele usa a
+instrução `cpuid`. Pelo mesmo motivo de sandbox, `BGBATCH_THREADS=2` fixa o
+número de threads (no automático ele tenta prender thread a núcleo).
+
+**Modelo de recorte: `isnet`, por enquanto.** Conta nova da AWS tem teto de
+3008 MB por função, e o BiRefNet não cabe: medido, o `birefnet-lite` chega a
+6,4 GB de pico mesmo no modo econômico. O `isnet` usa ~1 GB e recorta uma foto
+em ~12 s; perde em detalhe fino (alça, renda). Quando a cota for aumentada
+(Service Quotas → AWS Lambda → memória da função → 10240), troque:
+
+```bash
+MODELO_FUNDO=birefnet-general MEMORIA_MB=10240 bash nuvem/infra/publicar-esteira.sh
+```
+
+O modelo vem do Hugging Face na primeira foto e fica guardado em
+`modelos/` no bucket de dados; cada função nova copia de lá para o `/tmp`.
 
 O palpite da ficha é o Claude Haiku 4.5 no Bedrock (`nuvem/esteira/ficha_ia.py`).
 Se o Bedrock recusar, a peça entra sem palpite e nada trava.
 
-**Custo**: ~US$ 0,005 de Lambda por foto (6 GB × ~40 s), coberto pela franquia
-gratuita de 400 mil GB-s/mês até umas mil fotos por mês; ~US$ 0,001 de Bedrock
-por foto; ~US$ 0,02/mês para guardar o modelo.
+**Custo**: ~US$ 0,0007 de Lambda por foto (3 GB × ~15 s), coberto pela
+franquia gratuita de 400 mil GB-s/mês; ~US$ 0,001 de Bedrock por foto;
+centavos por mês para guardar os modelos.
+
+**Foto que mata o processo** (memória, tempo) não consegue gravar "erro". O
+trabalhador anota `iniciadoEm` ao começar, e a API mostra como travada a que
+passa de 15 min em "processando".
 
 **Foto que falhou três vezes** vai para a fila `brecho-esteira-mortas` e aparece
 com erro na tela, com o botão "Tentar de novo". O log está em

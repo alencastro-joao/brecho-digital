@@ -13,12 +13,22 @@ export PATH="$PATH:/c/Program Files/Amazon/AWSCLIV2"
 export MSYS_NO_PATHCONV=1
 
 DADOS=brecho-dados-108826053014
+# Modelo de recorte e memória. Passados sempre: o `cloudformation deploy`
+# reaproveita o valor anterior de parâmetro omitido e ignoraria o padrão do
+# template. O isnet cabe nos 3 GB de conta nova; com a cota de memória
+# aumentada (Service Quotas → Lambda), o melhor é:
+#     MODELO_FUNDO=birefnet-general MEMORIA_MB=10240 bash nuvem/infra/publicar-esteira.sh
+MODELO_FUNDO=${MODELO_FUNDO:-isnet}
+MEMORIA_MB=${MEMORIA_MB:-3008}
 SITE_URL=https://dufkck3bmeh9v.cloudfront.net
 PILHA=brecho-esteira
 
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OBRA="$RAIZ/nuvem/.obra"
-rm -rf "$OBRA" && mkdir -p "$OBRA/codigo" "$OBRA/camada/python"
+# Pasta de montagem nova a cada execução, fora do projeto: some no fim, e uma
+# execução interrompida não deixa lixo preso no caminho da próxima.
+OBRA="$(mktemp -d "${TMPDIR:-/tmp}/brecho-obra.XXXXXX")"
+trap 'rm -rf "$OBRA"' EXIT
+mkdir -p "$OBRA/codigo" "$OBRA/camada/python"
 win() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else echo "$1"; fi; }
 
 # --- Código ----------------------------------------------------------------
@@ -26,15 +36,20 @@ win() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else echo "$1"; 
 # mesmo contorno da máquina do admin, copiados na hora de empacotar.
 cp "$RAIZ/nuvem/esteira/"*.py "$RAIZ/App/tools/bgbatch.py" "$RAIZ/App/tools/pipeline.py" "$OBRA/codigo/"
 
-# --- Camada: numpy + onnxruntime para Linux arm64 --------------------------
+# --- Camada: numpy + onnxruntime + Pillow para Linux x86_64 -----------------
 # Wheels prontos (--only-binary): nada é compilado, então funciona do Windows.
 # --no-deps: o onnxruntime puxa sympy, protobuf e coloredlogs, que são de
 # ferramenta de conversão — a inferência não toca neles, e só o sympy são 77 MB.
 python -m pip install --quiet --disable-pip-version-check --no-deps \
-  --platform manylinux2014_aarch64 --platform manylinux_2_28_aarch64 \
+  --platform manylinux2014_x86_64 --platform manylinux_2_28_x86_64 \
   --implementation cp --python-version 3.13 --only-binary=:all: \
   --target "$(win "$OBRA/camada/python")" \
-  numpy==2.3.5 onnxruntime==1.23.2
+  numpy==2.3.5 onnxruntime==1.23.2 pillow==12.2.0
+# x86_64 e não arm64 (como a API): em ARM o onnxruntime descobre a CPU lendo
+# /sys/devices/system/cpu, que a Lambda não expõe, e o processo morre com
+# "Attempt to use DefaultLogger but none has been registered". Em x86 ele usa
+# a instrução cpuid. Por isso o Pillow vem aqui, e não da camada brecho-pillow,
+# que é arm64.
 # Testes e cabeçalhos não rodam na Lambda: só ocupam o limite de 250 MB.
 find "$OBRA/camada/python" -type d \( -name tests -o -name __pycache__ -o -name include \) -prune -exec rm -rf {} +
 
@@ -113,7 +128,6 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM \
   --no-fail-on-empty-changeset \
   --tags projeto=brecho \
-  --parameter-overrides "CodigoChave=$CODIGO" "CamadaChave=$CAMADA" "$@"
+  --parameter-overrides "CodigoChave=$CODIGO" "CamadaChave=$CAMADA"     "ModeloFundo=$MODELO_FUNDO" "MemoriaMb=$MEMORIA_MB" "$@"
 
-rm -rf "$OBRA"
 echo "== esteira publicada"

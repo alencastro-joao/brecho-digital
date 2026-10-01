@@ -1,4 +1,4 @@
-/* Modal de adicionar peça: ficha + dimensionamento no molde. */
+/* Modal de editar peça (js/editar.js): ficha + medida no molde. */
 
 .modal {
   position: fixed; inset: 0; z-index: 800;
@@ -52,55 +52,6 @@ body.com-modal { overflow: hidden; }
 }
 .mp-aviso.alerta { color: #b26a00; font-weight: 600; }
 
-/* --------------------------- A fila de arquivos -------------------------- */
-/* Com mais de um arquivo a tira aparece no alto do passo 1: cada miniatura é
-   um item com a ficha dele. Clicar troca o item em edição; o ✕ tira da fila. */
-.mp-fila {
-  flex: none;
-  display: flex; align-items: center; gap: 8px;
-  padding: 14px 26px 0;
-  overflow-x: auto; scrollbar-width: thin;
-}
-.mp-fila[hidden] { display: none; }
-.mp-fila-item {
-  position: relative; flex: none;
-  width: 58px; height: 58px; padding: 5px;
-  border: 1px solid var(--linha); border-radius: 12px;
-  background: #fdfcfa; cursor: pointer;
-  transition: border-color .18s, transform .18s;
-}
-.mp-fila-item:hover { border-color: #cfc6b9; transform: translateY(-1px); }
-.mp-fila-item.ativa { border-color: var(--tinta); box-shadow: 0 0 0 2px color-mix(in srgb, var(--tinta) 18%, transparent); }
-.mp-fila-item.erro { border-color: #d98b3a; background: #fdf4e8; }
-.mp-fila-item.salva { opacity: .45; }
-.mp-fila-item img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.mp-fila-vazio {
-  display: grid; place-items: center; height: 100%;
-  font-size: 15px; color: #b6ad9f;
-}
-.mp-fila-x {
-  position: absolute; top: -6px; right: -6px;
-  width: 17px; height: 17px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: #fff; border: 1px solid var(--linha);
-  font-size: 9px; color: var(--tinta-suave);
-  opacity: 0; transition: opacity .15s;
-}
-.mp-fila-item:hover .mp-fila-x { opacity: 1; }
-.mp-fila-x:hover { border-color: #d05a5a; color: #d05a5a; }
-/* Sinais discretos de estado: já medida, já gravada. */
-.mp-fila-medida, .mp-fila-ok {
-  position: absolute; bottom: -5px; left: -5px;
-  width: 16px; height: 16px; border-radius: 50%;
-  display: grid; place-items: center;
-  font-size: 9px; background: var(--tinta); color: #fff;
-}
-.mp-fila-ok { background: #3f9a6b; }
-.mp-fila-conta {
-  flex: none; margin-left: 4px;
-  font-size: 11px; color: var(--tinta-suave); white-space: nowrap;
-}
-
 /* ------------------------------- Passo 1 -------------------------------- */
 .mp-colunas {
   flex: 1; min-height: 0; overflow-y: auto;
@@ -108,14 +59,10 @@ body.com-modal { overflow: hidden; }
   padding: 24px 26px;
 }
 
-/* A coluna da imagem: a área de soltar ocupa o que sobra e a chave do
-   recorte automático fica logo abaixo dela, junto do que ela controla. */
+/* A coluna da imagem: a prévia ocupa o que sobra, a dica fica embaixo. */
 .mp-imagem {
-  display: grid; grid-template-rows: 1fr auto auto; gap: 8px; min-height: 0;
+  display: grid; grid-template-rows: 1fr auto; gap: 8px; min-height: 0;
 }
-.mp-fundo { margin-top: 2px; }
-.mp-fundo:has(input:disabled) { opacity: .5; cursor: default; }
-#mp-fundo-dica { margin: 0; }
 
 .mp-solta {
   border: 2px dashed var(--linha); border-radius: 20px;
@@ -131,13 +78,6 @@ body.com-modal { overflow: hidden; }
 }
 .mp-solta:hover, .mp-solta.sobre { border-color: var(--tinta); }
 .mp-solta.sobre { transform: scale(1.01); }
-.mp-solta-vazio {
-  display: grid; justify-items: center; gap: 5px; text-align: center;
-  font-size: 13px; color: var(--tinta-suave); pointer-events: none;
-}
-.mp-solta-vazio strong { font-size: 15px; color: var(--tinta); }
-.mp-solta-vazio small { font-size: 11px; color: #a9a196; margin-top: 4px; }
-.mp-icone { font-size: 30px; color: #cfc6b9; line-height: 1; }
 #mp-previa {
   max-width: 100%; max-height: 320px; object-fit: contain;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .16));
@@ -268,14 +208,3 @@ body.com-modal { overflow: hidden; }
   .mp-colunas { grid-template-columns: 1fr; }
 }
 
-/* Modo edição: a peça já existe, então o destino ("entra no meu guarda-roupa")
-   não se aplica — ela já está onde está. Fica só a ficha, o molde e o aviso de
-   que soltar um PNG troca a imagem. */
-.modal-caixa.editando .mp-destino,
-.modal-caixa.editando .tool-hint#mp-destino-dica { display: none; }
-.modal-caixa.editando .mp-solta::after {
-  content: 'solte um PNG aqui para trocar a imagem';
-  position: absolute; left: 0; right: 0; bottom: 6px;
-  text-align: center; font-size: 11px; color: #a9a196; pointer-events: none;
-}
-.modal-caixa.editando .mp-solta { position: relative; }

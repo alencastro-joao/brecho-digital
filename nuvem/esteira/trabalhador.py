@@ -154,7 +154,9 @@ def previa_de(recorte):
 def processar(chave):
     item_id = os.path.splitext(os.path.basename(chave))[0]
     ficha = ler_ficha(item_id)
-    ficha.update(estado='processando', entrada=chave, erro='',
+    # iniciadoEm: se o processo morrer (memória, tempo), ninguém grava "erro";
+    # é por esta hora que a API percebe que travou.
+    ficha.update(estado='processando', entrada=chave, erro='', iniciadoEm=_agora(),
                  tentativas=int(ficha.get('tentativas') or 0) + 1)
     ficha.setdefault('criadoEm', _agora())
     gravar_ficha(ficha)

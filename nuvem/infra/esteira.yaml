@@ -16,9 +16,6 @@ Parameters:
     Type: String
     Default: brecho-lambda
     Description: Papel da Lambda brecho-api (criado fora desta pilha).
-  CamadaPillow:
-    Type: String
-    Default: arn:aws:lambda:us-east-1:108826053014:layer:brecho-pillow:1
   CodigoChave:
     Type: String
     Description: deploy/trabalhador-<hash>.zip no bucket de dados.
@@ -27,11 +24,13 @@ Parameters:
     Description: deploy/camada-ciencia-<hash>.zip no bucket de dados.
   MemoriaMb:
     Type: Number
-    Default: 6144
-    Description: Mais memoria = mais vCPU. O BiRefNet fp32 pede uns 3 GB de pico.
+    Default: 3008
+    Description: >
+      Mais memoria = mais vCPU. 3008 e o teto de conta nova; pedir aumento
+      (Service Quotas) libera ate 10240 e o birefnet-general.
   ModeloFundo:
     Type: String
-    Default: birefnet-general
+    Default: isnet                     # ~3 GB; o BiRefNet pede 6-10 GB (ver nuvem/README.md)
     AllowedValues: [birefnet-general, birefnet-lite, isnet]
   ModeloIa:
     Type: String
@@ -91,8 +90,8 @@ Resources:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: brecho-ciencia
-      Description: numpy + onnxruntime (arm64, python 3.13)
-      CompatibleArchitectures: [arm64]
+      Description: numpy + onnxruntime + Pillow (x86_64, python 3.13)
+      CompatibleArchitectures: [x86_64]
       CompatibleRuntimes: [python3.13]
       Content:
         S3Bucket: !Ref BucketDados
@@ -160,13 +159,14 @@ Resources:
       FunctionName: brecho-esteira
       Description: Esteira de pecas - recorte, previa, contorno e palpite da ficha
       Runtime: python3.13
-      Architectures: [arm64]
+      # x86_64: em arm64 o onnxruntime aborta (ver publicar-esteira.sh).
+      Architectures: [x86_64]
       Handler: trabalhador.handler
       Role: !GetAtt PapelDoTrabalhador.Arn
       MemorySize: !Ref MemoriaMb
       Timeout: 300
       EphemeralStorage: { Size: 3072 }          # o modelo (~1 GB) mora no /tmp
-      Layers: [!Ref CamadaPillow, !Ref CamadaCiencia]
+      Layers: [!Ref CamadaCiencia]
       Code:
         S3Bucket: !Ref BucketDados
         S3Key: !Ref CodigoChave
@@ -177,7 +177,10 @@ Resources:
           BD_MODELO_FUNDO: !Ref ModeloFundo
           BD_MODELO_IA: !Ref ModeloIa
           BGBATCH_MODELOS: /tmp/modelos
-          OMP_NUM_THREADS: '0'
+          BGBATCH_THREADS: '2'                # 3008 MB = 2 vCPU; ver bgbatch.sessao
+          # Sem a arena do onnxruntime e com otimização de grafo básica: o pico
+          # cai o bastante para o BiRefNet caber nos 3 GB (com arena, estoura).
+          BGBATCH_POUCA_MEMORIA: '1'
       Tags:
         - { Key: projeto, Value: brecho }
 

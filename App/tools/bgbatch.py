@@ -254,6 +254,13 @@ def sessao(nome=PADRAO, pasta=None, quieto=False, baixar=True):
                               'CPUExecutionProvider') if p in disponiveis]
     opcoes = ort.SessionOptions()
     opcoes.log_severity_level = 3
+    # Número de threads explícito. No automático o onnxruntime prende cada
+    # thread a um núcleo (afinidade), e onde isso é proibido — a Lambda — a
+    # recusa vira exceção antes de o log existir e o processo morre com
+    # "Attempt to use DefaultLogger". Com o número dado, ele não prende nada.
+    if os.environ.get('BGBATCH_THREADS'):
+        opcoes.intra_op_num_threads = int(os.environ['BGBATCH_THREADS'])
+        opcoes.inter_op_num_threads = 1
     # Máquina apertada: o onnxruntime reserva uma arena e reaproveita blocos,
     # o que é rápido e caro. Sem ela cada tensor é pedido e devolvido na hora
     # — mais lento, mas o pico cai o suficiente para o BiRefNet caber.
@@ -285,7 +292,11 @@ def _rodar(ses, img_rgb):
     x = (x - np.array(spec['media'], np.float32)) / np.array(spec['desvio'], np.float32)
     x = np.ascontiguousarray(x.transpose(2, 0, 1)[None], dtype=tipo)
 
-    saida = s.run(None, {entrada.name: x})[-1]
+    # Os modelos devolvem várias saídas (as auxiliares do treino vêm junto), e
+    # a ordem muda: no BiRefNet a máscara final é a última, no IS-Net é a
+    # primeira e a última tem 16×16. A final é sempre a de maior resolução.
+    saidas = s.run(None, {entrada.name: x})
+    saida = max(saidas, key=lambda a: a.shape[-1] * a.shape[-2])
     y = np.asarray(saida, dtype=np.float32)
     y = y.reshape(y.shape[-2], y.shape[-1])
 

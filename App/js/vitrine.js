@@ -19,7 +19,7 @@ import * as estoque from './estoque.js';
 import { falar, falarDe } from './npc.js';
 import { instalarPassThrough, precarregarAlpha } from './alpha.js';
 import { criarAura } from './aura.js';
-import { abrirEditar } from './adicionar.js';
+import { abrirEditar } from './editar.js';
 import {
   el, $, clamp, pontosPoisson, mulberry32, sementeDoDia, shuffle, hojeISO,
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
