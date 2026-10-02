@@ -29,7 +29,7 @@
   },
   {
    "id": "04",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/04.webp",
    "w": 489,
    "h": 512,
@@ -37,7 +37,7 @@
   },
   {
    "id": "05",
-   "cat": "rings",
+   "cat": "bracelets",
    "src": "assets/cloths/05.webp",
    "w": 504,
    "h": 334,
@@ -45,7 +45,7 @@
   },
   {
    "id": "06",
-   "cat": "rings",
+   "cat": "bracelets",
    "src": "assets/cloths/06.webp",
    "w": 463,
    "h": 512,
@@ -53,7 +53,7 @@
   },
   {
    "id": "07",
-   "cat": "acc",
+   "cat": "glasses",
    "src": "assets/cloths/07.webp",
    "w": 512,
    "h": 219,
@@ -77,7 +77,7 @@
   },
   {
    "id": "10",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/10.webp",
    "w": 439,
    "h": 484,
@@ -85,7 +85,7 @@
   },
   {
    "id": "11",
-   "cat": "acc",
+   "cat": "glasses",
    "src": "assets/cloths/11.webp",
    "w": 394,
    "h": 218,
@@ -109,7 +109,7 @@
   },
   {
    "id": "14",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/14.webp",
    "w": 485,
    "h": 512,
@@ -125,7 +125,7 @@
   },
   {
    "id": "16",
-   "cat": "acc",
+   "cat": "glasses",
    "src": "assets/cloths/16.webp",
    "w": 512,
    "h": 132,
@@ -157,7 +157,7 @@
   },
   {
    "id": "20",
-   "cat": "acc",
+   "cat": "glasses",
    "src": "assets/cloths/20.webp",
    "w": 512,
    "h": 132,
@@ -165,7 +165,7 @@
   },
   {
    "id": "21",
-   "cat": "rings",
+   "cat": "bracelets",
    "src": "assets/cloths/21.webp",
    "w": 512,
    "h": 377,
@@ -181,7 +181,7 @@
   },
   {
    "id": "23",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/23.webp",
    "w": 443,
    "h": 512,
@@ -237,7 +237,7 @@
   },
   {
    "id": "30",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/30.webp",
    "w": 512,
    "h": 452,
@@ -269,7 +269,7 @@
   },
   {
    "id": "34",
-   "cat": "acc",
+   "cat": "glasses",
    "src": "assets/cloths/34.webp",
    "w": 512,
    "h": 200,
@@ -285,7 +285,7 @@
   },
   {
    "id": "36",
-   "cat": "acc",
+   "cat": "glasses",
    "src": "assets/cloths/36.webp",
    "w": 512,
    "h": 484,
@@ -301,7 +301,7 @@
   },
   {
    "id": "38",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/38.webp",
    "w": 477,
    "h": 409,
@@ -309,7 +309,7 @@
   },
   {
    "id": "39",
-   "cat": "rings",
+   "cat": "bracelets",
    "src": "assets/cloths/39.webp",
    "w": 512,
    "h": 429,
@@ -317,7 +317,7 @@
   },
   {
    "id": "40",
-   "cat": "tops",
+   "cat": "shirts",
    "src": "assets/cloths/40.webp",
    "w": 450,
    "h": 512,

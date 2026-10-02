@@ -34,7 +34,7 @@ except ImportError:
 
 # --- Mapa de categorias (identico ao do prototipo Closet) -------------------
 CATEGORIES = {
-    "tops":    ["04", "14", "10", "23", "30", "40", "38"],
+    "shirts":  ["04", "14", "10", "23", "30", "40", "38"],
     "pants":   ["03", "26", "27"],
     "shoes":   ["37", "35", "32", "33", "22", "15", "17", "18", "02"],
     "dresses": ["08", "41", "42", "43", "44", "45"],
@@ -42,8 +42,8 @@ CATEGORIES = {
     "hats":    ["09", "01", "31", "24", "29", "51", "52", "53"],
     "bags":    ["12", "25", "19", "54", "55", "56"],
     "watches": ["13", "57", "58", "59"],
-    "rings":   ["21", "05", "06", "39"],
-    "acc":     ["07", "16", "11", "34", "36", "20"],
+    "bracelets": ["21", "05", "06", "39"],
+    "glasses": ["07", "16", "11", "34", "36", "20"],
 }
 ID_TO_CAT = {i: c for c, ids in CATEGORIES.items() for i in ids}
 
@@ -224,7 +224,7 @@ def main():
 
         items.append({
             "id": item_id,
-            "cat": ID_TO_CAT.get(item_id, "acc"),
+            "cat": ID_TO_CAT.get(item_id, "glasses"),
             "src": "assets/cloths/" + item_id + ".webp",
             "w": img.size[0],
             "h": img.size[1],

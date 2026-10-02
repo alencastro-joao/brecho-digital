@@ -17,7 +17,7 @@
 // (PUT /api/pecas/<id>), que recusa quem não for administrador.
 
 import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, hexDaCor,
-         corDoPixel, distanciaEntreCores } from './config.js';
+         corDoPixel, distanciaEntreCores, rotuloDeCadastro } from './config.js';
 import { registrarPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
@@ -187,7 +187,7 @@ function montarCategorias() {
   const cat = $('#mp-cat');
   if (cat.options.length) return;
   for (const c of ORDEM_CATEGORIAS) {
-    cat.append(el('option', { value: c }, `${CATEGORIAS[c].icone}  ${CATEGORIAS[c].nome}`));
+    cat.append(el('option', { value: c }, rotuloDeCadastro(c)));
   }
 }
 

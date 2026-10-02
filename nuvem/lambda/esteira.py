@@ -180,7 +180,7 @@ def guardar(item_id, corpo):
     if isinstance(corpo.get('ficha'), dict):
         f = corpo['ficha']
         dados['ficha'] = {
-            'cat': f.get('cat') if f.get('cat') in acervo.CATS else '',
+            'cat': acervo.categoria(f.get('cat')) if acervo.categoria(f.get('cat')) in acervo.CATS else '',
             'cor': str(f.get('cor') or '').strip()[:24],
             'nome': str(f.get('nome') or '').strip()[:60],
             'marca': str(f.get('marca') or '').strip()[:40],
@@ -203,7 +203,7 @@ def publicar(item_id, corpo):
     ficha = {**(dados.get('ficha') or {}), **(corpo.get('ficha') or {})}
     medida = corpo.get('medida') or dados.get('medida')
     if not medida:
-        medida = dict(acervo.ANCORAS.get(ficha.get('cat')) or {})
+        medida = dict(acervo.ANCORAS.get(acervo.categoria(ficha.get('cat'))) or {})
     pedido = {**ficha, 'ancora': medida or {}, 'w': dados['w'], 'h': dados['h']}
     acervo.validar(pedido)
 

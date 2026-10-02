@@ -77,7 +77,7 @@ export const RARIDADE = Object.fromEntries(RARIDADES.map(r => [r.id, r]));
 // Conta nova entra com guarda-roupa vazio, e guarda-roupa vazio é tela vazia:
 // o closet sem nada, o Stylist sem o que vestir e o personagem pelado. O
 // presente é o mínimo para o jogo existir na primeira sessão — duas de cada uma
-// das três categorias que fecham um look (top + calça + calçado), então dá para
+// das três categorias que fecham um look (camisa + calça + sapato), então dá para
 // montar e ainda ter troca.
 //
 // As faixas dizem de quais raridades o presente pode sair: só comum e incomum.
@@ -87,7 +87,7 @@ export const RARIDADE = Object.fromEntries(RARIDADES.map(r => [r.id, r]));
 // que ela tem na arara.
 export const PRESENTE = {
   itens: [
-    { cat: 'tops', quantas: 2 },
+    { cat: 'shirts', quantas: 2 },
     { cat: 'pants', quantas: 2 },
     { cat: 'shoes', quantas: 2 },
   ],
@@ -219,16 +219,20 @@ export function distanciaEntreCores(a, b) {
 // TAMANHO é o tamanho relativo de cada categoria no mundo real, com casaco = 1.
 // É a única fonte de verdade; as telas derivam dele.
 export const TAMANHO = {
-  coats:   1.00,
-  dresses: 0.94,
-  pants:   0.90,
-  tops:    0.78,
-  shoes:   0.58,
-  bags:    0.52,
-  hats:    0.46,
-  acc:     0.34,
-  watches: 0.24,
-  rings:   0.11,
+  coats:     1.00,
+  dresses:   0.94,
+  pants:     0.90,
+  shirts:    0.78,
+  skirts:    0.66,
+  cropped:   0.64,
+  shorts:    0.62,
+  shoes:     0.58,
+  bags:      0.52,
+  hats:      0.46,
+  glasses:   0.34,
+  necklaces: 0.30,
+  watches:   0.24,
+  bracelets: 0.20,
 };
 
 // Exceções peça a peça (multiplicador). Serve para o casaco extra-longo ou o
@@ -285,24 +289,61 @@ export function tamanhoNoMural(peca, prop) {
   return { w: Math.round(w), h: Math.round(h) };
 }
 
-// Categorias: rótulo, ícone e como a peça se encaixa no avatar.
+// Categorias: rótulo, ícone, parte do corpo e como a peça se encaixa no avatar.
 // anchor = ponto de ancoragem em unidades de palco; w = largura alvo; z = camada.
 // É a "engine de lookbook" do roadmap: z-index fixo por tipo de peça.
+//
+// A peça só guarda a categoria (`cat`). A parte do corpo (`regiao`) sai daqui,
+// nunca é gravada: quem cadastra escolhe "Bermuda" e a peça já está em "Perna".
 export const CATEGORIAS = {
-  tops:    { nome: 'Tops',        icone: '👕', anchor: { x: 300, y: 358, w: 250, z: 30 } },
-  pants:   { nome: 'Calças',      icone: '👖', anchor: { x: 300, y: 796, w: 236, z: 20 } },
-  // Calçado por cima da calça e da barra do vestido: é assim que a bota fica
-  // sobre a calça no corpo, e era o que a ordem antiga (z 16) invertia.
-  shoes:   { nome: 'Calçados',    icone: '👟', anchor: { x: 300, y: 1096, w: 248, z: 28 } },
-  dresses: { nome: 'Vestidos',    icone: '👗', anchor: { x: 300, y: 486, w: 272, z: 25 } },
-  coats:   { nome: 'Casacos',     icone: '🧥', anchor: { x: 300, y: 436, w: 310, z: 40 } },
-  hats:    { nome: 'Chapéus',     icone: '👒', anchor: { x: 300, y: 84,  w: 176, z: 65 } },
-  bags:    { nome: 'Bolsas',      icone: '👜', anchor: { x: 440, y: 646, w: 152, z: 50 } },
-  watches: { nome: 'Relógios',    icone: '⌚', anchor: { x: 172, y: 652, w: 72,  z: 55 } },
-  rings:   { nome: 'Anéis',       icone: '💍', anchor: { x: 168, y: 700, w: 44,  z: 56 } },
-  acc:     { nome: 'Acessórios',  icone: '🕶️', anchor: { x: 300, y: 116, w: 124, z: 60 } },
+  shoes:     { nome: 'Sapatos',   icone: '👟', regiao: 'pes',    anchor: { x: 300, y: 1096, w: 248, z: 28 } },
+  pants:     { nome: 'Calças',    icone: '👖', regiao: 'perna',  anchor: { x: 300, y: 796, w: 236, z: 20 } },
+  shorts:    { nome: 'Bermudas',  icone: '🩳', regiao: 'perna',  anchor: { x: 300, y: 652, w: 240, z: 20 } },
+  skirts:    { nome: 'Saias',     icone: '🥻', regiao: 'perna',  anchor: { x: 300, y: 676, w: 250, z: 21 } },
+  dresses:   { nome: 'Vestidos',  icone: '👗', regiao: 'tronco', anchor: { x: 300, y: 486, w: 272, z: 25 } },
+  shirts:    { nome: 'Camisas',   icone: '👕', regiao: 'tronco', anchor: { x: 300, y: 358, w: 250, z: 30 } },
+  coats:     { nome: 'Casacos',   icone: '🧥', regiao: 'tronco', anchor: { x: 300, y: 436, w: 310, z: 40 } },
+  cropped:   { nome: 'Tops',      icone: '🎽', regiao: 'tronco', anchor: { x: 300, y: 336, w: 228, z: 31 } },
+  watches:   { nome: 'Relógios',  icone: '⌚', regiao: 'maos',   anchor: { x: 172, y: 652, w: 72,  z: 55 } },
+  bracelets: { nome: 'Pulseiras', icone: '💍', regiao: 'maos',   anchor: { x: 428, y: 660, w: 62,  z: 54 } },
+  necklaces: { nome: 'Colares',   icone: '📿', regiao: 'tronco', anchor: { x: 300, y: 300, w: 120, z: 45 } },
+  glasses:   { nome: 'Óculos',    icone: '🕶️', regiao: 'cabeca', anchor: { x: 300, y: 116, w: 124, z: 60 } },
+  hats:      { nome: 'Chapéus',   icone: '👒', regiao: 'cabeca', anchor: { x: 300, y: 84,  w: 176, z: 65 } },
+  bags:      { nome: 'Bolsas',    icone: '👜', regiao: 'maos',   anchor: { x: 440, y: 646, w: 152, z: 50 } },
 };
 export const ORDEM_CATEGORIAS = Object.keys(CATEGORIAS);
+
+// A segunda forma de organizar: por onde a peça vai no corpo, de cima para baixo.
+export const REGIOES = {
+  cabeca: { nome: 'Cabeça', icone: '🧢' },
+  tronco: { nome: 'Tronco', icone: '👚' },
+  perna:  { nome: 'Perna',  icone: '👖' },
+  pes:    { nome: 'Pés',    icone: '🥾' },
+  maos:   { nome: 'Mãos',   icone: '✋' },
+};
+export const ORDEM_REGIOES = Object.keys(REGIOES);
+
+// Rótulo do seletor de categoria no cadastro: escolhe-se o tipo, e o rótulo já
+// mostra a parte do corpo que vem junto ("👕 Camisas · Tronco").
+export const rotuloDeCadastro = (cat) =>
+  `${CATEGORIAS[cat].icone} ${CATEGORIAS[cat].nome} · ${REGIOES[CATEGORIAS[cat].regiao].nome}`;
+
+// Categorias de antes desta lista. Peça e save antigos continuam gravados com
+// elas (o acervo na nuvem, o inventário de cada conta, looks e colagens), então
+// toda leitura passa por `migrarCategoria`. O 'tops' de antes era camiseta e
+// camisa — por isso o "Tops" de agora (cropped, regata) é `cropped`, e não
+// reaproveita a chave: um 'tops' gravado sempre quer dizer Camisas.
+const CATEGORIAS_ANTIGAS = { tops: 'shirts', acc: 'glasses', rings: 'bracelets' };
+export const migrarCategoria = (cat) => CATEGORIAS_ANTIGAS[cat] ?? cat;
+
+// As duas formas de organizar as telas de roupa (closet, Stylist, Colagem). A
+// pessoa escolhe uma — `usuario.preferencias.agrupamento` — e vale nas três.
+export const AGRUPAMENTOS = {
+  tipo:  { nome: 'Peça',  titulo: 'Por tipo de peça',     grupos: CATEGORIAS, ordem: ORDEM_CATEGORIAS,
+           de: (cat) => cat },
+  corpo: { nome: 'Corpo', titulo: 'Por parte do corpo',   grupos: REGIOES,    ordem: ORDEM_REGIOES,
+           de: (cat) => CATEGORIAS[cat]?.regiao },
+};
 
 // Coleção cápsula do mês: fica fora do sorteio diário e só entra no
 // guarda-roupa quando todas as missões do mês são concluídas.

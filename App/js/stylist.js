@@ -6,8 +6,9 @@
 // ancoragem da sua categoria (engine de lookbook) e dentro da sua camada de
 // z-index; dali a pessoa move, gira e redimensiona à vontade.
 
-import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, escalaGrade, ancoraDaPeca } from './config.js';
+import { CONFIG, escalaGrade, ancoraDaPeca } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
+import { grupoDe, gruposDoInventario, compararPorGrupo, seletorDeAgrupamento } from './agrupamento.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniatura, baixarLook } from './render.js';
@@ -21,7 +22,7 @@ let selecionado = null;
 // for o caso, gerar de novo não pergunta nada.
 let palcoSorteado = false;
 let lookAtualId = null;
-let catPaleta = 'todas';   // a paleta abre mostrando o guarda-roupa inteiro
+let catPaleta = 'todas';   // o grupo aberto; a paleta abre mostrando o guarda-roupa inteiro
 let guiaLigado = false;
 let uidSeq = 1;
 
@@ -64,12 +65,19 @@ function desenharAvatar() {
 
 // --- Paleta de peças ------------------------------------------------------
 function montarPaleta() {
-  // Se a categoria aberta não tem nada, volta para "todas" — senão a paleta
-  // abre vazia mesmo com o guarda-roupa cheio.
+  // Se o grupo aberto não tem nada (ou deixou de existir, quando a pessoa
+  // trocou peça ↔ corpo), volta para "todas" — senão a paleta abre vazia
+  // mesmo com o guarda-roupa cheio.
+  const grupos = gruposDoInventario();
   if (catPaleta !== 'todas' && db.state.inventario.length &&
-      !db.state.inventario.some(p => p.cat === catPaleta)) {
+      !grupos.some(g => g.id === catPaleta && g.qtd)) {
     catPaleta = 'todas';
   }
+
+  $('#palette-agrupar').replaceChildren(seletorDeAgrupamento(() => {
+    catPaleta = 'todas';
+    montarPaleta();
+  }));
 
   const abas = $('#palette-cats');
   abas.innerHTML = '';
@@ -81,23 +89,20 @@ function montarPaleta() {
     onclick: () => { catPaleta = 'todas'; montarPaleta(); },
   }, '✦', el('small', {}, String(db.state.inventario.length))));
 
-  for (const cat of ORDEM_CATEGORIAS) {
-    const qtd = db.state.inventario.filter(p => p.cat === cat).length;
-    if (!qtd) continue;
+  for (const g of grupos) {
+    if (!g.qtd) continue;
     abas.append(el('button', {
-      class: 'pal-cat' + (cat === catPaleta ? ' active' : ''),
-      title: CATEGORIAS[cat].nome,
-      onclick: () => { catPaleta = cat; montarPaleta(); },
-    }, CATEGORIAS[cat].icone, el('small', {}, String(qtd))));
+      class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
+      title: g.nome,
+      onclick: () => { catPaleta = g.id; montarPaleta(); },
+    }, g.icone, el('small', {}, String(g.qtd))));
   }
 
   const grid = $('#palette-grid');
   grid.innerHTML = '';
   const pecas = db.state.inventario
-    .filter(p => catPaleta === 'todas' || p.cat === catPaleta)
-    .sort((a, b) => catPaleta === 'todas'
-      ? ORDEM_CATEGORIAS.indexOf(a.cat) - ORDEM_CATEGORIAS.indexOf(b.cat) || a.ordem - b.ordem
-      : a.ordem - b.ordem);
+    .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta)
+    .sort((a, b) => compararPorGrupo(a, b) || a.ordem - b.ordem);
 
   if (!db.state.inventario.length) {
     grid.append(el('p', { class: 'palette-vazia' },

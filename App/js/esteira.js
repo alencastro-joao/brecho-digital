@@ -17,7 +17,10 @@
 // Página separada do jogo de propósito. Ela não precisa do save, do catálogo
 // nem das telas — só da conta (para saber que é admin) e do molde do avatar.
 
-import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor } from './config.js';
+import {
+  CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
+  migrarCategoria, rotuloDeCadastro,
+} from './config.js';
 import { carregarSessao } from './auth.js';
 import { svgAvatar } from './avatar.js';
 import { el, $, $$, clamp, toast } from './util.js';
@@ -135,10 +138,12 @@ async function atualizar() {
   if (andando) vigia = setTimeout(atualizar, VIGIA_MS);
 }
 
-const fichaDe = (item) => ({
-  cat: '', cor: '', nome: '', marca: '', raridade: 'common',
-  ...(item.ficha || {}),
-});
+const fichaDe = (item) => {
+  const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', ...(item.ficha || {}) };
+  // Peça que entrou na esteira antes das categorias atuais ('tops', 'acc').
+  f.cat = migrarCategoria(f.cat);
+  return f;
+};
 
 function desenhar() {
   const grade = $('#es-grade');
@@ -171,7 +176,7 @@ function cartao(item) {
 
   const cat = campo('cat', el('select', { 'aria-label': 'Categoria' },
     el('option', { value: '' }, 'Categoria…'),
-    ...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, `${CATEGORIAS[c].icone} ${CATEGORIAS[c].nome}`))));
+    ...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, rotuloDeCadastro(c)))));
   cat.value = f.cat;
 
   const rar = campo('raridade', el('select', { 'aria-label': 'Raridade' },
@@ -474,7 +479,7 @@ function ligarEntrada() {
 }
 
 function ligarLote() {
-  for (const c of ORDEM_CATEGORIAS) $('#es-lote-cat').append(el('option', { value: c }, CATEGORIAS[c].nome));
+  for (const c of ORDEM_CATEGORIAS) $('#es-lote-cat').append(el('option', { value: c }, rotuloDeCadastro(c)));
   for (const r of RARIDADES) $('#es-lote-rar').append(el('option', { value: r.id }, r.nome));
   for (const c of CORES) $('#es-cores').append(el('option', { value: c.nome }));
 

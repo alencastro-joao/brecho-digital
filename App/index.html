@@ -159,6 +159,10 @@
           <p class="closet-sub" id="closet-sub"></p>
         </div>
         <div class="closet-acoes">
+          <div class="closet-ordem">
+            <span>Categorias</span>
+            <div id="closet-agrupar"></div>
+          </div>
           <label class="closet-ordem" title="Como organizar as peças">
             <span>Organizar</span>
             <select id="closet-ordem">
@@ -201,7 +205,10 @@
   <!-- ====================== STYLIST ====================== -->
   <section class="view view-stylist" data-view="stylist" hidden>
     <aside class="stylist-palette">
-      <h2>Peças</h2>
+      <div class="palette-head">
+        <h2>Peças</h2>
+        <div id="palette-agrupar"></div>
+      </div>
       <div class="palette-cats" id="palette-cats"></div>
       <div class="palette-grid" id="palette-grid"></div>
       <p class="palette-hint">Clique para vestir. Arraste no palco para ajustar.</p>
@@ -267,7 +274,10 @@
   <!-- ====================== COLAGEM (BOARD) ====================== -->
   <section class="view view-board" data-view="board" hidden>
     <aside class="board-palette">
-      <h2>Peças</h2>
+      <div class="palette-head">
+        <h2>Peças</h2>
+        <div id="board-agrupar"></div>
+      </div>
       <div class="pal-busca">
         <input type="search" id="board-busca" placeholder="filtrar por nº">
       </div>

@@ -4,8 +4,11 @@
 // raridade vem gravada na peça (não é re-sorteada a cada render) e a ordem dos
 // slots é persistida quando você arrasta.
 
-import { ADMIN, CATEGORIAS, ORDEM_CATEGORIAS, RARIDADE, RARIDADES, escalaGrade } from './config.js';
+import { ADMIN, CATEGORIAS, RARIDADE, RARIDADES, escalaGrade } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
+import {
+  agrupamento, categoriaDe, grupoDe, gruposDoInventario, compararPorGrupo, seletorDeAgrupamento,
+} from './agrupamento.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { abrirEditar } from './editar.js';
@@ -14,7 +17,7 @@ import { irPara } from './router.js';
 import { vestirPeca } from './stylist.js';
 import { adicionar as soltarNaColagem } from './board.js';
 
-let categoriaAtual = 'todas';   // o guarda-roupa abre mostrando tudo
+let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
 let selecionada = null;
 
@@ -47,8 +50,9 @@ const ORDENS = {
                grupo: p => p.favorito ? 'Favoritas' : 'Outras' },
   cor:       { cmp: (a, b) => porTexto(corDe(a), corDe(b)) || a.ordem - b.ordem, grupo: p => corDe(p) },
   marca:     { cmp: (a, b) => porTexto(marcaDe(a), marcaDe(b)) || a.ordem - b.ordem, grupo: p => marcaDe(p) },
-  categoria: { cmp: (a, b) => ORDEM_CATEGORIAS.indexOf(a.cat) - ORDEM_CATEGORIAS.indexOf(b.cat) || a.ordem - b.ordem,
-               grupo: p => CATEGORIAS[p.cat]?.nome || p.cat },
+  // Segue a organização escolhida: por tipo de peça ou por parte do corpo.
+  categoria: { cmp: (a, b) => compararPorGrupo(a, b) || a.ordem - b.ordem,
+               grupo: p => agrupamento().grupos[grupoDe(p)]?.nome || 'Outras' },
   origem:    { cmp: (a, b) => porTexto(origemDe(a), origemDe(b)) || quando(b) - quando(a), grupo: p => origemDe(p) },
 };
 
@@ -64,6 +68,7 @@ function origemDe(p) { return ORIGENS[p.origem] || 'Garimpo'; }
 
 export function montarCloset() {
   montarRail();
+  montarSeletorDeAgrupamento();
   const seletor = $('#closet-ordem');
   if (!ORDENS[ordemAtual]) ordemAtual = 'manual';
   seletor.value = ordemAtual;
@@ -121,6 +126,15 @@ export function montarCloset() {
   });
 }
 
+function montarSeletorDeAgrupamento() {
+  $('#closet-agrupar').replaceChildren(seletorDeAgrupamento(() => {
+    categoriaAtual = 'todas';    // os grupos mudaram: o aberto não existe mais
+    montarSeletorDeAgrupamento();
+    montarRail();
+    carregarCategoria(categoriaAtual);
+  }));
+}
+
 function montarRail() {
   const rail = $('#cat-rail');
   // Só os botões saem: o puxador de redimensionar mora aqui dentro.
@@ -138,22 +152,22 @@ function montarRail() {
   );
   rail.insertBefore(todas, divisor());
 
-  for (const cat of ORDEM_CATEGORIAS) {
-    const c = CATEGORIAS[cat];
-    const qtd = db.state.inventario.filter(p => p.cat === cat).length;
+  for (const g of gruposDoInventario()) {
     const botao = el('button', {
-      class: 'cat-btn' + (cat === categoriaAtual ? ' active' : ''),
-      dataset: { cat }, title: c.nome,
-      onclick: () => carregarCategoria(cat),
+      class: 'cat-btn' + (g.id === categoriaAtual ? ' active' : ''),
+      dataset: { cat: g.id }, title: g.nome,
+      onclick: () => carregarCategoria(g.id),
     },
-      el('span', { class: 'cat-icone' }, c.icone),
-      qtd ? el('span', { class: 'cat-qtd' }, String(qtd)) : null
+      el('span', { class: 'cat-icone' }, g.icone),
+      g.qtd ? el('span', { class: 'cat-qtd' }, String(g.qtd)) : null
     );
     rail.insertBefore(botao, divisor());
   }
 }
 
 export function carregarCategoria(cat) {
+  const grupos = agrupamento().grupos;
+  if (!grupos[cat]) cat = 'todas';
   categoriaAtual = cat;
   document.querySelectorAll('.cat-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.cat === cat));
@@ -165,10 +179,10 @@ export function carregarCategoria(cat) {
 
   const tudo = cat === 'todas';
   const pecas = db.state.inventario
-    .filter(p => tudo || p.cat === cat)
+    .filter(p => tudo || grupoDe(p) === cat)
     .sort(ORDENS[ordemAtual].cmp);
 
-  const rotulo = tudo ? 'Todas as peças' : CATEGORIAS[cat].nome;
+  const rotulo = tudo ? 'Todas as peças' : grupos[cat].nome;
   $('#closet-sub').textContent = tudo
     ? `${rotulo} · ${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`
     : `${rotulo} · ${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'} · ` +
@@ -317,7 +331,8 @@ function selecionar(peca) {
   rotularFavorito();
 
   const origem = { collab: 'cápsula do mês', propria: 'peça sua', teste: 'teste' }[peca.origem] || 'garimpo';
-  const partes = [CATEGORIAS[peca.cat].nome];
+  const tipo = CATEGORIAS[categoriaDe(peca)];
+  const partes = [tipo?.nome ?? 'Peça'];
   if (cat.cor?.trim()) partes.push(cat.cor.trim());
   if (cat.marca?.trim()) partes.push(cat.marca.trim());
   partes.push(origem, `em ${new Date(peca.obtidoEm).toLocaleDateString('pt-BR')}`);

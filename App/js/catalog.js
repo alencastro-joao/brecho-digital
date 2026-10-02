@@ -9,16 +9,17 @@
 // Se o catálogo não existir, cai para os PNGs no S3 (sem contorno; nesse caso o
 // hit-test por canal alpha em alpha.js assume).
 
-import { CONFIG, CATEGORIAS } from './config.js';
+import { CONFIG, CATEGORIAS, migrarCategoria } from './config.js';
 import * as db from './db.js';
 
 const SINGULAR = {
-  tops: 'Top', pants: 'Calça', shoes: 'Calçado', dresses: 'Vestido', coats: 'Casaco',
-  hats: 'Chapéu', bags: 'Bolsa', watches: 'Relógio', rings: 'Anel', acc: 'Acessório',
+  shoes: 'Sapato', pants: 'Calça', shorts: 'Bermuda', skirts: 'Saia', dresses: 'Vestido',
+  shirts: 'Camisa', coats: 'Casaco', cropped: 'Top', watches: 'Relógio', bracelets: 'Pulseira',
+  necklaces: 'Colar', glasses: 'Óculos', hats: 'Chapéu', bags: 'Bolsa',
 };
 
 const CATEGORIAS_FALLBACK = {
-  tops: ['04','14','10','23','30','40','38'],
+  shirts: ['04','14','10','23','30','40','38'],
   pants: ['03','26','27'],
   shoes: ['37','35','32','33','22','15','17','18','02'],
   dresses: ['08','41','42','43','44','45'],
@@ -26,8 +27,8 @@ const CATEGORIAS_FALLBACK = {
   hats: ['09','01','31','24','29','51','52','53'],
   bags: ['12','25','19','54','55','56'],
   watches: ['13','57','58','59'],
-  rings: ['21','05','06','39'],
-  acc: ['07','16','11','34','36','20'],
+  bracelets: ['21','05','06','39'],
+  glasses: ['07','16','11','34','36','20'],
 };
 
 export const catalogo = {
@@ -76,6 +77,9 @@ export async function carregarCatalogo() {
   // outra peça.
   catalogo.itens.push(...db.state.pecasProprias.map(p => ({ ...p, propria: true })));
 
+  // catalog.json e acervo.json ainda trazem peça com categoria antiga.
+  for (const it of catalogo.itens) it.cat = migrarCategoria(it.cat);
+
   catalogo.itens.sort((a, b) => a.id.localeCompare(b.id));
   catalogo.porId = new Map(catalogo.itens.map(i => [i.id, i]));
   montarClipPaths();
@@ -104,6 +108,7 @@ async function carregarAcervo() {
 // Registra (ou atualiza) uma peça no catálogo em memória, sem recarregar tudo.
 export function registrarPeca(peca, { permanente = false } = {}) {
   const item = permanente ? { ...peca, permanente: true } : { ...peca, propria: true };
+  item.cat = migrarCategoria(item.cat);
   if (permanente && peca.raridade) db.raridadesFixas.set(peca.id, peca.raridade);
   const i = catalogo.itens.findIndex(x => x.id === item.id);
   if (i >= 0) catalogo.itens[i] = item;

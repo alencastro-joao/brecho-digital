@@ -41,17 +41,29 @@ DISTRIBUICAO = os.environ.get('BD_DISTRIBUICAO') or ''
 _s3 = boto3.client('s3')
 
 ACERVO = 'assets/acervo.json'
-CATS = {'tops', 'pants', 'shoes', 'dresses', 'coats',
-        'hats', 'bags', 'watches', 'rings', 'acc'}
+CATS = {'shoes', 'pants', 'shorts', 'skirts', 'dresses', 'shirts', 'coats',
+        'cropped', 'watches', 'bracelets', 'necklaces', 'glasses', 'hats', 'bags'}
+# Categorias de antes desta lista — espelho de CATEGORIAS_ANTIGAS em
+# App/js/config.js. O acervo.json e fichas da esteira ainda trazem estas; quem
+# grava passa por `categoria()` e a peça sai com a chave de agora.
+CATS_ANTIGAS = {'tops': 'shirts', 'acc': 'glasses', 'rings': 'bracelets'}
+
+
+def categoria(cat):
+    return CATS_ANTIGAS.get(cat, cat)
+
+
 RARIDADES = {'common', 'uncommon', 'rare', 'epic', 'legendary'}
 # Medida padrão de cada categoria no molde 600×1200 — espelho do `anchor` de
 # CATEGORIAS em App/js/config.js. Vale para peça publicada sem ser medida.
 ANCORAS = {
-    'tops': {'x': 300, 'y': 358, 'w': 250}, 'pants': {'x': 300, 'y': 796, 'w': 236},
-    'shoes': {'x': 300, 'y': 1096, 'w': 248}, 'dresses': {'x': 300, 'y': 486, 'w': 272},
-    'coats': {'x': 300, 'y': 436, 'w': 310}, 'hats': {'x': 300, 'y': 84, 'w': 176},
-    'bags': {'x': 440, 'y': 646, 'w': 152}, 'watches': {'x': 172, 'y': 652, 'w': 72},
-    'rings': {'x': 168, 'y': 700, 'w': 44}, 'acc': {'x': 300, 'y': 116, 'w': 124},
+    'shoes': {'x': 300, 'y': 1096, 'w': 248}, 'pants': {'x': 300, 'y': 796, 'w': 236},
+    'shorts': {'x': 300, 'y': 652, 'w': 240}, 'skirts': {'x': 300, 'y': 676, 'w': 250},
+    'dresses': {'x': 300, 'y': 486, 'w': 272}, 'shirts': {'x': 300, 'y': 358, 'w': 250},
+    'coats': {'x': 300, 'y': 436, 'w': 310}, 'cropped': {'x': 300, 'y': 336, 'w': 228},
+    'watches': {'x': 172, 'y': 652, 'w': 72}, 'bracelets': {'x': 428, 'y': 660, 'w': 62},
+    'necklaces': {'x': 300, 'y': 300, 'w': 120}, 'glasses': {'x': 300, 'y': 116, 'w': 124},
+    'hats': {'x': 300, 'y': 84, 'w': 176}, 'bags': {'x': 440, 'y': 646, 'w': 152},
 }
 ID_OK = re.compile(r'^[a-z0-9_-]{1,40}$')
 TOKEN_OK = re.compile(r'^[a-f0-9]{16}$')
@@ -198,6 +210,8 @@ def ficha_da_peca(item_id, corpo, src, path):
 
 
 def validar(corpo):
+    if 'cat' in corpo:
+        corpo['cat'] = categoria(corpo['cat'])
     if corpo.get('cat') not in CATS:
         raise ValueError('categoria desconhecida')
     if corpo.get('raridade', 'common') not in RARIDADES:
@@ -248,9 +262,9 @@ def editar_peca(item_id, corpo):
                              '(só dá para editar o que foi subido por aqui)')
 
         if 'cat' in corpo:
-            if corpo['cat'] not in CATS:
+            if categoria(corpo['cat']) not in CATS:
                 raise ValueError('categoria desconhecida')
-            item['cat'] = corpo['cat']
+            item['cat'] = categoria(corpo['cat'])
         if 'raridade' in corpo:
             if corpo['raridade'] not in RARIDADES:
                 raise ValueError('raridade desconhecida')

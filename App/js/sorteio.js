@@ -1,7 +1,7 @@
 // Sorteio de conjuntos.
 //
-// Monta um look plausível a partir de um acervo: vestido OU top+calça, um
-// calçado e alguns acessórios por chance. É o mesmo miolo usado pelo botão de
+// Monta um look plausível a partir de um acervo: vestido OU parte de cima +
+// parte de baixo, um sapato e alguns acessórios por chance. É o mesmo miolo usado pelo botão de
 // gerar do Stylist, pelo da Colagem e pelos perfis fictícios do feed — assim
 // os três sorteiam com o mesmo critério.
 
@@ -12,24 +12,31 @@ import { shuffle } from './util.js';
 
 // Chance de cada categoria opcional entrar no conjunto.
 const CHANCES = {
-  hats: 0.55, bags: 0.5, coats: 0.35, acc: 0.4, watches: 0.25, rings: 0.2,
+  hats: 0.55, bags: 0.5, coats: 0.35, glasses: 0.4, necklaces: 0.3, watches: 0.25, bracelets: 0.2,
 };
 
+// O que cobre o tronco e o que cobre a perna. O look leva um de cada (ou um
+// vestido no lugar dos dois), nunca dois do mesmo lado.
+const CIMA = ['shirts', 'cropped', 'coats'];
+const BAIXO = ['pants', 'shorts', 'skirts'];
+const TRONCO = [...CIMA, 'dresses'];
+
 export function sortearConjunto(acervo, rnd = Math.random, { minimo = 3 } = {}) {
-  const por = (cat) => acervo.filter(i => i.cat === cat);
-  const um = (cat) => { const l = por(cat); return l.length ? shuffle(l, rnd)[0] : null; };
+  const por = (cats) => acervo.filter(i => [].concat(cats).includes(i.cat));
+  const um = (cats) => { const l = por(cats); return l.length ? shuffle(l, rnd)[0] : null; };
 
   const escolhidas = [];
   const temVestido = por('dresses').length > 0;
-  const temConjunto = por('tops').length > 0 && por('pants').length > 0;
+  const temConjunto = por(CIMA).length > 0 && por(BAIXO).length > 0;
 
   if (temVestido && (!temConjunto || rnd() < 0.4)) {
     escolhidas.push(um('dresses'));
   } else {
-    // Parte de cima é camisa OU casaco, nunca os dois e nunca nenhum.
-    const comCasaco = por('coats').length > 0 && (por('tops').length === 0 || rnd() < CHANCES.coats);
-    escolhidas.push(um(comCasaco ? 'coats' : 'tops'));
-    escolhidas.push(um('pants'));
+    // Parte de cima é camisa, top OU casaco, nunca dois e nunca nenhum.
+    const semCasaco = por(['shirts', 'cropped']);
+    const comCasaco = por('coats').length > 0 && (semCasaco.length === 0 || rnd() < CHANCES.coats);
+    escolhidas.push(um(comCasaco ? 'coats' : ['shirts', 'cropped']));
+    escolhidas.push(um(BAIXO));
   }
   escolhidas.push(um('shoes'));
 
@@ -41,12 +48,14 @@ export function sortearConjunto(acervo, rnd = Math.random, { minimo = 3 } = {}) 
   let lista = escolhidas.filter(Boolean);
 
   // Guarda-roupa pequeno: completa com o que houver para não sair quase vazio,
-  // sem repetir categoria nem empilhar casaco sobre camisa.
+  // sem repetir categoria nem empilhar duas peças no tronco ou na perna.
   if (lista.length < minimo) {
     const usadas = new Set(lista.map(p => p.cat));
-    const cobreTronco = ['tops', 'coats', 'dresses'].some(c => usadas.has(c));
+    const cobreTronco = TRONCO.some(c => usadas.has(c));
+    const cobrePerna = BAIXO.some(c => usadas.has(c)) || usadas.has('dresses');
     const resto = shuffle(acervo.filter(p => !lista.includes(p) && !usadas.has(p.cat)
-      && !(cobreTronco && ['tops', 'coats', 'dresses'].includes(p.cat))), rnd);
+      && !(cobreTronco && TRONCO.includes(p.cat))
+      && !(cobrePerna && BAIXO.includes(p.cat))), rnd);
     lista = [...lista, ...resto.slice(0, minimo - lista.length)];
   }
   return lista;

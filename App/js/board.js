@@ -7,7 +7,8 @@
 // formato. Assim o que você monta na tela sai idêntico na exportação, em qualquer
 // resolução. As coordenadas de cada peça são o centro dela.
 
-import { BOARD, CATEGORIAS, ORDEM_CATEGORIAS, escalaGrade, escalaMural } from './config.js';
+import { BOARD, escalaGrade, escalaMural } from './config.js';
+import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
@@ -117,19 +118,27 @@ function montarPaleta() {
   const abas = $('#board-cats');
   abas.innerHTML = '';
   const total = db.state.inventario.length;
+  const grupos = gruposDoInventario();
+  // Grupo que deixou de existir (trocou peça ↔ corpo) ou esvaziou: volta a tudo.
+  if (catPaleta !== 'todas' && !grupos.some(g => g.id === catPaleta && g.qtd)) catPaleta = 'todas';
+
+  $('#board-agrupar').replaceChildren(seletorDeAgrupamento(() => {
+    catPaleta = 'todas';
+    montarPaleta();
+  }));
+
   abas.append(el('button', {
     class: 'pal-cat' + (catPaleta === 'todas' ? ' active' : ''),
     onclick: () => { catPaleta = 'todas'; montarPaleta(); },
   }, '✦', el('small', {}, String(total))));
 
-  for (const cat of ORDEM_CATEGORIAS) {
-    const qtd = db.state.inventario.filter(p => p.cat === cat).length;
-    if (!qtd) continue;
+  for (const g of grupos) {
+    if (!g.qtd) continue;
     abas.append(el('button', {
-      class: 'pal-cat' + (cat === catPaleta ? ' active' : ''),
-      title: CATEGORIAS[cat].nome,
-      onclick: () => { catPaleta = cat; montarPaleta(); },
-    }, CATEGORIAS[cat].icone, el('small', {}, String(qtd))));
+      class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
+      title: g.nome,
+      onclick: () => { catPaleta = g.id; montarPaleta(); },
+    }, g.icone, el('small', {}, String(g.qtd))));
   }
 
   const grid = $('#board-grid');
@@ -141,7 +150,7 @@ function montarPaleta() {
   }
 
   const pecas = db.state.inventario
-    .filter(p => catPaleta === 'todas' || p.cat === catPaleta)
+    .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta)
     .filter(p => !busca || p.id.includes(busca))
     .sort((a, b) => a.ordem - b.ordem);
 

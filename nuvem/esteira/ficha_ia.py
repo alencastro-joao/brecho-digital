@@ -22,16 +22,20 @@ import boto3
 MODELO = os.environ.get('BD_MODELO_IA') or 'us.anthropic.claude-haiku-4-5-20251001-v1:0'
 
 CATEGORIAS = {
-    'tops': 'camiseta, camisa, blusa, regata, moletom sem zíper, cropped',
-    'pants': 'calça, bermuda, short, saia',
     'shoes': 'tênis, bota, sapato, sandália, chinelo',
+    'pants': 'calça comprida, jeans, calça de moletom, legging',
+    'shorts': 'bermuda, short',
+    'skirts': 'saia',
     'dresses': 'vestido, macacão',
+    'shirts': 'camiseta, camisa, polo, blusa de manga, moletom sem zíper',
     'coats': 'jaqueta, casaco, blazer, colete, moletom com zíper, corta-vento',
+    'cropped': 'top, cropped, regata, top de alça, body, bustiê',
+    'watches': 'relógio',
+    'bracelets': 'pulseira, bracelete, anel',
+    'necklaces': 'colar, corrente, gargantilha, pingente',
+    'glasses': 'óculos de sol, óculos de grau',
     'hats': 'boné, chapéu, gorro, bucket, tiara',
     'bags': 'bolsa, mochila, pochete, carteira',
-    'watches': 'relógio',
-    'rings': 'anel',
-    'acc': 'óculos, colar, brinco, cinto, lenço, outros acessórios',
 }
 CORES = ['Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Rosa',
          'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo', 'Dourado', 'Prateado',

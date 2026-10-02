@@ -18,7 +18,7 @@
 import { hojeISO, mulberry32, sementeDoDia } from './util.js';
 import {
   RARIDADES, MISSOES, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
-  XP_BONUS_DIA, nivelPorXP, progressoDoNivel, nivelDaFerramenta,
+  XP_BONUS_DIA, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
 } from './config.js';
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
@@ -53,6 +53,7 @@ function estadoInicial() {
       preferencias: {
         sombra: true,               // padrão da sombra nas peças da colagem
         soPecasProprias: true,      // ignora o acervo da pasta; usa só o que você subiu
+        agrupamento: 'tipo',        // telas de roupa por 'tipo' de peça ou parte do 'corpo'
       },
       avatar: { ...APARENCIA_PADRAO },        // pele, corte, cor do cabelo e nariz
     },
@@ -129,6 +130,15 @@ function carregar() {
       delete estado.vestiario.equipado[antigo];
       if (id && !estado.vestiario.equipado[novo]) estado.vestiario.equipado[novo] = id;
     }
+    // Save de antes das categorias atuais: 'tops' virou Camisas, 'acc' virou
+    // Óculos e 'rings' virou Pulseiras (ver migrarCategoria em config.js). Toda
+    // cópia de `cat` que o save guarda passa por aqui.
+    const pecasComCat = [
+      ...(estado.inventario || []), ...(estado.pecasProprias || []),
+      ...(estado.looks || []).flatMap(l => l?.camadas || []),
+      ...(estado.boards || []).flatMap(b => b?.itens || []),
+    ];
+    for (const p of pecasComCat) if (p?.cat) p.cat = migrarCategoria(p.cat);
     return estado;
   } catch {
     return estadoInicial();

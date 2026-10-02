@@ -338,3 +338,18 @@ body.redimensionando .divisor::after { background: var(--tinta); }
   .app > .sidebar .sidebar-btn { width: 46px; height: 46px; border-radius: 14px; }
   .app > .sidebar .sidebar-btn span { font-size: 8px; }
 }
+
+/* ------------------- Organizar por peça ou por corpo -------------------- */
+/* O seletor [Peça | Corpo] do closet, do Stylist e da Colagem. */
+.agrupar {
+  display: inline-flex; padding: 2px; gap: 2px;
+  border: 1px solid #ddd6cc; border-radius: 9px; background: #fff;
+}
+.agrupar-op {
+  border: 0; background: transparent; border-radius: 7px;
+  padding: 4px 10px; font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--tinta-suave); cursor: pointer; transition: background .15s, color .15s;
+}
+.agrupar-op:hover { color: var(--tinta); }
+.agrupar-op.active { background: var(--tinta); color: #fff; }
+.palette-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
