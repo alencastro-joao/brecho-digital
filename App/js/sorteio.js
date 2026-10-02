@@ -26,20 +26,27 @@ export function sortearConjunto(acervo, rnd = Math.random, { minimo = 3 } = {}) 
   if (temVestido && (!temConjunto || rnd() < 0.4)) {
     escolhidas.push(um('dresses'));
   } else {
-    escolhidas.push(um('tops'));
+    // Parte de cima é camisa OU casaco, nunca os dois e nunca nenhum.
+    const comCasaco = por('coats').length > 0 && (por('tops').length === 0 || rnd() < CHANCES.coats);
+    escolhidas.push(um(comCasaco ? 'coats' : 'tops'));
     escolhidas.push(um('pants'));
   }
   escolhidas.push(um('shoes'));
 
   for (const [cat, chance] of Object.entries(CHANCES)) {
+    if (cat === 'coats') continue;
     if (rnd() < chance) escolhidas.push(um(cat));
   }
 
   let lista = escolhidas.filter(Boolean);
 
-  // Guarda-roupa pequeno: completa com o que houver para não sair quase vazio.
+  // Guarda-roupa pequeno: completa com o que houver para não sair quase vazio,
+  // sem repetir categoria nem empilhar casaco sobre camisa.
   if (lista.length < minimo) {
-    const resto = shuffle(acervo.filter(p => !lista.includes(p)), rnd);
+    const usadas = new Set(lista.map(p => p.cat));
+    const cobreTronco = ['tops', 'coats', 'dresses'].some(c => usadas.has(c));
+    const resto = shuffle(acervo.filter(p => !lista.includes(p) && !usadas.has(p.cat)
+      && !(cobreTronco && ['tops', 'coats', 'dresses'].includes(p.cat))), rnd);
     lista = [...lista, ...resto.slice(0, minimo - lista.length)];
   }
   return lista;
