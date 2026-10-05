@@ -4,8 +4,9 @@
 // foto, recorta na nuvem e palpita a ficha. Este modal é o conserto de uma peça
 // que já existe — ficha, medida no molde e, se for o caso, a imagem.
 //
-// Dois passos: a ficha (categoria, marca, cor, nome, raridade) e o molde do
-// avatar, onde a peça ganha o tamanho real dela. O id não muda: é ele que amarra
+// Dois passos: a ficha (categoria, marca, cor, nome, raridade — e girar ou
+// cortar a imagem) e o molde do avatar, onde a peça ganha o tamanho real dela.
+// O id não muda: é ele que amarra
 // a peça ao inventário de quem já a tem, então editar aqui conserta a peça para
 // todo mundo em vez de criar outra.
 //
@@ -32,24 +33,31 @@ let arquivo = null;            // { src, w, h, novo } — novo = imagem trocada,
 let medida = null;             // { x, y, w } em unidades do palco (600×1200)
 let aoSalvar = null;
 
-// ============================ Trocar imagem ===============================
-// Apara pelo alpha numa cópia de até 1000 px, reduz e vira WebP.
-async function prepararImagem(file) {
-  const bitmap = await createImageBitmap(file);
-  const escala = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
-  const tw = Math.max(1, Math.round(bitmap.width * escala));
-  const th = Math.max(1, Math.round(bitmap.height * escala));
-  const trab = document.createElement('canvas');
-  trab.width = tw; trab.height = th;
-  const ctx = trab.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(bitmap, 0, 0, tw, th);
-  bitmap.close?.();
+// Girar e cortar. Toda edição sai da `origem` (a imagem como chegou, em até
+// 1000 px), nunca do resultado da edição anterior: girar quatro vezes não pode
+// ir borrando a peça a cada WebP.
+let origem = null;             // canvas da imagem sem edição (carregado sob demanda)
+let arquivoBase = null;        // o `arquivo` antes de girar/cortar — o "Restaurar"
+let passos = 0;                // quartos de volta, sentido horário
+let fino = 0;                  // graus do "endireitar", -45 a 45
+let corte = null;              // { x, y, w, h } em 0–1 sobre a imagem já girada
+let cortando = null;           // o retângulo em edição no modo cortar
 
-  const dados = ctx.getImageData(0, 0, tw, th).data;
-  let x0 = tw, y0 = th, x1 = -1, y1 = -1, opacos = 0;
-  for (let y = 0; y < th; y++) {
-    for (let x = 0; x < tw; x++) {
-      if (dados[(y * tw + x) * 4 + 3] < 10) continue;
+const novoCanvas = (w, h) => {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w));
+  c.height = Math.max(1, Math.round(h));
+  return c;
+};
+
+// A caixa do que não é transparente; null se não sobrou nada.
+function caixaOpaca(canvas) {
+  const { width: w, height: h } = canvas;
+  const dados = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1, opacos = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (dados[(y * w + x) * 4 + 3] < 10) continue;
       opacos++;
       if (x < x0) x0 = x;
       if (y < y0) y0 = y;
@@ -57,23 +65,42 @@ async function prepararImagem(file) {
       if (y > y1) y1 = y;
     }
   }
-  if (x1 < 0) throw new Error('A imagem está inteira transparente.');
-  if (opacos >= tw * th * 0.985) {
-    throw new Error('Essa imagem tem fundo. Para foto com fundo, use a esteira — ela recorta sozinha.');
-  }
+  return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, opacos };
+}
 
-  const largura = x1 - x0 + 1, altura = y1 - y0 + 1;
-  const k = Math.min(1, MAX_LADO / Math.max(largura, altura));
-  const saida = document.createElement('canvas');
-  saida.width = Math.max(1, Math.round(largura * k));
-  saida.height = Math.max(1, Math.round(altura * k));
+// Apara pelo alpha, reduz para o tamanho guardado e vira WebP.
+function codificar(canvas) {
+  const caixa = caixaOpaca(canvas);
+  if (!caixa) throw new Error('Não sobrou nada da peça — o corte ficou só no transparente.');
+  const k = Math.min(1, MAX_LADO / Math.max(caixa.w, caixa.h));
+  const saida = novoCanvas(caixa.w * k, caixa.h * k);
   const pincel = saida.getContext('2d', { willReadFrequently: true });
-  pincel.drawImage(trab, x0, y0, largura, altura, 0, 0, saida.width, saida.height);
+  pincel.imageSmoothingQuality = 'high';
+  pincel.drawImage(canvas, caixa.x, caixa.y, caixa.w, caixa.h, 0, 0, saida.width, saida.height);
 
   let src;
   try { src = saida.toDataURL('image/webp', QUALIDADE); }
   catch { src = saida.toDataURL('image/png'); }
   return { src, w: saida.width, h: saida.height, novo: true, cor: corDaImagem(pincel, saida.width, saida.height) };
+}
+
+// ============================ Trocar imagem ===============================
+// Uma cópia de até 1000 px, aparada pelo alpha: é a origem das edições.
+async function prepararImagem(file) {
+  const bitmap = await createImageBitmap(file);
+  const escala = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
+  const trab = novoCanvas(bitmap.width * escala, bitmap.height * escala);
+  trab.getContext('2d', { willReadFrequently: true }).drawImage(bitmap, 0, 0, trab.width, trab.height);
+  bitmap.close?.();
+
+  const caixa = caixaOpaca(trab);
+  if (!caixa) throw new Error('A imagem está inteira transparente.');
+  if (caixa.opacos >= trab.width * trab.height * 0.985) {
+    throw new Error('Essa imagem tem fundo. Para foto com fundo, use a esteira — ela recorta sozinha.');
+  }
+  const aparada = novoCanvas(caixa.w, caixa.h);
+  aparada.getContext('2d').drawImage(trab, caixa.x, caixa.y, caixa.w, caixa.h, 0, 0, caixa.w, caixa.h);
+  return { canvas: aparada, arquivo: codificar(aparada) };
 }
 
 // A cor da peça, escolhida entre as que o jogo conhece: cada pixel opaco vota
@@ -112,26 +139,245 @@ function corDaImagem(ctx, w, h) {
 async function trocarImagem(file) {
   if (!file?.type.startsWith('image/')) return;
   $('#mp-aviso').textContent = 'processando…';
+  let pronta;
   try {
-    arquivo = await prepararImagem(file);
+    pronta = await prepararImagem(file);
   } catch (e) {
-    $('#mp-aviso').textContent = e.message;
-    $('#mp-aviso').classList.add('alerta');
-    return;
+    return avisar(e.message);
   }
-  // Peça antiga sem cor ganha o palpite da imagem nova; cor escrita fica.
-  if (!ficha.cor && arquivo.cor) $('#mp-cor').value = ficha.cor = arquivo.cor;
+  sairDoCorte();
+  zerarEdicao();
+  origem = pronta.canvas;
+  arquivo = arquivoBase = pronta.arquivo;
+  ganharCor();
   mostrarImagem();
+}
+
+// Peça antiga sem cor ganha o palpite da imagem nova; cor escrita fica.
+function ganharCor() {
+  if (ficha.cor || !arquivo.cor) return;
+  $('#mp-cor').value = ficha.cor = arquivo.cor;
   montarCores();
+}
+
+function avisar(texto) {
+  $('#mp-aviso').textContent = texto;
+  $('#mp-aviso').classList.add('alerta');
 }
 
 function mostrarImagem() {
   $('#mp-previa').src = arquivo.src;
+  $('#mp-previa').style.transform = '';
   const aviso = $('#mp-aviso');
   aviso.classList.remove('alerta');
   aviso.textContent = arquivo.novo
     ? `imagem nova · ${arquivo.w}×${arquivo.h} · ${Math.round(arquivo.src.length / 1024)} KB`
     : '';
+  $('#mp-restaurar').disabled = arquivo === arquivoBase;
+}
+
+// ============================ Girar e cortar ==============================
+function zerarEdicao() {
+  passos = 0; fino = 0; corte = null;
+  $('#mp-fino').value = 0;
+  $('#mp-fino-valor').textContent = '0°';
+}
+
+// A peça já no editor vem do site (mesma origem), então o canvas pode lê-la.
+async function garantirOrigem() {
+  if (origem) return origem;
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = arquivoBase.src;
+  await img.decode();
+  const c = novoCanvas(img.naturalWidth, img.naturalHeight);
+  c.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0);
+  c.getContext('2d').getImageData(0, 0, 1, 1);   // falha já aqui se o canvas ficou bloqueado
+  return (origem = c);
+}
+
+// A origem girada, no menor retângulo que a contém (cantos transparentes).
+function girada() {
+  const graus = passos * 90 + fino;
+  if (!graus) return origem;
+  const rad = graus * Math.PI / 180;
+  const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+  const w = origem.width, h = origem.height;
+  const c = novoCanvas(w * cos + h * sin, w * sin + h * cos);
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingQuality = 'high';
+  ctx.translate(c.width / 2, c.height / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(origem, -w / 2, -h / 2);
+  return c;
+}
+
+function recortada(canvas, r) {
+  if (!r) return canvas;
+  const x = r.x * canvas.width, y = r.y * canvas.height;
+  const c = novoCanvas(r.w * canvas.width, r.h * canvas.height);
+  c.getContext('2d', { willReadFrequently: true })
+    .drawImage(canvas, x, y, c.width, c.height, 0, 0, c.width, c.height);
+  return c;
+}
+
+// Refaz a imagem a partir da origem com o giro e o corte atuais.
+async function aplicarEdicao() {
+  try {
+    await garantirOrigem();
+    if (!passos && !fino && !corte) {
+      arquivo = arquivoBase;
+    } else {
+      arquivo = codificar(recortada(girada(), corte));
+      ganharCor();
+    }
+  } catch (e) {
+    return avisar(e.name === 'SecurityError'
+      ? 'Não consigo editar esta imagem aqui — solte o arquivo de novo sobre ela.'
+      : e.message);
+  }
+  mostrarImagem();
+}
+
+// Um quarto de volta leva o corte junto: o retângulo gira com a imagem.
+function girar90(sentido) {
+  passos = (passos + sentido + 4) % 4;
+  if (corte) {
+    const { x, y, w, h } = corte;
+    corte = sentido > 0
+      ? { x: 1 - y - h, y: x, w: h, h: w }
+      : { x: y, y: 1 - x - w, w: h, h: w };
+  }
+  aplicarEdicao();
+}
+
+// O endireitar muda o tamanho da imagem girada; o corte antigo não vale mais.
+function endireitar(graus, final) {
+  $('#mp-fino-valor').textContent = `${graus > 0 ? '+' : ''}${String(graus).replace('.', ',')}°`;
+  if (!final) {
+    // Enquanto arrasta, só a prévia gira; a imagem é refeita ao soltar.
+    $('#mp-previa').style.transform = `rotate(${graus - fino}deg)`;
+    return;
+  }
+  fino = graus;
+  corte = null;
+  aplicarEdicao();
+}
+
+async function entrarNoCorte() {
+  try {
+    await garantirOrigem();
+  } catch {
+    return avisar('Não consigo editar esta imagem aqui — solte o arquivo de novo sobre ela.');
+  }
+  // Mostra a imagem girada inteira: o retângulo é desenhado sobre ela.
+  const g = girada();
+  $('#mp-previa').src = g.toDataURL('image/png');
+  $('#mp-previa').style.transform = '';
+  cortando = corte ? { ...corte } : { x: 0, y: 0, w: 1, h: 1 };
+  $('#mp-solta').classList.add('cortando');
+  $('#mp-corte').hidden = false;
+  $('#mp-ferramentas').hidden = true;
+  $('#mp-ferr-corte').hidden = false;
+  desenharCorte();
+}
+
+function sairDoCorte() {
+  if (!cortando) return;
+  cortando = null;
+  $('#mp-solta').classList.remove('cortando');
+  $('#mp-corte').hidden = true;
+  $('#mp-ferramentas').hidden = false;
+  $('#mp-ferr-corte').hidden = true;
+}
+
+async function aplicarCorte() {
+  const r = cortando;
+  sairDoCorte();
+  // Retângulo que pega a imagem inteira é o mesmo que não cortar.
+  corte = r.w > 0.995 && r.h > 0.995 ? null : r;
+  await aplicarEdicao();
+}
+
+function cancelarCorte() {
+  sairDoCorte();
+  mostrarImagem();
+}
+
+function desenharCorte() {
+  const caixa = $('#mp-corte-caixa');
+  caixa.style.left = cortando.x * 100 + '%';
+  caixa.style.top = cortando.y * 100 + '%';
+  caixa.style.width = cortando.w * 100 + '%';
+  caixa.style.height = cortando.h * 100 + '%';
+}
+
+// Arrastar a caixa move; arrastar uma quina redimensiona; arrastar fora dela
+// desenha um retângulo novo a partir do ponto clicado.
+function ligarCorte() {
+  const area = $('#mp-corte');
+  const MIN = 0.04;
+  area.addEventListener('pointerdown', (e) => {
+    if (!cortando) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const ret = area.getBoundingClientRect();
+    const ponto = (ev) => ({
+      x: clamp((ev.clientX - ret.left) / ret.width, 0, 1),
+      y: clamp((ev.clientY - ret.top) / ret.height, 0, 1),
+    });
+    const p0 = ponto(e);
+    const base = { ...cortando };
+    let canto = e.target.dataset?.canto;
+    const mover = e.target.id === 'mp-corte-caixa';
+    if (!canto && !mover) {
+      // Retângulo novo: começa num ponto e a quina oposta segue o ponteiro.
+      Object.assign(base, { x: p0.x, y: p0.y, w: 0, h: 0 });
+      canto = 'se';
+    }
+    area.setPointerCapture(e.pointerId);
+
+    const arrastar = (ev) => {
+      const p = ponto(ev);
+      if (mover) {
+        cortando.x = clamp(base.x + p.x - p0.x, 0, 1 - base.w);
+        cortando.y = clamp(base.y + p.y - p0.y, 0, 1 - base.h);
+      } else {
+        // A quina arrastada vai com o ponteiro; a oposta fica parada.
+        const fixoX = canto.includes('w') ? base.x + base.w : base.x;
+        const fixoY = canto.includes('n') ? base.y + base.h : base.y;
+        const x0 = Math.min(fixoX, p.x), x1 = Math.max(fixoX, p.x);
+        const y0 = Math.min(fixoY, p.y), y1 = Math.max(fixoY, p.y);
+        cortando = { x: x0, y: y0, w: Math.max(MIN, x1 - x0), h: Math.max(MIN, y1 - y0) };
+        cortando.x = Math.min(cortando.x, 1 - cortando.w);
+        cortando.y = Math.min(cortando.y, 1 - cortando.h);
+      }
+      desenharCorte();
+    };
+    const soltar = () => {
+      area.removeEventListener('pointermove', arrastar);
+      area.removeEventListener('pointerup', soltar);
+      area.removeEventListener('pointercancel', soltar);
+    };
+    area.addEventListener('pointermove', arrastar);
+    area.addEventListener('pointerup', soltar);
+    area.addEventListener('pointercancel', soltar);
+  });
+  // O clique no corte não pode abrir o seletor de arquivo da área de soltar.
+  area.addEventListener('click', (e) => e.stopPropagation());
+
+  $('#mp-girar-esq').addEventListener('click', () => girar90(-1));
+  $('#mp-girar-dir').addEventListener('click', () => girar90(1));
+  $('#mp-fino').addEventListener('input', (e) => endireitar(Number(e.target.value), false));
+  $('#mp-fino').addEventListener('change', (e) => endireitar(Number(e.target.value), true));
+  $('#mp-cortar').addEventListener('click', entrarNoCorte);
+  $('#mp-corte-aplicar').addEventListener('click', aplicarCorte);
+  $('#mp-corte-cancelar').addEventListener('click', cancelarCorte);
+  $('#mp-restaurar').addEventListener('click', () => {
+    zerarEdicao();
+    arquivo = arquivoBase;
+    mostrarImagem();
+  });
 }
 
 // ================================ Ficha ===================================
@@ -207,7 +453,8 @@ const medidaPadrao = (cat) => {
   return { x: p.x, y: p.y, w: p.w };
 };
 
-function irParaMedida() {
+async function irParaMedida() {
+  if (cortando) await aplicarCorte();
   capturarFicha();
   $('#mp-passo1').hidden = true;
   $('#mp-passo2').hidden = false;
@@ -337,6 +584,8 @@ async function salvar() {
 export function fechar() {
   $('#modal-peca').hidden = true;
   $('#mp-caixa').classList.remove('medindo');
+  sairDoCorte();
+  origem = null;
   document.body.classList.remove('com-modal');
   peca = null;
 }
@@ -354,7 +603,10 @@ export function abrirEditar(alvo, callback) {
     cat: alvo.cat, marca: alvo.marca || '', cor: alvo.cor || '',
     nome: alvo.nome || '', raridade: alvo.raridade || 'common',
   };
-  arquivo = { src: alvo.src, w: alvo.w || 1, h: alvo.h || 1, novo: false };
+  arquivo = arquivoBase = { src: alvo.src, w: alvo.w || 1, h: alvo.h || 1, novo: false };
+  origem = null;
+  sairDoCorte();
+  zerarEdicao();
   medida = alvo.ancora ? { ...alvo.ancora } : medidaPadrao(alvo.cat);
 
   montarCategorias();
@@ -377,9 +629,10 @@ export function abrirEditar(alvo, callback) {
 
 export function montarEditar() {
   ligarPalco();
+  ligarCorte();
 
   const solta = $('#mp-solta');
-  solta.addEventListener('click', () => $('#mp-arquivo').click());
+  solta.addEventListener('click', () => { if (!cortando) $('#mp-arquivo').click(); });
   $('#mp-arquivo').addEventListener('change', (e) => {
     trocarImagem(e.target.files[0]);
     e.target.value = '';

@@ -808,7 +808,32 @@
           <div class="mp-imagem">
             <div class="mp-solta" id="mp-solta">
               <input type="file" id="mp-arquivo" accept="image/png,image/webp" hidden>
-              <img id="mp-previa" alt="Prévia da peça">
+              <div class="mp-moldura" id="mp-moldura">
+                <img id="mp-previa" alt="Prévia da peça">
+                <div class="mp-corte" id="mp-corte" hidden>
+                  <div class="mp-corte-caixa" id="mp-corte-caixa">
+                    <span class="mp-canto" data-canto="nw"></span>
+                    <span class="mp-canto" data-canto="ne"></span>
+                    <span class="mp-canto" data-canto="sw"></span>
+                    <span class="mp-canto" data-canto="se"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mp-ferramentas" id="mp-ferramentas">
+              <button class="mp-ferr" id="mp-girar-esq" title="Girar 90° para a esquerda">↺</button>
+              <button class="mp-ferr" id="mp-girar-dir" title="Girar 90° para a direita">↻</button>
+              <label class="mp-fino" title="Endireitar">
+                <input type="range" id="mp-fino" min="-45" max="45" step="0.5" value="0" aria-label="Endireitar">
+                <span id="mp-fino-valor">0°</span>
+              </label>
+              <button class="mp-ferr" id="mp-cortar">Cortar</button>
+              <button class="mp-ferr" id="mp-restaurar" title="Desfazer giro e corte" disabled>Restaurar</button>
+            </div>
+            <div class="mp-ferramentas" id="mp-ferr-corte" hidden>
+              <span class="mp-ferr-dica">Arraste as quinas, ou desenhe um retângulo novo.</span>
+              <button class="mp-ferr" id="mp-corte-cancelar">Cancelar</button>
+              <button class="mp-ferr escuro" id="mp-corte-aplicar">Aplicar corte</button>
             </div>
             <p class="tool-hint">
               Para trocar a imagem, solte um PNG de fundo transparente sobre ela.
