@@ -1,5 +1,7 @@
 // Parâmetros do protótipo. Tudo que é regra de negócio mora aqui.
 
+import { ancoraNoCorpo } from './proporcao.js';
+
 export const CONFIG = {
   // Vitrine
   PECAS_NA_VITRINE: 25,     // quantas peças o dono da loja põe no mural por dia
@@ -274,11 +276,19 @@ export function tamanhoDaPeca(peca) {
 // Onde a peça encosta no corpo: a medida da própria peça, quando existe, ou o
 // ponto padrão da categoria. A camada (z) é sempre a da categoria — quem veste
 // por cima de quem não é escolha da peça.
+//
+// Medida e ponto padrão estão no molde; o que sai daqui já está no corpo, na
+// proporção de agora (js/proporcao.js). O tamanho da peça na vitrine
+// (`tamanhoDaPeca`) continua lendo a medida crua: a loja não tem corpo.
 export function ancoraDaPeca(peca) {
   const padrao = CATEGORIAS[peca?.cat]?.anchor ?? { x: 300, y: 500, w: 240, z: 30 };
-  if (!peca?.ancora?.w) return padrao;
-  return { ...padrao, ...peca.ancora, z: padrao.z };
+  const molde = peca?.ancora?.w ? { ...padrao, ...peca.ancora, z: padrao.z } : padrao;
+  return ancoraNoCorpo(CATEGORIAS[peca?.cat]?.regiao, molde);
 }
+
+// O ponto padrão de uma categoria, já no corpo: é de onde o molde começa.
+export const ancoraPadrao = (cat) =>
+  ancoraNoCorpo(CATEGORIAS[cat]?.regiao, CATEGORIAS[cat]?.anchor ?? { x: 300, y: 600, w: 200 });
 
 const excecao = (id) => ESCALA_PECA[id] ?? 1;
 
@@ -377,9 +387,14 @@ export const COLLAB = {
 // largura: ombro, cintura, quadril e a grossura de braço e perna. Assim um
 // relógio, um anel ou uma bolsa continuam caindo no lugar nos dois.
 //
-// `arte(extra)` devolve as peças com a espessura já resolvida. `extra` é o
-// quanto o desenho engorda para virar contorno (ver avatar.js); a cor vem do
-// grupo que envolve tudo, então nada aqui pinta a si mesmo.
+// `partes(extra)` devolve as peças com a espessura já resolvida, separadas por
+// região — pernas, tronco (com braços e pescoço) e cabeça —, porque cada uma
+// é desenhada na escala dela (ver js/proporcao.js). `extra` é o quanto o
+// desenho engorda para virar contorno (ver avatar.js); a cor vem do grupo que
+// envolve tudo, então nada aqui pinta a si mesmo.
+//
+// O pescoço começa bem dentro da cabeça (y=120, escondido por ela): com a
+// cabeça maior e o ombro mais baixo, a emenda entre os dois continua coberta.
 export const CORPOS = {
   masculino: {
     nome: 'Masculino',
@@ -393,17 +408,18 @@ export const CORPOS = {
       bracoX: [206, 176, 168, 172],
       pernaX: [268, 256, 250, 254],
     },
-    arte: (extra) => `
+    partes: (extra) => ({
+      pernas: `
+    <path d="M268 606 C 256 768, 250 924, 254 1086" fill="none" stroke-width="${76 + extra}"/>
+    <path d="M332 606 C 344 768, 350 924, 346 1086" fill="none" stroke-width="${76 + extra}"/>
+    <ellipse cx="250" cy="1118" rx="46" ry="26"/>
+    <ellipse cx="350" cy="1118" rx="46" ry="26"/>`,
+      tronco: `
     <!-- braços -->
     <path d="M206 262 C 176 344, 168 486, 172 660" fill="none" stroke-width="${46 + extra}"/>
     <path d="M394 262 C 424 344, 432 486, 428 660" fill="none" stroke-width="${46 + extra}"/>
     <circle cx="172" cy="694" r="24"/>
     <circle cx="428" cy="694" r="24"/>
-    <!-- pernas -->
-    <path d="M268 606 C 256 768, 250 924, 254 1086" fill="none" stroke-width="${76 + extra}"/>
-    <path d="M332 606 C 344 768, 350 924, 346 1086" fill="none" stroke-width="${76 + extra}"/>
-    <ellipse cx="250" cy="1118" rx="46" ry="26"/>
-    <ellipse cx="350" cy="1118" rx="46" ry="26"/>
     <!-- tronco: ombro largo, cintura discreta, quadril estreito que fecha na coxa -->
     <path d="M300 208 C 356 208, 404 234, 412 262
              C 420 322, 400 408, 384 470
@@ -414,9 +430,11 @@ export const CORPOS = {
              C 212 562, 226 524, 216 470
              C 200 408, 180 322, 188 262
              C 196 234, 244 208, 300 208 Z"/>
-    <!-- pescoço e cabeça -->
-    <rect x="279" y="160" width="42" height="62" rx="18"/>
+    <!-- pescoço -->
+    <rect x="279" y="120" width="42" height="102" rx="18"/>`,
+      cabeca: `
     <ellipse cx="300" cy="112" rx="56" ry="70"/>`,
+    }),
   },
 
   feminino: {
@@ -428,17 +446,19 @@ export const CORPOS = {
       bracoX: [222, 192, 168, 172],
       pernaX: [272, 262, 252, 252],
     },
-    arte: (extra) => `
+    partes: (extra) => ({
+      // pernas: mais finas, e no mesmo pé do outro corpo
+      pernas: `
+    <path d="M272 606 C 262 770, 252 926, 252 1088" fill="none" stroke-width="${70 + extra}"/>
+    <path d="M328 606 C 338 770, 348 926, 348 1088" fill="none" stroke-width="${70 + extra}"/>
+    <ellipse cx="250" cy="1118" rx="43" ry="25"/>
+    <ellipse cx="350" cy="1118" rx="43" ry="25"/>`,
+      tronco: `
     <!-- braços: mais finos, saindo de um ombro estreito para a mesma mão -->
     <path d="M222 262 C 192 344, 168 486, 172 660" fill="none" stroke-width="${38 + extra}"/>
     <path d="M378 262 C 408 344, 432 486, 428 660" fill="none" stroke-width="${38 + extra}"/>
     <circle cx="172" cy="694" r="22"/>
     <circle cx="428" cy="694" r="22"/>
-    <!-- pernas: mais finas, e no mesmo pé do outro corpo -->
-    <path d="M272 606 C 262 770, 252 926, 252 1088" fill="none" stroke-width="${70 + extra}"/>
-    <path d="M328 606 C 338 770, 348 926, 348 1088" fill="none" stroke-width="${70 + extra}"/>
-    <ellipse cx="250" cy="1118" rx="43" ry="25"/>
-    <ellipse cx="350" cy="1118" rx="43" ry="25"/>
     <!-- tronco: ombro estreito, cintura marcada, quadril cheio. Diferente do
          outro corpo, ele não para na linha do quadril: desce afinando até a
          largura exata das coxas (232–368), senão a quina do quadril vira saia -->
@@ -451,9 +471,11 @@ export const CORPOS = {
              C 208 552, 260 500, 244 440
              C 224 384, 206 316, 212 262
              C 218 232, 252 206, 300 206 Z"/>
-    <!-- pescoço e cabeça -->
-    <rect x="283" y="160" width="34" height="62" rx="16"/>
+    <!-- pescoço -->
+    <rect x="283" y="120" width="34" height="102" rx="16"/>`,
+      cabeca: `
     <ellipse cx="300" cy="112" rx="56" ry="70"/>`,
+    }),
   },
 };
 export const ORDEM_CORPOS = Object.keys(CORPOS);

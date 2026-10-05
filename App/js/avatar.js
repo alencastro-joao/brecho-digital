@@ -1,8 +1,10 @@
 // Avatar 2D de corpo inteiro — o manequim base sobre o qual as colagens acontecem.
 //
 // Também serve como guia técnico para os ilustradores convidados: o palco é
-// 600×1200, o corpo ocupa 8 cabeças e os pontos de ancoragem por categoria estão
-// em config.js (CATEGORIAS[*].anchor). Ligando o guia (ver Stylist) os pontos
+// 600×1200, o corpo é desenhado num molde de 8 cabeças e os pontos de
+// ancoragem por categoria estão em config.js (CATEGORIAS[*].anchor). A
+// proporção que aparece na tela (cabeça maior, tronco menor) é aplicada por
+// cima do molde — ver js/proporcao.js. Ligando o guia (ver Stylist) os pontos
 // aparecem desenhados sobre o corpo.
 //
 // A aparência (pele, corte, cor do cabelo e nariz) vem do perfil. Quem não
@@ -20,10 +22,12 @@ import {
   CORES_CABELO, NARIZES, ORDEM_NARIZES,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
+import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
 import * as db from './db.js';
 import { el, mulberry32, escolher, sementeDoTexto } from './util.js';
 
-// Cabeça: elipse em (300, 112), raios 56 × 70 → topo em y=42, base em y=182.
+// Cabeça: elipse em (300, 112), raios 56 × 70 → topo em y=42, base em y=182 —
+// no molde. No palco ela sai na escala de js/proporcao.js, como o tronco.
 
 // De ids (pele: 'clara') para cores prontas de desenhar.
 export function resolverAparencia(cfg = {}) {
@@ -65,9 +69,12 @@ export const aparenciaDoPerfil = (perfil) =>
   resolverAparencia(perfil?.aparencia || aparenciaSorteada(perfil?.id || '?'));
 
 // Retrato redondo: o mesmo avatar, recortado na cabeça. 150 unidades de altura
-// é o enquadramento que pega cabeça e ombros.
+// (no molde) é o enquadramento que pega cabeça e ombros; ele acompanha a
+// cabeça para onde a proporção a levou.
+const [, RETRATO_Y, , RETRATO_H] = recorteNaRegiao('cabeca', [225, 43, 150, 150]);
+
 export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null) {
-  const k = tamanho / 150;
+  const k = tamanho / RETRATO_H;
   const caixa = el('span', {
     class: 'retrato',
     style: { width: tamanho + 'px', height: tamanho + 'px', background: cor },
@@ -78,7 +85,7 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null) {
     width: (CONFIG.STAGE_W * k) + 'px',
     height: 'auto',
     left: (tamanho / 2 - 300 * k) + 'px',
-    top: (tamanho / 2 - 118 * k) + 'px',
+    top: (tamanho / 2 - (RETRATO_Y + RETRATO_H / 2) * k) + 'px',
   });
   return caixa;
 }
@@ -89,17 +96,30 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null) {
 // pele por cima. Sobra só a linha de fora, que é a do corpo inteiro.
 const CONTORNO = 6;   // largura da borda; metade sobra para fora da silhueta
 
-const corpo = (id, cor, extra) => `
-  <g fill="${cor}" stroke="${cor}" stroke-width="${extra}"
-     stroke-linejoin="round" stroke-linecap="round">${(CORPOS[id] || CORPOS.masculino).arte(extra)}
+// Cada parte na escala dela (js/proporcao.js), e as duas passadas continuam
+// valendo: o contorno é o da união das partes já escaladas. A engorda de cada
+// parte é dividida pela escala dela, para a linha sair da mesma grossura na
+// cabeça e no tronco.
+const corpo = (id, cor, extra) => {
+  const forma = CORPOS[id] || CORPOS.masculino;
+  const parte = (regiao, nome) => {
+    const e = extra / escalaDe(regiao);
+    return naRegiao(regiao, `<g stroke-width="${e}">${forma.partes(e)[nome]}</g>`);
+  };
+  return `
+  <g fill="${cor}" stroke="${cor}"
+     stroke-linejoin="round" stroke-linecap="round">
+    ${parte(null, 'pernas')}${parte('tronco', 'tronco')}${parte('cabeca', 'cabeca')}
   </g>`;
+};
 
 // O cabelo engorda o mesmo tanto que o corpo. A silhueta ganhou CONTORNO/2 de
 // borda para fora, e corte desenhado rente à cabeça antiga (quase todos vão de
 // x=244 a x=356, que era a largura exata dela) passou a deixar aparecer um
 // filete de pele em volta. Engordar o desenho na própria cor resolve sem mexer
 // corte por corte — volume de cabelo não tem medida exata a respeitar.
-const VOLUME = CONTORNO + 2;   // dois a mais: sobra 1 de folga sobre a cabeça
+// A conta é feita na escala da cabeça, como o contorno dela.
+const VOLUME = CONTORNO / escalaDe('cabeca') + 2;   // dois a mais: sobra 1 de folga
 
 const comVolume = (arte, cor) => (arte.trim()
   ? `<g stroke="${cor}" stroke-width="${VOLUME}"
@@ -134,15 +154,18 @@ export function svgAvatar({
   const nariz = (NARIZES[ap.nariz] || NARIZES.botao).arte.replaceAll('{traco}', ap.traco);
   const [vx, vy, vw, vh] = recorte || [0, 0, CONFIG.STAGE_W, CONFIG.STAGE_H];
 
-  const pontos = guia ? Object.entries(CATEGORIAS).map(([cat, c]) => `
+  const pontos = guia ? Object.entries(CATEGORIAS).map(([cat, c]) => {
+    const a = ancoraNoCorpo(c.regiao, c.anchor);
+    return `
       <g class="guia">
-        <circle cx="${c.anchor.x}" cy="${c.anchor.y}" r="6" fill="#ff2e63" opacity=".85"/>
-        <line x1="${c.anchor.x - c.anchor.w / 2}" y1="${c.anchor.y}"
-              x2="${c.anchor.x + c.anchor.w / 2}" y2="${c.anchor.y}"
+        <circle cx="${a.x}" cy="${a.y}" r="6" fill="#ff2e63" opacity=".85"/>
+        <line x1="${a.x - a.w / 2}" y1="${a.y}"
+              x2="${a.x + a.w / 2}" y2="${a.y}"
               stroke="#ff2e63" stroke-width="2" stroke-dasharray="6 5" opacity=".55"/>
-        <text x="${c.anchor.x + c.anchor.w / 2 + 10}" y="${c.anchor.y + 5}"
+        <text x="${a.x + a.w / 2 + 10}" y="${a.y + 5}"
               font-family="monospace" font-size="19" fill="#ff2e63">${cat}</text>
-      </g>`).join('') : '';
+      </g>`;
+  }).join('') : '';
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}"
@@ -154,7 +177,7 @@ export function svgAvatar({
   </clipPath>`}
 
   <!-- cabelo que fica atrás do corpo (chanel, longo) -->
-  ${cabelo('atras')}
+  ${naRegiao('cabeca', cabelo('atras'))}
 
   <!-- roupinha que fica atrás do corpo: capa, mochila, asas, capuz caído -->
   ${veste.atras}
@@ -166,11 +189,13 @@ export function svgAvatar({
   ${veste.frente}
 
   <!-- cabelo por cima da cabeça -->
-  ${cabelo('frente')}
+  ${naRegiao('cabeca', cabelo('frente'))}
 
-  <!-- rosto por último: só o nariz, e o cabelo nunca o cobre -->
-  ${nariz ? `<g fill="none" stroke="${ap.traco}" stroke-width="3.2"
-       stroke-linecap="round" stroke-linejoin="round" opacity=".78">${nariz}</g>` : ''}
+  <!-- rosto por último: só o nariz, e o cabelo nunca o cobre. O traço é
+       dividido pela escala da cabeça para não engrossar junto com ela. -->
+  ${nariz ? naRegiao('cabeca', `<g fill="none" stroke="${ap.traco}"
+       stroke-width="${(3.2 / escalaDe('cabeca')).toFixed(2)}"
+       stroke-linecap="round" stroke-linejoin="round" opacity=".78">${nariz}</g>`) : ''}
 
   <!-- o que vem depois do rosto: óculos e chapéu, por cima do cabelo -->
   ${veste.rosto}

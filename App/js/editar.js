@@ -17,11 +17,12 @@
 // Ferramenta de administração: só aparece em modo admin, e quem grava é a API
 // (PUT /api/pecas/<id>), que recusa quem não for administrador.
 
-import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, hexDaCor,
+import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, hexDaCor, ancoraPadrao,
          corDoPixel, distanciaEntreCores, rotuloDeCadastro } from './config.js';
 import { registrarPeca, esquecerPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
+import { ancoraNoMolde, ancoraNoCorpo } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
 
 const MAX_LADO = 460;          // maior lado da imagem guardada (= esteira)
@@ -448,10 +449,14 @@ function montarRaridades() {
 }
 
 // ================================ Molde ===================================
+// `medida` é o que se vê: a peça em cima do corpo, na proporção de agora. O
+// que se grava é a mesma medida levada de volta ao molde (js/proporcao.js) —
+// é nela que as outras telas confiam, e ela não muda se a proporção mudar.
 const medidaPadrao = (cat) => {
-  const p = CATEGORIAS[cat].anchor;
+  const p = ancoraPadrao(cat);
   return { x: p.x, y: p.y, w: p.w };
 };
+const noMolde = () => ancoraNoMolde(CATEGORIAS[ficha.cat].regiao, medida);
 
 async function irParaMedida() {
   if (cortando) await aplicarCorte();
@@ -481,9 +486,10 @@ function posicionarPeca() {
   // A medida é a verdade sobre o tamanho da peça em todo o app: errar aqui
   // aparece depois, com a camisa maior que a calça na loja.
   const campo = $('#mp-medida');
-  const razao = medida.w / CATEGORIAS[ficha.cat].anchor.w;
+  const real = noMolde();
+  const razao = real.w / CATEGORIAS[ficha.cat].anchor.w;
   const fora = razao > 1.55 || razao < 0.6;
-  campo.textContent = `largura ${Math.round(medida.w)} un · ${Math.round(medida.w / 224 * 100)}% dos ombros`
+  campo.textContent = `largura ${Math.round(real.w)} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
     + (fora ? ` — ${razao.toFixed(1).replace('.', ',')}× a largura padrão de ${CATEGORIAS[ficha.cat].nome}, confira` : '');
   campo.classList.toggle('alerta', fora);
 }
@@ -538,9 +544,10 @@ async function salvar() {
   botao.disabled = true;
   $('#mp-medida').textContent = 'gravando alterações…';
 
+  const real = noMolde();
   const corpo = {
     ...ficha,
-    ancora: { x: Math.round(medida.x), y: Math.round(medida.y), w: Math.round(medida.w) },
+    ancora: { x: Math.round(real.x), y: Math.round(real.y), w: Math.round(real.w) },
   };
   if (arquivo.novo) Object.assign(corpo, { src: arquivo.src, w: arquivo.w, h: arquivo.h });
 
@@ -641,7 +648,9 @@ export function abrirEditar(alvo, callback) {
   origem = null;
   sairDoCorte();
   zerarEdicao();
-  medida = alvo.ancora ? { ...alvo.ancora } : medidaPadrao(alvo.cat);
+  medida = alvo.ancora
+    ? ancoraNoCorpo(CATEGORIAS[alvo.cat]?.regiao, { ...alvo.ancora })
+    : medidaPadrao(alvo.cat);
 
   montarCategorias();
   $('#mp-cat').value = ficha.cat;

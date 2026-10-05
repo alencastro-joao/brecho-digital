@@ -12,6 +12,7 @@ import {
 } from './config.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
+import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
 import { irPara } from './router.js';
 
@@ -31,10 +32,11 @@ const aparenciaDoRascunho = () => {
 };
 
 // Enquadramentos das miniaturas, no sistema do palco (600×1200): o corte
-// precisa da cabeça com folga para os cabelos longos; o nariz, da cara.
+// precisa da cabeça com folga para os cabelos longos; o nariz, da cara. Os
+// dois da cabeça são medidos no molde e seguem a cabeça na proporção de agora.
 const CROP_CORPO = [148, 18, 304, 716];
-const CROP_CABELO = [190, 2, 220, 236];
-const CROP_NARIZ = [234, 34, 132, 162];
+const CROP_CABELO = recorteNaRegiao('cabeca', [190, 2, 220, 236]);
+const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
 
 function renderPrevia() {
   $('#pg-previa').innerHTML = svgAvatar({ aparencia: aparenciaDoRascunho() });

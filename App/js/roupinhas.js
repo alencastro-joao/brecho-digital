@@ -18,6 +18,7 @@
 
 import { CONFIG, CORPOS } from './config.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
+import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
 
 // ----------------------------- Lugares do corpo ---------------------------
 // Os seis slots do vestiário. `z` é a camada de quem é desenhado depois do
@@ -141,7 +142,7 @@ const nosPes = (fn) => fn(250) + fn(350);
 const nasMaos = (fn) => fn(172) + fn(428);
 
 // --------------------------- A linha do ombro -----------------------------
-// O ombro do corpo (CORPOS[*].arte) sai do pescoço em y≈207 e cai até a junta
+// O ombro do corpo (CORPOS[*].partes) sai do pescoço em y≈207 e cai até a junta
 // do braço em y=262. Toda peça de cima tem que seguir essa linha por fora: a
 // gola que ia reta do pescoço até a junta passava por baixo dela e deixava o
 // ombro do avatar aparecendo por cima da roupa — dava para ver a pele nos dois
@@ -1228,9 +1229,11 @@ export function estadoDoDesbloqueio(r, progresso) {
 // costuras de dentro da silhueta — e roupa é feita de formas sobrepostas.
 const CONTORNO = 5;
 
-const desenhar = (arte, m, cor) => `
-  <g fill="${escurecer(cor)}" stroke="${escurecer(cor)}" stroke-width="${CONTORNO}"
-     stroke-linejoin="round" stroke-linecap="round">${arte(m, CONTORNO)}</g>
+// `k` é a escala em que a peça vai ser desenhada (js/proporcao.js): o contorno
+// é dividido por ela para sair da mesma grossura em qualquer parte do corpo.
+const desenhar = (arte, m, cor, k = 1) => `
+  <g fill="${escurecer(cor)}" stroke="${escurecer(cor)}" stroke-width="${CONTORNO / k}"
+     stroke-linejoin="round" stroke-linecap="round">${arte(m, CONTORNO / k)}</g>
   <g fill="${cor}" stroke="${cor}" stroke-width="0"
      stroke-linejoin="round" stroke-linecap="round">${arte(m, 0)}</g>`;
 
@@ -1255,11 +1258,15 @@ export function partesDasRoupas(roupas, corpo) {
     // que só existe atrás do corpo — as asas — teria perdido o dela se ele
     // morasse sempre na camada da frente.
     const detalhe = r.detalhe ? r.detalhe(m, cor) : '';
-
-    if (r.atras) atras.push(desenhar(r.atras, m, cor) + (r.arte ? '' : detalhe));
-    if (!r.arte) continue;
-    const svg = desenhar(r.arte, m, cor) + detalhe;
+    // A peça vai na escala da parte do corpo que ela veste (js/proporcao.js):
+    // desenhada no molde, sai do tamanho da cabeça ou do tronco de agora.
     const z = r.z ?? SLOTS[slot].z;
+    const regiao = regiaoDaRoupinha(r, z);
+    const k = escalaDe(regiao);
+
+    if (r.atras) atras.push(naRegiao(regiao, desenhar(r.atras, m, cor, k) + (r.arte ? '' : detalhe)));
+    if (!r.arte) continue;
+    const svg = naRegiao(regiao, desenhar(r.arte, m, cor, k) + detalhe);
     (z >= 60 ? rosto : frente).push({ z, svg });
   }
 

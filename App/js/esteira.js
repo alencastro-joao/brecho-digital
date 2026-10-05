@@ -19,8 +19,9 @@
 
 import {
   CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
-  migrarCategoria, rotuloDeCadastro,
+  migrarCategoria, rotuloDeCadastro, ancoraPadrao,
 } from './config.js';
+import { ancoraNoCorpo, ancoraNoMolde } from './proporcao.js';
 import { carregarSessao } from './auth.js';
 import { svgAvatar } from './avatar.js';
 import { el, $, $$, clamp, toast } from './util.js';
@@ -365,16 +366,23 @@ function aplicarLote() {
 let medindo = null;                    // o item no molde
 let medida = null;                     // { x, y, w } em unidades do palco (600×1200)
 
+// `medida` é a peça em cima do corpo, na proporção de agora; `item.medida` é
+// a mesma levada de volta ao molde (js/proporcao.js), que é o que se grava.
 const medidaPadrao = (cat) => {
-  const a = CATEGORIAS[cat]?.anchor ?? { x: 300, y: 600, w: 200 };
+  const a = ancoraPadrao(cat);
   return { x: a.x, y: a.y, w: a.w };
+};
+const regiaoDe = (item) => CATEGORIAS[fichaDe(item).cat]?.regiao;
+const paraGravar = () => {
+  const a = ancoraNoMolde(regiaoDe(medindo), medida);
+  return { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(a.w) };
 };
 
 function abrirMolde(item) {
   const f = fichaDe(item);
   if (!f.cat) return toast('Escolha a categoria antes de medir.', 'aviso');
   medindo = item;
-  medida = item.medida ? { ...item.medida } : medidaPadrao(f.cat);
+  medida = item.medida ? ancoraNoCorpo(regiaoDe(item), { ...item.medida }) : medidaPadrao(f.cat);
   $('#es-avatar').innerHTML = svgAvatar();
   $('#es-peca-img').src = item.previa;
   $('#es-molde-modal').hidden = false;
@@ -383,7 +391,7 @@ function abrirMolde(item) {
 
 function fecharMolde(guardar) {
   if (guardar && medindo) {
-    medindo.medida = { x: Math.round(medida.x), y: Math.round(medida.y), w: Math.round(medida.w) };
+    medindo.medida = paraGravar();
     guardarDepois(medindo);
     desenhar();
   }
@@ -400,10 +408,11 @@ function posicionar() {
   no.style.height = `${(medida.w / prop) / CONFIG.STAGE_H * 100}%`;
 
   const cat = fichaDe(medindo).cat;
-  const razao = medida.w / CATEGORIAS[cat].anchor.w;
+  const real = paraGravar();
+  const razao = real.w / CATEGORIAS[cat].anchor.w;
   const fora = razao > 1.55 || razao < 0.6;
   const texto = $('#es-medida');
-  texto.textContent = `largura ${Math.round(medida.w)} un · ${Math.round(medida.w / 224 * 100)}% dos ombros`
+  texto.textContent = `largura ${real.w} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
     + (fora ? ` — ${razao.toFixed(1).replace('.', ',')}× o padrão de ${CATEGORIAS[cat].nome}, confira` : '');
   texto.classList.toggle('alerta', fora);
 }
@@ -411,7 +420,7 @@ function posicionar() {
 function usarNasIrmas() {
   const cat = fichaDe(medindo).cat;
   const irmas = itens.filter(i => i !== medindo && i.estado === 'pronta' && fichaDe(i).cat === cat);
-  for (const i of irmas) { i.medida = { ...medida }; guardarDepois(i); }
+  for (const i of irmas) { i.medida = paraGravar(); guardarDepois(i); }
   toast(`Medida aplicada a ${irmas.length} ${irmas.length === 1 ? 'peça' : 'peças'} de ${CATEGORIAS[cat].nome}.`);
 }
 
