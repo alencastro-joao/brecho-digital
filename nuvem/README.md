@@ -180,12 +180,36 @@ aws iam put-role-policy --role-name brecho-lambda --policy-name brecho-varrer-co
 Sem ela a Lambda responde 500 em `GET /api/usuarios` e o front segue só com os
 perfis de exemplo — nada quebra, mas ninguém acha uma conta real.
 
-## O que ficou de fora
+## O feed compartilhado — 04/10/2026
 
-**O feed de uma conta ainda não chega às outras.** Achar, seguir e ver a página
-de alguém funciona de verdade, mas as colagens de cada um continuam no save
-local dele — quem você segue aparece sem publicações. Um feed compartilhado é o
-próximo passo do grafo social.
+`lambda/feed.py` (espelho de `App/tools/feed.py`, em SQLite). Antes, cada post
+morava só no save de quem publicou: o amigo abria o feed e não via nada.
+
+```
+POST#<id>   id, autor, tipo, nome, criado_em, thumb, pecas, origem,
+            curtidas (SS de quem curtiu), comentarios (lista de mapas)
+```
+
+| Rota | O que faz |
+|---|---|
+| `GET /api/feed[?autor=]` | os posts, mais novos primeiro, com os cartões de quem aparece |
+| `POST /api/feed` | publica `{ chave, tipo, nome, thumb, pecas, origem }` |
+| `DELETE /api/feed/<id>` | o dono apaga |
+| `POST /api/feed/<id>/curtir` | `{ curte }` |
+| `POST /api/feed/<id>/comentarios` | `{ texto }` |
+| `DELETE /api/feed/<id>/comentarios/<cid>` | quem comentou (ou o dono do post) apaga |
+
+- **A miniatura vai para `assets/posts/` no bucket do site**, imutável por um
+  ano (o nome leva o hash do conteúdo). O `publicar.sh` não toca nessa pasta.
+- **Publicar é idempotente**: o id sai de (autor, look ou colagem de origem).
+  Os posts antigos, que só existiam no save, sobem sozinhos na primeira leitura
+  do feed — com a data original.
+- **A listagem é um `Scan`**, como a busca de pessoas. Nenhuma permissão nova:
+  o papel já tinha `Scan`, `PutItem`/`UpdateItem`/`DeleteItem` e escrita em
+  `assets/*` do site.
+- Os perfis de exemplo continuam locais (no save de cada navegador).
+
+## O que ficou de fora
 
 **Confirmação de e-mail e "esqueci a senha"** continuam pendentes, como no
 protótipo. Os dois pedem e-mail transacional (SES sai de graça até 3.000

@@ -15,9 +15,8 @@
 //   * rosto e roupa são os que a pessoa escolheu, enviados por ela mesma (ver
 //     `agendarPerfil`); enquanto ela nunca enviou, cai no sorteio do id, como
 //     qualquer perfil fictício;
-//   * ela não tem colagens no seu feed: o feed de cada um ainda é local, e o
-//     que uma conta publica não chega às outras. Isso é o próximo passo do
-//     grafo social, não deste.
+//   * as publicações dela vêm do feed compartilhado (publicacoes.js), e não
+//     do seu save — onde só moram as dos perfis fictícios.
 //
 // Nada aqui é chamado no carregamento do módulo — só em tempo de execução.
 
@@ -74,6 +73,10 @@ function guardar(cartao) {
   reais.set(perfil.id, perfil);
   return perfil;
 }
+
+// O feed (publicacoes.js) traz o cartão de quem postou e de quem comentou:
+// guardado aqui, o retrato e o perfil público dessas pessoas já funcionam.
+export const guardarCartao = guardar;
 
 async function chamar(rota, opcoes = {}) {
   const r = await fetch(rota, {

@@ -477,9 +477,17 @@
   <section class="view view-social" data-view="social" hidden>
     <div class="feed-wrapper">
       <header class="feed-head">
-        <h1>Feed</h1>
-        <p id="feed-sub"></p>
-        <div class="feed-abas" id="feed-abas"></div>
+        <div class="feed-titulo">
+          <h1>Feed</h1>
+          <p><span id="feed-sub"></span> · <span id="feed-estado"></span></p>
+          <button type="button" class="feed-atualizar" id="feed-atualizar"
+                  title="Buscar publicações novas" aria-label="Atualizar o feed">↻</button>
+        </div>
+        <!-- Abas (de quem) à esquerda, filtro (o quê) à direita. -->
+        <div class="feed-barra">
+          <div class="feed-abas" id="feed-abas"></div>
+          <div class="feed-filtros" id="feed-filtros"></div>
+        </div>
       </header>
       <div class="feed" id="feed"></div>
     </div>

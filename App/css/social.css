@@ -2,33 +2,85 @@
 
 .view-social { background: #fbf8f4; }
 
-.feed-wrapper { flex: 1; min-width: 0; overflow-y: auto; padding: 30px 34px; }
+/* O cabeçalho fica parado enquanto o feed rola por baixo. */
+.feed-wrapper { flex: 1; min-width: 0; overflow-y: auto; padding: 0 34px 40px; }
+.feed-head {
+  position: sticky; top: 0; z-index: 5;
+  background: #fbf8f4; padding: 26px 0 14px; margin-bottom: 6px;
+  border-bottom: 1px solid var(--linha);
+}
+.feed-titulo { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .feed-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -.4px; }
-.feed-head p { font-size: 12.5px; color: var(--tinta-suave); margin: 2px 0 14px; }
+.feed-head p { font-size: 12.5px; color: var(--tinta-suave); flex: 1; min-width: 0; }
+#feed-estado.offline { color: #b7791f; }
+.feed-atualizar {
+  width: 30px; height: 30px; border-radius: 50%; flex: none; align-self: center;
+  border: 1px solid var(--linha); background: #fff; font-size: 15px; color: var(--tinta-suave);
+}
+.feed-atualizar:hover { border-color: var(--tinta); color: var(--tinta); }
+.feed-atualizar.girando { animation: feed-gira .8s linear infinite; }
+@keyframes feed-gira { to { transform: rotate(360deg); } }
 
-.feed-abas { display: flex; gap: 6px; margin-bottom: 18px; }
+.feed-barra {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; margin-top: 12px;
+}
+.feed-abas { display: flex; gap: 6px; }
 .feed-aba {
   border: 1px solid var(--linha); background: #fff;
   border-radius: 20px; padding: 6px 15px;
   font-size: 12px; color: var(--tinta-suave);
 }
+.feed-aba:hover { border-color: var(--tinta); color: var(--tinta); }
 .feed-aba.ativa { background: var(--tinta); border-color: var(--tinta); color: #fff; font-weight: 700; }
 
-.feed {
+/* O filtro é um interruptor só, para não competir com as abas. */
+.feed-filtros { display: flex; background: #f0ebe4; border-radius: 20px; padding: 3px; }
+.feed-filtro {
+  border: 0; background: none; border-radius: 16px;
+  padding: 4px 12px; font-size: 11.5px; color: var(--tinta-suave);
+}
+.feed-filtro.ativo {
+  background: #fff; color: var(--tinta); font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+
+/* Um bloco por período: Hoje, Ontem, Esta semana... */
+.feed-bloco { margin-top: 22px; }
+.feed-periodo {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-size: 11px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.feed-periodo small {
+  font-size: 10px; font-weight: 700; letter-spacing: 0;
+  background: #f0ebe4; border-radius: 20px; padding: 1px 7px;
+}
+.feed-periodo::after { content: ""; flex: 1; height: 1px; background: var(--linha); }
+
+.feed-grade {
   display: grid; gap: 18px;
-  grid-template-columns: repeat(auto-fill, minmax(288px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   align-items: start;
 }
-.feed-vazio { color: var(--tinta-suave); font-size: 14px; }
+.feed-vazio {
+  color: var(--tinta-suave); font-size: 14px; line-height: 1.6;
+  margin-top: 26px; max-width: 520px;
+}
+.feed-vazio .link-btn { font-size: 14px; }
 
 .post {
   background: #fff; border: 1px solid var(--linha); border-radius: var(--raio);
   overflow: hidden; transition: box-shadow .2s, transform .2s;
 }
 .post:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
+.post.meu { border-color: #d9d0c3; }
 .post-head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; }
 .post-head strong { display: block; font-size: 13px; }
-.post-head small { font-size: 11px; color: var(--tinta-suave); }
+.post-head small {
+  display: block; font-size: 11px; color: var(--tinta-suave);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .tag-meu {
   margin-left: auto; font-size: 9.5px; font-weight: 700; text-transform: uppercase;
   background: var(--tinta); color: #fff; border-radius: 20px; padding: 2px 8px;
@@ -47,20 +99,55 @@
   font-weight: 800; font-size: 13px; color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
 }
-.post-thumb { background: var(--papel); display: grid; place-items: center; }
-.post-thumb img { width: 100%; display: block; }
-.post-thumb .sem-thumb { padding: 60px 0; font-size: 12px; }
+/* Moldura de tamanho fixo: look (3:5) e colagem (4:5 ou 9:16) cabem inteiros,
+   e os cards de uma linha da grade ficam da mesma altura. */
+.post-thumb {
+  position: relative; aspect-ratio: 4 / 5;
+  background: var(--papel); overflow: hidden;
+}
+/* Absoluta: altura em % dentro de grid ou de bloco sem altura definida vira
+   "auto", e a imagem alta vazava da moldura e era cortada embaixo. */
+.post-thumb img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; display: block;
+}
+.post-thumb .sem-thumb {
+  position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px;
+}
+.post-tipo {
+  position: absolute; left: 10px; top: 10px;
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  background: rgba(255, 255, 255, .88); color: var(--tinta-suave);
+  border-radius: 20px; padding: 2px 8px;
+}
 
 .post-autor { flex: 1; min-width: 0; }
 .post-acoes { display: flex; align-items: center; gap: 10px; padding: 10px 14px 8px; }
 .btn-seguir.mini { padding: 4px 10px; font-size: 10px; }
+.post-mais {
+  border: 0; background: none; border-radius: 50%;
+  width: 26px; height: 26px; flex: none;
+  font-size: 16px; line-height: 1; color: var(--tinta-suave);
+}
+.post-mais:hover { background: #f3efe9; color: var(--tinta); }
 
 /* ------------------------------ Comentários ------------------------------ */
 .post-thread {
   border-top: 1px solid var(--linha);
-  padding: 10px 14px 12px;
+  padding: 8px 14px 10px;
   display: flex; flex-direction: column; gap: 6px;
 }
+.post-thread.aberta { padding: 10px 14px 12px; max-height: 320px; overflow-y: auto; }
+/* Fechada, a conversa é uma linha: o último comentário (ou o convite). */
+.thread-previa {
+  border: 0; background: none; text-align: left; padding: 0;
+  font-size: 12px; line-height: 1.5; color: var(--tinta);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.thread-previa strong { font-weight: 700; }
+.thread-previa small { color: var(--tinta-suave); font-size: 10.5px; margin-left: 6px; }
+.thread-previa.vazia { color: #b3aaa0; }
+.thread-previa:hover small, .thread-previa.vazia:hover { color: var(--tinta); }
 .comentario {
   font-size: 12px; line-height: 1.5; color: var(--tinta);
   position: relative; padding-right: 16px;
@@ -72,9 +159,11 @@
   border: 0; background: none; color: #cfc6b9; font-size: 10px;
 }
 .apagar-com:hover { color: #c0392b; }
-.ver-todos { align-self: flex-start; font-size: 11.5px; }
 
-.comentar-linha { display: flex; gap: 6px; margin-top: 4px; }
+.comentar-linha {
+  display: flex; gap: 6px; margin-top: 4px;
+  position: sticky; bottom: 0; background: #fff;
+}
 .campo-comentario {
   flex: 1; min-width: 0;
   border: 1px solid var(--linha); border-radius: 20px;
@@ -92,7 +181,7 @@
   display: flex; align-items: center; gap: 5px;
 }
 .comentar-btn span { font-size: 12px; }
-.comentar-btn:hover { color: var(--tinta); }
+.comentar-btn:hover, .comentar-btn.on { color: var(--tinta); }
 
 /* ---------------------------- Menu compartilhar -------------------------- */
 .menu-compartilhar {
@@ -109,6 +198,10 @@
 .menu-item:hover { background: #f6f3ee; }
 .menu-item .ponto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .menu-aviso { font-size: 11px; color: var(--tinta-suave); padding: 8px 10px; line-height: 1.5; }
+.menu-item.perigo {
+  color: #c0392b; border-top: 1px solid var(--linha);
+  border-radius: 0 0 10px 10px; margin-top: 4px;
+}
 
 .post-foot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
 .curtir {

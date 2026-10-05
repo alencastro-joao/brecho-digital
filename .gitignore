@@ -27,3 +27,6 @@ node_modules/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Miniaturas do feed no servidor local (na nuvem moram no bucket do site)
+App/assets/posts/

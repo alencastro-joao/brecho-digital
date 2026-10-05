@@ -46,6 +46,7 @@ from urllib.parse import parse_qs
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import contas          # noqa: E402  (precisa da linha de cima)
 import pessoas         # noqa: E402
+import feed            # noqa: E402
 import estoque         # noqa: E402
 
 PASTA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -57,6 +58,8 @@ MODO_NUVEM = '--nuvem' in sys.argv[1:]
 LIMITE_LOGIN = 8 * 1024            # cadastro e login são texto curto
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil')
+ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
+LIMITE_POST = 1536 * 1024          # a miniatura em base64 e um pouco de texto
 
 
 # --- Modo nuvem -------------------------------------------------------------
@@ -250,6 +253,46 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.responder(400, {'erro': str(e)})
         return True
 
+    # O feed compartilhado (ver tools/feed.py): mesmas rotas da Lambda.
+    def rota_de_feed(self, metodo):
+        caminho, _, consulta = self.path.partition('?')
+        m = ROTA_FEED.match(caminho.rstrip('/'))
+        if not m:
+            return False
+        usuario = self.exigir_sessao()
+        if not usuario:
+            return True
+        eu = usuario['id']
+        post_id, acao, comentario_id = m.groups()
+
+        try:
+            if not post_id and metodo == 'GET':
+                autor = parse_qs(consulta).get('autor', [None])[0]
+                self.responder(200, feed.listar(eu, autor))
+            elif not post_id and metodo == 'POST':
+                corpo = self.ler_corpo(LIMITE_POST)
+                if corpo is not None:
+                    self.responder(201, feed.publicar(eu, corpo))
+            elif post_id and not acao and metodo == 'DELETE':
+                self.responder(200, feed.apagar(eu, post_id))
+            elif acao == 'curtir' and metodo == 'POST':
+                corpo = self.ler_corpo(LIMITE_LOGIN)
+                if corpo is not None:
+                    self.responder(200, feed.curtir(eu, post_id, bool(corpo.get('curte'))))
+            elif acao == 'comentarios' and not comentario_id and metodo == 'POST':
+                corpo = self.ler_corpo(LIMITE_LOGIN)
+                if corpo is not None:
+                    self.responder(200, feed.comentar(eu, post_id, corpo.get('texto')))
+            elif acao == 'comentarios' and comentario_id and metodo == 'DELETE':
+                self.responder(200, feed.apagar_comentario(eu, post_id, comentario_id))
+            else:
+                self.responder(404, {'erro': 'rota desconhecida'})
+        except contas.ErroDeConta as e:
+            self.responder(e.codigo, {'erro': str(e)})
+        except ValueError as e:
+            self.responder(400, {'erro': str(e)})
+        return True
+
     # Tiragem limitada (ver estoque.py): mesmas rotas e respostas da Lambda.
     def rota_de_estoque(self, metodo):
         rota = self.path.rstrip('/')
@@ -305,6 +348,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self.responder(200, {'usuario': self.usuario_da_sessao()})
         if self.rota_de_pessoas('GET'):
             return None
+        if self.rota_de_feed('GET'):
+            return None
         # O banco de contas mora dentro da pasta servida: nao e arquivo estatico.
         if re.match(r'^/dados(/|$)', self.path):
             return self.responder(404, {'erro': 'rota desconhecida'})
@@ -327,6 +372,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return None
         if self.rota_de_estoque('POST'):
             return None
+        if self.rota_de_feed('POST'):
+            return None
         return self.responder(404, {'erro': 'rota desconhecida'})
 
     def do_PUT(self):
@@ -340,6 +387,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_DELETE(self):
         if self.api_remota('DELETE'):
+            return None
+        if self.rota_de_feed('DELETE'):
             return None
         return self.responder(404, {'erro': 'rota desconhecida'})
 
@@ -371,6 +420,7 @@ if __name__ == '__main__':
     if not MODO_NUVEM:
         contas.preparar()
         pessoas.preparar()
+        feed.preparar()
     with Servidor(('', PORTA), Handler) as servidor:
         print('Brecho Digital: http://localhost:%d' % PORTA)
         if MODO_NUVEM:

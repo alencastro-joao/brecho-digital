@@ -19,7 +19,9 @@ import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.j
 import { chipNivel } from './nivel.js';
 import { chipsDeRedes } from './conexoes.js';
 import { irPara, paramAtual, viewAtual } from './router.js';
-import { cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed } from './social.js';
+import {
+  cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed,
+} from './social.js';
 
 const MAX_PECAS = 12;
 
@@ -88,17 +90,19 @@ export const segueDeVolta = (id) => {
 export const mesAno = (data) =>
   data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-const postsDe = (id) => db.state.feed
-  .filter(p => p.autor === id)
-  .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+// Os de uma conta real vêm do feed compartilhado; os de um perfil de exemplo,
+// do save. postsDoAutor junta os dois, já do mais novo para o mais velho.
+// Função, e não apelido: social.js ainda não terminou de carregar aqui.
+const postsDe = (id) => postsDoAutor(id);
 
 // As peças que aparecem nas publicações dela, sem repetir e na ordem em que
 // postou. Post antigo pode citar peça que saiu do acervo (o usuário desligou a
 // pasta): o que o catálogo não tem hoje simplesmente não entra.
 // Post de look traz as camadas vestidas no avatar; post de colagem traz a
 // colagem inteira. Os dois listam as peças em `itemId`, então o que interessa
-// aqui é só de onde ler.
-const pecasDoPost = (post) => post.camadas || post.colagem?.itens || [];
+// aqui é só de onde ler. Post do feed compartilhado traz só a lista de ids.
+const pecasDoPost = (post) =>
+  post.pecas?.map(itemId => ({ itemId })) || post.camadas || post.colagem?.itens || [];
 
 function pecasDe(id) {
   const vistas = new Map();
@@ -145,11 +149,14 @@ export async function aoEntrarNoUsuario() {
   $('.view-usuario').scrollTop = 0;
 
   // O cartão de uma conta real envelhece — seguidores, "segue você", o rosto
-  // que ela trocou —, então abrir a página o renova em segundo plano.
+  // que ela trocou —, então abrir a página o renova em segundo plano. As
+  // publicações dela também: vêm do feed compartilhado.
   if (p.real) {
-    carregarPerfil(id).then(() => {
+    const repintarSeAinda = () => {
       if (idAtual === id && viewAtual() === 'usuario') renderUsuario();
-    }).catch(() => {});
+    };
+    carregarPerfil(id).then(repintarSeAinda).catch(() => {});
+    garantirFeed().then(repintarSeAinda);
     return;
   }
 

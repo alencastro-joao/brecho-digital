@@ -19,6 +19,7 @@ esta função só responde `/api/*`.
     POST /api/seguir           segue ou deixa de seguir
     GET  /api/social           quem eu sigo e quem me segue
     PUT  /api/perfil           o que os outros leem de mim: bio, rosto, roupa
+    /api/feed[/<id>[/...]]     o feed compartilhado: publicar, curtir, comentar (ver feed.py)
     POST /api/pecas            admin: peça nova no acervo
     PUT  /api/pecas/<id>       admin: edita a peça
     GET  /api/estoque          quantas cópias de cada peça já saíram (ver estoque.py)
@@ -50,6 +51,7 @@ from http import cookies as _cookies
 import contas
 import estado as save
 import estoque
+import feed
 import pessoas
 
 SEGREDO = os.environ.get('BD_SEGREDO_ORIGEM') or ''
@@ -58,11 +60,13 @@ CABECALHO_SEGREDO = 'x-origem-brecho'
 LIMITE_LOGIN = 8 * 1024             # cadastro e login são texto curto
 LIMITE_PECA = 5 * 1024 * 1024       # a Function URL para em 6 MB: fique abaixo
 LIMITE_ESTADO = 5 * 1024 * 1024
+LIMITE_POST = 1536 * 1024           # a miniatura em base64 e um pouco de texto
 
 ROTA_PECA = re.compile(r'^/api/pecas/([^/]+)$')
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
 ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$')
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil')
+ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 
 
 class Pedido:
@@ -242,6 +246,32 @@ def rotas_de_pessoas(pedido):
     return None
 
 
+def rotas_de_feed(pedido):
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    eu, metodo = usuario['id'], pedido.metodo
+    post_id, acao, comentario_id = ROTA_FEED.match(pedido.rota).groups()
+
+    if not post_id:
+        if metodo == 'GET':
+            return responder(200, feed.listar(eu, pedido.consulta.get('autor')))
+        if metodo == 'POST':
+            return responder(201, feed.publicar(eu, pedido.corpo(LIMITE_POST)))
+        return None
+    if not acao and metodo == 'DELETE':
+        return responder(200, feed.apagar(eu, post_id))
+    if acao == 'curtir' and metodo == 'POST':
+        corpo = pedido.corpo(LIMITE_LOGIN)
+        return responder(200, feed.curtir(eu, post_id, bool(corpo.get('curte'))))
+    if acao == 'comentarios' and not comentario_id and metodo == 'POST':
+        corpo = pedido.corpo(LIMITE_LOGIN)
+        return responder(200, feed.comentar(eu, post_id, corpo.get('texto')))
+    if acao == 'comentarios' and comentario_id and metodo == 'DELETE':
+        return responder(200, feed.apagar_comentario(eu, post_id, comentario_id))
+    return None
+
+
 def rotas_de_acervo(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -319,6 +349,8 @@ def despachar(pedido):
         return rotas_de_pessoas(pedido)
     if rota.startswith('/api/estoque'):
         return rotas_de_estoque(pedido)
+    if ROTA_FEED.match(rota):
+        return rotas_de_feed(pedido)
     if rota == '/api/pecas' or ROTA_PECA.match(rota):
         return rotas_de_acervo(pedido)
     if ROTA_ESTEIRA.match(rota):

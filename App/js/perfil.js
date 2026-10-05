@@ -23,7 +23,9 @@ import { chipNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
-import { gerarPostsFicticios, aoAtualizarFeed, COR_PROPRIA } from './social.js';
+import {
+  gerarPostsFicticios, aoAtualizarFeed, COR_PROPRIA, postsDoAutor, garantirFeed,
+} from './social.js';
 import { atualizarBadge, montarVitrine } from './vitrine.js';
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
@@ -33,9 +35,8 @@ import {
   gradeDePecas, botaoDePerfil, perfilPublico, segueDeVolta, mesAno,
 } from './usuario.js';
 
-const meusPosts = () => db.state.feed
-  .filter(p => p.autor === db.state.usuario.id)
-  .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+// Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
+const meusPosts = () => postsDoAutor(db.state.usuario.id);
 
 // Do mais novo para o mais velho: a vitrine abre pelo que você acabou de fazer.
 const porData = (lista) => [...lista]
@@ -378,5 +379,7 @@ function montarTestes() {
 // que retribuiu entra em "amigos" sem ninguém precisar recarregar.
 export function aoEntrarNoPerfil() {
   renderPerfil();
-  sincronizarSocial().then(() => { if (viewAtual() === 'perfil') renderPerfil(); });
+  const repintar = () => { if (viewAtual() === 'perfil') renderPerfil(); };
+  sincronizarSocial().then(repintar);
+  garantirFeed().then(repintar);
 }

@@ -14,6 +14,7 @@ import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorn
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
 import { miniaturaBoard, baixarBoard } from './render.js';
+import { publicarOuGuardar, pacoteDaColagem, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
@@ -1017,25 +1018,26 @@ async function salvarBoard({ silencioso = false } = {}) {
 async function publicarBoard() {
   const salvo = await salvarBoard({ silencioso: true });
   if (!salvo) return;
-  if (salvo.publicado) return toast('Essa colagem já está no feed.', 'aviso');
+  if (salvo.publicado && jaPublicado('boardId', salvo.id)) {
+    return toast('Essa colagem já está no feed.', 'aviso');
+  }
 
+  let onde;
+  try {
+    onde = await publicarOuGuardar(await pacoteDaColagem(salvo));
+  } catch (e) {
+    return toast(e.message || 'Não consegui publicar agora.', 'aviso');
+  }
+  if (!salvo.publicado) {
+    db.state.stats.publicacoes += 1;
+    db.progredirMissao('publicar');
+  }
   salvo.publicado = true;
-  db.state.feed.unshift({
-    id: 'p' + Date.now(),
-    tipo: 'board',
-    autor: db.state.usuario.id,
-    boardId: salvo.id,
-    nome: salvo.nome,
-    thumb: salvo.thumb,
-    criadoEm: new Date().toISOString(),
-    curtidas: 0,
-    curtido: false,
-  });
-  db.state.stats.publicacoes += 1;
-  db.progredirMissao('publicar');
   db.salvar();
   renderLista();
-  toast('Colagem publicada no feed.');
+  toast(onde === 'servidor'
+    ? 'Colagem publicada no feed — seus amigos já podem ver.'
+    : 'Sem conexão: publicada só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
 function renderLista() {

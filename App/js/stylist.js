@@ -13,6 +13,7 @@ import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniatura, baixarLook } from './render.js';
+import { publicarOuGuardar, pacoteDoLook, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
@@ -407,24 +408,26 @@ const estruturaLimpa = () => camadas.map(({ uid, ...resto }) => ({ ...resto }));
 async function publicarLook() {
   const look = await salvarLook({ silencioso: true });
   if (!look) return;
-  if (look.publicado) return toast('Esse look já está no feed.', 'aviso');
+  if (look.publicado && jaPublicado('lookId', look.id)) {
+    return toast('Esse look já está no feed.', 'aviso');
+  }
 
+  let onde;
+  try {
+    onde = await publicarOuGuardar(await pacoteDoLook(look));
+  } catch (e) {
+    return toast(e.message || 'Não consegui publicar agora.', 'aviso');
+  }
+  if (!look.publicado) {
+    db.state.stats.publicacoes += 1;
+    db.progredirMissao('publicar');
+  }
   look.publicado = true;
-  db.state.feed.unshift({
-    id: 'p' + Date.now(),
-    autor: db.state.usuario.id,
-    lookId: look.id,
-    nome: look.nome,
-    thumb: look.thumb,
-    criadoEm: new Date().toISOString(),
-    curtidas: 0,
-    curtido: false,
-  });
-  db.state.stats.publicacoes += 1;
-  db.progredirMissao('publicar');
   db.salvar();
   renderSalvos();
-  toast('Publicado no feed.');
+  toast(onde === 'servidor'
+    ? 'Publicado no feed — seus amigos já podem ver.'
+    : 'Sem conexão: publicado só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
 function renderSalvos() {
