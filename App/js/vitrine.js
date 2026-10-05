@@ -14,7 +14,7 @@
 // na próxima abertura, que é o que o resgate significa.
 
 import { ADMIN, CONFIG, COLLAB, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural } from './config.js';
-import { catalogo, soProprias, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { falar, falarDe } from './npc.js';
@@ -82,11 +82,10 @@ export function poolDoDia(iso = hojeISO()) {
     return RARIDADE[r] ? r : 'common';
   };
 
-  // Com o acervo da pasta ligado, peça sua não entra no sorteio — ela já é sua.
-  // Usando só as suas, elas *são* o estoque da loja. Peça do guarda-roupa fica
-  // de fora — menos a que saiu daqui hoje, que guarda a vaga até a meia-noite.
+  // Peça do guarda-roupa fica de fora — menos a que saiu daqui hoje, que guarda
+  // a vaga até a meia-noite.
   const candidatas = catalogo.itens.filter(i =>
-    !COLLAB.itens.includes(i.id) && (soProprias() || !i.propria)
+    !COLLAB.itens.includes(i.id)
     && (!db.temPeca(i.id) || levadaHoje(i.id, iso))
     // Tiragem esgotada: todas as cópias já estão em algum guarda-roupa.
     && !estoque.esgotada(i.id, raridade(i)));
@@ -309,13 +308,6 @@ export function montarVitrine() {
       src: peca.src, alt: nomeDaPeca(peca), loading: 'eager', decoding: 'async',
       style: { width: `${Math.round(w)}px`, height: `${Math.round(h)}px` },
     });
-    img.onerror = () => {
-      // Catálogo local falhou: tenta o PNG original no S3.
-      if (!img.dataset.retry) {
-        img.dataset.retry = '1';
-        img.src = CONFIG.S3_FALLBACK + peca.id + '.png';
-      }
-    };
     const temContorno = aplicarContorno(img, peca);
     if (!temContorno) precarregarAlpha(img);
 
@@ -376,9 +368,9 @@ export function montarVitrine() {
   if (!pecas.length) {
     mural.append(el('div', { class: 'mural-vazio' },
       el('strong', {}, 'A loja está sem estoque.'),
-      el('p', {}, soProprias()
-        ? 'Suba peças no guarda-roupa (+ Adicionar peça). As que você deixar como estoque aparecem aqui para garimpar.'
-        : 'Tudo que estava na arara já está no seu guarda-roupa.')
+      el('p', {}, catalogo.itens.length
+        ? 'Tudo que estava na arara já está no seu guarda-roupa.'
+        : 'O acervo ainda não tem peças. Publique pela esteira para elas aparecerem aqui.')
     ));
   }
 

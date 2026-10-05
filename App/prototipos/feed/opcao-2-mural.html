@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<base href="../../">
+<title>Feed · Opção 2 — Mural</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="prototipos/feed/proto.css">
+<style>
+  /* Opção 2 — imagem primeiro: um mural em colunas, sem coluna lateral. */
+  .col { flex: 1; min-width: 0; overflow: hidden; padding: 0 34px; }
+
+  .topo { display: flex; align-items: center; gap: 16px; padding: 22px 0 12px; }
+  .topo h1 { font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+  .busca {
+    flex: 1; max-width: 460px; display: flex; align-items: center; gap: 9px;
+    background: #fff; border: 1px solid var(--linha); border-radius: 99px; padding: 9px 16px;
+    font-size: 13px; color: #b3aaa0;
+  }
+  .topo .btn-pri { margin-left: auto; }
+
+  .chips { display: flex; align-items: center; gap: 7px; padding-bottom: 16px; }
+  .chips .sep { width: 1px; height: 22px; background: var(--linha); margin: 0 6px; }
+  .chip-tema {
+    display: inline-flex; align-items: center; gap: 7px; border-radius: 99px; padding: 7px 14px;
+    font-size: 12.5px; font-weight: 700; color: #6a3fb5;
+    background: linear-gradient(90deg, #efe6ff, #ffe8f1); border: 1px solid #e3d4fb;
+  }
+  .chip-raras { color: #7a35c9; border-color: #dccbf7; }
+
+  /* O mural: colunas, cada card na altura da própria imagem. */
+  .mural { column-count: 4; column-gap: 16px; }
+  .card { break-inside: avoid; margin-bottom: 16px; position: relative; }
+  .card .img {
+    position: relative; border-radius: 18px; overflow: hidden; background: #fdfaf6;
+    box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 8px 22px rgba(60,40,20,.06);
+  }
+  .card .img.board { background: #fff; }
+  .card .img img.arte { display: block; width: 100%; height: auto; }
+  .card .selo-rar { position: absolute; left: 10px; top: 10px; }
+  .card.epica .img { box-shadow: 0 0 0 2px #c3a6f2, 0 10px 28px rgba(155, 70, 240, .22); }
+  .card.rara .img { box-shadow: 0 0 0 2px #b9d6f2, 0 10px 26px rgba(47, 127, 240, .16); }
+  .likes {
+    position: absolute; right: 10px; top: 10px; font-size: 11.5px; font-weight: 700;
+    background: rgba(255,255,255,.92); border-radius: 99px; padding: 4px 9px;
+  }
+  .likes.on { color: #d1345b; }
+  .pe { display: flex; align-items: center; gap: 8px; padding: 9px 4px 0; }
+  .pe strong { font-size: 12.5px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pe small { font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
+
+  /* O card "com o mouse em cima": as ações aparecem por cima da imagem. */
+  .card.hover .img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(20,15,10,0) 40%, rgba(20,15,10,.62));
+  }
+  .sobre {
+    position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2;
+    display: flex; flex-direction: column; gap: 10px; color: #fff;
+  }
+  .sobre .pecas { display: flex; gap: 6px; }
+  .sobre .peca-tile { border-width: 1px; }
+  .sobre .tem { font-size: 11.5px; font-weight: 600; }
+  .sobre .tem b { color: #a5f0bd; }
+  .sobre .botoes { display: flex; gap: 8px; }
+  .sobre .btn-pri { background: #fff; color: var(--tinta); flex: 1; padding: 9px 12px; font-size: 12.5px; }
+  .sobre .salvar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.22); color: #fff; font-size: 15px; backdrop-filter: blur(4px); }
+  .card.hover .likes { display: none; }
+
+  /* Cards que não são post: convites misturados no mural. */
+  .convite { break-inside: avoid; margin-bottom: 16px; border-radius: 18px; padding: 16px; }
+  .convite h3 { font-size: 15px; font-weight: 800; letter-spacing: -.2px; margin-bottom: 4px; }
+  .convite p { font-size: 12px; color: var(--tinta-suave); line-height: 1.5; margin-bottom: 12px; }
+  .convite.gente { background: #f3edff; }
+  .convite.loja { background: #eaf6ec; }
+  .convite.tema { background: linear-gradient(160deg, #fff1e3, #ffe6f0); }
+  .convite .sug strong { font-size: 12.5px; }
+  .convite .tiles { display: flex; gap: 8px; margin-bottom: 12px; }
+  .convite .btn-pri { width: 100%; padding: 9px; font-size: 12.5px; }
+  .convite .contador { font-size: 26px; font-weight: 800; letter-spacing: -.6px; }
+  .convite .faces { display: flex; margin: 4px 0 12px; }
+  .convite .faces .retrato { border: 2px solid #fff; margin-right: -8px; }
+</style>
+</head>
+<body>
+<div class="carregando">montando a opção 2…</div>
+<div class="app" id="app"></div>
+
+<script type="module">
+import {
+  prepararAcervo, gerarPosts, estadoDasPecas, rosto, perfil, tempo, tile, selo, maisRara,
+  sidebar, pronto, el,
+} from './prototipos/feed/dados.js';
+
+const acervo = await prepararAcervo();
+const estado = estadoDasPecas(acervo);
+const posts = await gerarPosts(acervo, 10, {
+  semente: 4410,
+  tipos: ['look', 'board', 'look', 'board', 'look', 'look', 'board', 'look', 'look', 'board'],
+});
+
+const HOVER = 0;               // o card que aparece "com o mouse em cima"
+const CURTIDO = new Set([3]);
+
+function card(post, i) {
+  const autor = perfil(post.autor);
+  const rara = maisRara(post.pecas);
+  // Só épica e lendária ganham selo: se todo card brilha, nenhum chama atenção.
+  const nivel = rara?.raridade === 'epic' || rara?.raridade === 'legendary' ? ' epica' : '';
+  const tem = post.pecas.filter(p => estado(p) === 'tenho').length;
+  return el('article', { class: 'card' + nivel + (i === HOVER ? ' hover' : '') },
+    el('div', { class: 'img' + (post.tipo === 'board' ? ' board' : '') },
+      el('img', { class: 'arte', src: post.img, alt: post.nome }),
+      nivel ? selo(rara) : null,
+      el('span', { class: 'likes' + (CURTIDO.has(i) ? ' on' : '') }, (CURTIDO.has(i) ? '♥ ' : '♡ ') + post.curtidas),
+      i === HOVER ? el('div', { class: 'sobre' },
+        el('div', { class: 'pecas' }, ...post.pecas.slice(0, 5).map(p => tile(p, 40))),
+        el('span', { class: 'tem' }, 'você tem ', el('b', {}, `${tem} de ${post.pecas.length}`), ' peças deste look'),
+        el('div', { class: 'botoes' },
+          el('button', { class: 'btn-pri' }, 'Vestir no meu avatar'),
+          el('button', { class: 'salvar' }, '🔖'),
+          el('button', { class: 'salvar' }, '♡'))) : null),
+    el('div', { class: 'pe' }, rosto(post.autor, 26),
+      el('strong', {}, autor.nome), el('small', {}, tempo(post.horas))));
+}
+
+const naLoja = acervo.filter(p => estado(p) === 'loja').slice(0, 3);
+
+const convites = {
+  gente: el('section', { class: 'convite gente' },
+    el('h3', {}, 'Gente com o seu estilo'),
+    el('p', {}, 'Curtiram os mesmos looks que você esta semana.'),
+    ...['u-yumi', 'u-enzo', 'u-maya'].map(id => el('div', { class: 'sug' },
+      rosto(id, 34),
+      el('div', {}, el('strong', {}, perfil(id).nome), el('small', {}, perfil(id).bio)),
+      el('button', { class: 'btn-seguir' }, 'seguir')))),
+
+  loja: el('section', { class: 'convite loja' },
+    el('h3', {}, 'Na loja hoje'),
+    el('p', {}, '3 peças que aparecem em looks que você curtiu. Restam 2 resgates.'),
+    el('div', { class: 'tiles' }, ...naLoja.map(p => tile(p, 62))),
+    el('button', { class: 'btn-pri' }, 'Ir à loja →')),
+
+  tema: el('section', { class: 'convite tema' },
+    el('h3', {}, 'Tema da semana: clima seco'),
+    el('div', { class: 'contador' }, '84 looks'),
+    el('div', { class: 'faces' }, ...['u-lia', 'u-tom', 'u-nina', 'u-duda', 'u-ian'].map(id => rosto(id, 30))),
+    el('button', { class: 'btn-pri' }, 'Montar o meu')),
+};
+
+// A ordem do mural: posts com um convite a cada três.
+const itens = [];
+posts.forEach((p, i) => {
+  itens.push(card(p, i));
+  if (i === 1) itens.push(convites.tema);
+  if (i === 4) itens.push(convites.gente);
+  if (i === 6) itens.push(convites.loja);
+});
+
+const col = el('div', { class: 'col' },
+  el('header', { class: 'topo' },
+    el('h1', {}, 'Feed'),
+    el('div', { class: 'busca' }, '🔍', 'procurar pessoas, peças ou temas'),
+    el('button', { class: 'btn-pri' }, '+ Publicar')),
+  el('nav', { class: 'chips' },
+    el('span', { class: 'pill ativa' }, 'Para você'),
+    el('span', { class: 'pill' }, 'Seguindo', el('span', { class: 'n' }, '5')),
+    el('span', { class: 'pill' }, 'Em alta'),
+    el('span', { class: 'sep' }),
+    el('span', { class: 'pill' }, 'Looks'),
+    el('span', { class: 'pill' }, 'Colagens'),
+    el('span', { class: 'pill chip-raras' }, '✦ Com peça rara'),
+    el('span', { class: 'sep' }),
+    el('span', { class: 'chip-tema' }, '☀ #climaseco')),
+  el('div', { class: 'mural' }, ...itens));
+
+document.getElementById('app').append(el('main', { class: 'proto-main' }, col), sidebar());
+
+await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+pronto();
+</script>
+</body>
+</html>

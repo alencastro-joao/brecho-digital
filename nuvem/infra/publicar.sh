@@ -4,8 +4,8 @@
 #     bash nuvem/infra/publicar.sh
 #
 # Só sobe o que mudou (é o que o `s3 sync` faz), então republicar é rápido e
-# quase de graça. Não invalida o CloudFront: o HTML, o CSS, o JS e os dois
-# .json sobem com `no-cache`, então o CloudFront revalida por ETag e a mudança
+# quase de graça. Não invalida o CloudFront: o HTML, o CSS e o JS
+# sobem com `no-cache`, então o CloudFront revalida por ETag e a mudança
 # aparece na hora, sem gastar invalidação. As imagens das peças sobem imutáveis
 # por um ano porque o nome do arquivo é o id da peça.
 set -euo pipefail
@@ -42,11 +42,9 @@ aws s3 sync "$APP/js" "s3://$SITE/js" --delete \
 aws s3 cp "$APP/esteira.html" "s3://$SITE/esteira.html" \
   --cache-control "$REVALIDA" --content-type 'text/html; charset=utf-8'
 
-# Só o catalog.json (gerado pelo pipeline). O acervo.json NÃO sobe daqui: quem
-# escreve nele é a Lambda, quando a esteira publica uma peça. Subir o do disco
-# apagaria as peças publicadas desde o último `tools/sincronizar.py`.
-aws s3 cp "$APP/assets/catalog.json" "s3://$SITE/assets/catalog.json" \
-  --cache-control "$REVALIDA" --content-type 'application/json; charset=utf-8'
+# O acervo.json NÃO sobe daqui: quem escreve nele é a Lambda, quando a esteira
+# publica uma peça. Subir o do disco apagaria as peças publicadas desde o último
+# `tools/sincronizar.py`.
 
 # --- O que não muda ------------------------------------------------------
 aws s3 sync "$APP/assets/cloths" "s3://$SITE/assets/cloths" \

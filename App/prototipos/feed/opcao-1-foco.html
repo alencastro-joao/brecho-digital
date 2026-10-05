@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<base href="../../">
+<title>Feed · Opção 1 — Em foco</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="prototipos/feed/proto.css">
+<style>
+  /* Opção 1 — uma publicação por vez, grande, com as peças dela do lado. */
+  .col { flex: 1; min-width: 0; overflow: hidden; padding: 0 40px; }
+  .col-dentro { max-width: 860px; margin: 0 auto; }
+
+  .topo { display: flex; align-items: center; gap: 14px; padding: 24px 0 14px; }
+  .topo h1 { font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+  .abas { display: flex; gap: 6px; margin-left: 10px; }
+  .topo .btn-pri { margin-left: auto; }
+
+  /* Novidades: quem postou desde a sua última visita. */
+  .novidades { display: flex; gap: 16px; padding: 6px 0 18px; border-bottom: 1px solid var(--linha); }
+  .nov { display: grid; justify-items: center; gap: 6px; width: 64px; }
+  .nov small { font-size: 11px; color: var(--tinta); max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nov.visto small { color: var(--tinta-suave); }
+  .anel { padding: 3px; border-radius: 50%; background: conic-gradient(#b48cf0, #f48fb1, #ffcc80, #b48cf0); }
+  .nov.visto .anel { background: #e4ddd3; }
+  .anel > .retrato, .anel > .voce { border: 3px solid #fbf8f4; box-sizing: content-box; }
+  .voce {
+    width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+    background: #fff; font-size: 24px; font-weight: 300; color: var(--tinta);
+  }
+  .nov.publicar .anel { background: none; border: 1.5px dashed #bdb3a6; padding: 1.5px; }
+
+  /* O card: a imagem grande à esquerda, tudo o que dá para fazer à direita. */
+  .post-foco {
+    margin-top: 20px; background: #fff; border: 1px solid var(--linha); border-radius: 22px;
+    display: grid; grid-template-columns: 410px 1fr; overflow: hidden;
+    box-shadow: 0 18px 40px rgba(60, 40, 20, .06);
+  }
+  .foto { position: relative; min-height: 600px; background: #fdfaf6; }
+  .foto.board { background: #fff; }
+  .foto img.arte { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .foto .selo-rar { position: absolute; left: 14px; top: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .foto .tipo {
+    position: absolute; right: 14px; top: 14px; font-size: 10px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave);
+    background: rgba(255,255,255,.9); border-radius: 99px; padding: 4px 10px;
+  }
+
+  .painel { padding: 18px 22px 16px; display: flex; flex-direction: column; min-width: 0; }
+  .autor { display: flex; align-items: center; gap: 10px; }
+  .autor div { flex: 1; min-width: 0; }
+  .autor strong { display: block; font-size: 14px; }
+  .autor small { font-size: 11.5px; color: var(--tinta-suave); }
+  .seguir { border: 1px solid var(--tinta); background: #fff; color: var(--tinta); border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700; }
+
+  .titulo { font-size: 21px; font-weight: 800; letter-spacing: -.4px; margin: 16px 0 4px; }
+  .legenda { font-size: 13px; color: var(--tinta-suave); line-height: 1.5; }
+
+  .pecas-topo { display: flex; align-items: baseline; justify-content: space-between; margin: 18px 0 8px; }
+  .pecas-topo h3 { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-suave); }
+  .pecas-topo span { font-size: 12px; font-weight: 700; }
+  .pecas-topo span b { color: #23864a; }
+  .peca-linha { display: flex; align-items: center; gap: 11px; padding: 6px 0; }
+  .peca-linha + .peca-linha { border-top: 1px dashed #eee6dc; }
+  .peca-linha .info { flex: 1; min-width: 0; }
+  .peca-linha strong { display: block; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peca-linha small { font-size: 11px; color: var(--tinta-suave); }
+  .estado { font-size: 11px; font-weight: 700; border-radius: 99px; padding: 4px 10px; white-space: nowrap; }
+  .estado.tenho { background: #e8f3e6; color: #2f6b2c; }
+  .estado.loja { background: #fff3d6; color: #8a5a00; }
+  .estado.falta { background: #f4f0ea; color: #8d857b; }
+
+  .cta { margin-top: 16px; width: 100%; padding: 13px 18px; font-size: 13.5px; }
+  .cta small { font-weight: 500; opacity: .7; font-size: 11.5px; }
+  .acoes { display: flex; align-items: center; gap: 18px; padding: 12px 2px 10px; font-size: 13px; color: var(--tinta-suave); }
+  .acoes b { color: var(--tinta); font-weight: 700; }
+  .acoes .on { color: #d1345b; }
+  .acoes .dir { margin-left: auto; }
+
+  .conversa { border-top: 1px solid var(--linha); padding-top: 10px; font-size: 12.5px; line-height: 1.55; }
+  .conversa p strong { margin-right: 4px; }
+  .conversa .ver { color: var(--tinta-suave); font-size: 11.5px; margin-top: 2px; }
+  .comentar {
+    margin-top: 10px; display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--linha); border-radius: 99px; padding: 5px 6px 5px 6px; background: #fdfcfa;
+  }
+  .comentar span.ph { flex: 1; font-size: 12px; color: #b3aaa0; }
+  .comentar .rapidos { display: flex; gap: 4px; }
+  .comentar .rapidos i { font-style: normal; font-size: 13px; background: #fff; border: 1px solid var(--linha); border-radius: 99px; padding: 2px 7px; }
+
+  /* Coluna da direita: o seu dia, gente para seguir, a trilha. */
+  .dia { background: linear-gradient(160deg, #f3edff, #fff5ec); border: 1px solid #ebe1fb; border-radius: 18px; padding: 16px; }
+  .dia-topo { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .dia-topo strong { font-size: 15px; }
+  .dia-topo small { font-size: 11.5px; color: var(--tinta-suave); }
+  .dia .barra { background: rgba(255,255,255,.8); margin-bottom: 12px; }
+  .dia .barra span { background: linear-gradient(90deg, #9b6ff0, #f07aa6); }
+  .missao { display: flex; align-items: center; gap: 10px; font-size: 12.5px; padding: 6px 0; }
+  .missao .ck { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #cbbfe9; display: grid; place-items: center; font-size: 11px; flex: none; background: #fff; }
+  .missao.feita .ck { background: #2f9e5a; border-color: #2f9e5a; color: #fff; }
+  .missao.feita span { color: var(--tinta-suave); text-decoration: line-through; }
+  .missao span { flex: 1; }
+  .missao em { font-style: normal; font-size: 11px; font-weight: 800; color: #7a35c9; }
+  .dia .bonus { font-size: 11.5px; color: var(--tinta-suave); margin-top: 6px; }
+  .dia .bonus b { color: var(--tinta); }
+
+  .trilha { display: flex; align-items: center; gap: 12px; background: var(--papel); border-radius: 16px; padding: 11px 14px; }
+  .trilha button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--tinta); color: #fff; font-size: 12px; }
+  .trilha strong { display: block; font-size: 13px; }
+  .trilha small { font-size: 11px; color: var(--tinta-suave); }
+</style>
+</head>
+<body>
+<div class="carregando">montando a opção 1…</div>
+<div class="app" id="app"></div>
+
+<script type="module">
+import {
+  prepararAcervo, gerarPosts, estadoDasPecas, rosto, perfil, tempo, tile, selo, maisRara,
+  raridadeDe, sidebar, pronto, el, MISSOES, nomeDaPeca,
+} from './prototipos/feed/dados.js';
+
+const acervo = await prepararAcervo();
+const estado = estadoDasPecas(acervo);
+const [post, proximo] = await gerarPosts(acervo, 2, { semente: 8812, tipos: ['look', 'board'], autores: ['u-bia', 'u-lia'] });
+post.horas = 2.2;
+post.curtidas = 84;
+post.totalComentarios = 12;
+
+const autor = perfil(post.autor);
+const rara = maisRara(post.pecas);
+const tem = post.pecas.filter(p => estado(p) === 'tenho').length;
+
+const ROTULO = { tenho: '✓ você tem', loja: 'na loja hoje →', falta: '🔔 avise-me' };
+
+const linhaDaPeca = (p) => el('div', { class: 'peca-linha' },
+  tile(p, 46),
+  el('div', { class: 'info' },
+    el('strong', {}, nomeDaPeca(p)),
+    el('small', {}, [p.marca, raridadeDe(p).nome].filter(Boolean).join(' · '))),
+  el('span', { class: 'estado ' + estado(p) }, ROTULO[estado(p)]));
+
+const NOVIDADES = ['u-lia', 'u-tom', 'u-nina', 'u-duda', 'u-yumi', 'u-caio', 'u-isa', 'u-ian', 'u-kika', 'u-otto'];
+
+const col = el('div', { class: 'col' }, el('div', { class: 'col-dentro' },
+  el('header', { class: 'topo' },
+    el('h1', {}, 'Feed'),
+    el('div', { class: 'abas' },
+      el('span', { class: 'pill ativa' }, 'Para você'),
+      el('span', { class: 'pill' }, 'Seguindo', el('span', { class: 'n' }, '5 novos')),
+      el('span', { class: 'pill' }, 'Comunidade')),
+    el('button', { class: 'btn-pri' }, '+ Publicar')),
+
+  el('div', { class: 'novidades' },
+    el('div', { class: 'nov publicar' },
+      el('div', { class: 'anel' }, el('span', { class: 'voce' }, '+')), el('small', {}, 'Seu look')),
+    ...NOVIDADES.map((id, i) => el('div', { class: 'nov' + (i > 5 ? ' visto' : '') },
+      el('div', { class: 'anel' }, rosto(id, 54)),
+      el('small', {}, perfil(id).nome.split(' ')[0])))),
+
+  el('article', { class: 'post-foco' },
+    el('div', { class: 'foto' + (post.tipo === 'board' ? ' board' : '') },
+      el('img', { class: 'arte', src: post.img, alt: post.nome }),
+      rara && ['epic', 'legendary'].includes(rara.raridade) ? selo(rara) : null,
+      el('span', { class: 'tipo' }, post.tipo === 'board' ? 'colagem' : 'look')),
+
+    el('div', { class: 'painel' },
+      el('div', { class: 'autor' }, rosto(post.autor, 42),
+        el('div', {}, el('strong', {}, autor.nome), el('small', {}, `${autor.handle} · ${tempo(post.horas)}`)),
+        el('button', { class: 'seguir' }, 'Seguir')),
+      el('h2', { class: 'titulo' }, post.nome),
+      el('p', { class: 'legenda' }, `${autor.bio}. Montado com ${post.pecas.length} peças do brechó.`),
+
+      el('div', { class: 'pecas-topo' },
+        el('h3', {}, 'Peças do look'),
+        el('span', {}, 'você tem ', el('b', {}, `${tem} de ${post.pecas.length}`))),
+      ...post.pecas.slice(0, 5).map(linhaDaPeca),
+
+      el('button', { class: 'btn-pri cta' }, 'Vestir este look no meu avatar', el('small', {}, '· abre no Stylist')),
+      el('div', { class: 'acoes' },
+        el('span', { class: 'on' }, '♥ ', el('b', {}, String(post.curtidas))),
+        el('span', {}, '💬 ', el('b', {}, String(post.totalComentarios))),
+        el('span', {}, '🔖 Salvar'),
+        el('span', { class: 'dir' }, '↗ Compartilhar')),
+
+      el('div', { class: 'conversa' },
+        el('p', {}, el('strong', {}, 'Nina Cardoso'), 'onde garimpou essa peça?'),
+        el('p', {}, el('strong', {}, 'Tom Arruda'), 'essa bota mudou tudo'),
+        el('p', { class: 'ver' }, `ver os ${post.totalComentarios} comentários`),
+        el('div', { class: 'comentar' },
+          el('span', { class: 'ph' }, '  comentar…'),
+          el('span', { class: 'rapidos' }, el('i', {}, '🔥'), el('i', {}, '😍'), el('i', {}, '👏'))))))));
+
+// ---- coluna da direita ----
+const feitas = { resgates: 3, looks: 1 };
+const rail = el('aside', { class: 'rail' },
+  el('section', { class: 'dia' },
+    el('div', { class: 'dia-topo' }, el('strong', {}, 'Seu dia'), el('small', {}, '2 de 5 missões')),
+    el('div', { class: 'barra' }, el('span', { style: { width: '40%' } })),
+    ...MISSOES.map(m => {
+      const feita = (feitas[m.id] ?? 0) >= m.meta;
+      return el('div', { class: 'missao' + (feita ? ' feita' : '') },
+        el('span', { class: 'ck' }, feita ? '✓' : ''),
+        el('span', {}, m.nome),
+        el('em', {}, `+${m.xp} XP`));
+    }),
+    el('p', { class: 'bonus' }, 'Fechou as 5? ', el('b', {}, '+60 XP de bônus'), ' e sobe para o nível 5.')),
+
+  el('section', {},
+    el('h2', {}, 'Quem seguir'),
+    ...['u-yumi', 'u-enzo', 'u-maya', 'u-pedro'].map(id => el('div', { class: 'sug' },
+      rosto(id, 36),
+      el('div', {}, el('strong', {}, perfil(id).nome), el('small', {}, perfil(id).bio)),
+      el('button', { class: 'btn-seguir' }, 'seguir')))),
+
+  el('section', {},
+    el('h2', {}, 'Trilha do mês'),
+    el('div', { class: 'trilha' }, el('button', {}, '▶'),
+      el('div', {}, el('strong', {}, 'Tema base'), el('small', {}, 'toca enquanto você garimpa')))));
+
+document.getElementById('app').append(
+  el('main', { class: 'proto-main' }, col, rail),
+  sidebar());
+
+await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+pronto();
+</script>
+</body>
+</html>

@@ -41,8 +41,8 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 | **Feed** | Abas Seguindo/Descobrir, 32 perfis fictícios publicando looks **e colagens** geradas na hora, com comentários, curtir, comentar, seguir, compartilhar, player da trilha do mês. A coluna "Quem seguir" procura por nome, sobrenome, @ ou bio — **contas reais incluídas**, é assim que se acha um amigo |
 | **Tarefas** | As missões do dia com barra de progresso, a trilha de níveis (XP, quanto falta, o que cada nível abre) e a cápsula do ilustrador |
 | **Inventário** | O personagem no meio da metade da esquerda, com uma coluna de lugares do corpo de cada lado dele (Cabeça, Tronco, Pernas · Acessório, Cintura, Pés); à direita a mochila, uma página fixa de 5×5 casas com o passador embaixo. Um clique abre a peça, dois vestem; arrastar veste, tira e arruma o saco. As 66 peças aparecem soltas na casa, como item, e não recortadas do corpo. É o que o perfil veste |
-| **Perfil** | A sua página, com o mesmo desenho da página pública: avatar, bio, desde quando, números, amigos e três vitrines curadas — looks, colagens e roupas que você favoritou. Mais editar identidade e personagem, contas conectadas e botões de teste |
-| **Perfil de alguém** | A página pública de quem aparece no feed: avatar, bio, redes ligadas, desde quando, seguidores, as colagens dela (com curtir e comentar no lugar), as peças que ela veste e um atalho para os outros perfis |
+| **Perfil** | A sua página em duas colunas: à esquerda o cartão (avatar, bio, peças/seguidores/amigos, editar perfil, personagem, inventário) e o menu que abre contas conectadas, conta e testes num modal; à direita, no alto, os amigos e "Complete a sua vitrine" (com atalho para o que falta), e embaixo a vitrine curada — roupas favoritas e, em seções separadas, até 3 Stylists e 3 colagens favoritos (a estrela não deixa marcar mais) |
+| **Perfil de alguém** | A página pública de quem aparece no feed, no mesmo desenho do seu perfil: o cartão à esquerda (avatar, bio, redes ligadas, desde quando, publicações/seguidores/seguindo, seguir) e, à direita, outros perfis, as peças que ela veste e os looks (Stylists) e as colagens dela, em seções separadas, no mesmo cartão dos seus favoritos — o clique abre a publicação inteira num modal, com curtir e comentar |
 | **Personagem** | Tom de pele, corte e cor do cabelo do avatar que veste os seus looks |
 
 ## Estrutura
@@ -58,7 +58,7 @@ App/
     auth.js             cliente da API de contas: entrar, criar, sair, trocar senha
     telaauth.js         a tela de entrada, única que roda antes do app existir
     config.js           regras do jogo: limites, raridades, âncoras por categoria, missões, níveis, collab
-    catalog.js          carrega assets/catalog.json e monta os <clipPath> de cada peça
+    catalog.js          carrega assets/acervo.json e monta os <clipPath> de cada peça
     db.js               persistência (localStorage no formato que vai para o DynamoDB)
     presente.js         o brinde de conta nova: 2 tops, 2 calças e 2 calçados, comuns e incomuns
     vitrine.js          mural do dia, resgate, NPC
@@ -86,13 +86,13 @@ App/
     util.js             semente diária, Poisson-disc, helpers de DOM, toasts
   tools/
     bgbatch.py          foto com fundo → recorte PNG em alta (o máster)
-    pipeline.py         PNG → WebP + contorno vetorial + catálogo
+    pipeline.py         contorno vetorial da peça (usado pela esteira e pela Lambda)
     servidor.py         servidor local sem cache
     contas.py           contas e sessões: SQLite, scrypt, cookie de sessão
     pessoas.py          achar gente, seguir e o perfil público: SQLite (espelho de nuvem/lambda/pessoas.py)
   assets/
-    catalog.json        59 peças: imagem, categoria, dimensões e path SVG
-    cloths/*.webp       imagens otimizadas (2,2 MB no total, contra 27 MB dos PNGs)
+    acervo.json         as peças do jogo: imagem, ficha, raridade, dimensões e path SVG
+    cloths/*.webp       imagens otimizadas das peças
     mestres/*.png       recortes em alta das peças subidas pelo admin
     audio/              vazio: solte base.mp3 e collab-01.mp3 aqui para ligar o player
 ```
@@ -251,8 +251,8 @@ na tela sai idêntico no PNG, em qualquer resolução ou zoom.
 
 ## Remoção de fundo (`tools/bgbatch.py`)
 
-O pipeline abaixo assume PNG com fundo transparente. O `bgbatch.py` é o passo
-antes dele: pega a foto crua — JPG de estúdio, print de e-commerce, foto de
+O contorno vetorial (`tools/pipeline.py`) assume PNG com fundo transparente. O
+`bgbatch.py` é o passo antes dele: pega a foto crua — JPG de estúdio, print de e-commerce, foto de
 celular — e devolve o recorte em PNG com alpha no tamanho grande, o **máster**.
 
 Instalação (uma vez):
@@ -332,7 +332,6 @@ Em lote:
 ```bash
 python tools/bgbatch.py                       # ../Cloths/brutas → ../Cloths
 python tools/bgbatch.py --tiles 2 --max 3000  # borda em alta, máster maior
-python tools/pipeline.py --force              # e então o catálogo
 ```
 
 O recorte sai em alta porque são três passadas, não uma:
@@ -360,24 +359,20 @@ estimativas: onde a observação ainda se distingue do fundo ela manda; onde ela
 é o próprio fundo, a cor vem do tecido logo ao lado. O resultado é uma borda
 serrilhada de verdade em vez de uma franja clara.
 
-## Pipeline de imagens
+## Contorno vetorial
 
-`tools/pipeline.py` é a versão local (e executável) do processo descrito em
-*Anotações/upload e formatação das imagens.txt*:
+`tools/pipeline.py` é a versão local do processo descrito em
+*Anotações/upload e formatação das imagens.txt*. Não roda sozinho: a esteira e a
+Lambda do acervo chamam o `contour_of` dele ao publicar uma peça.
 
-```bash
-python tools/pipeline.py            # lê ../Cloths, escreve assets/
-python tools/pipeline.py --force    # reprocessa tudo
-```
-
-Para cada PNG ele recorta pelo alpha, converte para WebP, traça o contorno do objeto
-(Moore neighborhood), simplifica os pontos (Douglas-Peucker) e grava o path SVG
-normalizado no catálogo. O frontend aplica esse path como `clip-path`, e então o próprio
-navegador passa a ignorar os pixels transparentes **também no clique e no hover** —
-sem ler pixel por pixel. Peças com duas partes (um par de botas) viram dois subpaths.
+Ele traça o contorno do objeto pelo alpha (Moore neighborhood), simplifica os pontos
+(Douglas-Peucker) e devolve o path SVG normalizado, que vai para a ficha da peça. O
+frontend aplica esse path como `clip-path`, e então o próprio navegador passa a ignorar
+os pixels transparentes **também no clique e no hover** — sem ler pixel por pixel.
+Peças com duas partes (um par de botas) viram dois subpaths.
 
 O hit-test por canal alpha do protótipo antigo continua em `alpha.js` e entra
-automaticamente se o catálogo não existir e as imagens vierem do S3.
+automaticamente para a peça que não tem contorno.
 
 ## Guia do avatar (para os ilustradores)
 
@@ -965,34 +960,20 @@ roupa é a foto.
 
 ## De onde vêm as peças
 
-Existem duas fontes, e dá para desligar a primeira:
-
 | Fonte | Onde mora | Quem gera |
 |---|---|---|
-| **Acervo da pasta** | `assets/catalog.json` + `assets/cloths/*.webp` (disco) | `tools/pipeline.py`, a partir de `../Cloths` (e `tools/bgbatch.py` antes dele, se a foto tiver fundo) |
-| **Acervo do administrador** | `assets/acervo.json` + `assets/cloths/*.webp` (disco) | o botão **+ Adicionar peça**, em modo admin |
+| **Acervo do administrador** | `assets/acervo.json` + `assets/cloths/*.webp` (disco) | a esteira (**+ Adicionar peça**, em modo admin) |
 | **Peças suas (legado)** | `pecasProprias` em `localStorage` | migração de dados antigos |
 
-As duas primeiras são permanentes e valem para todo mundo. `acervo.json` é um arquivo
-separado de propósito: rodar `tools/pipeline.py` regenera o `catalog.json` inteiro, e as
-peças subidas pela ferramenta não podem sumir nisso.
+O acervo do administrador é permanente e vale para todo mundo: é ele o estoque da loja.
+Sem peça nenhuma, a vitrine avisa que a loja está sem estoque e os perfis fictícios só
+postam quando houver roupa para vestir.
 
-Em **Perfil → Testes**, o botão **Usar só as minhas peças / Usar também o acervo da pasta**
-alterna entre os dois modos (recarrega a página, porque o catálogo é lido no boot). Ele
-vale só para o `catalog.json` da pasta: o `acervo.json` do administrador é carregado sempre,
-nos dois modos — peça subida pela ferramenta não some por causa de preferência.
-
-Com "só as minhas" ligado — que é o padrão — o `catalog.json` **nem é requisitado**: os
-arquivos continuam no disco, intactos, mas o app não os lê. Voltar atrás é um clique.
-
-Nesse modo as suas peças passam a ser o estoque da loja: a vitrine sorteia entre elas, e
-as que já estão no guarda-roupa aparecem marcadas como "no closet". Por isso o passo 1 de
-adicionar peça ganhou a opção **"já entra no meu guarda-roupa"** — desmarcando, a peça
-fica só como estoque, para ser garimpada na loja como qualquer outra.
-
-O que depende do acervo da pasta e se comporta bem sem ele: a vitrine avisa que a loja
-está sem estoque, os perfis fictícios só postam quando houver roupa para vestir, e a
-cápsula do mês explica que as peças dela vêm da pasta desligada.
+Existiu outra fonte, o "acervo da pasta": `assets/catalog.json`, gerado a partir
+de `../Cloths` pelo `tools/pipeline.py`, com um botão em Perfil → Testes para ligá-lo e
+desligá-lo. Ela saiu do app — as 59 peças numeradas e o botão. A cápsula do mês
+(`COLLAB.itens`) ainda aponta para ids dessa fonte e mostra que as peças não estão no
+acervo até ser apontada para peças publicadas pela esteira.
 
 ## Esteira de peças (como a peça entra no jogo)
 
@@ -1119,7 +1100,7 @@ país, link). Marca repetida não duplica: só incrementa o contador, ignorando 
 
 A peça entra no mesmo catálogo das outras: dali em diante closet, Stylist, colagem e
 exportação a tratam como qualquer peça do acervo. A raridade escolhida na ficha fica
-gravada com ela — não é re-sorteada por dia como a das peças do `catalog.json`.
+gravada com ela — não é re-sorteada por dia.
 
 A opção **"já entra no meu guarda-roupa"** decide só o que acontece no inventário de quem
 está subindo: desmarcada, a peça fica de estoque na loja, para ser garimpada na vitrine.
@@ -1169,9 +1150,8 @@ O recorte não carrega escala nenhuma: o arquivo de um anel (504×334) tem prati
 mesmo tamanho do de um casaco (512×335). Sem uma tabela, qualquer tela que faça a peça
 "preencher a caixa" acaba com relógio do tamanho de calça.
 
-Peça dimensionada no molde usa a medida dela. Para as outras — as 59 do acervo, que
-vieram do pipeline — vale `TAMANHO` em `js/config.js`, o tamanho relativo de cada
-categoria no mundo real, com casaco = 1:
+Peça dimensionada no molde usa a medida dela. Para as outras vale `TAMANHO` em
+`js/config.js`, o tamanho relativo de cada categoria no mundo real, com casaco = 1:
 
 | Categoria | Tamanho | | Categoria | Tamanho |
 |---|---|---|---|---|
@@ -1192,7 +1172,7 @@ Desse número saem duas curvas, porque grade e composição têm necessidades di
 
 Para exceções que fogem da média da categoria — um casaco extra-longo, um brinco
 minúsculo — existe `ESCALA_PECA` no mesmo arquivo: `{ '39': 1.3 }` multiplica só aquela
-peça, e sobrevive a rodar o pipeline de novo (diferente de editar o `catalog.json`).
+peça, sem mexer na ficha dela.
 
 A conta é a mesma nos dois casos: `tamanhoDaPeca()` devolve a medida da peça quando ela
 existe e o padrão da categoria quando não — as telas não precisam saber a diferença.

@@ -44,7 +44,7 @@ export function montarCloset() {
   // e preenche a ficha, e a peça publicada lá aparece aqui na próxima carga.
   btnAdd.addEventListener('click', () => { location.href = 'esteira.html'; });
   // Editar também é ferramenta de administrador, e só vale para peça do
-  // acervo (as do pipeline não têm ficha em disco para reescrever).
+  // acervo (as guardadas só no navegador não têm ficha em disco para reescrever).
   $('#btn-editar-peca').addEventListener('click', () => {
     if (!selecionada) return;
     const cat = pecaDoCatalogo(selecionada);

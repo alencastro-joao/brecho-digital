@@ -1,0 +1,189 @@
+/* Perfil (#/perfil): a sua página, em duas colunas.
+   À esquerda o cartão de quem você é, parado enquanto a vitrine rola; à
+   direita a vitrine. Ajustes da conta abrem num modal (#modal-ajustes).
+   O perfil dos outros (#/usuario/<id>) usa este mesmo desenho; o que é só
+   dele está em usuario.css.
+   Reaproveita de social.css o .perfil-handle, o .perfil-redes, o .rede-chip e
+   o cartão de conexão; de auth.css, o formulário de senha. */
+
+.view-perfil { background: #fbf8f4; overflow-y: auto; }
+
+.pf-layout {
+  flex: 1; max-width: 1120px; margin: 0 auto; align-self: flex-start;
+  padding: 40px 34px 60px;
+  display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 34px; align-items: start;
+}
+
+/* ------------------------------- O cartão -------------------------------- */
+.pf-cartao {
+  position: sticky; top: 24px;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 22px;
+  overflow: hidden;
+}
+.pf-avatar { height: 250px; display: grid; place-items: center; }
+.pf-avatar .avatar-svg svg { height: 228px; }
+
+.pf-corpo { padding: 18px 20px 20px; display: flex; flex-direction: column; }
+.pf-corpo h1 {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 22px; letter-spacing: -.4px; overflow-wrap: anywhere;
+}
+.pf-corpo .perfil-handle { margin: 4px 0 10px; }
+.pf-bio {
+  font-size: 13.5px; color: var(--tinta-suave); line-height: 1.5;
+  margin-bottom: 12px; overflow-wrap: anywhere;
+}
+.pf-corpo .perfil-redes { margin: 0 0 12px; }
+
+.pf-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid #f2ede6; border-bottom: 1px solid #f2ede6;
+  margin-bottom: 18px;
+}
+.pf-stat { padding: 11px 0; text-align: center; cursor: default; }
+.pf-stat + .pf-stat { border-left: 1px solid #f2ede6; }
+.pf-stat strong { display: block; font-size: 17px; }
+.pf-stat small { font-size: 10.5px; color: var(--tinta-suave); }
+
+.pf-acoes { display: flex; flex-direction: column; gap: 8px; }
+.pf-dupla { display: flex; gap: 8px; }
+.pf-dupla .btn-ghost { flex: 1; margin: 0; padding: 10px 8px; }
+
+/* Editar: o formulário toma o lugar do miolo do cartão. */
+.perfil-editar { gap: 12px; }
+.perfil-editar h2 { font-size: 16px; }
+.perfil-editar label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.perfil-editar input {
+  border: 1px solid var(--linha); border-radius: 12px; padding: 8px 11px;
+  font-family: inherit; font-size: 13px; color: var(--tinta);
+}
+.perfil-editar input:focus { outline: none; border-color: var(--tinta); }
+.pf-form-acoes { display: flex; gap: 8px; }
+.pf-form-acoes .btn-dark, .pf-form-acoes .btn-ghost { width: auto; margin: 0; padding: 9px 18px; }
+
+.pf-menu { border-top: 1px solid var(--linha); display: flex; flex-direction: column; }
+.pf-menu button {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 13px 20px; border: 0; border-bottom: 1px solid #f2ede6;
+  background: none; font-size: 13px; color: var(--tinta); text-align: left;
+}
+.pf-menu button:last-child { border-bottom: 0; }
+.pf-menu button:hover { background: #fbf8f4; }
+.pf-menu span { color: var(--tinta-suave); }
+
+/* ------------------------------- A vitrine ------------------------------- */
+.pf-vitrine { display: flex; flex-direction: column; gap: 30px; min-width: 0; }
+
+.pf-secao-topo { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.pf-secao-topo h2 { font-size: 17px; }
+.pf-secao-topo span { font-size: 12px; color: var(--tinta-suave); }
+.pf-link {
+  margin-left: auto; padding: 0; border: 0; background: none;
+  font-size: 12.5px; font-weight: 600; color: var(--tinta);
+}
+.pf-link:hover { text-decoration: underline; }
+
+.pf-grade {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cel-peca), 1fr));
+}
+
+/* Looks e colagens: cartão com a miniatura, o nome e as peças que o compõem.
+   A miniatura do look nasce em 360×600 (render.js); o quadro de 9:14 come só
+   a margem de cima e de baixo, então o boneco preenche o cartão sem faixa. */
+.pf-grade-obras { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; }
+.pf-obra {
+  display: flex; flex-direction: column; padding: 0; overflow: hidden; text-align: left;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 18px;
+  transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.pf-obra:hover {
+  border-color: var(--tinta); transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .08);
+}
+.pf-obra-foto {
+  position: relative; aspect-ratio: 9 / 14; overflow: hidden;
+  background: #fdfaf6; border-bottom: 1px solid #f2ede6;
+  display: grid; place-items: center;
+}
+.pf-obra-foto img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; transition: transform .25s;
+}
+/* A colagem tem formato próprio (4:5, 1:1, 9:16): inteira, no branco dela. */
+.pf-obra.colagem .pf-obra-foto { background: #fff; }
+.pf-obra.colagem .pf-obra-foto img { object-fit: contain; }
+.pf-obra:hover .pf-obra-foto img { transform: scale(1.03); }
+.pf-etiqueta {
+  position: absolute; left: 10px; top: 10px;
+  padding: 3px 9px; border-radius: 20px;
+  background: var(--tinta); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: .02em;
+}
+
+.pf-obra-info { padding: 11px 13px 4px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-obra-info strong {
+  font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-obra-info small { font-size: 11px; color: var(--tinta-suave); }
+
+/* As peças do look, em miniatura: dá para ver de relance do que ele é feito. */
+.pf-obra-pecas { display: flex; gap: 6px; padding: 8px 13px 13px; }
+.pf-obra-peca {
+  position: relative; flex: none; width: 32px; height: 32px;
+  border-radius: 9px; background: #faf7f2; border: 1px solid #f0eae2;
+}
+.pf-obra-peca img {
+  position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px);
+  object-fit: contain;
+}
+.pf-obra-peca.mais {
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: var(--tinta-suave);
+}
+
+.pf-amigos { display: flex; flex-wrap: wrap; gap: 18px; }
+.pf-amigo {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 0; background: none; padding: 0;
+}
+.pf-amigo .retrato { border-radius: 50%; transition: transform .15s; }
+.pf-amigo:hover .retrato, .pf-amigo:hover .pf-mais { transform: translateY(-2px); }
+.pf-amigo small { font-size: 11px; color: var(--tinta-suave); }
+.pf-mais {
+  width: 54px; height: 54px; border-radius: 50%;
+  border: 1px dashed #cfc5b8; display: grid; place-items: center;
+  font-size: 20px; color: var(--tinta-suave); transition: transform .15s;
+}
+
+/* O lugar das seções vazias: o que falta e onde resolver. */
+.pf-dicas {
+  background: var(--branco); border: 1px dashed #dcd3c7; border-radius: 18px;
+  padding: 16px 18px 8px;
+}
+.pf-dicas h3 { font-size: 14px; margin-bottom: 8px; }
+.pf-dica {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-top: 1px solid #f2ede6;
+}
+.pf-dica-icone {
+  flex: none; width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center; font-size: 13px;
+}
+.pf-dica div { flex: 1; min-width: 0; }
+.pf-dica strong { display: block; font-size: 13px; font-weight: 600; }
+.pf-dica small { font-size: 12px; color: var(--tinta-suave); }
+.pf-dica .btn-ghost { width: auto; margin: 0; padding: 6px 14px; font-size: 12px; }
+
+/* -------------------------------- Ajustes -------------------------------- */
+.aj-caixa { width: min(620px, 100%); }
+.aj-corpo { overflow-y: auto; padding: 18px 26px 24px; }
+.aj-corpo .missoes-sub { margin-bottom: 0; }
+.aj-corpo .conexao-lista { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.aj-corpo .tool-row { margin: 12px 0; }
+.aj-corpo .tool-row .btn-ghost { width: auto; flex: 1 1 160px; margin: 0; }
+.aj-corpo .conta-senha { margin-bottom: 12px; }

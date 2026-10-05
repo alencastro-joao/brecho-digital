@@ -1,13 +1,11 @@
 // Catálogo de peças.
 //
-// Lê assets/catalog.json (gerado por tools/pipeline.py). Cada item traz a imagem
-// otimizada + o contorno vetorial. O contorno vira um <clipPath> SVG aplicado na
-// imagem: com ele o navegador passa a ignorar os pixels transparentes também no
-// clique e no hover — é a versão "geométrica" do problema, como no documento de
-// upload/formatação.
-//
-// Se o catálogo não existir, cai para os PNGs no S3 (sem contorno; nesse caso o
-// hit-test por canal alpha em alpha.js assume).
+// Lê assets/acervo.json (o acervo do administrador, publicado pela esteira).
+// Cada item traz a imagem otimizada + o contorno vetorial. O contorno vira um
+// <clipPath> SVG aplicado na imagem: com ele o navegador passa a ignorar os
+// pixels transparentes também no clique e no hover — é a versão "geométrica" do
+// problema, como no documento de upload/formatação. Peça sem contorno cai no
+// hit-test por canal alpha de alpha.js.
 
 import { CONFIG, CATEGORIAS, migrarCategoria } from './config.js';
 import * as db from './db.js';
@@ -18,67 +16,24 @@ const SINGULAR = {
   necklaces: 'Colar', glasses: 'Óculos', hats: 'Chapéu', bags: 'Bolsa',
 };
 
-const CATEGORIAS_FALLBACK = {
-  shirts: ['04','14','10','23','30','40','38'],
-  pants: ['03','26','27'],
-  shoes: ['37','35','32','33','22','15','17','18','02'],
-  dresses: ['08','41','42','43','44','45'],
-  coats: ['28','46','47','48','49','50'],
-  hats: ['09','01','31','24','29','51','52','53'],
-  bags: ['12','25','19','54','55','56'],
-  watches: ['13','57','58','59'],
-  bracelets: ['21','05','06','39'],
-  glasses: ['07','16','11','34','36','20'],
-};
-
 export const catalogo = {
   itens: [],
   porId: new Map(),
   temContorno: false,
-  origem: 'local',
   removidas: [],             // ids que o admin apagou do acervo (ver db.esquecerPecas)
 };
 
-// Duas fontes de peça: o acervo gerado pelo pipeline (assets/catalog.json, no
-// disco) e as peças que você subiu pela interface (localStorage). A preferência
-// `soPecasProprias` desliga a primeira — os arquivos continuam lá, só não são
-// lidos. Dá para voltar atrás em Perfil → Testes.
-export const soProprias = () => Boolean(db.state.usuario.preferencias?.soPecasProprias);
-
 export async function carregarCatalogo() {
-  if (soProprias()) {
-    catalogo.itens = [];
-    catalogo.origem = 'proprias';
-  } else try {
-    const resp = await fetch(CONFIG.CATALOGO, { cache: 'no-cache' });
-    if (!resp.ok) throw new Error(resp.status);
-    const data = await resp.json();
-    catalogo.itens = data.items;
-    catalogo.temContorno = data.items.some(i => i.path);
-  } catch (e) {
-    console.warn('catalog.json indisponível — usando os PNGs do S3.', e);
-    catalogo.origem = 's3';
-    catalogo.itens = Object.entries(CATEGORIAS_FALLBACK).flatMap(([cat, ids]) =>
-      ids.map(id => ({ id, cat, src: CONFIG.S3_FALLBACK + id + '.png', w: 1, h: 1, path: '' }))
-    );
-  }
+  // O acervo do administrador: peças publicadas pela esteira, com ficha (nome,
+  // marca, raridade) e a âncora medida no molde.
+  catalogo.itens = await carregarAcervo();
 
-  // O acervo do administrador: peças subidas pela ferramenta e gravadas no
-  // disco. Entram como qualquer peça do catálogo — a diferença é que trazem
-  // ficha (nome, marca, raridade) e a âncora medida no molde. Entram sempre,
-  // independente da preferência de fonte.
-  const extras = await carregarAcervo();
-  for (const it of extras) {
-    const i = catalogo.itens.findIndex(x => x.id === it.id);
-    if (i >= 0) catalogo.itens[i] = it; else catalogo.itens.push(it);
-  }
-
-  // As peças que você subiu entram no mesmo catálogo: a partir daqui todo o
-  // resto do app (closet, Stylist, prancheta, render) as trata como qualquer
-  // outra peça.
+  // As peças subidas pelo navegador (legado) entram no mesmo catálogo: a partir
+  // daqui todo o resto do app (closet, Stylist, prancheta, render) as trata
+  // como qualquer outra peça.
   catalogo.itens.push(...db.state.pecasProprias.map(p => ({ ...p, propria: true })));
 
-  // catalog.json e acervo.json ainda trazem peça com categoria antiga.
+  // O acervo.json ainda traz peça com categoria antiga.
   for (const it of catalogo.itens) it.cat = migrarCategoria(it.cat);
 
   catalogo.itens.sort((a, b) => a.id.localeCompare(b.id));
@@ -87,9 +42,6 @@ export async function carregarCatalogo() {
   return catalogo;
 }
 
-// O acervo do administrador é conteúdo do jogo, não "peça do acervo da pasta":
-// entra sempre, inclusive no modo "só as minhas peças" — era por ficar de fora
-// que a peça recém-subida sumia no primeiro recarregamento.
 async function carregarAcervo() {
   try {
     const resp = await fetch(CONFIG.ACERVO, { cache: 'no-cache' });
@@ -103,7 +55,7 @@ async function carregarAcervo() {
     if (itens.some(i => i.path)) catalogo.temContorno = true;
     return itens;
   } catch {
-    return [];                 // sem acervo ainda: o catálogo base basta
+    return [];                 // sem acervo ainda: catálogo vazio
   }
 }
 

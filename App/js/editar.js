@@ -631,12 +631,12 @@ export function fechar() {
   peca = null;
 }
 
-// Só peça do acervo do administrador pode ser editada: as do pipeline não
-// moram no acervo.json e a API recusaria.
+// Só peça do acervo do administrador pode ser editada: as subidas pelo
+// navegador (legado) não moram no acervo.json e a API recusaria.
 export function abrirEditar(alvo, callback) {
   if (!alvo) return;
   if (!alvo.permanente) {
-    return toast('Essa peça veio do catálogo gerado pelo pipeline — só dá para editar as do acervo.', 'aviso');
+    return toast('Essa peça foi guardada só neste navegador — só dá para editar as do acervo.', 'aviso');
   }
   peca = alvo;
   aoSalvar = callback;

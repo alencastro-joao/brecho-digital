@@ -8,13 +8,10 @@ export const CONFIG = {
   RESGATES_POR_DIA: 3,      // o "X peças por dia" da descrição técnica
   MIN_DIST_MURAL: 118,      // px entre âncoras no Poisson-disc
 
-  // Fontes de imagem. O catálogo local é gerado por tools/pipeline.py.
-  CATALOGO: 'assets/catalog.json',
   // Acervo do administrador: peças publicadas pela esteira (esteira.html),
-  // gravado pela Lambda. Fica fora do catalog.json para sobreviver ao pipeline.
+  // gravado pela Lambda. É a fonte das peças do jogo.
   ACERVO: 'assets/acervo.json',
   API_PECAS: 'api/pecas',      // PUT: editar peça (peça nova entra pela esteira)
-  S3_FALLBACK: 'https://brecho-system-resources.s3.us-east-1.amazonaws.com/cloths/',
 
   // O dono da loja some da vitrine enquanto o personagem não volta.
   // Vira true e ele reaparece com o balão de fala, sem mais nenhuma mudança.

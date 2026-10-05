@@ -2,8 +2,10 @@
 //
 // Aqui não há contas ligadas nem botões de teste: isso é do dono da conta. O
 // que se vê de fora é quem a pessoa é (avatar, bio, desde quando), o que ela
-// fez (colagens, curtidas recebidas) e o que ela veste (as peças dos looks).
-// O seu perfil é esta mesma página, montada com os seus dados — ver perfil.js.
+// fez (looks e colagens publicados) e o que ela veste (as peças deles).
+// O desenho é o do seu perfil (perfil.js): o cartão à esquerda e a coluna da
+// direita com outras pessoas, as peças e as publicações. Clicar numa
+// publicação abre o cartão inteiro do feed, num modal, para curtir e comentar.
 //
 // Os números não vêm de lugar nenhum — são sorteados a partir do id, como o
 // avatar (ver avatar.js). Mesma semente, mesma pessoa: @liamoreno tem sempre os
@@ -15,6 +17,7 @@ import { item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria } from './catalog.j
 import * as db from './db.js';
 import { aparenciaDoPerfil, svgAvatar, retrato } from './avatar.js';
 import { el, $, mulberry32, sementeDoTexto, tempoRelativo, toast } from './util.js';
+import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipNivel } from './nivel.js';
 import { chipsDeRedes } from './conexoes.js';
@@ -27,6 +30,7 @@ const MAX_PECAS = 12;
 
 let idAtual = null;          // de quem é a página aberta
 let gerando = false;         // uma leva de colagens por vez
+let postAberto = null;       // o post aberto no modal, se houver
 
 // Fictício (PERFIS_MOCK) ou conta real (pessoas.js): o mesmo formato.
 export const perfilPublico = perfilDe;
@@ -116,9 +120,23 @@ function pecasDe(id) {
   return [...vistas.values()].slice(0, MAX_PECAS);
 }
 
+// As peças de um post só, para a fileira do cartão.
+const pecasDeUmPost = (post) => [...new Set(pecasDoPost(post).map(c => c.itemId))]
+  .map(pecaDoCatalogo).filter(Boolean);
+
+const plural = (n, um, muitos) => `${n} ${n === 1 ? um : muitos}`;
+
 // --------------------------------- Tela -----------------------------------
 export function montarUsuario() {
   $('#up-voltar').addEventListener('click', () => irPara('social'));
+  $('#up-buscar').addEventListener('click', () => abrirBuscaDePessoas(renderUsuario));
+
+  const modal = $('#modal-post');
+  $('#up-post-fechar').addEventListener('click', fecharPost);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fecharPost(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) fecharPost();
+  });
 
   // Curtir ou comentar aqui é curtir no feed: quando ele repinta, esta tela
   // repinta junto, senão o coração ficaria aceso só de um lado.
@@ -128,6 +146,7 @@ export function montarUsuario() {
 export async function aoEntrarNoUsuario() {
   const id = paramAtual();
   let p = perfilPublico(id);
+  fecharPost();
 
   // Conta real que este navegador ainda não viu (link direto, ou um seguido de
   // outro aparelho): o cartão vem do servidor antes de a página existir.
@@ -195,21 +214,23 @@ function renderUsuario() {
     ...(n.nivel == null ? [] : [chipNivel(n.nivel, { titulo: false })]));
   // Numa conta real "segue você" é fato, então aparece antes de você seguir —
   // ao contrário dos fictícios, onde mostrar o sorteio cedo estragaria a graça.
-  $('#up-handle').textContent = `${p.handle} · no brechó desde ${mesAno(n.desde)}` +
-    (p.real && p.segueVoce ? ' · segue você' : '');
+  $('#up-handle').replaceChildren(
+    p.handle, el('br'), `no brechó desde ${mesAno(n.desde)}`,
+    ...(p.real && p.segueVoce ? [el('span', { class: 'pf-segue-voce' }, 'segue você')] : []));
   $('#up-bio').textContent = p.bio;
+  $('#up-bio').hidden = !p.bio;
   $('#up-redes').replaceChildren(...chipsDeRedes(redesDoPerfil(p)));
 
+  // Três números, como no seu cartão; as curtidas vão no título.
   // Fictício: o sorteio não sabe que você o seguiu, então soma você à mão.
   // Conta real: o servidor já contou.
   const stats = [
-    ['colagens', posts.length],
-    ['curtidas', curtidas],
-    ['seguidores', n.seguidores + (!p.real && segue ? 1 : 0)],
-    ['seguindo', n.seguindo],
+    ['publicações', posts.length, `${plural(curtidas, 'curtida', 'curtidas')} nas publicações`],
+    ['seguidores', n.seguidores + (!p.real && segue ? 1 : 0), ''],
+    ['seguindo', n.seguindo, ''],
   ];
-  $('#up-stats').replaceChildren(...stats.map(([rotulo, valor]) =>
-    el('div', { class: 'stat' },
+  $('#up-stats').replaceChildren(...stats.map(([rotulo, valor, dica]) =>
+    el('div', { class: 'pf-stat', title: dica },
       el('strong', {}, String(valor)), el('small', {}, rotulo))));
 
   $('#up-acoes').replaceChildren(
@@ -220,47 +241,96 @@ function renderUsuario() {
     el('button', { class: 'btn-ghost', onclick: () => irPara('social') }, 'Ver o feed')
   );
 
-  renderPosts(p, posts);
-  renderPecas(p);
   renderOutros(p);
+  renderVazio(p, posts, segue);
+  renderPecas(p);
+  renderPosts(posts);
+  if (postAberto) renderPostAberto();
 }
 
-function renderPosts(p, posts) {
-  const nomeCurto = p.nome.split(' ')[0];
-  $('#up-posts-sub').textContent = posts.length
-    ? `${posts.length} ${posts.length === 1 ? 'colagem publicada' : 'colagens publicadas'} · ` +
-      `a última ${tempoRelativo(posts[0].criadoEm)}`
-    : `${nomeCurto} ainda não publicou nada.`;
+// Sem publicação nenhuma, o lugar das seções vazias é um aviso só — o mesmo
+// bloco tracejado do "Complete a sua vitrine" do seu perfil.
+function renderVazio(p, posts, segue) {
+  const caixa = $('#up-vazio');
+  caixa.hidden = posts.length > 0;
+  if (caixa.hidden) return;
 
-  const caixa = $('#up-posts');
-  if (!posts.length) {
-    caixa.replaceChildren(el('p', { class: 'feed-vazio' },
-      'Sem colagens por aqui — siga a pessoa para não perder a primeira.'));
-    return;
-  }
-  caixa.replaceChildren(...posts.map(cardDoPost));
+  caixa.replaceChildren(
+    el('h3', {}, `${p.nome.split(' ')[0]} ainda não publicou nada`),
+    el('div', { class: 'pf-dica' },
+      el('span', { class: 'pf-dica-icone', style: { background: 'var(--social)' } }, '♡'),
+      el('div', {},
+        el('strong', {}, segue ? 'Você já segue' : 'Siga para não perder a primeira'),
+        el('small', {}, 'os looks e as colagens publicados aparecem aqui e no seu feed')),
+      segue ? null : el('button', {
+        class: 'btn-ghost', onclick: () => alternarSeguir(p.id),
+      }, 'Seguir')));
 }
 
 function renderPecas(p) {
   const pecas = pecasDe(p.id);
-
-  $('#up-pecas-sub').textContent = pecas.length
-    ? `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'} que aparecem nas colagens ` +
-      `de ${p.nome.split(' ')[0]}.`
-    : 'As peças aparecem aqui quando houver colagem publicada.';
-
+  $('#up-secao-pecas').hidden = !pecas.length;
+  $('#up-pecas-sub').textContent = 'as que aparecem nas publicações';
   $('#up-pecas').replaceChildren(...gradeDePecas(pecas));
 }
 
-// Rodapé: pular para a próxima pessoa sem voltar ao feed.
+// O mesmo cartão dos seus favoritos, em duas seções como no seu perfil:
+// Stylists e Colagens. Curtidas e comentários vão na linha de baixo do nome, e
+// o clique abre a publicação inteira.
+function renderPosts(posts) {
+  const secao = (chave, lista, um, muitos) => {
+    $(`#up-secao-${chave}`).hidden = !lista.length;
+    $(`#up-${chave}-sub`).textContent = lista.length
+      ? `${plural(lista.length, um, muitos)} · a última ${tempoRelativo(lista[0].criadoEm)}`
+      : '';
+    $(`#up-${chave}`).replaceChildren(...lista.map(post => cartaoDeObra({
+      nome: post.nome,
+      thumb: post.thumb,
+      tipo: post.tipo === 'board' ? 'colagem' : 'look',
+      pecas: pecasDeUmPost(post),
+      selo: post.curtido ? '♥ curtido' : null,
+      resumo: `♥ ${post.curtidas || 0} · 💬 ${(post.comentarios || []).length}`,
+      abrir: () => abrirPost(post.id),
+    })));
+  };
+  secao('looks', posts.filter(post => post.tipo !== 'board'), 'look', 'looks');
+  secao('colagens', posts.filter(post => post.tipo === 'board'), 'colagem', 'colagens');
+}
+
+// Pular para a próxima pessoa sem voltar ao feed.
 function renderOutros(p) {
   $('#up-outros').replaceChildren(...botoesDeOutrosPerfis(p.id));
+}
+
+// ------------------------------ Post aberto -------------------------------
+// O cartão do feed inteiro (cardDoPost): curtir, comentar e o menu. Quando o
+// feed repinta, renderUsuario repinta o modal junto.
+function abrirPost(id) {
+  postAberto = id;
+  renderPostAberto();
+  $('#modal-post').hidden = false;
+  document.body.classList.add('com-modal');
+}
+
+function renderPostAberto() {
+  const post = postsDe(idAtual).find(x => x.id === postAberto);
+  if (!post) return fecharPost();
+  $('#up-post-titulo').textContent = post.nome;
+  $('#up-post-corpo').replaceChildren(cardDoPost(post));
+}
+
+function fecharPost() {
+  if (!postAberto) return;
+  postAberto = null;
+  $('#modal-post').hidden = true;
+  $('#up-post-corpo').replaceChildren();
+  document.body.classList.remove('com-modal');
 }
 
 // ------------------------- Pedaços que o perfil usa ------------------------
 // As duas telas são a mesma página vista de fora e de dentro (ver perfil.js),
 // então estas seções nascem aqui e o perfil próprio as enche com o que é dele:
-// o guarda-roupa no lugar das peças dos looks, e a lista inteira de perfis.
+// as favoritas no lugar das peças dos posts, e os seus looks no lugar dos dela.
 
 // A célula é a mesma do guarda-roupa, sem aura nem arrastar.
 export const gradeDePecas = (pecas) => pecas.map(peca =>
@@ -272,17 +342,49 @@ export const gradeDePecas = (pecas) => pecas.map(peca =>
       el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' }))
   ));
 
-// Um atalho para a página de alguém: retrato, primeiro nome e o clique.
+// Quantas peças a fileira de baixo do cartão de look mostra antes do "+N".
+const PECAS_NO_CARTAO = 4;
+
+// O cartão de um look ou colagem: a miniatura no formato dela, o nome, um
+// resumo e a fileira das peças que o compõem — num brechó, o que interessa num
+// look é de onde saiu cada peça. `selo` é o rótulo escuro no canto da foto.
+export function cartaoDeObra({ nome, thumb, tipo, pecas, selo = null, resumo = null, abrir }) {
+  const sobra = pecas.length - PECAS_NO_CARTAO;
+  return el('button', { class: `pf-obra ${tipo}`, title: `Abrir "${nome}"`, onclick: abrir },
+    el('div', { class: 'pf-obra-foto' },
+      thumb
+        ? el('img', { src: thumb, alt: nome, loading: 'lazy' })
+        : el('span', { class: 'sem-thumb' }, 'sem prévia'),
+      selo ? el('span', { class: 'pf-etiqueta' }, selo) : null),
+    el('div', { class: 'pf-obra-info' },
+      el('strong', {}, nome),
+      el('small', {}, [
+        tipo === 'look' ? 'Look' : 'Colagem',
+        plural(pecas.length, 'peça', 'peças'),
+        resumo,
+      ].filter(Boolean).join(' · '))),
+    pecas.length
+      ? el('div', { class: 'pf-obra-pecas' },
+        ...pecas.slice(0, PECAS_NO_CARTAO).map(p =>
+          el('span', { class: 'pf-obra-peca', title: nomeDaPeca(p) },
+            el('img', { src: p.src, alt: nomeDaPeca(p), loading: 'lazy' }))),
+        sobra > 0 ? el('span', { class: 'pf-obra-peca mais' }, `+${sobra}`) : null)
+      : null
+  );
+}
+
+// Um atalho para a página de alguém: o retrato redondo e o primeiro nome.
+// É a fileira de amigos do seu perfil e a de outros perfis daqui.
 export const botaoDePerfil = (p) =>
   el('button', {
-    class: 'up-outro',
+    class: 'pf-amigo',
     title: p.bio,
     onclick: () => abrirPerfilDe(p.id),
   },
-    retrato(aparenciaDoPerfil(p), 40, p.cor, roupasDoPerfil(p)),
+    retrato(aparenciaDoPerfil(p), 54, p.cor, roupasDoPerfil(p)),
     el('small', {}, p.nome.split(' ')[0])
   );
 
-// Rodapé do perfil público. `exceto` é quem já está na tela aberta.
+// "Outros perfis" do perfil público. `exceto` é quem já está na tela aberta.
 export const botoesDeOutrosPerfis = (exceto = null, quantos = 6) =>
   PERFIS_MOCK.filter(o => o.id !== exceto).slice(0, quantos).map(botaoDePerfil);

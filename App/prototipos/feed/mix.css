@@ -1,0 +1,122 @@
+/* Peças das opções 4, 5 e 6: o mural da opção 2 com o desafio da opção 3. */
+
+.col { flex: 1; min-width: 0; overflow: hidden; padding: 0 34px; }
+.topo { display: flex; align-items: center; gap: 16px; padding: 22px 0 12px; }
+.topo h1 { font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+.topo .btn-pri { margin-left: auto; }
+.busca {
+  flex: 1; max-width: 420px; display: flex; align-items: center; gap: 9px;
+  background: #fff; border: 1px solid var(--linha); border-radius: 99px; padding: 9px 16px;
+  font-size: 13px; color: #b3aaa0;
+}
+.chips { display: flex; align-items: center; gap: 7px; padding-bottom: 16px; }
+.chips .sep { width: 1px; height: 22px; background: var(--linha); margin: 0 6px; }
+.chip-raras { color: #7a35c9; border-color: #dccbf7; }
+.chip-tema {
+  display: inline-flex; align-items: center; gap: 7px; border-radius: 99px; padding: 7px 14px;
+  font-size: 12.5px; font-weight: 700; color: #8a3b62;
+  background: linear-gradient(90deg, #ffe9cf, #ffd9e6); border: 1px solid #f6cfdc;
+}
+.chip-tema.ativa { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+
+/* ------------------------------- Mural --------------------------------- */
+.mural { column-count: 4; column-gap: 16px; }
+.mural.tres { column-count: 3; }
+.card { break-inside: avoid; margin-bottom: 16px; position: relative; }
+.card .img {
+  position: relative; border-radius: 18px; overflow: hidden; background: #fdfaf6;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 8px 22px rgba(60,40,20,.06);
+}
+.card .img.board { background: #fff; }
+.card .img img.arte { display: block; width: 100%; height: auto; }
+.card .selo-rar { position: absolute; left: 10px; top: 10px; }
+.card.epica .img { box-shadow: 0 0 0 2px #c3a6f2, 0 10px 28px rgba(155, 70, 240, .22); }
+.likes {
+  position: absolute; right: 10px; top: 10px; font-size: 11.5px; font-weight: 700;
+  background: rgba(255,255,255,.92); border-radius: 99px; padding: 4px 9px;
+}
+.likes.on { color: #d1345b; }
+.pe { display: flex; align-items: center; gap: 8px; padding: 9px 4px 0; }
+.pe strong { font-size: 12.5px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe small { font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
+
+/* Selo de quem está no desafio de hoje. */
+.no-tema {
+  position: absolute; left: 10px; bottom: 10px; font-size: 10.5px; font-weight: 800;
+  color: #8a3b62; background: rgba(255, 236, 244, .95); border-radius: 99px; padding: 4px 9px;
+}
+
+/* O card com o mouse em cima. */
+.card.hover .img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(20,15,10,0) 40%, rgba(20,15,10,.62));
+}
+.sobre {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2;
+  display: flex; flex-direction: column; gap: 10px; color: #fff;
+}
+.sobre .pecas { display: flex; gap: 6px; }
+.sobre .peca-tile { border-width: 1px; }
+.sobre .tem { font-size: 11.5px; font-weight: 600; }
+.sobre .tem b { color: #a5f0bd; }
+.sobre .botoes { display: flex; gap: 8px; }
+.sobre .btn-pri { background: #fff; color: var(--tinta); flex: 1; padding: 9px 12px; font-size: 12.5px; }
+.sobre .redondo { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.22); color: #fff; font-size: 15px; }
+.card.hover .likes, .card.hover .no-tema { display: none; }
+
+/* Convites no meio do mural. */
+.convite { break-inside: avoid; margin-bottom: 16px; border-radius: 18px; padding: 16px; }
+.convite h3 { font-size: 15px; font-weight: 800; letter-spacing: -.2px; margin-bottom: 4px; }
+.convite p { font-size: 12px; color: var(--tinta-suave); line-height: 1.5; margin-bottom: 12px; }
+.convite .btn-pri { width: 100%; padding: 9px; font-size: 12.5px; }
+.convite.gente { background: #f3edff; }
+.convite.loja { background: #eaf6ec; }
+.convite.escuro { background: #1f1a17; color: #fff; }
+.convite.escuro p { color: #d9cfc6; }
+.convite.escuro .btn-pri { background: #fff; color: var(--tinta); }
+.convite .tiles { display: flex; gap: 8px; margin-bottom: 12px; }
+
+/* ------------------------------ Desafio -------------------------------- */
+.gradiente-tema { background: radial-gradient(120% 140% at 0% 0%, #ffe9cf 0%, #ffd9e6 45%, #e6dcff 100%); }
+.rotulo { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #8a4b6b; }
+.relogio { font-variant-numeric: tabular-nums; }
+
+/* O duelo em miniatura: dois looks e um clique. */
+.duelo-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: relative; }
+.duelo-mini .lado { background: #fff; border-radius: 14px; overflow: hidden; border: 1.5px solid transparent; }
+.duelo-mini .lado.escolhido { border-color: var(--tinta); }
+.duelo-mini .lado img { display: block; width: 100%; height: auto; background: #fdfaf6; }
+.duelo-mini .lado button {
+  width: 100%; border: 0; border-top: 1px solid var(--linha); background: #fff;
+  padding: 7px; font-size: 11.5px; font-weight: 800;
+}
+.duelo-mini .lado.escolhido button { background: var(--tinta); color: #fff; }
+.duelo-mini .vs {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  width: 32px; height: 32px; border-radius: 50%; background: var(--tinta); color: #fff;
+  display: grid; place-items: center; font-size: 10px; font-weight: 900; box-shadow: 0 0 0 3px #fff;
+}
+.barra.quente span { background: linear-gradient(90deg, #f0a35e, #e0679a); }
+
+.medalha {
+  position: absolute; left: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 12.5px; font-weight: 900; color: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.15);
+}
+.votar {
+  border: 1.5px solid var(--tinta); background: #fff; border-radius: 99px;
+  padding: 5px 12px; font-size: 11.5px; font-weight: 800; white-space: nowrap;
+}
+.votar.on { background: var(--tinta); color: #fff; }
+
+.sequencia { background: #1f1a17; color: #fff; border-radius: 18px; padding: 14px 16px; }
+.sequencia .grande { display: flex; align-items: baseline; gap: 8px; }
+.sequencia .grande strong { font-size: 24px; font-weight: 900; letter-spacing: -.6px; }
+.sequencia .grande span { font-size: 12.5px; color: #d9cfc6; }
+.semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 10px 0 8px; }
+.semana div { display: grid; justify-items: center; gap: 3px; font-size: 9.5px; color: #b5aaa0; }
+.semana i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; background: #3a322d; }
+.semana .ok i { background: linear-gradient(135deg, #f0a35e, #e0679a); }
+.semana .hoje i { background: transparent; border: 1.5px dashed #f0a35e; }
+.sequencia p { font-size: 11.5px; color: #d9cfc6; line-height: 1.5; }
+.sequencia p b { color: #fff; }

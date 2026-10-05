@@ -42,8 +42,8 @@ valendo em `js/auth.js`: site e API na mesma origem significa **sem CORS**, sem
 bash nuvem/infra/publicar.sh
 ```
 
-Sobe só o que mudou. Não precisa invalidar cache: HTML, CSS, JS e o
-`catalog.json` vão com `no-cache`, então o CloudFront revalida por ETag e a
+Sobe só o que mudou. Não precisa invalidar cache: HTML, CSS e JS vão
+com `no-cache`, então o CloudFront revalida por ETag e a
 mudança aparece na hora. As imagens das peças vão imutáveis por um ano, porque
 o nome do arquivo é o id da peça.
 

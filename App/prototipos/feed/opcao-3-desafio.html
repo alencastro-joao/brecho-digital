@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<base href="../../">
+<title>Feed · Opção 3 — Desafio do dia</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="prototipos/feed/proto.css">
+<style>
+  /* Opção 3 — o feed gira em torno de um tema por dia: votar, entrar, subir. */
+  .col { flex: 1; min-width: 0; overflow: hidden; padding: 0 36px; }
+
+  .topo { display: flex; align-items: center; gap: 14px; padding: 22px 0 14px; }
+  .topo h1 { font-size: 22px; font-weight: 800; letter-spacing: -.4px; }
+  .abas { display: flex; gap: 6px; margin-left: 10px; }
+  .topo .btn-pri { margin-left: auto; }
+
+  /* O tema de hoje: o que é, quanto falta, o que se ganha. */
+  .hero {
+    position: relative; overflow: hidden;
+    border-radius: 24px; padding: 20px 26px;
+    background: radial-gradient(120% 140% at 0% 0%, #ffe9cf 0%, #ffd9e6 45%, #e6dcff 100%);
+    display: grid; grid-template-columns: 1fr 190px; gap: 20px; align-items: center;
+  }
+  .hero .rotulo { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #8a4b6b; }
+  .hero h2 { font-size: 38px; font-weight: 900; letter-spacing: -1.2px; line-height: 1.05; margin: 4px 0 6px; }
+  .hero p { font-size: 13.5px; color: #5d4a52; line-height: 1.5; max-width: 470px; }
+  .hero .numeros { display: flex; gap: 22px; margin: 14px 0 16px; }
+  .hero .numeros div { display: grid; }
+  .hero .numeros strong { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
+  .hero .numeros small { font-size: 11px; color: #7a6670; }
+  .hero .relogio strong { font-variant-numeric: tabular-nums; }
+  .hero .botoes { display: flex; gap: 8px; }
+  .hero .btn-sec { background: rgba(255,255,255,.6); border-color: transparent; }
+
+  .premio {
+    background: rgba(255,255,255,.72); border-radius: 20px; padding: 14px;
+    display: grid; justify-items: center; gap: 8px; text-align: center;
+    box-shadow: 0 0 0 2px #c3a6f2, 0 14px 34px rgba(155, 70, 240, .25);
+  }
+  .premio small { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #7a35c9; }
+  .premio strong { font-size: 12.5px; }
+
+  /* Votar: dois looks, um clique. */
+  .secao-topo { display: flex; align-items: baseline; gap: 12px; margin: 22px 0 12px; }
+  .secao-topo h3 { font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+  .secao-topo span { font-size: 12.5px; color: var(--tinta-suave); }
+  .secao-topo .dir { margin-left: auto; font-size: 12.5px; font-weight: 700; color: var(--tinta); }
+
+  .duelo { display: grid; grid-template-columns: 1fr 250px 44px 250px; gap: 16px; align-items: center; }
+  .explica { align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding-right: 8px; }
+  .explica h4 { font-size: 24px; font-weight: 800; letter-spacing: -.6px; line-height: 1.15; }
+  .explica p { font-size: 13px; color: var(--tinta-suave); line-height: 1.5; }
+  .explica .progresso { display: grid; gap: 6px; font-size: 12px; font-weight: 700; }
+  .explica .barra span { background: linear-gradient(90deg, #f0a35e, #e0679a); }
+  .explica .pular { font-size: 12.5px; color: var(--tinta-suave); text-decoration: underline; text-underline-offset: 3px; }
+
+  .opcao {
+    background: #fff; border: 1.5px solid var(--linha); border-radius: 20px; overflow: hidden;
+    box-shadow: 0 10px 26px rgba(60,40,20,.06);
+  }
+  .opcao.escolhida { border-color: var(--tinta); box-shadow: 0 0 0 3px rgba(26,26,26,.08), 0 16px 34px rgba(60,40,20,.12); }
+  .opcao .foto { background: #fdfaf6; height: 330px; width: 100%; }
+  .opcao .foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .opcao .base { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--linha); }
+  .opcao .base strong { flex: 1; font-size: 12.5px; }
+  .votar { border: 1.5px solid var(--tinta); background: #fff; border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 800; }
+  .opcao.escolhida .votar { background: var(--tinta); color: #fff; }
+  .vs { width: 44px; height: 44px; border-radius: 50%; background: var(--tinta); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 900; letter-spacing: .04em; }
+
+  /* Ranking parcial: começa a aparecer embaixo, puxa a rolagem. */
+  .ranking { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .pos { background: #fff; border: 1px solid var(--linha); border-radius: 18px; overflow: hidden; position: relative; }
+  .pos .foto { height: 230px; background: #fdfaf6; }
+  .pos .foto img { width: 100%; height: 100%; object-fit: contain; }
+  .pos .medalha {
+    position: absolute; left: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px; font-weight: 900; color: #fff;
+  }
+  .pos .votos { position: absolute; right: 10px; top: 12px; font-size: 11.5px; font-weight: 800; background: rgba(255,255,255,.92); border-radius: 99px; padding: 3px 9px; }
+
+  /* Coluna da direita: a sequência, as missões e o vencedor de ontem. */
+  .sequencia { background: #1f1a17; color: #fff; border-radius: 18px; padding: 16px; }
+  .sequencia .grande { display: flex; align-items: baseline; gap: 8px; }
+  .sequencia .grande strong { font-size: 30px; font-weight: 900; letter-spacing: -.8px; }
+  .sequencia .grande span { font-size: 13px; color: #d9cfc6; }
+  .semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 12px 0 10px; }
+  .semana div { display: grid; justify-items: center; gap: 4px; font-size: 10px; color: #b5aaa0; }
+  .semana i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px; background: #3a322d; }
+  .semana .ok i { background: linear-gradient(135deg, #f0a35e, #e0679a); }
+  .semana .hoje i { background: transparent; border: 1.5px dashed #f0a35e; }
+  .sequencia p { font-size: 11.5px; color: #d9cfc6; line-height: 1.5; }
+  .sequencia p b { color: #fff; }
+
+  .missao { display: flex; align-items: center; gap: 10px; font-size: 12.5px; padding: 7px 0; }
+  .missao + .missao { border-top: 1px solid #f2ede6; }
+  .missao span { flex: 1; }
+  .missao em { font-style: normal; font-size: 11px; font-weight: 800; color: #b55a2c; }
+  .missao .ck { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #e2d6c7; display: grid; place-items: center; font-size: 11px; flex: none; }
+  .missao.feita .ck { background: #2f9e5a; border-color: #2f9e5a; color: #fff; }
+  .missao.feita span { color: var(--tinta-suave); text-decoration: line-through; }
+
+  .ontem { display: flex; gap: 12px; align-items: center; background: var(--papel); border-radius: 16px; padding: 10px; }
+  .ontem img { width: 64px; height: 96px; object-fit: contain; background: #fff; border-radius: 10px; }
+  .ontem strong { display: block; font-size: 13px; }
+  .ontem small { display: block; font-size: 11.5px; color: var(--tinta-suave); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="carregando">montando a opção 3…</div>
+<div class="app" id="app"></div>
+
+<script type="module">
+import {
+  prepararAcervo, gerarPosts, rosto, perfil, tile, sidebar, pronto, el, nomeDaPeca, MISSOES,
+} from './prototipos/feed/dados.js';
+
+const acervo = await prepararAcervo();
+const posts = await gerarPosts(acervo, 7, { semente: 7731, tipos: ['look'] });
+const [a, b, ...resto] = posts;
+// O prêmio é a peça épica que mais aparece: um tênis ou uma blusa, se houver.
+const premio = acervo.find(p => p.raridade === 'epic' && ['shoes', 'shirts'].includes(p.cat))
+  || acervo.find(p => p.raridade === 'epic') || acervo[0];
+
+const MEDALHA = ['#d4a72c', '#a7a39c', '#c07a4a', '#cfc6b9'];
+const VOTOS = [128, 97, 84, 61];
+
+const opcao = (post, escolhida) => el('article', { class: 'opcao' + (escolhida ? ' escolhida' : '') },
+  el('div', { class: 'foto' }, el('img', { src: post.img, alt: post.nome })),
+  el('div', { class: 'base' }, rosto(post.autor, 28),
+    el('strong', {}, perfil(post.autor).nome),
+    el('button', { class: 'votar' }, escolhida ? '✓ votado' : 'Votar')));
+
+const col = el('div', { class: 'col' },
+  el('header', { class: 'topo' },
+    el('h1', {}, 'Feed'),
+    el('div', { class: 'abas' },
+      el('span', { class: 'pill ativa' }, '☀ Desafio'),
+      el('span', { class: 'pill' }, 'Seguindo', el('span', { class: 'n' }, '5 novos')),
+      el('span', { class: 'pill' }, 'Comunidade')),
+    el('button', { class: 'btn-pri' }, '+ Publicar')),
+
+  el('section', { class: 'hero' },
+    el('div', {},
+      el('span', { class: 'rotulo' }, 'Desafio de hoje · 5 de outubro'),
+      el('h2', {}, 'Clima seco'),
+      el('p', {}, 'Monte um look para um dia de sol e ar seco, só com peças do brechó. O mais votado até meia-noite leva a peça épica.'),
+      el('div', { class: 'numeros' },
+        el('div', {}, el('strong', {}, '84'), el('small', {}, 'looks na disputa')),
+        el('div', {}, el('strong', {}, '1.312'), el('small', {}, 'votos')),
+        el('div', { class: 'relogio' }, el('strong', {}, '06:12:40'), el('small', {}, 'para acabar'))),
+      el('div', { class: 'botoes' },
+        el('button', { class: 'btn-pri' }, 'Participar com um look'),
+        el('button', { class: 'btn-sec' }, 'Ver os 84 looks'))),
+    el('div', { class: 'premio' },
+      el('small', {}, 'Prêmio'),
+      tile(premio, 120),
+      el('strong', {}, nomeDaPeca(premio)),
+      el('span', { class: 'selo-rar', style: { '--rar-bg': '#f8f4ff', '--rar-cor': '#c3a6f2', '--rar-tinta': '#7a35c9', '--rar-aura': '#9b46f0' } }, 'Épica · 1 de 100'))),
+
+  el('div', { class: 'secao-topo' },
+    el('h3', {}, 'Vote rápido'),
+    el('span', {}, 'cada voto rende +2 XP'),
+    el('span', { class: 'dir' }, 'Seu look ainda não está na disputa →')),
+  el('div', { class: 'duelo' },
+    el('div', { class: 'explica' },
+      el('h4', {}, 'Qual você usaria num dia de clima seco?'),
+      el('p', {}, 'Toque no look que mais combina com o tema. Os votos decidem o ranking e o prêmio.'),
+      el('div', { class: 'progresso' },
+        el('span', {}, 'Você votou em 3 de 10 pares hoje'),
+        el('div', { class: 'barra' }, el('span', { style: { width: '30%' } }))),
+      el('span', { class: 'pular' }, 'Pular este par')),
+    opcao(a, true),
+    el('div', { class: 'vs' }, 'VS'),
+    opcao(b, false)),
+
+  el('div', { class: 'secao-topo' },
+    el('h3', {}, 'Ranking parcial'),
+    el('span', {}, 'atualiza a cada voto')),
+  el('div', { class: 'ranking' }, ...resto.slice(0, 4).map((p, i) => el('article', { class: 'pos' },
+    el('div', { class: 'foto' }, el('img', { src: p.img, alt: p.nome })),
+    el('span', { class: 'medalha', style: { background: MEDALHA[i] } }, String(i + 1)),
+    el('span', { class: 'votos' }, `${VOTOS[i]} votos`)))));
+
+const ontem = resto[4] || a;
+const feitas = { resgates: 3 };
+const rail = el('aside', { class: 'rail' },
+  el('section', { class: 'sequencia' },
+    el('div', { class: 'grande' }, el('strong', {}, '🔥 4 dias'), el('span', {}, 'seguidos')),
+    el('div', { class: 'semana' }, ...['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) =>
+      el('div', { class: i < 4 ? 'ok' : i === 4 ? 'hoje' : '' }, el('i', {}, i < 4 ? '✓' : ''), d))),
+    el('p', {}, 'Vote ou publique hoje para chegar a ', el('b', {}, '5 dias'), ' e ganhar uma peça rara.')),
+
+  el('section', {},
+    el('h2', {}, 'Missões de hoje'),
+    ...[{ id: 'votar', nome: 'Vote em 10 pares', meta: 10, xp: 20 }, ...MISSOES.slice(0, 4)].map(m => {
+      const feita = (feitas[m.id] ?? 0) >= m.meta;
+      return el('div', { class: 'missao' + (feita ? ' feita' : '') },
+        el('span', { class: 'ck' }, feita ? '✓' : ''),
+        el('span', {}, m.nome),
+        el('em', {}, `+${m.xp} XP`));
+    })),
+
+  el('section', {},
+    el('h2', {}, 'Ontem venceu'),
+    el('div', { class: 'ontem' },
+      el('img', { src: ontem.img, alt: '' }),
+      el('div', {},
+        el('strong', {}, perfil(ontem.autor).nome),
+        el('small', {}, 'tema "preto no preto"'),
+        el('small', {}, '412 votos · levou a peça épica')))));
+
+document.getElementById('app').append(el('main', { class: 'proto-main' }, col, rail), sidebar());
+
+await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+pronto();
+</script>
+</body>
+</html>

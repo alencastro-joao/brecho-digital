@@ -697,8 +697,6 @@ def main():
             os.path.getsize(destino) / 1024, time.time() - marca))
 
     print('\n%d recortadas, %d puladas, %d com erro' % (feitos, pulados, falhas))
-    if feitos:
-        print('agora rode:  python tools/pipeline.py --force')
 
 
 if __name__ == '__main__':

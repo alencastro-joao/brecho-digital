@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<base href="../../">
+<title>Feed · Opção 5 — Mural com a coluna do desafio</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="prototipos/feed/proto.css">
+<link rel="stylesheet" href="prototipos/feed/mix.css">
+<style>
+  /* Opção 5 — mural à esquerda, e a coluna da direita vira o desafio inteiro:
+     tema, prêmio, voto e sequência, sempre à vista enquanto o mural rola. */
+  .rail { width: 340px; padding: 20px 18px; gap: 14px; background: #fffaf6; }
+  .tema-card { border-radius: 20px; padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+  .tema-card h2 { font-size: 28px; font-weight: 900; letter-spacing: -.8px; line-height: 1.05; color: var(--tinta); text-transform: none; margin: 2px 0 4px; }
+  .tema-card p { font-size: 12px; color: #5d4a52; line-height: 1.45; grid-column: 1 / -1; }
+  .tema-card .premio-cx { grid-row: 1 / 3; grid-column: 2; display: grid; justify-items: center; gap: 4px; }
+  .tema-card .premio-cx .peca-tile { box-shadow: 0 0 0 2px #c3a6f2, 0 8px 20px rgba(155,70,240,.25); }
+  .tema-card .premio-cx small { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #7a35c9; }
+  .tema-card .numeros { grid-column: 1 / -1; display: flex; gap: 16px; margin: 8px 0 10px; font-size: 11px; color: #7a6670; }
+  .tema-card .numeros b { display: block; font-size: 16px; color: var(--tinta); }
+  .tema-card .btn-pri { grid-column: 1 / -1; }
+
+  .voto-cx h3 { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+  .voto-cx p { font-size: 11.5px; color: var(--tinta-suave); margin-bottom: 10px; }
+  .voto-cx .duelo-mini .lado img { height: 196px; width: 100%; object-fit: contain; }
+  .voto-cx .rodape { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 11.5px; font-weight: 700; }
+  .voto-cx .rodape .barra { flex: 1; }
+</style>
+</head>
+<body>
+<div class="carregando">montando a opção 5…</div>
+<div class="app" id="app"></div>
+
+<script type="module">
+import { prepararAcervo, gerarPosts, estadoDasPecas, tile, sidebar, pronto, el, nomeDaPeca } from './prototipos/feed/dados.js';
+import { cardMural, duelo, sequencia } from './prototipos/feed/mix.js';
+
+const acervo = await prepararAcervo();
+const estado = estadoDasPecas(acervo);
+const posts = await gerarPosts(acervo, 8, {
+  semente: 5120, tipos: ['look', 'board', 'look', 'look', 'board', 'look', 'look', 'board'],
+});
+const [a, b] = await gerarPosts(acervo, 2, { semente: 991, tipos: ['look'], autores: ['u-nina', 'u-caio'] });
+const premio = acervo.find(p => p.raridade === 'epic' && ['shoes', 'shirts'].includes(p.cat)) || acervo[0];
+
+const NO_TEMA = new Set([0, 3, 5]);
+const col = el('div', { class: 'col' },
+  el('header', { class: 'topo' },
+    el('h1', {}, 'Feed'),
+    el('div', { class: 'busca' }, '🔍', 'procurar pessoas, peças ou temas'),
+    el('button', { class: 'btn-pri' }, '+ Publicar')),
+  el('nav', { class: 'chips' },
+    el('span', { class: 'pill ativa' }, 'Para você'),
+    el('span', { class: 'pill' }, 'Seguindo', el('span', { class: 'n' }, '5')),
+    el('span', { class: 'pill' }, 'Em alta'),
+    el('span', { class: 'chip-tema' }, '☀ Desafio'),
+    el('span', { class: 'sep' }),
+    el('span', { class: 'pill' }, 'Looks'),
+    el('span', { class: 'pill' }, 'Colagens')),
+  el('div', { class: 'mural tres' },
+    ...posts.map((p, i) => cardMural(p, estado, { hover: i === 0, noTema: NO_TEMA.has(i), curtido: i === 2 }))));
+
+const rail = el('aside', { class: 'rail' },
+  el('section', { class: 'tema-card gradiente-tema' },
+    el('span', { class: 'rotulo' }, 'Desafio de hoje'),
+    el('h2', {}, 'Clima seco'),
+    el('div', { class: 'premio-cx' }, el('small', {}, 'Prêmio'), tile(premio, 74), el('small', {}, 'épica')),
+    el('p', {}, `Look para sol e ar seco. O mais votado até meia-noite leva ${nomeDaPeca(premio)}.`),
+    el('div', { class: 'numeros' },
+      el('span', {}, el('b', { class: 'relogio' }, '06:12:40'), 'para acabar'),
+      el('span', {}, el('b', {}, '84'), 'looks'),
+      el('span', {}, el('b', {}, '1.312'), 'votos')),
+    el('button', { class: 'btn-pri' }, 'Participar com um look')),
+
+  el('section', { class: 'voto-cx' },
+    el('h3', {}, 'Vote rápido'),
+    el('p', {}, 'Qual você usaria num dia de clima seco? +2 XP'),
+    duelo(a, b),
+    el('div', { class: 'rodape' }, el('span', {}, '3 de 10'),
+      el('div', { class: 'barra quente' }, el('span', { style: { width: '30%' } })),
+      el('span', { style: { color: 'var(--tinta-suave)', fontWeight: 500 } }, 'pular'))),
+
+  sequencia());
+
+document.getElementById('app').append(el('main', { class: 'proto-main' }, col, rail), sidebar());
+await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+pronto();
+</script>
+</body>
+</html>

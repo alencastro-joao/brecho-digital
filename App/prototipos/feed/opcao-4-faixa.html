@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<base href="../../">
+<title>Feed · Opção 4 — Mural com a faixa do desafio</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="prototipos/feed/proto.css">
+<link rel="stylesheet" href="prototipos/feed/mix.css">
+<style>
+  /* Opção 4 — o mural continua sendo o feed; o desafio vira uma faixa fina no
+     topo e um card de voto dentro do mural. */
+  .faixa {
+    border-radius: 20px; padding: 14px 16px 14px 22px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 22px;
+  }
+  .faixa .tema h2 { font-size: 26px; font-weight: 900; letter-spacing: -.8px; line-height: 1.05; margin-top: 2px; }
+  .faixa .num { display: grid; }
+  .faixa .num strong { font-size: 17px; font-weight: 800; }
+  .faixa .num small { font-size: 11px; color: #7a6670; }
+  .faixa .premio-mini {
+    display: flex; align-items: center; gap: 10px; margin-left: auto;
+    background: rgba(255,255,255,.7); border-radius: 14px; padding: 6px 12px 6px 6px;
+    box-shadow: 0 0 0 1.5px #c3a6f2;
+  }
+  .faixa .premio-mini small { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #7a35c9; }
+  .faixa .premio-mini strong { font-size: 12.5px; }
+  .faixa .btn-sec { background: rgba(255,255,255,.6); border-color: transparent; }
+
+  .convite.voto { background: #fff; border: 1.5px solid #f3cddc; }
+  .convite.voto .topo-voto { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+  .convite.voto .topo-voto span { font-size: 11px; font-weight: 700; color: #b5487a; }
+  .convite.voto .rodape { display: grid; gap: 6px; margin-top: 12px; font-size: 11.5px; font-weight: 700; }
+
+  .ranking-mini .linha { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .ranking-mini .linha .medalha { position: static; width: 24px; height: 24px; font-size: 11px; box-shadow: none; }
+  .ranking-mini .linha strong { flex: 1; font-size: 12.5px; }
+  .ranking-mini .linha small { font-size: 11.5px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="carregando">montando a opção 4…</div>
+<div class="app" id="app"></div>
+
+<script type="module">
+import { prepararAcervo, gerarPosts, estadoDasPecas, rosto, perfil, tile, sidebar, pronto, el, nomeDaPeca } from './prototipos/feed/dados.js';
+import { cardMural, duelo, MEDALHA } from './prototipos/feed/mix.js';
+
+const acervo = await prepararAcervo();
+const estado = estadoDasPecas(acervo);
+const posts = await gerarPosts(acervo, 11, {
+  semente: 4410,
+  tipos: ['look', 'board', 'look', 'board', 'look', 'look', 'board', 'look', 'look', 'board', 'look'],
+});
+const [a, b] = await gerarPosts(acervo, 2, { semente: 991, tipos: ['look'], autores: ['u-nina', 'u-caio'] });
+const premio = acervo.find(p => p.raridade === 'epic' && ['shoes', 'shirts'].includes(p.cat)) || acervo[0];
+
+const NO_TEMA = new Set([0, 2, 5, 8]);
+const cards = posts.map((p, i) => cardMural(p, estado, { hover: i === 0, noTema: NO_TEMA.has(i), curtido: i === 3 }));
+
+const voto = el('section', { class: 'convite voto' },
+  el('div', { class: 'topo-voto' }, el('h3', {}, 'Vote rápido'), el('span', {}, '+2 XP por voto')),
+  duelo(a, b),
+  el('div', { class: 'rodape' },
+    el('span', {}, 'Qual você usaria num dia de clima seco? · 3 de 10'),
+    el('div', { class: 'barra quente' }, el('span', { style: { width: '30%' } }))));
+
+const ranking = el('section', { class: 'convite gente ranking-mini' },
+  el('h3', {}, 'Ranking agora'),
+  el('p', {}, 'Os mais votados do desafio de hoje.'),
+  ...['u-davi', 'u-lia', 'u-zeca'].map((id, i) => el('div', { class: 'linha' },
+    el('span', { class: 'medalha', style: { background: MEDALHA[i] } }, String(i + 1)),
+    rosto(id, 28), el('strong', {}, perfil(id).nome), el('small', {}, `${[128, 97, 84][i]} votos`))),
+  el('button', { class: 'btn-pri', style: { marginTop: '10px' } }, 'Ver os 84 looks'));
+
+const loja = el('section', { class: 'convite loja' },
+  el('h3', {}, 'Na loja hoje'),
+  el('p', {}, '3 peças que aparecem em looks que você curtiu. Restam 2 resgates.'),
+  el('div', { class: 'tiles' }, ...acervo.filter(p => estado(p) === 'loja').slice(0, 3).map(p => tile(p, 62))),
+  el('button', { class: 'btn-pri' }, 'Ir à loja →'));
+
+// Coluna 1: post em hover, voto. As outras: posts com convites espalhados.
+const itens = [cards[0], voto, cards[1], cards[2], cards[3], ranking, cards[4], cards[5], cards[6], loja, ...cards.slice(7)];
+
+const col = el('div', { class: 'col' },
+  el('header', { class: 'topo' },
+    el('h1', {}, 'Feed'),
+    el('div', { class: 'busca' }, '🔍', 'procurar pessoas, peças ou temas'),
+    el('button', { class: 'btn-pri' }, '+ Publicar')),
+
+  el('section', { class: 'faixa gradiente-tema' },
+    el('div', { class: 'tema' }, el('span', { class: 'rotulo' }, 'Desafio de hoje'), el('h2', {}, 'Clima seco')),
+    el('div', { class: 'num' }, el('strong', { class: 'relogio' }, '06:12:40'), el('small', {}, 'para acabar')),
+    el('div', { class: 'num' }, el('strong', {}, '84'), el('small', {}, 'looks')),
+    el('div', { class: 'num' }, el('strong', {}, '1.312'), el('small', {}, 'votos')),
+    el('div', { class: 'premio-mini' }, tile(premio, 46),
+      el('div', {}, el('small', {}, 'Prêmio · épica'), el('strong', {}, nomeDaPeca(premio)))),
+    el('button', { class: 'btn-sec' }, 'Votar · 3/10'),
+    el('button', { class: 'btn-pri' }, 'Participar')),
+
+  el('nav', { class: 'chips' },
+    el('span', { class: 'pill ativa' }, 'Para você'),
+    el('span', { class: 'pill' }, 'Seguindo', el('span', { class: 'n' }, '5')),
+    el('span', { class: 'pill' }, 'Em alta'),
+    el('span', { class: 'chip-tema' }, '☀ Só o desafio'),
+    el('span', { class: 'sep' }),
+    el('span', { class: 'pill' }, 'Looks'),
+    el('span', { class: 'pill' }, 'Colagens'),
+    el('span', { class: 'pill chip-raras' }, '✦ Com peça rara')),
+  el('div', { class: 'mural' }, ...itens));
+
+document.getElementById('app').append(el('main', { class: 'proto-main' }, col), sidebar());
+await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+pronto();
+</script>
+</body>
+</html>

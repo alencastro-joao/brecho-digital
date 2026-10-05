@@ -90,8 +90,7 @@ function renderCollab() {
   const disponiveis = COLLAB.itens.filter(id => pecaDoCatalogo(id));
   if (!disponiveis.length) {
     box.append(el('p', { class: 'tool-hint' },
-      'As peças desta cápsula vêm do acervo da pasta, que está desligado. ' +
-      'Ligue de volta em Perfil → Testes para vê-las.'));
+      'As peças desta cápsula ainda não estão no acervo.'));
     return;
   }
   for (const id of disponiveis) {

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<base href="../../">
+<title>Feed · Opção 6 — O mural é o desafio</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="prototipos/feed/proto.css">
+<link rel="stylesheet" href="prototipos/feed/mix.css">
+<style>
+  /* Opção 6 — a aba de abertura é o desafio: o mural mostra os looks do tema,
+     cada card se vota ali mesmo e os três primeiros levam medalha. */
+  .cabeca { display: flex; align-items: flex-end; gap: 24px; padding: 22px 0 14px; }
+  .cabeca .titulo .rotulo { display: block; margin-bottom: 2px; }
+  .cabeca h1 { font-size: 40px; font-weight: 900; letter-spacing: -1.4px; line-height: 1; }
+  .cabeca h1 span { font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--tinta-suave); margin-left: 10px; }
+  .cabeca .abas { display: flex; gap: 6px; margin-left: auto; align-self: center; }
+
+  /* Onde você está no desafio, numa linha só. */
+  .placar {
+    display: flex; align-items: center; gap: 18px; margin-bottom: 16px;
+    border-radius: 18px; padding: 12px 14px 12px 18px; font-size: 12.5px;
+  }
+  .placar .item { display: grid; gap: 1px; }
+  .placar .item small { font-size: 10.5px; color: #7a6670; font-weight: 600; }
+  .placar .item strong { font-size: 16px; font-weight: 800; }
+  .placar .votos { min-width: 150px; }
+  .placar .votos .barra { margin-top: 5px; background: rgba(255,255,255,.7); }
+  .placar .div { width: 1px; align-self: stretch; background: rgba(120, 70, 90, .18); }
+  .placar .voce { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .placar .voce span { font-size: 12px; color: #5d4a52; }
+
+  /* Grade, não colunas: o ranking tem de ler da esquerda para a direita. */
+  .mural.grade { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start; }
+  .mural.grade > * { margin-bottom: 0; }
+  .convite.premio { background: #fff; text-align: center; border: 1.5px solid #e2d2fa; }
+  .convite.premio .peca-tile { margin: 4px auto 10px; box-shadow: 0 0 0 2px #c3a6f2, 0 12px 28px rgba(155,70,240,.25); }
+  .convite.premio small { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #7a35c9; }
+  .convite.escuro .ontem { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .convite.escuro .ontem img { width: 70px; height: 105px; object-fit: contain; border-radius: 10px; background: #fdfaf6; }
+  .convite.escuro .ontem strong { display: block; font-size: 13.5px; }
+  .convite.escuro .ontem small { font-size: 11.5px; color: #d9cfc6; line-height: 1.5; display: block; }
+</style>
+</head>
+<body>
+<div class="carregando">montando a opção 6…</div>
+<div class="app" id="app"></div>
+
+<script type="module">
+import { prepararAcervo, gerarPosts, estadoDasPecas, perfil, tile, sidebar, pronto, el, nomeDaPeca } from './prototipos/feed/dados.js';
+import { cardMural } from './prototipos/feed/mix.js';
+
+const acervo = await prepararAcervo();
+const estado = estadoDasPecas(acervo);
+const posts = await gerarPosts(acervo, 11, { semente: 6203, tipos: ['look', 'look', 'look', 'board', 'look', 'look', 'board', 'look', 'look', 'look', 'look'] });
+const premio = acervo.find(p => p.raridade === 'epic' && ['shoes', 'shirts'].includes(p.cat)) || acervo[0];
+const VOTOS = [128, 97, 84, 61, 58, 44, 40, 33, 31, 27, 22];
+
+const cards = posts.map((p, i) => cardMural(p, estado, {
+  posicao: i < 3 ? i + 1 : null, votos: VOTOS[i], votar: true,
+  votado: i === 1 || i === 6, hover: i === 4,
+}));
+
+const ontem = posts[10];
+const premioCard = el('section', { class: 'convite premio' },
+  el('small', {}, 'Prêmio de hoje'),
+  tile(premio, 110),
+  el('h3', {}, nomeDaPeca(premio)),
+  el('p', {}, 'Épica · tiragem de 100. Vai para o guarda-roupa de quem ficar em 1º à meia-noite.'));
+const ontemCard = el('section', { class: 'convite escuro' },
+  el('h3', {}, 'Ontem venceu'),
+  el('div', { class: 'ontem' }, el('img', { src: ontem.img, alt: '' }),
+    el('div', {}, el('strong', {}, perfil(ontem.autor).nome),
+      el('small', {}, 'tema "preto no preto"'), el('small', {}, '412 votos · levou a peça épica'))),
+  el('button', { class: 'btn-pri' }, 'Ver o ranking de ontem'));
+
+const itens = [cards[0], cards[1], cards[2], premioCard, cards[3], cards[4], ontemCard, cards[5], cards[6], cards[7], cards[8], cards[9]];
+
+const col = el('div', { class: 'col' },
+  el('header', { class: 'cabeca' },
+    el('div', { class: 'titulo' },
+      el('span', { class: 'rotulo' }, '☀ Desafio de hoje · termina em 06:12:40'),
+      el('h1', {}, 'Clima seco', el('span', {}, 'look para sol e ar seco'))),
+    el('div', { class: 'abas' },
+      el('span', { class: 'chip-tema ativa' }, '☀ Desafio'),
+      el('span', { class: 'pill' }, 'Para você'),
+      el('span', { class: 'pill' }, 'Seguindo', el('span', { class: 'n' }, '5')),
+      el('button', { class: 'btn-pri', style: { marginLeft: '8px' } }, '+ Publicar'))),
+
+  el('section', { class: 'placar gradiente-tema' },
+    el('div', { class: 'item' }, el('small', {}, 'looks na disputa'), el('strong', {}, '84')),
+    el('div', { class: 'item votos' }, el('small', {}, 'seus votos hoje · +2 XP cada'), el('strong', {}, '3 de 10'),
+      el('div', { class: 'barra quente' }, el('span', { style: { width: '30%' } }))),
+    el('span', { class: 'div' }),
+    el('div', { class: 'item' }, el('small', {}, 'sequência'), el('strong', {}, '🔥 4 dias')),
+    el('span', { class: 'div' }),
+    el('div', { class: 'voce' },
+      el('span', {}, 'Você ainda não está na disputa.'),
+      el('button', { class: 'btn-pri' }, 'Participar com um look'))),
+
+  el('div', { class: 'mural grade' }, ...itens));
+
+document.getElementById('app').append(el('main', { class: 'proto-main' }, col), sidebar());
+await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+pronto();
+</script>
+</body>
+</html>

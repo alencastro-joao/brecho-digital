@@ -15,6 +15,10 @@ const ROTULO = {
   colagem: ['Colagem', 'favoritada'],
 };
 
+// Quantos de cada um o perfil mostra. Peça não tem teto; look e colagem têm
+// três vagas cada, para o perfil ser uma vitrine escolhida e não um arquivo.
+export const LIMITE_FAVORITOS = { look: 3, colagem: 3 };
+
 // `aoMudar` repinta a lista de onde a estrela saiu — ela mesma não sabe
 // desenhar a tela que a contém.
 export function estrelaFavorito(tipo, id, aoMudar) {
@@ -30,6 +34,12 @@ export function estrelaFavorito(tipo, id, aoMudar) {
       // A estrela fica dentro de uma linha clicável: o clique dela para aqui,
       // senão favoritar também abriria o item.
       e.stopPropagation();
+      const limite = LIMITE_FAVORITOS[tipo];
+      if (!ligada && limite && db.favoritos(tipo).length >= limite) {
+        toast(`Seu perfil já tem ${limite} ${tipo === 'look' ? 'looks' : 'colagens'} ` +
+          'favoritos. Tire a estrela de um para colocar este.', 'aviso');
+        return;
+      }
       const agora = db.alternarFavorito(tipo, id);
       toast(agora
         ? `${nome} ${participio} — está no seu perfil.`

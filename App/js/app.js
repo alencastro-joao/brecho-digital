@@ -96,10 +96,6 @@ async function iniciar() {
   db.onChange(agendarPerfil);
   agendarPerfil();
 
-  if (catalogo.origem === 's3') {
-    toast('Catálogo local não encontrado — carregando os PNGs do S3.', 'aviso');
-  }
-
   // O presente de boas-vindas. Aqui e não antes: ele escolhe peças, e o catálogo
   // é o que diz quais existem e de que raridade são hoje. Aqui e não depois: as
   // telas ainda não foram montadas, então a vitrine já nasce sem as peças que

@@ -8,10 +8,11 @@
 //     do mesmo sorteio dos botões de gerar e servem para o feed nascer povoado.
 //
 // A tela é organizada em abas (Seguindo · Comunidade · Tudo), com um filtro de
-// tipo (looks ou colagens) e os posts agrupados por quando saíram.
+// tipo (looks ou colagens). Os posts formam um mural: colunas em que cada card
+// tem a altura da própria imagem, e passar o mouse mostra as peças usadas.
 
-import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, SERVICOS } from './config.js';
-import { catalogo } from './catalog.js';
+import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, SERVICOS, RARIDADE } from './config.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { miniatura, miniaturaBoard } from './render.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
@@ -223,6 +224,10 @@ function ouvirFoco() {
   if (ouvindoFoco) return;
   ouvindoFoco = true;
   window.addEventListener('focus', () => { if (viewAtual() === 'social') garantirFeed(); });
+  // Janela mais larga ou mais estreita pode pedir outro número de colunas.
+  window.addEventListener('resize', () => {
+    if (viewAtual() === 'social' && colunasDoMural($('#feed')) !== colunasDesenhadas) renderFeed();
+  });
   $('#feed-atualizar')?.addEventListener('click', atualizarFeed);
 }
 
@@ -261,15 +266,39 @@ function renderAbas() {
   }
 }
 
-// Hoje, ontem, esta semana... — a régua que separa o feed em blocos.
-function periodoDe(iso) {
-  const dia = (d) => { const c = new Date(d); c.setHours(0, 0, 0, 0); return c; };
-  const dias = Math.round((dia(Date.now()) - dia(iso)) / 864e5);
-  if (dias <= 0) return 'Hoje';
-  if (dias === 1) return 'Ontem';
-  if (dias < 7) return 'Esta semana';
-  if (dias < 31) return 'Este mês';
-  return 'Mais antigos';
+// ================================= Mural ==================================
+// As colunas são montadas aqui, e não com `columns` do CSS: assim o post mais
+// novo fica no alto à esquerda e abrir os comentários de um card só alonga a
+// coluna dele, sem embaralhar o mural inteiro.
+const LARGURA_MIN_COLUNA = 260;
+const VAO_MURAL = 18;                     // o mesmo gap de .mural em social.css
+let colunasDesenhadas = 0;
+
+function colunasDoMural(caixa) {
+  const largura = caixa?.clientWidth || 0;
+  if (!largura) return 3;
+  return Math.max(1, Math.floor((largura + VAO_MURAL) / (LARGURA_MIN_COLUNA + VAO_MURAL)));
+}
+
+// Altura do card em larguras de coluna, antes de a imagem carregar: o look é
+// a miniatura 3:5 do render, a colagem é 4:5 (ou 9:16). O rodapé soma um pouco.
+function alturaEstimada(post) {
+  const imagem = post.tipo === 'board'
+    ? (post.colagem?.formato === '9:16' ? 16 / 9 : 5 / 4)
+    : 5 / 3;
+  return imagem + 0.16;
+}
+
+function montarMural(posts, colunas) {
+  const cols = Array.from({ length: colunas }, () => ({
+    altura: 0, no: el('div', { class: 'mural-coluna' }),
+  }));
+  for (const post of posts) {
+    const c = cols.reduce((a, b) => (b.altura < a.altura ? b : a));
+    c.no.append(cardDoPost(post));
+    c.altura += alturaEstimada(post);
+  }
+  return el('div', { class: 'mural' }, ...cols.map(c => c.no));
 }
 
 function renderFeed() {
@@ -299,18 +328,8 @@ function renderFeed() {
     return;
   }
 
-  // Um bloco por período, cada um com a sua grade: os cards de um mesmo dia
-  // ficam juntos e o olho acha "o que saiu hoje" sem ler as datas.
-  const blocos = new Map();
-  for (const post of posts) {
-    const periodo = periodoDe(post.criadoEm);
-    if (!blocos.has(periodo)) blocos.set(periodo, []);
-    blocos.get(periodo).push(post);
-  }
-  feed.replaceChildren(...[...blocos].map(([periodo, lista]) =>
-    el('section', { class: 'feed-bloco' },
-      el('h2', { class: 'feed-periodo' }, periodo, el('small', {}, String(lista.length))),
-      el('div', { class: 'feed-grade' }, ...lista.map(cardDoPost)))));
+  colunasDesenhadas = colunasDoMural(feed);
+  feed.replaceChildren(montarMural(posts, colunasDesenhadas));
 
   if (escrevendo) {
     const campo = feed.querySelector(`.campo-comentario[data-post="${CSS.escape(escrevendo)}"]`);
@@ -340,57 +359,62 @@ function mensagemVazia() {
     : 'Feed vazio. Publique um look no Stylist para começar.'];
 }
 
+// ================================ O card ==================================
+// A imagem manda: o card tem a altura dela. Por cima, o coração (curtir) e,
+// quando o post tem peça épica ou lendária, o selo dela; passando o mouse, as
+// peças usadas. Embaixo, quem postou, comentários e o menu.
 export function cardDoPost(post) {
   const meu = sou(post.autor);
   const autor = autorDe(post.autor);
   const segue = db.state.usuario.seguindo.includes(post.autor);
   post.comentarios ??= [];
+  const pecas = pecasDoPost(post);
+  const rara = pecaQueBrilha(pecas);
 
-  return el('article', { class: 'post' + (meu ? ' meu' : '') },
-    el('header', { class: 'post-head' },
-      el('button', {
-        class: 'autor-link', title: `Ver o perfil de ${autor.nome}`,
-        onclick: () => abrirAutor(post.autor),
-      }, retratoDe(post.autor, 36)),
-      el('div', { class: 'post-autor' },
-        el('strong', {},
-          el('button', {
-            class: 'autor-link nome',
-            onclick: () => abrirAutor(post.autor),
-          }, autor.nome),
-          meu ? chipNivel() : null),
-        el('small', {}, `${autor.handle} · ${tempoRelativo(post.criadoEm)}`)
-      ),
-      meu
-        ? el('span', { class: 'tag-meu' }, 'seu')
-        : el('button', {
-            class: 'btn-seguir mini' + (segue ? ' seguindo' : ''),
-            onclick: () => alternarSeguir(post.autor),
-          }, segue ? 'seguindo' : 'seguir')
-    ),
-
-    el('div', { class: 'post-thumb' },
+  return el('article', {
+    class: 'post' + (meu ? ' meu' : '') + (rara ? ' brilha' : ''),
+    style: rara ? coresDaRaridade(raridadeDaPeca(rara)) : undefined,
+  },
+    el('div', { class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') },
       post.thumb
         ? el('img', { src: post.thumb, alt: post.nome, loading: 'lazy' })
         : el('div', { class: 'sem-thumb' }, 'sem prévia'),
-      el('span', { class: 'post-tipo' }, post.tipo === 'board' ? 'colagem' : 'look')
-    ),
-
-    el('div', { class: 'post-acoes' },
+      rara ? el('span', { class: 'selo-rar' }, raridadeDaPeca(rara).nome) : null,
       el('button', {
         class: 'curtir' + (post.curtido ? ' on' : ''),
         title: post.curtido ? 'Descurtir' : 'Curtir',
         onclick: () => alternarCurtida(post),
       }, post.curtido ? '♥' : '♡', el('span', {}, String(post.curtidas))),
+      pecasPorCima(post, pecas)
+    ),
 
+    el('footer', { class: 'post-pe' },
+      el('button', {
+        class: 'autor-link', title: `Ver o perfil de ${autor.nome}`,
+        onclick: () => abrirAutor(post.autor),
+      }, retratoDe(post.autor, 28)),
+      el('div', { class: 'post-autor' },
+        el('strong', {},
+          el('button', {
+            class: 'autor-link nome', title: autor.handle,
+            onclick: () => abrirAutor(post.autor),
+          }, autor.nome),
+          meu ? chipNivel() : null),
+        el('small', {}, tempoRelativo(post.criadoEm))
+      ),
+      // Seguir só aparece para quem você ainda não segue: deixar de seguir
+      // fica no perfil da pessoa e na coluna ao lado.
+      meu
+        ? el('span', { class: 'tag-meu' }, 'seu')
+        : segue ? null : el('button', {
+            class: 'btn-seguir mini',
+            onclick: () => alternarSeguir(post.autor),
+          }, 'seguir'),
       el('button', {
         class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
         title: 'Comentários',
         onclick: () => alternarThread(post),
       }, '💬', el('span', {}, String(post.comentarios.length))),
-
-      el('span', { class: 'post-nome', title: post.nome }, post.nome),
-
       el('button', {
         class: 'post-mais', title: 'Mais opções',
         onclick: (e) => menuDoPost(post, e.currentTarget),
@@ -401,25 +425,63 @@ export function cardDoPost(post) {
   );
 }
 
-// ============================== Comentários ===============================
-// Fechada, a conversa é uma linha: o último comentário. Aberta, é a lista
-// inteira e o campo — assim os cards da grade ficam do mesmo tamanho.
-function thread(post) {
-  const aberta = expandidos.has(post.id);
-  const caixa = el('div', { class: 'post-thread' + (aberta ? ' aberta' : '') });
+// ============================ Peças do post ===============================
+// Post publicado no servidor traz a lista de ids; o dos perfis de exemplo tem
+// as camadas do look ou os itens da colagem. Peça que saiu do acervo some.
+function pecasDoPost(post) {
+  const ids = post.pecas || (post.camadas || post.colagem?.itens || []).map(c => c.itemId);
+  return [...new Set(ids)].map(pecaDoCatalogo).filter(Boolean);
+}
 
-  if (!aberta) {
-    const ultimo = post.comentarios.at(-1);
-    caixa.append(ultimo
-      ? el('button', { class: 'thread-previa', onclick: () => alternarThread(post) },
-          el('strong', {}, autorDe(ultimo.autor).nome), ' ', ultimo.texto,
-          post.comentarios.length > 1
-            ? el('small', {}, `ver os ${post.comentarios.length}`)
-            : null)
-      : el('button', { class: 'thread-previa vazia', onclick: () => alternarThread(post) },
-          'comentar…'));
-    return caixa;
-  }
+const raridadeDaPeca = (p) =>
+  RARIDADE[p.raridade] || RARIDADE[db.raridadesFixas.get(p.id)] || RARIDADE.common;
+
+// Só épica e lendária viram selo no card: se todo card brilhasse, nenhum
+// chamaria atenção.
+const QUE_BRILHAM = ['legendary', 'epic'];
+const pecaQueBrilha = (pecas) =>
+  QUE_BRILHAM.map(id => pecas.find(p => raridadeDaPeca(p).id === id)).find(Boolean) || null;
+
+// A lendária tem aura de arco-íris na vitrine; aqui, numa cor só, fica o dourado.
+const coresDaRaridade = (r) => ({
+  '--rar-cor': r.cor, '--rar-bg': r.bg,
+  '--rar-aura': r.aura === 'arco-iris' ? '#c9a227' : (r.aura || '#b3aaa0'),
+});
+
+const PECAS_POR_CIMA = 6;
+
+function pecasPorCima(post, pecas) {
+  if (!pecas.length) return null;
+  const tem = pecas.filter(p => db.temPeca(p.id)).length;
+  const sobra = pecas.length - PECAS_POR_CIMA;
+  return el('div', { class: 'post-pecas' },
+    el('strong', { class: 'post-titulo' }, post.nome),
+    el('div', { class: 'post-pecas-lista' },
+      ...pecas.slice(0, PECAS_POR_CIMA).map(pecaMini),
+      sobra > 0 ? el('span', { class: 'peca-mini mais' }, `+${sobra}`) : null),
+    el('small', {}, tem
+      ? ['você tem ', el('b', {}, `${tem} de ${pecas.length}`), ' peças']
+      : `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'} do brechó`));
+}
+
+function pecaMini(p) {
+  const r = raridadeDaPeca(p);
+  const tenho = db.temPeca(p.id);
+  const img = el('img', { src: p.src, alt: '', loading: 'lazy' });
+  aplicarContorno(img, p);
+  return el('span', {
+    class: 'peca-mini' + (tenho ? ' tenho' : ''),
+    title: `${nomeDaPeca(p)} · ${r.nome}${tenho ? ' · você tem' : ''}`,
+    style: { '--rar-cor': r.cor, '--rar-bg': r.bg },
+  }, img);
+}
+
+// ============================== Comentários ===============================
+// Fechada, a conversa é só o contador no rodapé do card. Aberta, é a lista
+// inteira e o campo, logo abaixo — a coluna do mural alonga, as outras não.
+function thread(post) {
+  if (!expandidos.has(post.id)) return null;
+  const caixa = el('div', { class: 'post-thread aberta' });
 
   for (const c of post.comentarios) {
     const a = autorDe(c.autor);

@@ -1,51 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-Pipeline de ativos do Brecho Digital.
-Versao local e executavel do processo descrito em
-"Anotacoes/upload e formatacao das imagens.txt".
-
-Para cada PNG em ../Cloths:
+Contorno vetorial das pecas do Brecho Digital.
+Versao local do processo descrito em
+"Anotacoes/upload e formatacao das imagens.txt", usada pela esteira e pela
+Lambda do acervo (contour_of):
   1. Le o canal alpha e ignora tudo que e invisivel.
-  2. Recorta a imagem na bounding box real do objeto.
-  3. Converte para WebP (mantem transparencia, pesa ~40x menos).
-  4. Traca o contorno do objeto (Moore neighborhood) e simplifica os pontos
+  2. Traca o contorno do objeto (Moore neighborhood) e simplifica os pontos
      (Douglas-Peucker).
-  5. Grava tudo em assets/catalog.json: caminho da imagem otimizada + a
-     "identidade geometrica" (path SVG normalizado).
+  3. Devolve o path SVG normalizado — a "identidade geometrica" da peca.
 
 O frontend aplica esse path como clip-path. Com isso o proprio navegador passa a
 ignorar os pixels transparentes tambem para clique e hover, sem ler pixel a pixel.
-
-Uso:  python tools/pipeline.py [--src ../Cloths] [--max 512] [--force]
 """
 
-import argparse
-import json
 import math
-import os
 import sys
 from collections import deque
-from datetime import datetime, timezone
 
 try:
     from PIL import Image, ImageFilter
 except ImportError:
     sys.exit("Pillow nao encontrado. Instale com:  python -m pip install pillow")
-
-# --- Mapa de categorias (identico ao do prototipo Closet) -------------------
-CATEGORIES = {
-    "shirts":  ["04", "14", "10", "23", "30", "40", "38"],
-    "pants":   ["03", "26", "27"],
-    "shoes":   ["37", "35", "32", "33", "22", "15", "17", "18", "02"],
-    "dresses": ["08", "41", "42", "43", "44", "45"],
-    "coats":   ["28", "46", "47", "48", "49", "50"],
-    "hats":    ["09", "01", "31", "24", "29", "51", "52", "53"],
-    "bags":    ["12", "25", "19", "54", "55", "56"],
-    "watches": ["13", "57", "58", "59"],
-    "bracelets": ["21", "05", "06", "39"],
-    "glasses": ["07", "16", "11", "34", "36", "20"],
-}
-ID_TO_CAT = {i: c for c, ids in CATEGORIES.items() for i in ids}
 
 ALPHA_THRESHOLD = 24      # abaixo disso o pixel e considerado invisivel
 TRACE_MAX_DIM = 200       # resolucao de trabalho do tracador (nao da imagem final)
@@ -181,72 +156,3 @@ def contour_of(img):
         contours.append(rdp(raw, RDP_EPSILON))
     pts = sum(len(c) for c in contours)
     return to_svg_path(contours, w, h), pts
-
-
-# --- Main ------------------------------------------------------------------
-def main():
-    here = os.path.dirname(os.path.abspath(__file__))
-    app = os.path.dirname(here)
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--src", default=os.path.join(os.path.dirname(app), "Cloths"))
-    ap.add_argument("--max", type=int, default=512, help="maior lado do WebP gerado")
-    ap.add_argument("--quality", type=int, default=82)
-    ap.add_argument("--force", action="store_true", help="reprocessa mesmo se o webp ja existe")
-    args = ap.parse_args()
-
-    out_dir = os.path.join(app, "assets", "cloths")
-    os.makedirs(out_dir, exist_ok=True)
-
-    files = sorted(f for f in os.listdir(args.src) if f.lower().endswith(".png"))
-    if not files:
-        sys.exit("Nenhum PNG encontrado em " + args.src)
-
-    items = []
-    src_bytes = out_bytes = 0
-
-    for n, fname in enumerate(files, 1):
-        item_id = os.path.splitext(fname)[0]
-        src_path = os.path.join(args.src, fname)
-        dst_path = os.path.join(out_dir, item_id + ".webp")
-
-        img = Image.open(src_path).convert("RGBA")
-        bbox = img.getchannel("A").point(lambda v: 255 if v >= 8 else 0).getbbox()
-        if bbox:
-            img = img.crop(bbox)
-        img.thumbnail((args.max, args.max), Image.LANCZOS)
-
-        if args.force or not os.path.exists(dst_path):
-            img.save(dst_path, "WEBP", quality=args.quality, method=6)
-
-        path, pts = contour_of(img)
-        src_bytes += os.path.getsize(src_path)
-        out_bytes += os.path.getsize(dst_path)
-
-        items.append({
-            "id": item_id,
-            "cat": ID_TO_CAT.get(item_id, "glasses"),
-            "src": "assets/cloths/" + item_id + ".webp",
-            "w": img.size[0],
-            "h": img.size[1],
-            "path": path,
-        })
-        print("[{:>2}/{}] {} -> {}.webp  {}x{}  contorno: {} pts".format(
-            n, len(files), fname, item_id, img.size[0], img.size[1], pts))
-
-    catalog = {
-        "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "source": os.path.relpath(args.src, app).replace("\\", "/"),
-        "count": len(items),
-        "items": items,
-    }
-    cat_path = os.path.join(app, "assets", "catalog.json")
-    with open(cat_path, "w", encoding="utf-8") as fh:
-        json.dump(catalog, fh, ensure_ascii=False, indent=1)
-
-    print("\ncatalogo: " + cat_path)
-    print("peso: {:.1f} MB (PNG)  ->  {:.1f} MB (WebP)  = {:.0f}% menor".format(
-        src_bytes / 1e6, out_bytes / 1e6, 100 - out_bytes / max(1, src_bytes) * 100))
-
-
-if __name__ == "__main__":
-    main()

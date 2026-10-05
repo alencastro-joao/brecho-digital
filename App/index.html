@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/tarefas.css">
 <link rel="stylesheet" href="css/vestiario.css">
 <link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/perfil.css">
 </head>
 <body>
 
@@ -23,7 +24,7 @@
 <div id="file-warning" hidden>
   <div class="fw-card">
     <h1>Abra pelo servidor local</h1>
-    <p>Este protótipo carrega <code>assets/catalog.json</code> e exporta imagens via canvas —
+    <p>Este protótipo carrega <code>assets/acervo.json</code> e exporta imagens via canvas —
        as duas coisas são bloqueadas quando o arquivo é aberto direto do disco
        (<code>file://</code>).</p>
     <p>Na pasta <code>App</code>, rode:</p>
@@ -522,40 +523,71 @@
   <!-- Aberto por #/usuario/<id>, clicando em quem assina um post, um
        comentário ou uma sugestão do feed. -->
   <section class="view view-usuario" data-view="usuario" hidden>
-    <div class="perfil-wrapper up-wrapper">
-      <button class="link-btn up-voltar" id="up-voltar">← Voltar ao feed</button>
-
-      <header class="perfil-head">
-        <div class="perfil-avatar" id="up-avatar"></div>
-        <div class="up-identidade">
+    <!-- O mesmo desenho do seu perfil (#/perfil), visto de fora: o cartão de
+         quem a pessoa é à esquerda e, à direita, outras pessoas, as peças e as
+         publicações dela. js/usuario.js. -->
+    <div class="pf-layout">
+      <aside class="pf-cartao">
+        <div class="pf-avatar" id="up-avatar"></div>
+        <div class="pf-corpo">
           <h1 id="up-nome"></h1>
           <p class="perfil-handle" id="up-handle"></p>
-          <p class="up-bio" id="up-bio"></p>
+          <p class="pf-bio" id="up-bio"></p>
           <div class="perfil-redes" id="up-redes"></div>
-          <div class="perfil-stats" id="up-stats"></div>
-          <div class="up-acoes" id="up-acoes"></div>
+          <div class="pf-stats" id="up-stats"></div>
+          <div class="pf-acoes" id="up-acoes"></div>
         </div>
-      </header>
+        <nav class="pf-menu">
+          <button type="button" id="up-voltar">← Voltar ao feed <span>›</span></button>
+        </nav>
+      </aside>
 
-      <section class="up-secao">
-        <h2>Colagens</h2>
-        <p class="missoes-sub" id="up-posts-sub"></p>
-        <div class="up-posts" id="up-posts"></div>
-      </section>
+      <main class="pf-vitrine">
+        <section class="pf-secao">
+          <header class="pf-secao-topo">
+            <h2>Outros perfis</h2><span>quem mais está garimpando por aqui</span>
+            <button type="button" class="pf-link" id="up-buscar">+ Procurar pessoas</button>
+          </header>
+          <div class="pf-amigos" id="up-outros"></div>
+        </section>
 
-      <section class="up-secao">
-        <h2>Peças do guarda-roupa</h2>
-        <p class="missoes-sub" id="up-pecas-sub"></p>
-        <div class="up-pecas" id="up-pecas"></div>
-      </section>
+        <section class="pf-dicas" id="up-vazio" hidden></section>
 
-      <section class="up-secao">
-        <h2>Outros perfis</h2>
-        <p class="missoes-sub">Quem mais está garimpando por aqui.</p>
-        <div class="up-outros" id="up-outros"></div>
-      </section>
+        <section class="pf-secao" id="up-secao-pecas">
+          <header class="pf-secao-topo">
+            <h2>Peças do guarda-roupa</h2><span id="up-pecas-sub"></span>
+          </header>
+          <div class="pf-grade" id="up-pecas"></div>
+        </section>
+
+        <section class="pf-secao" id="up-secao-looks">
+          <header class="pf-secao-topo">
+            <h2>Stylists</h2><span id="up-looks-sub"></span>
+          </header>
+          <div class="pf-grade pf-grade-obras" id="up-looks"></div>
+        </section>
+
+        <section class="pf-secao" id="up-secao-colagens">
+          <header class="pf-secao-topo">
+            <h2>Colagens</h2><span id="up-colagens-sub"></span>
+          </header>
+          <div class="pf-grade pf-grade-obras" id="up-colagens"></div>
+        </section>
+      </main>
     </div>
   </section>
+
+  <!-- Uma publicação do perfil de alguém aberta inteira, com curtir e os
+       comentários: o mesmo cartão do feed (js/usuario.js). -->
+  <div class="modal" id="modal-post" hidden>
+    <div class="modal-caixa up-post-caixa">
+      <header class="modal-topo">
+        <h2 id="up-post-titulo"></h2>
+        <button class="modal-x" id="up-post-fechar" title="Fechar">✕</button>
+      </header>
+      <div class="up-post-corpo" id="up-post-corpo"></div>
+    </div>
+  </div>
 
   <!-- ====================== TAREFAS ====================== -->
   <!-- As missões do dia, a trilha de níveis e a cápsula: o que o app pede de
@@ -626,112 +658,147 @@
   </section>
 
   <section class="view view-perfil" data-view="perfil" hidden>
-    <div class="perfil-wrapper up-wrapper">
-      <header class="perfil-head">
-        <div class="perfil-avatar" id="perfil-avatar"></div>
-        <div class="up-identidade">
+    <div class="pf-layout">
+      <!-- O cartão: quem você é, os números e o que se faz com a página. Fica
+           parado enquanto a vitrine rola ao lado. -->
+      <aside class="pf-cartao">
+        <div class="pf-avatar" id="perfil-avatar"></div>
+
+        <div class="pf-corpo" id="pf-corpo">
           <h1 id="perfil-nome">Você</h1>
           <p class="perfil-handle" id="perfil-handle">@voce</p>
-          <p class="up-bio" id="perfil-bio"></p>
+          <p class="pf-bio" id="perfil-bio"></p>
           <div class="perfil-redes" id="perfil-redes"></div>
-          <div class="perfil-stats" id="perfil-stats"></div>
-          <div class="up-acoes" id="perfil-acoes"></div>
-
-          <form class="perfil-editar" id="perfil-editar" hidden>
-            <label>Nome
-              <input type="text" id="pf-nome" maxlength="28" autocomplete="off">
-            </label>
-            <label>Arroba
-              <input type="text" id="pf-handle" maxlength="20" autocomplete="off">
-            </label>
-            <label>Bio
-              <input type="text" id="pf-bio" maxlength="70" autocomplete="off"
-                     placeholder="uma linha sobre o seu garimpo">
-            </label>
-            <div class="pf-acoes">
-              <button type="submit" class="btn-dark">Salvar</button>
-              <button type="button" class="btn-ghost" id="pf-cancelar">Cancelar</button>
-            </div>
-          </form>
+          <div class="pf-stats" id="perfil-stats"></div>
+          <div class="pf-acoes" id="perfil-acoes"></div>
         </div>
-      </header>
 
-      <!-- As três vitrines do perfil mostram só o que você favoritou com a
-           estrela no Stylist, na Colagem e no guarda-roupa. -->
-      <section class="up-secao">
-        <h2>Stylists</h2>
-        <p class="missoes-sub" id="perfil-looks-sub"></p>
-        <div class="fav-grid" id="perfil-looks"></div>
-      </section>
-
-      <section class="up-secao">
-        <h2>Colagens</h2>
-        <p class="missoes-sub" id="perfil-colagens-sub"></p>
-        <div class="fav-grid" id="perfil-colagens"></div>
-      </section>
-
-      <section class="up-secao">
-        <h2>Roupas favoritas</h2>
-        <p class="missoes-sub" id="perfil-pecas-sub"></p>
-        <div class="up-pecas" id="perfil-pecas"></div>
-      </section>
-
-      <section class="up-secao">
-        <h2>Amigos</h2>
-        <p class="missoes-sub" id="perfil-amigos-sub"></p>
-        <button type="button" class="btn-dark btn-buscar" id="btn-buscar-pessoas">+ Procurar pessoas</button>
-        <div class="up-outros" id="perfil-amigos"></div>
-      </section>
-
-      <section class="conexoes">
-        <h2>Contas conectadas</h2>
-        <p class="missoes-sub">De onde vêm as peças e para onde vão as colagens.</p>
-        <div class="conexao-lista" id="conexao-lista"></div>
-      </section>
-
-      <section class="up-secao conta-secao">
-        <h2>Sua conta</h2>
-        <p class="missoes-sub" id="conta-resumo"></p>
-        <div class="tool-row">
-          <button class="btn-ghost" id="btn-trocar-senha">Trocar a senha</button>
-          <button class="btn-ghost" id="btn-sair">Sair da conta</button>
-        </div>
-        <form class="conta-senha" id="form-senha" hidden>
-          <label>Senha atual
-            <input type="password" id="senha-atual" autocomplete="current-password">
+        <form class="pf-corpo perfil-editar" id="perfil-editar" hidden>
+          <h2>Editar perfil</h2>
+          <label>Nome
+            <input type="text" id="pf-nome" maxlength="28" autocomplete="off">
           </label>
-          <label>Senha nova
-            <input type="password" id="senha-nova" autocomplete="new-password"
-                   placeholder="pelo menos 8 caracteres">
+          <label>Arroba
+            <input type="text" id="pf-handle" maxlength="20" autocomplete="off">
           </label>
-          <p class="auth-erro" id="senha-erro" hidden></p>
-          <div class="pf-acoes">
-            <button type="submit" class="btn-dark">Trocar</button>
-            <button type="button" class="btn-ghost" id="senha-cancelar">Cancelar</button>
+          <label>Bio
+            <input type="text" id="pf-bio" maxlength="70" autocomplete="off"
+                   placeholder="uma linha sobre o seu garimpo">
+          </label>
+          <div class="pf-form-acoes">
+            <button type="submit" class="btn-dark">Salvar</button>
+            <button type="button" class="btn-ghost" id="pf-cancelar">Cancelar</button>
           </div>
         </form>
-        <p class="tool-hint">Trocar a senha encerra as outras sessões: quem
-          estiver logado como você em outro computador cai fora.</p>
-      </section>
 
-      <section class="perfil-dev">
-        <h2>Testes</h2>
-        <div class="tool-row">
-          <button class="btn-ghost" id="btn-reset-dia">Liberar resgates de hoje</button>
-          <button class="btn-ghost" id="btn-dar-pecas">+10 peças aleatórias</button>
-          <button class="btn-ghost" id="btn-posts">+3 posts fictícios</button>
-          <button class="btn-ghost" id="btn-xp">+50 XP</button>
-          <button class="btn-ghost" id="btn-fonte"></button>
-          <button class="btn-ghost danger" id="btn-reset">Apagar meus dados</button>
-          <button class="btn-ghost danger" id="btn-apagar-acervo">Apagar peças guardadas aqui</button>
-        </div>
-        <p class="tool-hint">Tudo é salvo no localStorage do navegador
-          (o lugar do DynamoDB no protótipo). “Apagar meus dados” zera a partida
-          (inventário, looks, feed, XP) e preserva o cadastro — peças adicionadas,
-          marcas e cores —, que vai migrar para a base oficial do site.</p>
-      </section>
+        <!-- O que é da conta e não da página: abre por cima, em modal. -->
+        <nav class="pf-menu">
+          <button type="button" data-ajuste="conexoes">Contas conectadas <span id="pf-menu-conexoes"></span></button>
+          <button type="button" data-ajuste="conta">Sua conta <span>senha, sair ›</span></button>
+          <button type="button" data-ajuste="testes">Testes <span>›</span></button>
+        </nav>
+      </aside>
+
+      <!-- A coluna da direita abre pelos amigos e pelo que falta fazer
+           ("Complete a sua vitrine"); embaixo, a vitrine: só o que você
+           favoritou com a estrela no guarda-roupa, no Stylist e na Colagem.
+           Seção sem nada some, e o que falta vira dica no bloco de cima. -->
+      <main class="pf-vitrine">
+        <section class="pf-secao">
+          <header class="pf-secao-topo">
+            <h2>Amigos</h2><span id="perfil-amigos-sub"></span>
+            <button type="button" class="pf-link" id="btn-buscar-pessoas">+ Procurar pessoas</button>
+          </header>
+          <div class="pf-amigos" id="perfil-amigos"></div>
+        </section>
+
+        <section class="pf-dicas" id="pf-dicas" hidden>
+          <h3>Complete a sua vitrine</h3>
+          <div id="pf-dicas-lista"></div>
+        </section>
+        <section class="pf-secao" id="pf-secao-pecas">
+          <header class="pf-secao-topo">
+            <h2>Roupas favoritas</h2><span id="perfil-pecas-sub"></span>
+            <button type="button" class="pf-link" data-goto="closet">Ver guarda-roupa →</button>
+          </header>
+          <div class="pf-grade" id="perfil-pecas"></div>
+        </section>
+
+        <section class="pf-secao" id="pf-secao-looks">
+          <header class="pf-secao-topo">
+            <h2>Stylists</h2><span id="perfil-looks-sub"></span>
+            <button type="button" class="pf-link" data-goto="stylist">Abrir o Stylist →</button>
+          </header>
+          <div class="pf-grade pf-grade-obras" id="perfil-looks"></div>
+        </section>
+
+        <section class="pf-secao" id="pf-secao-colagens">
+          <header class="pf-secao-topo">
+            <h2>Colagens</h2><span id="perfil-colagens-sub"></span>
+            <button type="button" class="pf-link" data-goto="board">Abrir a Colagem →</button>
+          </header>
+          <div class="pf-grade pf-grade-obras" id="perfil-colagens"></div>
+        </section>
+
+      </main>
     </div>
   </section>
+
+  <!-- ====================== AJUSTES DO PERFIL ====================== -->
+  <!-- Aberto pelo menu do cartão do perfil (js/perfil.js): uma seção por vez. -->
+  <div class="modal" id="modal-ajustes" hidden>
+    <div class="modal-caixa aj-caixa">
+      <header class="modal-topo">
+        <h2 id="aj-titulo">Ajustes</h2>
+        <button class="modal-x" id="aj-fechar" title="Fechar">✕</button>
+      </header>
+      <div class="aj-corpo">
+        <section class="conexoes" data-ajuste="conexoes">
+          <p class="missoes-sub">De onde vêm as peças e para onde vão as colagens.</p>
+          <div class="conexao-lista" id="conexao-lista"></div>
+        </section>
+
+        <section class="conta-secao" data-ajuste="conta">
+          <p class="missoes-sub" id="conta-resumo"></p>
+          <div class="tool-row">
+            <button class="btn-ghost" id="btn-trocar-senha">Trocar a senha</button>
+            <button class="btn-ghost" id="btn-sair">Sair da conta</button>
+          </div>
+          <form class="conta-senha" id="form-senha" hidden>
+            <label>Senha atual
+              <input type="password" id="senha-atual" autocomplete="current-password">
+            </label>
+            <label>Senha nova
+              <input type="password" id="senha-nova" autocomplete="new-password"
+                     placeholder="pelo menos 8 caracteres">
+            </label>
+            <p class="auth-erro" id="senha-erro" hidden></p>
+            <div class="pf-form-acoes">
+              <button type="submit" class="btn-dark">Trocar</button>
+              <button type="button" class="btn-ghost" id="senha-cancelar">Cancelar</button>
+            </div>
+          </form>
+          <p class="tool-hint">Trocar a senha encerra as outras sessões: quem
+            estiver logado como você em outro computador cai fora.</p>
+        </section>
+
+        <section class="perfil-dev" data-ajuste="testes">
+          <div class="tool-row">
+            <button class="btn-ghost" id="btn-reset-dia">Liberar resgates de hoje</button>
+            <button class="btn-ghost" id="btn-dar-pecas">+10 peças aleatórias</button>
+            <button class="btn-ghost" id="btn-posts">+3 posts fictícios</button>
+            <button class="btn-ghost" id="btn-xp">+50 XP</button>
+            <button class="btn-ghost danger" id="btn-reset">Apagar meus dados</button>
+            <button class="btn-ghost danger" id="btn-apagar-acervo">Apagar peças guardadas aqui</button>
+          </div>
+          <p class="tool-hint">Tudo é salvo no localStorage do navegador
+            (o lugar do DynamoDB no protótipo). “Apagar meus dados” zera a partida
+            (inventário, looks, feed, XP) e preserva o cadastro — peças adicionadas,
+            marcas e cores —, que vai migrar para a base oficial do site.</p>
+        </section>
+      </div>
+    </div>
+  </div>
 
   <!-- ====================== SIDEBAR ====================== -->
   <aside class="sidebar">
