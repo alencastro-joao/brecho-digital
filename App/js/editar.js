@@ -19,7 +19,7 @@
 
 import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, hexDaCor,
          corDoPixel, distanciaEntreCores, rotuloDeCadastro } from './config.js';
-import { registrarPeca, nomeDaPeca } from './catalog.js';
+import { registrarPeca, esquecerPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { el, $, clamp, toast } from './util.js';
@@ -580,6 +580,40 @@ async function salvar() {
   aoSalvar?.(salva);
 }
 
+// ================================ Apagar ==================================
+// De vez: some do acervo, da vitrine e do guarda-roupa de quem já tinha (cada
+// conta tira ao abrir o jogo, pela lista `removidas` do acervo.json).
+async function apagar() {
+  const alvo = peca;
+  const nome = nomeDaPeca(alvo);
+  const ok = confirm(`Apagar "${nome}" de vez?
+
+`
+    + 'Ela some do acervo, da vitrine e do guarda-roupa de quem já tem — '
+    + 'inclusive dos looks e colagens. Não dá para desfazer.');
+  if (!ok) return;
+
+  const botao = $('#mp-apagar');
+  botao.disabled = true;
+  $('#mp-aviso').textContent = 'apagando…';
+  try {
+    const resp = await fetch(`${CONFIG.API_PECAS}/${encodeURIComponent(alvo.id)}`, { method: 'DELETE' });
+    const dados = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(dados.erro || `erro ${resp.status}`);
+  } catch (e) {
+    botao.disabled = false;
+    return avisar(`Não consegui apagar: ${e.message}`);
+  }
+  botao.disabled = false;
+
+  esquecerPeca(alvo.id);
+  db.esquecerPecas([alvo.id]);
+  toast(`${nome} foi apagada do acervo.`);
+  const callback = aoSalvar;
+  fechar();
+  callback?.(null);
+}
+
 // =============================== Montagem =================================
 export function fechar() {
   $('#modal-peca').hidden = true;
@@ -654,6 +688,7 @@ export function montarEditar() {
   $('#mp-voltar').addEventListener('click', voltarParaFicha);
   $('#mp-padrao').addEventListener('click', () => { medida = medidaPadrao(ficha.cat); posicionarPeca(); });
   $('#mp-salvar').addEventListener('click', salvar);
+  $('#mp-apagar').addEventListener('click', apagar);
   $('#mp-cancelar').addEventListener('click', fechar);
   $('#mp-fechar').addEventListener('click', fechar);
   $('#modal-peca').addEventListener('pointerdown', (e) => {

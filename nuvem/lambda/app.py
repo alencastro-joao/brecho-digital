@@ -22,6 +22,7 @@ esta função só responde `/api/*`.
     /api/feed[/<id>[/...]]     o feed compartilhado: publicar, curtir, comentar (ver feed.py)
     POST /api/pecas            admin: peça nova no acervo
     PUT  /api/pecas/<id>       admin: edita a peça
+    DELETE /api/pecas/<id>     admin: apaga a peça de vez
     GET  /api/estoque          quantas cópias de cada peça já saíram (ver estoque.py)
     POST /api/estoque/levar    reserva uma cópia (409 se esgotou)
     POST /api/estoque/devolver admin: a cópia volta para a loja
@@ -288,6 +289,8 @@ def rotas_de_acervo(pedido):
     if m and pedido.metodo == 'PUT':
         return responder(200, {'item': acervo.editar_peca(m.group(1),
                                                           pedido.corpo(LIMITE_PECA))})
+    if m and pedido.metodo == 'DELETE':
+        return responder(200, acervo.apagar_peca(m.group(1)))
     return None
 
 

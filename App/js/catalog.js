@@ -36,6 +36,7 @@ export const catalogo = {
   porId: new Map(),
   temContorno: false,
   origem: 'local',
+  removidas: [],             // ids que o admin apagou do acervo (ver db.esquecerPecas)
 };
 
 // Duas fontes de peça: o acervo gerado pelo pipeline (assets/catalog.json, no
@@ -94,6 +95,7 @@ async function carregarAcervo() {
     const resp = await fetch(CONFIG.ACERVO, { cache: 'no-cache' });
     if (!resp.ok) return [];
     const data = await resp.json();
+    catalogo.removidas = Array.isArray(data.removidas) ? data.removidas : [];
     const itens = (data.items || []).map(i => ({ ...i, permanente: true }));
     for (const it of itens) {
       if (it.raridade) db.raridadesFixas.set(it.id, it.raridade);
@@ -115,6 +117,12 @@ export function registrarPeca(peca, { permanente = false } = {}) {
   else catalogo.itens.push(item);
   catalogo.porId.set(item.id, item);
   return item;
+}
+
+// A peça apagada do acervo sai do catálogo em memória, sem recarregar tudo.
+export function esquecerPeca(id) {
+  catalogo.itens = catalogo.itens.filter(x => x.id !== id);
+  catalogo.porId.delete(id);
 }
 
 export const item = (id) => catalogo.porId.get(id);

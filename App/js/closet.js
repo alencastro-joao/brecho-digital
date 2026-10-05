@@ -54,6 +54,7 @@ export function montarCloset() {
       montarVitrine();                    // ficha nova, a loja precisa saber
       const p = db.pecaDoInventario(cat.id);
       if (p) selecionar(p);
+      else limparPreview();               // a peça foi apagada
     });
   });
   $('#btn-para-board').addEventListener('click', () => {

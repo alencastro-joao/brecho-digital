@@ -80,6 +80,7 @@ async function iniciar() {
   // montar seria desenhar o guarda-roupa errado e corrigir na frente da pessoa.
   const [, sync] = await Promise.all([
     carregarCatalogo(), db.sincronizarDaNuvem(), carregarEstoque()]);
+  db.esquecerPecas(catalogo.removidas);
   if (sync.estado === 'veio da nuvem') {
     toast('Guarda-roupa trazido da sua conta.');
   } else if (sync.estado === 'offline') {

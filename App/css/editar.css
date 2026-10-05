@@ -51,6 +51,8 @@ body.com-modal { overflow: hidden; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .mp-aviso.alerta { color: #b26a00; font-weight: 600; }
+.modal-rodape .mp-apagar { color: #b3261e; border-color: #ecc8c4; }
+.modal-rodape .mp-apagar:hover:not(:disabled) { background: #b3261e; border-color: #b3261e; color: #fff; }
 
 /* ------------------------------- Passo 1 -------------------------------- */
 .mp-colunas {

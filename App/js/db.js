@@ -404,6 +404,19 @@ export function limparPosicoes() {
 export const temPeca = (id) => state.inventario.some(p => p.id === id);
 export const pecaDoInventario = (id) => state.inventario.find(p => p.id === id);
 
+// Peça que o admin apagou do acervo sai do guarda-roupa de quem a tinha. A
+// lista vem explícita no acervo.json — e não "o que não está no catálogo" —
+// porque catálogo que falhou ao carregar esvaziaria o guarda-roupa de todo mundo.
+export function esquecerPecas(ids) {
+  const fora = new Set(ids || []);
+  if (!fora.size) return 0;
+  const antes = state.inventario.length;
+  state.inventario = state.inventario.filter(p => !fora.has(p.id));
+  const tiradas = antes - state.inventario.length;
+  if (tiradas) salvar();
+  return tiradas;
+}
+
 // Raridade é sorteada uma única vez, no resgate, e gravada com a peça.
 export function sortearRaridade(rnd = Math.random) {
   const total = RARIDADES.reduce((acc, r) => acc + r.peso, 0);

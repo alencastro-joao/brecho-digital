@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-O acervo do administrador na nuvem — `POST /api/pecas` e `PUT /api/pecas/<id>`.
+O acervo do administrador na nuvem — `POST /api/pecas`, `PUT /api/pecas/<id>`
+e `DELETE /api/pecas/<id>`.
 
 Mesma lógica de `App/tools/servidor.py`, com o disco trocado pelo S3:
 
@@ -306,3 +307,49 @@ def editar_peca(item_id, corpo):
             print('peça editada: %s (%s)' % (item_id, item['cat']))
             return item
     raise RuntimeError('o acervo está sendo escrito por outra aba; tente de novo')
+
+
+# Quantos ids apagados o acervo.json lembra. É por essa lista que cada conta
+# tira a peça do próprio guarda-roupa ao abrir o jogo; uma conta que ficar mais
+# que isso sem entrar só mantém a peça como órfã, que as telas já ignoram.
+MAX_REMOVIDAS = 500
+
+
+def apagar_peca(item_id):
+    """Some do acervo, da vitrine e do guarda-roupa de quem a tinha; a imagem e
+    o máster vão junto. Não tem volta."""
+    item_id = str(item_id or '').strip().lower()
+    if not ID_OK.match(item_id):
+        raise ValueError('id inválido')
+
+    for _ in range(5):
+        acervo, etag = ler_acervo()
+        item = next((i for i in acervo['items'] if i['id'] == item_id), None)
+        if item is None:
+            raise ValueError('essa peça não está no acervo do administrador '
+                             '(só dá para apagar o que foi subido por aqui)')
+        acervo['items'] = [i for i in acervo['items'] if i['id'] != item_id]
+        removidas = [r for r in acervo.get('removidas') or [] if r != item_id]
+        acervo['removidas'] = (removidas + [item_id])[-MAX_REMOVIDAS:]
+        if gravar_acervo(acervo, etag):
+            break
+    else:
+        raise RuntimeError('o acervo está sendo escrito por outra aba; tente de novo')
+
+    # Os arquivos só depois da lista: se algo falhar aqui, a peça já saiu do
+    # jogo e sobra no máximo um arquivo órfão no bucket.
+    src = item.get('src') or ''
+    if src.startswith('assets/cloths/'):
+        try:
+            _s3.delete_object(Bucket=BUCKET_SITE, Key=src)
+        except ClientError as e:
+            print('imagem não apagada: %s' % e)
+        invalidar(['/' + src])
+    mestre = item.get('mestre') or ''
+    if mestre.startswith('mestres/') and BUCKET_DADOS:
+        try:
+            _s3.delete_object(Bucket=BUCKET_DADOS, Key=mestre)
+        except ClientError as e:
+            print('máster não apagado: %s' % e)
+    print('peça apagada: %s (%s)' % (item_id, item.get('cat')))
+    return {'id': item_id}
