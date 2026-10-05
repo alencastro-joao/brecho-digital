@@ -234,7 +234,7 @@ function cartao(item) {
       item.estado === 'erro'
         ? el('button', { class: 'es-btn mini', onclick: () => refazer(item) }, 'Tentar de novo')
         : el('button', { class: 'es-btn mini', disabled: !pronta, onclick: () => abrirMolde(item) }, 'Medir'),
-      el('button', { class: 'es-btn mini escuro', disabled: !pronta || !f.cat, onclick: () => publicar([item]) },
+      el('button', { class: 'es-btn mini escuro', dataset: { acao: 'publicar' }, disabled: !pronta || !f.cat, onclick: () => publicar([item]) },
         'Publicar')),
   );
 
@@ -250,13 +250,20 @@ function cartao(item) {
 // ============================== Ficha =====================================
 function mudarFicha(item, campo, valor) {
   item.ficha = { ...fichaDe(item), [campo]: valor };
-  if (campo === 'cat' || campo === 'cor') {
-    // Bolinha de cor e botão de publicar dependem disso: redesenha só o cartão.
-    const velho = $(`.es-cartao[data-id="${item.id}"]`);
-    const ativo = document.activeElement?.dataset?.campo;
-    const novo = cartao(item);
-    velho?.replaceWith(novo);
-    if (ativo) $(`[data-campo="${ativo}"]`, novo)?.focus();
+  // Bolinha de cor e botão de publicar dependem disso. Mexe só neles: recriar o
+  // cartão a cada tecla jogava o cursor para o começo do campo e embaralhava o
+  // que se digitava (e fechava a lista de sugestões).
+  const no = $(`.es-cartao[data-id="${item.id}"]`);
+  if (no && campo === 'cor') {
+    const hex = hexDaCor(valor);
+    const bolha = $('.es-bolha', no);
+    bolha.className = 'es-bolha' + (hex === 'estampa' ? ' estampa' : '') + (hex ? '' : ' livre');
+    if (hex && hex !== 'estampa') bolha.style.setProperty('--cor', hex);
+    else bolha.style.removeProperty('--cor');
+  }
+  if (no && campo === 'cat') {
+    const publicar = $('[data-acao="publicar"]', no);
+    if (publicar) publicar.disabled = item.estado !== 'pronta' || !valor;
   }
   guardarDepois(item);
 }

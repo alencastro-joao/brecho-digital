@@ -43,6 +43,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 import bgbatch
 import ficha_ia
+from cor import cor_da_imagem
 from pipeline import contour_of
 
 DADOS = os.environ['BD_BUCKET_DADOS']
@@ -186,6 +187,8 @@ def processar(chave):
         segundos_recorte = time.time() - marca
 
         sugestao = ficha_ia.sugerir(webp, marcas_conhecidas())
+        # A cor medida nos pixels: chão para quando a IA falha ou não diz.
+        cor_medida = cor_da_imagem(previa)
     except FotoRuim as e:
         ficha.update(estado='erro', erro=str(e))
         gravar_ficha(ficha)
@@ -208,6 +211,7 @@ def processar(chave):
     # A ficha que o admin edita nasce do palpite. O que ele já tiver mexido
     # (pelo celular, enquanto a foto ainda processava) não é atropelado.
     proposta = {k: sugestao.get(k, '') for k in ('cat', 'cor', 'nome', 'marca')}
+    proposta['cor'] = proposta['cor'] or cor_medida
     ficha['ficha'] = {**proposta, **{k: v for k, v in (ficha.get('ficha') or {}).items() if v}}
     gravar_ficha(ficha)
     print('pronta %s: %dx%d, fundo %s, recorte %.1fs, total %.1fs, ia=%s'
