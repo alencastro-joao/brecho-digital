@@ -163,19 +163,9 @@
             <span>Categorias</span>
             <div id="closet-agrupar"></div>
           </div>
-          <label class="closet-ordem" title="Como organizar as peças">
+          <label class="closet-ordem">
             <span>Organizar</span>
-            <select id="closet-ordem">
-              <option value="manual">Minha ordem</option>
-              <option value="raridade">Raridade (maior primeiro)</option>
-              <option value="recentes">Mais recentes</option>
-              <option value="antigas">Mais antigas</option>
-              <option value="favoritas">Favoritas primeiro</option>
-              <option value="cor">Por cor</option>
-              <option value="marca">Por marca</option>
-              <option value="categoria">Por categoria</option>
-              <option value="origem">Por origem</option>
-            </select>
+            <span id="closet-ordem"></span>
           </label>
           <button class="btn-dark btn-adicionar" id="btn-add-peca">+ Adicionar peça</button>
         </div>
@@ -209,6 +199,7 @@
         <h2>Peças</h2>
         <div id="palette-agrupar"></div>
       </div>
+      <div class="pal-ordem" id="palette-ordem"></div>
       <div class="palette-cats" id="palette-cats"></div>
       <div class="palette-grid" id="palette-grid"></div>
       <p class="palette-hint">Clique para vestir. Arraste no palco para ajustar.</p>
@@ -278,6 +269,7 @@
         <h2>Peças</h2>
         <div id="board-agrupar"></div>
       </div>
+      <div class="pal-ordem" id="board-ordem"></div>
       <div class="pal-busca">
         <input type="search" id="board-busca" placeholder="filtrar por nº">
       </div>

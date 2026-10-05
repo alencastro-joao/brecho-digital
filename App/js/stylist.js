@@ -8,7 +8,8 @@
 
 import { CONFIG, escalaGrade, ancoraDaPeca } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
-import { grupoDe, gruposDoInventario, compararPorGrupo, seletorDeAgrupamento } from './agrupamento.js';
+import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
+import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniatura, baixarLook } from './render.js';
@@ -78,6 +79,7 @@ function montarPaleta() {
     catPaleta = 'todas';
     montarPaleta();
   }));
+  $('#palette-ordem').replaceChildren(seletorDeOrdem(() => montarPaleta()));
 
   const abas = $('#palette-cats');
   abas.innerHTML = '';
@@ -100,9 +102,8 @@ function montarPaleta() {
 
   const grid = $('#palette-grid');
   grid.innerHTML = '';
-  const pecas = db.state.inventario
-    .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta)
-    .sort((a, b) => compararPorGrupo(a, b) || a.ordem - b.ordem);
+  const pecas = ordenar(db.state.inventario
+    .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta));
 
   if (!db.state.inventario.length) {
     grid.append(el('p', { class: 'palette-vazia' },
@@ -114,21 +115,21 @@ function montarPaleta() {
     return;
   }
 
-  for (const p of pecas) {
+  preencherComGrupos(grid, pecas, (p) => {
     const peca = pecaDoCatalogo(p.id);
-    if (!peca) continue;
+    if (!peca) return null;
     const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' });
     aplicarContorno(img, peca);
     const vestida = camadas.some(c => c.itemId === p.id);
-    grid.append(el('button', {
+    return el('button', {
       class: 'pal-item' + (vestida ? ' vestida' : ''),
       title: vestida ? nomeDaPeca(peca) + ' — no palco (clique para tirar)' : nomeDaPeca(peca),
       onclick: () => vestirPeca(p.id),
     }, el('div', {
       class: 'peca-caixa',
       style: { '--esc': String(escalaGrade(peca)) },
-    }, img)));
-  }
+    }, img));
+  }, { categoriaAberta: catPaleta !== 'todas' });
 }
 
 // --- Camadas --------------------------------------------------------------

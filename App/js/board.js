@@ -9,6 +9,7 @@
 
 import { BOARD, escalaGrade, escalaMural } from './config.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
+import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
@@ -126,6 +127,7 @@ function montarPaleta() {
     catPaleta = 'todas';
     montarPaleta();
   }));
+  $('#board-ordem').replaceChildren(seletorDeOrdem(() => montarPaleta()));
 
   abas.append(el('button', {
     class: 'pal-cat' + (catPaleta === 'todas' ? ' active' : ''),
@@ -149,29 +151,28 @@ function montarPaleta() {
     return;
   }
 
-  const pecas = db.state.inventario
+  const pecas = ordenar(db.state.inventario
     .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta)
-    .filter(p => !busca || p.id.includes(busca))
-    .sort((a, b) => a.ordem - b.ordem);
+    .filter(p => !busca || p.id.includes(busca)));
 
   if (!pecas.length) {
     grid.append(el('p', { class: 'palette-vazia' }, 'Nada aqui com esse filtro.'));
     return;
   }
 
-  for (const p of pecas) {
+  preencherComGrupos(grid, pecas, (p) => {
     const peca = pecaDoCatalogo(p.id);
-    if (!peca) continue;
+    if (!peca) return null;
     const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' });
     aplicarContorno(img, peca);
-    grid.append(el('button', {
+    return el('button', {
       class: 'pal-item', title: nomeDaPeca(peca) + ' — clique para soltar',
       onclick: () => adicionar(p.id),
     }, el('div', {
       class: 'peca-caixa',
       style: { '--esc': String(escalaGrade(peca)) },
-    }, img)));
-  }
+    }, img));
+  }, { categoriaAberta: catPaleta !== 'todas' });
 }
 
 // ============================== Peças no board ============================

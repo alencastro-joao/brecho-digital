@@ -4,11 +4,12 @@
 // raridade vem gravada na peça (não é re-sorteada a cada render) e a ordem dos
 // slots é persistida quando você arrasta.
 
-import { ADMIN, CATEGORIAS, RARIDADE, RARIDADES, escalaGrade } from './config.js';
+import { ADMIN, CATEGORIAS, RARIDADE, escalaGrade } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import {
-  agrupamento, categoriaDe, grupoDe, gruposDoInventario, compararPorGrupo, seletorDeAgrupamento,
+  agrupamento, categoriaDe, grupoDe, gruposDoInventario, seletorDeAgrupamento,
 } from './agrupamento.js';
+import { ordemAtual, ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { abrirEditar } from './editar.js';
@@ -21,62 +22,14 @@ let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
 let selecionada = null;
 
-// Jeitos de organizar a grade. "manual" é a ordem que a pessoa arrasta; os
-// outros só ordenam a vista (não mexem no `ordem` gravado) e, quando faz
-// sentido, separam a grade em grupos com rótulo.
-const CHAVE_ORDEM = 'closet.ordem';
-let ordemAtual = (() => { try { return localStorage.getItem(CHAVE_ORDEM) || 'manual'; } catch { return 'manual'; } })();
-
-const NIVEL = Object.fromEntries(RARIDADES.map((r, i) => [r.id, i]));
-const ORIGENS = { collab: 'Cápsula do mês', propria: 'Peças suas', teste: 'Teste', vitrine: 'Garimpo' };
-const quando = p => new Date(p.obtidoEm).getTime() || 0;
-// Cor e marca são campo livre: "verde", "Verde " e "VERDE" têm que cair no
-// mesmo grupo. Normaliza espaços (inclusive o não-separável) e a caixa, e
-// devolve com só a primeira letra maiúscula.
-const texto = (v, vazio) => {
-  const t = (v || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('pt-BR');
-  return t ? t[0].toLocaleUpperCase('pt-BR') + t.slice(1) : vazio;
-};
-const porTexto = (a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
-
-// Cada modo: como comparar e (opcional) em que grupo a peça cai.
-const ORDENS = {
-  manual:    { cmp: (a, b) => a.ordem - b.ordem },
-  raridade:  { cmp: (a, b) => (NIVEL[b.raridade] ?? 0) - (NIVEL[a.raridade] ?? 0) || quando(b) - quando(a),
-               grupo: p => (RARIDADE[p.raridade] || RARIDADE.common).nome },
-  recentes:  { cmp: (a, b) => quando(b) - quando(a), grupo: p => mesAno(p) },
-  antigas:   { cmp: (a, b) => quando(a) - quando(b), grupo: p => mesAno(p) },
-  favoritas: { cmp: (a, b) => (b.favorito ? 1 : 0) - (a.favorito ? 1 : 0) || a.ordem - b.ordem,
-               grupo: p => p.favorito ? 'Favoritas' : 'Outras' },
-  cor:       { cmp: (a, b) => porTexto(corDe(a), corDe(b)) || a.ordem - b.ordem, grupo: p => corDe(p) },
-  marca:     { cmp: (a, b) => porTexto(marcaDe(a), marcaDe(b)) || a.ordem - b.ordem, grupo: p => marcaDe(p) },
-  // Segue a organização escolhida: por tipo de peça ou por parte do corpo.
-  categoria: { cmp: (a, b) => compararPorGrupo(a, b) || a.ordem - b.ordem,
-               grupo: p => agrupamento().grupos[grupoDe(p)]?.nome || 'Outras' },
-  origem:    { cmp: (a, b) => porTexto(origemDe(a), origemDe(b)) || quando(b) - quando(a), grupo: p => origemDe(p) },
-};
-
-function mesAno(p) {
-  const d = new Date(p.obtidoEm);
-  if (isNaN(d)) return 'Sem data';
-  const s = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  return s[0].toUpperCase() + s.slice(1);
-}
-function corDe(p) { return texto(pecaDoCatalogo(p.id)?.cor, 'Sem cor'); }
-function marcaDe(p) { return texto(pecaDoCatalogo(p.id)?.marca, 'Sem marca'); }
-function origemDe(p) { return ORIGENS[p.origem] || 'Garimpo'; }
+// A "Minha ordem" é a que a pessoa arrasta; os outros modos de organizar
+// (ordenacao.js, compartilhado com o Stylist e a Colagem) só ordenam a vista.
+const manual = () => ordemAtual() === 'manual';
 
 export function montarCloset() {
   montarRail();
   montarSeletorDeAgrupamento();
-  const seletor = $('#closet-ordem');
-  if (!ORDENS[ordemAtual]) ordemAtual = 'manual';
-  seletor.value = ordemAtual;
-  seletor.addEventListener('change', () => {
-    ordemAtual = seletor.value;
-    try { localStorage.setItem(CHAVE_ORDEM, ordemAtual); } catch {}
-    carregarCategoria(categoriaAtual);
-  });
+  montarSeletorDeOrdem();
   carregarCategoria(categoriaAtual);
   $('#btn-para-stylist').addEventListener('click', () => {
     if (!selecionada) return;
@@ -135,6 +88,10 @@ function montarSeletorDeAgrupamento() {
   }));
 }
 
+function montarSeletorDeOrdem() {
+  $('#closet-ordem').replaceChildren(seletorDeOrdem(() => carregarCategoria(categoriaAtual)));
+}
+
 function montarRail() {
   const rail = $('#cat-rail');
   // Só os botões saem: o puxador de redimensionar mora aqui dentro.
@@ -179,8 +136,8 @@ export function carregarCategoria(cat) {
 
   const tudo = cat === 'todas';
   const pecas = db.state.inventario
-    .filter(p => tudo || grupoDe(p) === cat)
-    .sort(ORDENS[ordemAtual].cmp);
+    .filter(p => tudo || grupoDe(p) === cat);
+  ordenar(pecas);
 
   const rotulo = tudo ? 'Todas as peças' : grupos[cat].nome;
   $('#closet-sub').textContent = tudo
@@ -196,22 +153,7 @@ export function carregarCategoria(cat) {
     return;
   }
 
-  // Agrupar por categoria dentro de uma categoria só seria um grupo único.
-  const grupo = !(ordemAtual === 'categoria' && !tudo) && ORDENS[ordemAtual].grupo;
-  let ultimo = null;
-  for (const p of pecas) {
-    const slot = criarSlot(p);
-    if (!slot) continue;
-    if (grupo) {
-      const g = grupo(p);
-      // Compara sem acento/caixa, igual ao sort, para não partir um grupo.
-      if (ultimo === null || porTexto(g, ultimo) !== 0) {
-        grid.append(el('h3', { class: 'grupo-rotulo' }, g));
-        ultimo = g;
-      }
-    }
-    grid.append(slot);
-  }
+  preencherComGrupos(grid, pecas, criarSlot, { categoriaAberta: !tudo });
   preencherVazios();
 }
 
@@ -225,7 +167,7 @@ function criarSlot(peca) {
   const slot = el('div', {
     class: `item-slot r-${peca.raridade}`,
     // Arrastar só reordena na "Minha ordem"; nos outros modos a ordem é calculada.
-    draggable: ordemAtual === 'manual' ? 'true' : 'false',
+    draggable: manual() ? 'true' : 'false',
     dataset: { id: peca.id },
     title: nomeDaPeca(cat) + ' · ' + r.nome,
     // No guarda-roupa a raridade é só cor: borda e fundo do slot. A aura fica
@@ -245,7 +187,7 @@ function criarSlot(peca) {
   if (peca.favorito) slot.classList.add('favorita');
 
   slot.addEventListener('dragstart', (e) => {
-    if (ordemAtual !== 'manual') { e.preventDefault(); return; }
+    if (!manual()) { e.preventDefault(); return; }
     arrastando = peca.id;
     slot.classList.add('arrastando');
     e.dataTransfer.effectAllowed = 'move';
@@ -256,7 +198,7 @@ function criarSlot(peca) {
   slot.addEventListener('drop', (e) => {
     e.preventDefault();
     slot.classList.remove('alvo');
-    if (ordemAtual === 'manual' && arrastando && arrastando !== peca.id) {
+    if (manual() && arrastando && arrastando !== peca.id) {
       db.reordenarInventario(arrastando, peca.id);
       carregarCategoria(categoriaAtual);
     }
@@ -364,6 +306,9 @@ function limparPreview() {
 }
 
 export function aoEntrarNoCloset() {
+  // O agrupamento e a ordem podem ter mudado no Stylist ou na Colagem.
+  montarSeletorDeAgrupamento();
+  montarSeletorDeOrdem();
   montarRail();
   carregarCategoria(categoriaAtual);
 }

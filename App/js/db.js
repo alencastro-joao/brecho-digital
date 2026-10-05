@@ -54,6 +54,7 @@ function estadoInicial() {
         sombra: true,               // padrão da sombra nas peças da colagem
         soPecasProprias: true,      // ignora o acervo da pasta; usa só o que você subiu
         agrupamento: 'tipo',        // telas de roupa por 'tipo' de peça ou parte do 'corpo'
+        // ordem: o "Organizar" das telas de roupa (ordenacao.js); sem valor, vale o antigo do closet
       },
       avatar: { ...APARENCIA_PADRAO },        // pele, corte, cor do cabelo e nariz
     },
