@@ -59,6 +59,10 @@
 }
 
 /* --------------------------- Peças no mural ---------------------------- */
+/* Peça encavalada em outra cobre a de baixo com mais que a roupa: o vão
+   transparente em volta e o botão "Pegar" invisível. Quem recebe o mouse é só
+   a silhueta (a <img>, recortada pelo contorno); o resto deixa passar, senão a
+   ponta da rara aparecendo por baixo de outra não dava para pegar. */
 .item-roupa {
   position: absolute;
   display: flex; flex-direction: column; align-items: center;
@@ -66,7 +70,9 @@
   transition: transform .4s cubic-bezier(.175, .885, .32, 1.275);
   cursor: grab;
   touch-action: none;
+  pointer-events: none;
 }
+.item-roupa img { pointer-events: auto; }
 .item-roupa.arrastando { transition: none; }
 /* O invólucro tem exatamente o tamanho da peça, então a aura é só inset: 0 —
    sem conta de deslocamento para errar. É ele que flutua. */
@@ -130,7 +136,7 @@
   transition: all .3s ease;
 }
 .btn-pegar:hover { background: #000; }
-.item-roupa:hover .btn-pegar { opacity: 1; transform: translateY(0); }
+.item-roupa:hover .btn-pegar { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
 /* Resgatada: a peça sai da arara. O cabide esvazia na frente de quem pegou, em
    vez de ficar com a roupa apagada ocupando lugar. Vem depois do :hover de

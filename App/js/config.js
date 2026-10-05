@@ -64,14 +64,28 @@ export function aplicarPapel(papel) {
 // aura:   cor do brilho que envolve a peça (null = sem aura).
 // tiragem: quantas cópias de cada peça existem no jogo, somando todas as
 //          contas. Esgotou, some da vitrine (ver estoque.js).
+// naLoja: quantas peças desta raridade a arara do dia leva, com a chance de
+//         cada quantidade em % (soma 100). É ela, e não o peso, que decide a
+//         loja: o acervo já nasce com raridade fixa na ficha, e sortear as 25
+//         peças sem olhar raridade trazia as ~2 épicas que o acervo tem em cada
+//         25 — todo santo dia. Comum não tem `naLoja`: ela completa a arara.
+// peso:   a raridade de quem não tem ficha (catálogo base, presente).
 export const RARIDADES = [
-  { id: 'common',    nome: 'Comum',    peso: 60, tiragem: 1000, cor: '#e8e8e8', bg: '#ffffff', aura: null },
-  { id: 'uncommon',  nome: 'Incomum',  peso: 25, tiragem: 500, cor: '#9ae0b5', bg: '#f4fbf6', aura: '#2fbf63' },
-  { id: 'rare',      nome: 'Rara',     peso: 11, tiragem: 300, cor: '#b9d6f2', bg: '#f0f7ff', aura: '#2f7ff0' },
-  { id: 'epic',      nome: 'Épica',    peso: 3,  tiragem: 100, cor: '#c3a6f2', bg: '#f8f4ff', aura: '#9b46f0' },
-  { id: 'legendary', nome: 'Lendária', peso: 1,  tiragem: 25, cor: '#efd469', bg: '#fffdf2', aura: 'arco-iris' },
+  { id: 'common',    nome: 'Comum',    peso: 60, naLoja: null,
+    tiragem: 1000, cor: '#e8e8e8', bg: '#ffffff', aura: null },
+  { id: 'uncommon',  nome: 'Incomum',  peso: 25, naLoja: { 4: 25, 5: 45, 6: 30 },
+    tiragem: 500, cor: '#9ae0b5', bg: '#f4fbf6', aura: '#2fbf63' },
+  { id: 'rare',      nome: 'Rara',     peso: 11, naLoja: { 1: 20, 2: 50, 3: 30 },
+    tiragem: 300, cor: '#b9d6f2', bg: '#f0f7ff', aura: '#2f7ff0' },
+  { id: 'epic',      nome: 'Épica',    peso: 3,  naLoja: { 0: 25, 1: 63, 2: 12 },
+    tiragem: 100, cor: '#c3a6f2', bg: '#f8f4ff', aura: '#9b46f0' },
+  { id: 'legendary', nome: 'Lendária', peso: 1,  naLoja: { 0: 93, 1: 7 },
+    tiragem: 25, cor: '#efd469', bg: '#fffdf2', aura: 'arco-iris' },
 ];
 export const RARIDADE = Object.fromEntries(RARIDADES.map(r => [r.id, r]));
+
+// Em quantas lojas, de cada 100, aparece pelo menos uma peça desta raridade.
+export const chanceNaLoja = (r) => (r?.naLoja ? 100 - (r.naLoja[0] ?? 0) : 100);
 
 // ------------------------- Presente de boas-vindas ------------------------
 // Conta nova entra com guarda-roupa vazio, e guarda-roupa vazio é tela vazia:

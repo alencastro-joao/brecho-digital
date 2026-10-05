@@ -7,12 +7,13 @@
 // aqui: ela é conquistada por missões.
 //
 // A arara é cheia de propósito: as peças se encavalam, e quem fica por baixo da
-// pilha é justamente a mais rara. Achar a lendária é garimpo — remexer roupa
-// com o mouse até a ponta dela aparecer. E peça pega *sai* da loja: some do
-// mural na hora e não volta na próxima abertura, que é o que o resgate
-// significa.
+// pilha é justamente a mais rara. Achar a épica é garimpo — tirar de cima a
+// roupa que a tapa até ela aparecer. Quantas raras vêm por dia é sorteado por raridade
+// (`naLoja`, em config.js): na maioria dos dias uma épica, às vezes duas, às
+// vezes nenhuma. E peça pega *sai* da loja: some do mural na hora e não volta
+// na próxima abertura, que é o que o resgate significa.
 
-import { ADMIN, CONFIG, COLLAB, RARIDADE, RARIDADES, CATEGORIAS, tamanhoNoMural } from './config.js';
+import { ADMIN, CONFIG, COLLAB, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural } from './config.js';
 import { catalogo, soProprias, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
@@ -32,8 +33,9 @@ let mural, passThroughInstalado = false, resizeTimer;
 // a arara no meio do garimpo.
 let tamanhoMontado = { w: 0, h: 0 };
 
-// Toda peça que você encosta o mouse sobe para o topo da pilha e fica lá — é
-// como remexer roupa numa arara: o que você mexeu por último está por cima.
+// Peça que você *pega* sobe para o topo e fica lá — o que você mexeu por último
+// está por cima. Só passar o mouse não basta: se a ponta da rara subisse no
+// hover, ninguém precisaria tirar roupa de cima para chegar nela.
 let zTopo = 100;
 const trazerParaFrente = (no) => { no.style.zIndex = String(++zTopo); };
 
@@ -54,17 +56,58 @@ const NIVEL = Object.fromEntries(RARIDADES.map((r, i) => [r.id, i]));
 const nivelDe = (id) => NIVEL[id] ?? 0;
 const NIVEL_RARO = NIVEL.rare;            // daqui para cima, a peça é escondida
 
+// Quantas peças de uma raridade a arara leva hoje, na tabela `naLoja` dela.
+function sortearQuantidade(tabela, rnd) {
+  const opcoes = Object.entries(tabela).map(([n, pct]) => [Number(n), pct]);
+  let x = rnd() * opcoes.reduce((s, [, pct]) => s + pct, 0);
+  for (const [n, pct] of opcoes) {
+    if (x < pct) return n;
+    x -= pct;
+  }
+  return opcoes.at(-1)?.[0] ?? 0;
+}
+
+// Saiu da arara hoje pelas suas mãos. Ela continua ocupando a vaga da sua
+// raridade no sorteio do dia: sem isso, pegar a épica e recarregar a página
+// punha *outra* épica no lugar — a loja se reabastecia de raridade sozinha.
+function levadaHoje(id, iso) {
+  const p = db.pecaDoInventario(id);
+  return p?.origem === 'vitrine' && !!p.obtidoEm && hojeISO(new Date(p.obtidoEm)) === iso;
+}
+
 export function poolDoDia(iso = hojeISO()) {
   const rnd = mulberry32(sementeEstoque ?? sementeDoDia(iso));
+  const raridade = (i) => {
+    const r = db.raridadeDoDia(i.id, iso);
+    return RARIDADE[r] ? r : 'common';
+  };
+
   // Com o acervo da pasta ligado, peça sua não entra no sorteio — ela já é sua.
-  // Usando só as suas, elas *são* o estoque da loja. Peça que já está no
-  // guarda-roupa fica de fora dos dois casos: ela saiu da loja quando foi
-  // resgatada, e a arara completa os 25 com o que ainda está à venda.
-  const elegiveis = catalogo.itens.filter(i =>
-    !COLLAB.itens.includes(i.id) && (soProprias() || !i.propria) && !db.temPeca(i.id)
+  // Usando só as suas, elas *são* o estoque da loja. Peça do guarda-roupa fica
+  // de fora — menos a que saiu daqui hoje, que guarda a vaga até a meia-noite.
+  const candidatas = catalogo.itens.filter(i =>
+    !COLLAB.itens.includes(i.id) && (soProprias() || !i.propria)
+    && (!db.temPeca(i.id) || levadaHoje(i.id, iso))
     // Tiragem esgotada: todas as cópias já estão em algum guarda-roupa.
-    && !estoque.esgotada(i.id, db.raridadeDoDia(i.id, iso)));
-  return shuffle(elegiveis, rnd).slice(0, CONFIG.PECAS_NA_VITRINE);
+    && !estoque.esgotada(i.id, raridade(i)));
+
+  // Separa por raridade (cada grupo já embaralhado) e tira de cada um a
+  // quantidade que a tabela `naLoja` sorteou para hoje. A raridade manda na
+  // loja, não no acervo: ter 10 épicas cadastradas não põe mais épica na arara.
+  const grupos = Object.fromEntries(RARIDADES.map(r => [r.id, []]));
+  for (const i of shuffle(candidatas, rnd)) grupos[raridade(i)].push(i);
+
+  const arara = [];
+  for (const r of [...RARIDADES].reverse()) {
+    if (r.naLoja) arara.push(...grupos[r.id].splice(0, sortearQuantidade(r.naLoja, rnd)));
+  }
+
+  // Comum completa o resto; faltando comum, a incomum que sobrou. Rara para cima
+  // nunca entra de recheio — ela só vem pela própria tabela.
+  const aVenda = (i) => !db.temPeca(i.id);
+  const recheio = [...grupos.common, ...grupos.uncommon].filter(aVenda);
+  const loja = arara.filter(aVenda);
+  return [...loja, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - loja.length))];
 }
 
 // A loja tem sempre o mesmo estoque: quantas peças o dono pendurou é regra de
@@ -254,6 +297,7 @@ export function montarVitrine() {
   encobrirAsRaras(estoque, pontos, medidas,
     { w: largura, h: altura, topo: 88, zonas: zonasProibidas }, rnd);
 
+  const nos = [];
   estoque.forEach(({ peca, raridade }, i) => {
     // O tamanho é só a medida da peça — sem variação aleatória. O mural ganha
     // vida no giro e na flutuação, não no tamanho: sorteá-lo fazia duas
@@ -321,8 +365,13 @@ export function montarVitrine() {
     );
 
     ligarPeca(no, peca, raridade);
-    mural.append(no);
+    nos.push(no);
   });
+
+  // Entra no mural de cima para baixo: quem está por cima pede a imagem
+  // primeiro. Na ordem do estoque a rara vinha antes, carregava antes e passava
+  // um instante sozinha na mesa — o garimpo entregue antes de começar.
+  mural.append(...nos.sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex)));
 
   if (!pecas.length) {
     mural.append(el('div', { class: 'mural-vazio' },
@@ -344,8 +393,6 @@ export function montarVitrine() {
 // Arrastar para reorganizar o mural; clique simples abre a ficha. A diferença
 // entre os dois é só distância: até 4px o gesto ainda é um clique.
 function ligarPeca(no, peca, raridade) {
-  no.addEventListener('pointerenter', () => trazerParaFrente(no));
-
   no.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.btn-pegar')) return;   // o botão cuida do próprio clique
     e.preventDefault();
@@ -421,9 +468,14 @@ function abrirFicha(peca, raridade, no) {
   if (peca.cor?.trim()) partes.push(peca.cor.trim());
   if (peca.marca?.trim()) partes.push(peca.marca.trim());
   $('#ficha-meta').textContent = partes.join(' · ');
-  $('#ficha-chance').textContent = estoque.temContador()
-    ? `restam ${estoque.restantes(peca.id, raridade)} de ${r.tiragem} · aparece em ${r.peso}% dos sorteios`
-    : `tiragem de ${r.tiragem} · aparece em ${r.peso}% dos sorteios`;
+  // Raridade que vem todo dia não precisa de chance: só a que pode faltar.
+  const chance = chanceNaLoja(r);
+  $('#ficha-chance').textContent = [
+    estoque.temContador()
+      ? `restam ${estoque.restantes(peca.id, raridade)} de ${r.tiragem}`
+      : `tiragem de ${r.tiragem}`,
+    chance < 100 ? `${r.nome.toLowerCase()} aparece em ${chance}% das lojas` : null,
+  ].filter(Boolean).join(' · ');
 
   const acao = $('#ficha-acao');
   const possuida = db.temPeca(peca.id);

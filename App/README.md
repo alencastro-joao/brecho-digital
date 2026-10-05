@@ -34,7 +34,7 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 | Tela | O que já funciona |
 |---|---|
 | **Entrar** | Primeira tela: entrar ou criar conta. Senha com `scrypt` no servidor, sessão em cookie `HttpOnly` de 30 dias — voltar amanhã não pede senha de novo |
-| **Vitrine** | Mural orgânico com até 27 peças (distribuição Poisson-disc), sorteio diário com semente na data, peças flutuando no tamanho real medido, aura de raridade no hover, arrastar para reorganizar, clique abre a ficha, limite de 3 resgates por dia |
+| **Vitrine** | Mural orgânico com 25 peças soltas (distribuição Poisson-disc), a rara por baixo de uma comum, sorteio diário com semente na data e cota por raridade, peças flutuando no tamanho real medido, aura de raridade no hover, arrastar para reorganizar, clique abre a ficha, limite de 3 resgates por dia |
 | **Guarda-roupa** | Abre em **Todas as peças**; botão de adicionar peça própria; categorias com contador, raridade identificada pela cor do slot, arrastar para reordenar (persiste), destaque com ficha da peça |
 | **Stylist** | Palco 600×1200 com o avatar base, paleta com aba "todas", uma peça por categoria (escolher outra troca), botão de sortear look com as suas peças, peça entra encaixada no ponto de ancoragem da categoria, mover/girar/redimensionar/espelhar/camada, salvar, publicar, exportar Story 1080×1920 e Post 1080×1350 |
 | **Colagem** | A colagem livre estilo board de moda, sempre em fundo branco: botão de sortear colagem, réguas e guias, ímã de alinhamento, assinatura, etiquetas de texto, seleção múltipla, undo/redo e exportação |
@@ -447,17 +447,29 @@ Quem quiser reagir ao XP escuta `db.onXP(fn)` — `db` não conhece a interface.
 
 ## Raridades
 
-Cinco níveis. O peso decide quanto cada um aparece no sorteio do dia:
+Cinco níveis. Quantas peças de cada um a loja do dia leva é sorteado pela tabela
+`naLoja` de cada raridade (`RARIDADES` em `js/config.js`, em %):
 
-| Nível | Chance | Aura |
+| Nível | Peças na loja do dia | Aura |
 |---|---|---|
-| Comum | 60% | nenhuma |
-| Incomum | 25% | verde |
-| Rara | 11% | azul |
-| Épica | 3% | roxa |
-| Lendária | 1% | colorida, com matiz girando |
+| Comum | o que sobrar até 25 | nenhuma |
+| Incomum | 4 (25%) · 5 (45%) · 6 (30%) | verde |
+| Rara | 1 (20%) · 2 (50%) · 3 (30%) | azul |
+| Épica | 0 (25%) · 1 (63%) · 2 (12%) | roxa |
+| Lendária | 0 (93%) · 1 (7%) | colorida, com matiz girando |
 
-A raridade é sorteada **por peça e por dia**, com a mesma semente da vitrine. Ou seja:
+É a cota, e não o acervo, que manda: antes as 25 peças eram sorteadas sem olhar
+raridade, e com 10 épicas em ~100 peças cadastradas vinham ~2 épicas todo dia. Se a
+raridade não tem peça suficiente disponível (a lendária, hoje, não tem nenhuma no
+acervo), a loja vem com menos dela — comum nunca é promovida para cobrir a cota. Peça
+que você pegou hoje continua ocupando a vaga dela até a meia-noite: pegar a épica e
+recarregar não põe outra épica no lugar.
+
+O `peso` continua valendo para a peça **sem ficha** (catálogo base e presente de
+boas-vindas): é ele que sorteia a raridade dela no dia — comum 60, incomum 25, rara
+11, épica 3, lendária 1.
+
+A raridade da peça sem ficha é sorteada **por peça e por dia**, com a mesma semente da vitrine. Ou seja:
 a peça já brilha no mural antes de ser resgatada, e o que você vê é exatamente o que
 entra no guarda-roupa. Depois de resgatada, o valor fica gravado com a peça e não
 muda mais.
@@ -555,6 +567,12 @@ sobre o tamanho da roupa.
 Peça maior significa menos peça na tela: `densidade()` calcula quantas cabem
 (uma a cada ~70.000px² de mural) e a distância mínima entre elas no Poisson-disc.
 `CONFIG.PECAS_NA_VITRINE` continua sendo o teto.
+
+Peça rara fica por baixo de uma comum (`encobrirAsRaras`), e chegar nela é tirar a de
+cima. Por isso **passar o mouse não puxa a peça para a frente** — só pegar (arrastar
+ou clicar) puxa — e **só a silhueta da roupa recebe o mouse** (`.item-roupa` tem
+`pointer-events: none`; a `<img>`, recortada pelo contorno, tem `auto`): a caixa
+transparente e o botão "Pegar" invisível da peça de cima não tapam a ponta da rara.
 
 ## Personagem
 
