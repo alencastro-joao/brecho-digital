@@ -21,6 +21,13 @@ miniaturas são descartadas antes de subir (`_enxugar`): elas são cache — o
 `render.js` desenha de novo a partir da lista de peças —, e o próprio
 `salvar()` do `db.js` já as descarta quando a cota do navegador estoura. O que
 é dado de verdade nunca é jogado fora.
+
+**Versão e conflito.** Cada save tem uma versão: o ETag do objeto no S3. O
+`GET` a devolve, e o `PUT` manda de volta a versão em que a edição se baseou —
+o S3 só aceita a escrita se o objeto ainda for aquele (`If-Match`). Sem isso,
+uma aba esquecida aberta no celular, depois de uma tarde de jogo no computador,
+subia o estado velho na primeira mexida e apagava a tarde inteira. Com isso ela
+recebe 409, e o `db.js` traz o save da nuvem em vez de gravar por cima dele.
 """
 
 import gzip
@@ -55,6 +62,19 @@ def _enxugar(estado):
     return estado
 
 
+class Conflito(Exception):
+    """O save na nuvem não é mais o que o aparelho leu: outro gravou antes."""
+
+
+def _versao(r):
+    return (r.get('ETag') or '').strip('"') or None
+
+
+def _quando(r):
+    return ((r.get('Metadata') or {}).get('atualizado-em')
+            or r['LastModified'].isoformat(timespec='seconds'))
+
+
 def ler(uid):
     """O save da conta, ou None se ela nunca gravou na nuvem."""
     try:
@@ -66,14 +86,34 @@ def ler(uid):
     bruto = gzip.decompress(r['Body'].read()).decode('utf-8')
     return {
         'estado': json.loads(bruto),
-        'atualizadoEm': (r.get('Metadata') or {}).get('atualizado-em')
-                        or r['LastModified'].isoformat(timespec='seconds'),
+        'atualizadoEm': _quando(r),
+        'versao': _versao(r),
     }
 
 
-def gravar(uid, estado):
-    """Grava o save e devolve quando foi. Último a escrever ganha: duas abas da
-    mesma pessoa não merecem uma máquina de resolver conflito."""
+def versao(uid):
+    """Só a versão, sem baixar o save: é o que a aba pergunta ao voltar a ficar
+    visível, e o save inteiro são megabytes."""
+    try:
+        r = _s3.head_object(Bucket=BUCKET, Key=_chave(uid))
+    except ClientError as e:
+        if e.response['Error']['Code'] in ('NoSuchKey', '404'):
+            return {'versao': None, 'atualizadoEm': None}
+        raise
+    return {'versao': _versao(r), 'atualizadoEm': _quando(r)}
+
+
+SEM_VERSAO = object()
+
+
+def gravar(uid, estado, base=SEM_VERSAO):
+    """Grava o save e devolve quando foi e a versão nova.
+
+    `base` é a versão em que a edição se baseou: uma string exige que o save
+    ainda seja aquele, e None exige que ainda não exista save nenhum. Se a nuvem
+    andou, levanta `Conflito` e nada é gravado. Sem `base` (aba aberta antes
+    desta versão do site) grava como antes, por cima.
+    """
     quando = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
     corpo = json.dumps(estado, ensure_ascii=False, separators=(',', ':'))
@@ -89,10 +129,23 @@ def gravar(uid, estado):
     with gzip.GzipFile(fileobj=buffer, mode='wb', compresslevel=6, mtime=0) as gz:
         gz.write(corpo.encode('utf-8'))
 
-    _s3.put_object(Bucket=BUCKET, Key=_chave(uid), Body=buffer.getvalue(),
-                   ContentType='application/json', ContentEncoding='gzip',
-                   Metadata={'atualizado-em': quando})
-    return {'atualizadoEm': quando, 'enxuto': enxuto,
+    condicao = {}
+    if base is None:
+        condicao['IfNoneMatch'] = '*'
+    elif base is not SEM_VERSAO:
+        condicao['IfMatch'] = '"%s"' % base
+    try:
+        r = _s3.put_object(Bucket=BUCKET, Key=_chave(uid), Body=buffer.getvalue(),
+                           ContentType='application/json', ContentEncoding='gzip',
+                           Metadata={'atualizado-em': quando}, **condicao)
+    except ClientError as e:
+        # 412: o objeto mudou (ou já existe). 409: outra escrita condicional
+        # chegou junto. 404: If-Match num save que foi apagado.
+        if e.response['Error']['Code'] in (
+                'PreconditionFailed', 'ConditionalRequestConflict', 'NoSuchKey'):
+            raise Conflito() from e
+        raise
+    return {'atualizadoEm': quando, 'versao': _versao(r), 'enxuto': enxuto,
             'bytes': buffer.getbuffer().nbytes}
 
 

@@ -49,29 +49,36 @@ export function sortearConjunto(acervo, rnd = Math.random, { minimo = 3 } = {}) 
 
   // Guarda-roupa pequeno: completa com o que houver para não sair quase vazio,
   // sem repetir categoria nem empilhar duas peças no tronco ou na perna.
+  // A regra é conferida a cada peça que entra: checar só uma vez, antes, deixava
+  // passar camisa e casaco juntos (ou vestido por cima da calça) na mesma leva.
   if (lista.length < minimo) {
-    const usadas = new Set(lista.map(p => p.cat));
-    const cobreTronco = TRONCO.some(c => usadas.has(c));
-    const cobrePerna = BAIXO.some(c => usadas.has(c)) || usadas.has('dresses');
-    const resto = shuffle(acervo.filter(p => !lista.includes(p) && !usadas.has(p.cat)
-      && !(cobreTronco && TRONCO.includes(p.cat))
-      && !(cobrePerna && BAIXO.includes(p.cat))), rnd);
-    lista = [...lista, ...resto.slice(0, minimo - lista.length)];
+    for (const p of shuffle(acervo, rnd)) {
+      if (lista.length >= minimo) break;
+      const usadas = new Set(lista.map(q => q.cat));
+      const cobreTronco = TRONCO.some(c => usadas.has(c));
+      const cobrePerna = BAIXO.some(c => usadas.has(c)) || usadas.has('dresses');
+      if (lista.some(q => q.id === p.id) || usadas.has(p.cat)) continue;
+      if (cobreTronco && TRONCO.includes(p.cat)) continue;
+      if (cobrePerna && (BAIXO.includes(p.cat) || p.cat === 'dresses')) continue;
+      lista.push(p);
+    }
   }
   return lista;
 }
 
-// Converte o conjunto em camadas vestidas no avatar (usa as âncoras da categoria).
-export function camadasParaAvatar(pecas, rnd = Math.random) {
+// Converte o conjunto em camadas vestidas no avatar. Cada peça entra do jeito
+// que foi configurada — ponto e largura da âncora dela, sem giro —, igual a
+// vestir clicando na paleta. O sorteio escolhe as peças, não mexe nelas.
+export function camadasParaAvatar(pecas) {
   return pecas.map(peca => {
     const a = ancoraDaPeca(peca);
     return {
       itemId: peca.id,
       cat: peca.cat,
-      x: a.x + (rnd() - 0.5) * 14,
-      y: a.y + (rnd() - 0.5) * 20,
-      escala: 0.92 + rnd() * 0.24,
-      rot: (rnd() - 0.5) * 7,
+      x: a.x,
+      y: a.y,
+      escala: 1,
+      rot: 0,
       flip: false,
       z: a.z,
     };

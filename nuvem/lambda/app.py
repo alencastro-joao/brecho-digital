@@ -205,9 +205,11 @@ def rotas_de_estado(pedido):
         return responder(401, {'erro': 'entre na sua conta para continuar'})
 
     if pedido.metodo == 'GET':
+        if pedido.consulta.get('so') == 'versao':
+            return responder(200, save.versao(usuario['id']))
         guardado = save.ler(usuario['id'])
         if not guardado:
-            return responder(200, {'estado': None, 'atualizadoEm': None})
+            return responder(200, {'estado': None, 'atualizadoEm': None, 'versao': None})
         return responder(200, guardado)
 
     if pedido.metodo == 'PUT':
@@ -215,7 +217,15 @@ def rotas_de_estado(pedido):
         conteudo = corpo.get('estado')
         if not isinstance(conteudo, dict):
             return responder(400, {'erro': 'estado inválido'})
-        return responder(200, save.gravar(usuario['id'], conteudo))
+        # `versao` ausente é aba antiga, de antes da gravação condicional.
+        base = corpo['versao'] if 'versao' in corpo else save.SEM_VERSAO
+        if base is not None and base is not save.SEM_VERSAO and not isinstance(base, str):
+            return responder(400, {'erro': 'versão inválida'})
+        try:
+            return responder(200, save.gravar(usuario['id'], conteudo, base))
+        except save.Conflito:
+            return responder(409, {'erro': 'o save mudou em outro aparelho',
+                                   **save.versao(usuario['id'])})
 
     return None
 
@@ -310,6 +320,12 @@ def rotas_de_esteira(pedido):
             return responder(200, esteira.listar())
         if metodo == 'POST':
             return responder(200, esteira.reservar(pedido.corpo(LIMITE_LOGIN * 8)))
+        return None
+    if item_id == 'pinterest' and not acao:
+        if metodo == 'GET':
+            return responder(200, esteira.pastas_pinterest())
+        if metodo == 'POST':
+            return responder(200, esteira.pinterest(pedido.corpo(LIMITE_LOGIN)))
         return None
     if acao == 'publicar' and metodo == 'POST':
         return responder(201, esteira.publicar(item_id, pedido.corpo(LIMITE_LOGIN)))

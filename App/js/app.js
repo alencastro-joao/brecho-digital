@@ -33,6 +33,8 @@ import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
 import { toast } from './util.js';
 
+const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
+
 // Quem está logado, segundo o servidor — ou a tela de entrada até estar.
 // O cookie de sessão dura 30 dias: na maioria das aberturas isto não mostra
 // tela nenhuma, só devolve a conta e o app abre direto na vitrine.
@@ -78,10 +80,26 @@ async function iniciar() {
   // estar prontos antes de montar tela alguma: o catálogo para desenhar as
   // peças, o save da nuvem para saber *quais* peças. Sincronizar depois de
   // montar seria desenhar o guarda-roupa errado e corrigir na frente da pessoa.
+  // O save mudou em outro aparelho enquanto esta aba estava aberta: o db já
+  // trouxe o de lá, e recarregar é o jeito de nenhuma tela ficar desenhando o
+  // guarda-roupa velho. O aviso atravessa a recarga pelo sessionStorage.
+  db.onConflito(({ perdeu }) => {
+    try { sessionStorage.setItem(AVISO_DE_CONFLITO, perdeu ? 'perdeu' : 'trouxe'); } catch {}
+    location.reload();
+  });
   const [, sync] = await Promise.all([
     carregarCatalogo(), db.sincronizarDaNuvem(), carregarEstoque()]);
   db.esquecerPecas(catalogo.removidas);
-  if (sync.estado === 'veio da nuvem') {
+  let conflito = null;
+  try {
+    conflito = sessionStorage.getItem(AVISO_DE_CONFLITO);
+    sessionStorage.removeItem(AVISO_DE_CONFLITO);
+  } catch {}
+  if (conflito === 'perdeu' || sync.perdeu) {
+    toast('Seu guarda-roupa mudou em outro aparelho e veio de lá. O que foi feito aqui depois disso não foi guardado.', 'aviso');
+  } else if (conflito === 'trouxe') {
+    toast('Guarda-roupa atualizado com o que você fez em outro aparelho.');
+  } else if (sync.estado === 'veio da nuvem') {
     toast('Guarda-roupa trazido da sua conta.');
   } else if (sync.estado === 'offline') {
     toast('Sem conexão com o servidor: jogando no save deste navegador.', 'aviso');

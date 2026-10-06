@@ -219,7 +219,10 @@ export function encerrarEstado() {
   despedir();
   clearTimeout(timerEnvio);
   sincronizado = false;
+  semNuvem = false;
   sujo = false;
+  versao = undefined;
+  pendente = false;
   carregadoEm = '';
   chave = null;
   for (const k of Object.keys(state)) delete state[k];
@@ -253,55 +256,167 @@ export function salvar() {
 // Só sobe alguns segundos depois de a pessoa parar de mexer. Arrastar uma peça
 // pela vitrine chama salvar() dezenas de vezes; sem a espera seriam dezenas de
 // requisições para gravar o mesmo estado final.
+//
+// Cada save da nuvem tem uma versão (o ETag do S3), e o `PUT` leva de volta a
+// versão em que esta aba se baseou: se outro aparelho gravou depois, o servidor
+// responde 409 em vez de deixar o estado velho apagar o novo. É o caso da aba
+// esquecida aberta no celular durante uma tarde de jogo no computador — antes,
+// a primeira mexida nela subia o guarda-roupa da manhã por cima da tarde.
 const ESPERA_ENVIO = 4000;
+// O navegador recusa `keepalive` com corpo acima de 64 KB. Save maior sai como
+// requisição comum: ao esconder a aba ela termina; ao fechar pode morrer, e aí
+// é o `pendente` gravado no disco que garante a subida no próximo login.
+const TETO_KEEPALIVE = 60 * 1024;
 
 let sincronizado = false;   // trava: antes de ler a nuvem, não se escreve nela
+let semNuvem = false;       // a leitura falhou: jogo local, que sobe depois
 let timerEnvio = null;
 let enviando = null;
-let sujo = false;
+let sujo = false;           // mudou desde o último envio (só em memória)
 let carregadoEm = '';       // a data que o save tinha no disco ao abrir
 
+// O que este navegador sabe da nuvem, gravado ao lado do save
+// (`bd:v1:estado:<id>:nuvem`) para valer no próximo login:
+//   versao    a versão da nuvem em que o save daqui se baseia
+//             (undefined: não sei; null: a nuvem não tem save)
+//   pendente  há mudança daqui que a nuvem ainda não confirmou
+// É o par que decide o login sem depender de relógio: versão igual e nada
+// pendente, os dois são o mesmo save; versão igual e pendente, o daqui está
+// adiante; versão diferente, a nuvem andou sem este aparelho.
+let versao;
+let pendente = false;
+const conflitos = new Set();
+
+const chaveDaNuvem = (conta) => conta + ':nuvem';
+
+function lerNota() {
+  try { return JSON.parse(localStorage.getItem(chaveDaNuvem(chave))); } catch { return null; }
+}
+
+function anotar(conta, v, p) {
+  if (conta === chave) { versao = v; pendente = p; }
+  try { localStorage.setItem(chaveDaNuvem(conta), JSON.stringify({ versao: v, pendente: p })); } catch {}
+}
+
+/** Avisado quando a nuvem ganhou de uma mudança desta aba. `perdeu` diz se
+ *  havia mudança daqui que não chegou a subir. Quem reage é a interface. */
+export const onConflito = (fn) => { conflitos.add(fn); return () => conflitos.delete(fn); };
+
 function agendarEnvio() {
+  if ((sincronizado || semNuvem) && !pendente) anotar(chave, versao, true);
   if (!sincronizado) return;
   sujo = true;
   clearTimeout(timerEnvio);
   timerEnvio = setTimeout(enviar, ESPERA_ENVIO);
 }
 
-async function enviar() {
+async function enviar({ despedida = false } = {}) {
   if (!chave || !sincronizado || !sujo) return;
-  if (enviando) return enviando.then(enviar);   // um de cada vez, na ordem
+  if (enviando) return enviando.then(() => enviar({ despedida }));   // um de cada vez, na ordem
   sujo = false;
-  const corpo = JSON.stringify({ estado: state });
+  clearTimeout(timerEnvio);
+  const conta = chave;
+  const corpo = JSON.stringify({ estado: state, versao });
   enviando = fetch('/api/estado', {
     method: 'PUT', credentials: 'include',
+    // Fechar a aba não pode custar os últimos segundos de jogo: `keepalive`
+    // deixa a requisição sair mesmo com a página morrendo.
+    keepalive: despedida && new Blob([corpo]).size < TETO_KEEPALIVE,
     headers: { 'Content-Type': 'application/json' },
     body: corpo,
-  }).then(r => {
+  }).then(async r => {
+    if (r.ok) {
+      const resposta = await r.json();
+      // Continua pendente se a pessoa mexeu enquanto este ia.
+      anotar(conta, resposta.versao ?? versao, conta === chave && sujo);
+      return;
+    }
+    if (r.status === 409 && conta === chave) {
+      await perderParaANuvem(true);
+      return;
+    }
     // Sessão vencida ou save grande demais: o jogo não para por isso. O save
-    // local está gravado, e a próxima tentativa vai junto com a próxima mexida.
-    if (!r.ok) console.warn('não consegui gravar o save na nuvem:', r.status);
+    // local está gravado e continua pendente: sobe com a próxima mexida, ou
+    // no próximo login.
+    console.warn('não consegui gravar o save na nuvem:', r.status);
   }).catch(e => {
-    sujo = true;                       // sem rede: tenta de novo na próxima
+    if (conta === chave) sujo = true;   // sem rede: tenta de novo na próxima
     console.warn('sem conexão para gravar o save:', e.message);
   }).finally(() => { enviando = null; });
   return enviando;
 }
 
-// Fechar a aba não pode custar os últimos segundos de jogo. `keepalive` deixa a
-// requisição sair mesmo com a página morrendo; é o que sobrou de útil do
-// sendBeacon depois que ele perdeu o direito de mandar Content-Type.
 function despedir() {
   if (!chave || !sincronizado || !sujo) return;
-  clearTimeout(timerEnvio);
+  enviar({ despedida: true });
+}
+
+// Põe o save da nuvem no lugar do daqui. Passa pelo localStorage de propósito:
+// `carregar()` é quem sabe migrar save antigo (missões, vestiário, slots
+// renomeados). Trazer da nuvem sem ele seria reimplementar essas migrações.
+function adotar(nuvem) {
+  localStorage.setItem(chave, JSON.stringify(nuvem.estado));
+  anotar(chave, nuvem.versao, false);
+  const trazido = carregar();
+  for (const k of Object.keys(state)) delete state[k];
+  Object.assign(state, trazido);
+  carregadoEm = nuvem.atualizadoEm || '';
   sujo = false;
+  sincronizado = true;
+  ouvintes.forEach(fn => fn(state));
+}
+
+async function lerDaNuvem() {
+  const r = await fetch('/api/estado', { credentials: 'include' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+// A nuvem andou sem esta aba. Nada mais sobe com a base velha: o save de lá
+// entra no lugar do daqui, e quem escuta `onConflito` (o app) recarrega a tela.
+// Sem fusão, de propósito — fundir dois guarda-roupas divergentes dá um
+// terceiro que não é o de ninguém. Perder os segundos desta aba é melhor do que
+// perder a tarde do outro aparelho.
+async function perderParaANuvem(perdeu) {
+  const conta = chave;
+  sincronizado = false;
+  clearTimeout(timerEnvio);
+  let nuvem;
   try {
-    fetch('/api/estado', {
-      method: 'PUT', credentials: 'include', keepalive: true,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: state }),
-    });
-  } catch { /* aba já indo embora */ }
+    nuvem = await lerDaNuvem();
+  } catch (e) {
+    // Fica travado até o próximo login, que resolve com a nota no disco.
+    console.warn('o save mudou em outro aparelho e não consegui trazê-lo:', e.message);
+    return;
+  }
+  if (conta !== chave) return;
+  if (!nuvem.estado) {
+    // Apagaram o save de lá: não há com o que conflitar, o daqui recria.
+    versao = null;
+    sincronizado = true;
+    sujo = true;
+    return enviar();
+  }
+  adotar(nuvem);
+  conflitos.forEach(fn => fn({ perdeu }));
+}
+
+// Voltar para a aba é o momento de perguntar se a nuvem andou: antes de a
+// pessoa mexer em qualquer coisa, e só a versão (o save inteiro são megabytes).
+async function conferirNuvem() {
+  if (!chave || !sincronizado || versao === undefined) return;
+  // O que esta aba mandou ao ser escondida volta com a versão nova; sem esperar,
+  // a própria escrita pareceria a de outro aparelho.
+  if (enviando) await enviando;
+  const conta = chave;
+  let dela;
+  try {
+    const r = await fetch('/api/estado?so=versao', { credentials: 'include' });
+    if (!r.ok) return;
+    dela = (await r.json()).versao;
+  } catch { return; }
+  if (conta !== chave || !sincronizado || dela === undefined || dela === versao) return;
+  await perderParaANuvem(sujo || pendente);
 }
 
 if (typeof window !== 'undefined') {
@@ -310,6 +425,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', despedir);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') despedir();
+    else conferirNuvem();
   });
 }
 
@@ -317,48 +433,60 @@ if (typeof window !== 'undefined') {
  * Casa o save daqui com o da nuvem. Roda uma vez por login, antes de qualquer
  * tela ser montada — daí em diante `salvar()` já sobe sozinho.
  *
- * Ganha o mais novo, pelo `atualizadoEm`. Não é fusão: fundir dois guarda-roupas
- * divergentes dá um terceiro que não é o de ninguém — e o caso real aqui não é
- * edição simultânea em dois lugares, é a mesma pessoa trocando de aparelho.
+ * Quem decide é a nota gravada ao lado do save (ver `anotar`). Save de antes
+ * dela não tem nota, e aí ganha o mais novo pelo `atualizadoEm`, como sempre foi.
  */
 export async function sincronizarDaNuvem() {
   if (!chave) return { estado: 'sem conta' };
+  const nota = lerNota();
+  versao = nota?.versao;
+  pendente = !!nota?.pendente;
+
   let nuvem = null;
   try {
-    const r = await fetch('/api/estado', { credentials: 'include' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    nuvem = await r.json();
+    nuvem = await lerDaNuvem();
   } catch (e) {
     // Sem nuvem o jogo roda igual ao protótipo: local, e só. Mas não liberamos
-    // o envio — subir sem ter lido é como apagar o save do outro aparelho.
+    // o envio — subir sem ter lido é como apagar o save do outro aparelho. O
+    // que se fizer agora fica pendente na nota e sobe no próximo login.
     console.warn('não consegui ler o save da nuvem; seguindo com o local.', e.message);
+    semNuvem = true;
     return { estado: 'offline' };
   }
+  semNuvem = false;
 
-  const daquiEm = carregadoEm;
-  const dalaEm = nuvem.atualizadoEm || '';
-
-  if (nuvem.estado && dalaEm > daquiEm) {
-    // Passa pelo localStorage de propósito: `carregar()` é quem sabe migrar
-    // save antigo (missões, vestiário, slots renomeados). Trazer da nuvem sem
-    // ele seria reimplementar essas migrações aqui.
-    localStorage.setItem(chave, JSON.stringify(nuvem.estado));
-    const trazido = carregar();
-    for (const k of Object.keys(state)) delete state[k];
-    Object.assign(state, trazido);
-    carregadoEm = dalaEm;
+  if (!nuvem.estado) {
+    versao = null;
     sincronizado = true;
-    ouvintes.forEach(fn => fn(state));
-    return { estado: 'veio da nuvem', em: dalaEm };
-  }
-
-  sincronizado = true;
-  // Local mais novo (ou nuvem vazia): a nuvem é que está atrasada.
-  if (daquiEm > dalaEm || !nuvem.estado) {
     sujo = true;
     await enviar();
-    return { estado: nuvem.estado ? 'subiu o local' : 'primeira vez na nuvem' };
+    return { estado: 'primeira vez na nuvem' };
   }
+
+  let daqui;   // 'igual' | 'atrás' | 'adiante' | 'conflito'
+  if (nota && nota.versao !== undefined && nuvem.versao) {
+    const nuvemAndou = nota.versao !== nuvem.versao;
+    daqui = nuvemAndou ? (pendente ? 'conflito' : 'atrás')
+                       : (pendente ? 'adiante' : 'igual');
+  } else {
+    const daquiEm = carregadoEm;
+    const dalaEm = nuvem.atualizadoEm || '';
+    daqui = dalaEm > daquiEm ? 'atrás' : daquiEm > dalaEm ? 'adiante' : 'igual';
+  }
+
+  if (daqui === 'atrás' || daqui === 'conflito') {
+    adotar(nuvem);
+    return { estado: 'veio da nuvem', em: nuvem.atualizadoEm, perdeu: daqui === 'conflito' };
+  }
+
+  versao = nuvem.versao;
+  sincronizado = true;
+  if (daqui === 'adiante') {
+    sujo = true;
+    await enviar();
+    return { estado: 'subiu o local' };
+  }
+  anotar(chave, versao, false);
   return { estado: 'iguais' };
 }
 

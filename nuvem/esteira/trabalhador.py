@@ -22,7 +22,11 @@ Para cada foto:
   3. Guarda o recorte em alta como rascunho de máster.
   4. Faz a prévia leve (WebP, 460 px) e o contorno vetorial, iguais aos do
      pipeline.
-  5. Pede ao Claude (Bedrock) o palpite da ficha: categoria, cor, nome, marca.
+     Antes de seguir, confere se a prévia é de uma peça que já está no jogo
+     ou na esteira (repetidas.py). Se for, a foto para aqui como `repetida`
+     — sem gastar o palpite da IA — e a API tira ela da esteira.
+  5. Pede ao Claude (Bedrock) o palpite da ficha: categoria, cor, marca.
+     O nome não: toda peça chega sem nome.
   6. Grava tudo em `esteira/<id>.json` com `estado: pronta`.
 
 Daí para a frente é a tela de revisão (`js/esteira.js`) que conversa com a API
@@ -43,6 +47,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 import bgbatch
 import ficha_ia
+import repetidas
 from cor import cor_da_imagem
 from pipeline import contour_of
 
@@ -169,6 +174,20 @@ def processar(chave):
             ficha.update(arquivo=meta['arquivo'], origem='pasta')
         recorte, sem_fundo = recortar(img)
 
+        previa, webp = previa_de(recorte)
+        assinatura = repetidas.assinatura(previa)
+        try:
+            igual = repetidas.procurar(_s3, DADOS, SITE, assinatura, item_id) if SITE else None
+        except Exception as e:                   # noqa: BLE001 - na dúvida, a foto segue
+            print('(não conferi repetida em %s: %s)' % (item_id, e))
+            igual = None
+        if igual:
+            ficha.update(estado='repetida', repetidaDe=igual, assinatura=assinatura,
+                         processadoEm=_agora())
+            gravar_ficha(ficha)
+            print('repetida %s: igual a %s %s' % (item_id, igual['onde'], igual['id']))
+            return
+
         # O máster: o recorte em alta, para reprocessar um dia sem caçar a foto.
         # Fica em esteira/ e não em mestres/rascunhos/: lá ele morre em um dia
         # (regra do bucket, feita para o recorte da tela antiga), e uma foto
@@ -179,7 +198,6 @@ def processar(chave):
         _s3.put_object(Bucket=DADOS, Key=mestre, Body=buf.getvalue(),
                        ContentType='image/png')
 
-        previa, webp = previa_de(recorte)
         chave_previa = 'esteira/%s.webp' % item_id
         _s3.put_object(Bucket=DADOS, Key=chave_previa, Body=webp,
                        ContentType='image/webp')
@@ -203,6 +221,7 @@ def processar(chave):
         mw=recorte.size[0], mh=recorte.size[1],
         path=caminho,
         fundoRemovido=sem_fundo,
+        assinatura=assinatura,
         modelo=MODELO if sem_fundo else '',
         segundos=round(time.time() - marca, 1),
         sugestao=sugestao,
@@ -210,7 +229,7 @@ def processar(chave):
     )
     # A ficha que o admin edita nasce do palpite. O que ele já tiver mexido
     # (pelo celular, enquanto a foto ainda processava) não é atropelado.
-    proposta = {k: sugestao.get(k, '') for k in ('cat', 'cor', 'nome', 'marca')}
+    proposta = {k: sugestao.get(k, '') for k in ('cat', 'cor', 'marca')}
     proposta['cor'] = proposta['cor'] or cor_medida
     ficha['ficha'] = {**proposta, **{k: v for k, v in (ficha.get('ficha') or {}).items() if v}}
     gravar_ficha(ficha)

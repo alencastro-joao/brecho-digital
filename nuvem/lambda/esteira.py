@@ -3,6 +3,8 @@
 A esteira de peças — o lado da API. Só o administrador chega aqui.
 
     POST   /api/esteira                 reserva ids e devolve onde subir cada foto
+    GET    /api/esteira/pinterest       as pastas do Pinterest vinculadas
+    POST   /api/esteira/pinterest       vincula, desvincula ou relê as pastas
     GET    /api/esteira                 o que está na esteira, com prévia e palpite
     PUT    /api/esteira/<id>            guarda a ficha/medida que o admin mexeu
     POST   /api/esteira/<id>/publicar   vira peça do acervo
@@ -21,6 +23,8 @@ Tudo o que é da esteira mora no bucket de dados, que é privado:
     esteira/<id>.json             estado + palpite da IA + ficha do admin
     esteira/<id>.webp             a prévia (vira assets/cloths/<peça>.webp)
     esteira/<id>.png              o recorte em alta (vira mestres/<peça>.png)
+    esteira/pins/<pin>            marca de "esse pin já entrou" (ver Pinterest)
+    esteira/config/pinterest.json as pastas do Pinterest vinculadas
 
 A prévia chega à tela por URL assinada de leitura, que vence em uma hora.
 """
@@ -156,21 +160,175 @@ def reservar(corpo):
     return {'envios': envios}
 
 
-def listar():
-    """GET /api/esteira — mais novas primeiro."""
-    itens = []
+# --- Pastas do Pinterest -----------------------------------------------------
+# A pasta do Pinterest é vinculada uma vez e relida toda vez que a esteira
+# abre: entra só o pin que nunca passou por aqui. "Nunca" quer dizer nunca —
+# cada pin que entra deixa uma marca em `esteira/pins/`, e a marca fica depois
+# de a peça ser publicada ou descartada. Sem ela, o pin publicado voltava na
+# leitura seguinte, e o único jeito de evitar era apagá-lo da pasta no
+# Pinterest.
+#
+# A marca reconhece o pin, não a roupa: a peça que já está no jogo chegando
+# por outro pin (importada antes de a marca existir, salva duas vezes no
+# Pinterest) é reconhecida pela imagem, no trabalhador (nuvem/esteira/
+# repetidas.py), e sai da esteira sozinha — ver `listar`.
+#
+# A foto passa pela Lambda (vem do Pinterest, não do navegador, então não
+# esbarra nos 6 MB da Function URL). A pasta é lida inteira; se o Pinterest
+# recusar, só os 25 pins mais recentes (ver pinterest.py), e a tela diz qual
+# das duas foi (`completa`). Cada leitura traz no máximo MAX_LOTE: pasta com
+# mais pins novos que isso termina de entrar nas aberturas seguintes.
+PINS = 'esteira/pins/'
+PASTAS = 'esteira/config/pinterest.json'
+TEMPO_RELEITURA = 20         # s; a Lambda da API tem 30
+
+
+def _pins_vistos():
+    """As marcas e, para os pins de antes delas, os que ainda estão na esteira."""
     pag = _s3.get_paginator('list_objects_v2')
-    for pagina in pag.paginate(Bucket=DADOS, Prefix='esteira/'):
+    vistos = {obj['Key'][len(PINS):]
+              for pagina in pag.paginate(Bucket=DADOS, Prefix=PINS)
+              for obj in pagina.get('Contents', [])}
+    return vistos | {str(f['pin']) for f in _fichas() if f.get('pin')}
+
+
+def _marcar_pin(pin, item_id=''):
+    _s3.put_object(Bucket=DADOS, Key=PINS + pin, Body=item_id.encode('utf-8'))
+
+
+def _pastas():
+    try:
+        r = _s3.get_object(Bucket=DADOS, Key=PASTAS)
+    except ClientError as e:
+        if e.response['Error']['Code'] in ('NoSuchKey', '404'):
+            return []
+        raise
+    return json.loads(r['Body'].read())
+
+
+def _gravar_pastas(pastas):
+    _s3.put_object(Bucket=DADOS, Key=PASTAS,
+                   Body=json.dumps(pastas, ensure_ascii=False).encode('utf-8'),
+                   ContentType='application/json; charset=utf-8')
+
+
+def _importar(pins, pasta):
+    """Baixa os pins e põe na esteira, com a categoria da pasta já sugerida.
+    Pin que não baixou fica sem marca: a próxima leitura tenta de novo."""
+    import pinterest
+    entraram, falharam = 0, 0
+    for p, foto, tipo in pinterest.baixar_fotos(pins[:MAX_LOTE]):
+        if foto is None:
+            falharam += 1
+            print('pinterest: pin %s não baixou (%s)' % (p['pin'], tipo))
+            continue
+        item_id = _novo_id()
+        chave = 'entrada/%s.%s' % (item_id, TIPOS[tipo])
+        # A ficha antes da foto: o trabalhador é chamado pelo "Object Created"
+        # e precisa achar a categoria da pasta já gravada.
+        _gravar({'id': item_id, 'estado': 'enviando', 'criadoEm': _agora(),
+                 'arquivo': p['titulo'] or 'pin %s' % p['pin'], 'origem': 'pinterest',
+                 'pin': p['pin'], 'entrada': chave,
+                 'ficha': {'cat': pasta['cat']} if pasta.get('cat') else {}})
+        _marcar_pin(p['pin'], item_id)
+        _s3.put_object(Bucket=DADOS, Key=chave, Body=foto, ContentType=tipo)
+        entraram += 1
+    return {'entraram': entraram, 'falharam': falharam}
+
+
+def pastas_pinterest():
+    """GET /api/esteira/pinterest."""
+    return {'pastas': _pastas()}
+
+
+def pinterest(corpo):
+    """POST /api/esteira/pinterest:
+
+        {link}                  vincula a pasta e traz o que a esteira nunca viu
+        {desvincular: id}       para de ler a pasta
+        {reler: true}           traz o novo de todas as vinculadas
+    """
+    if corpo.get('reler'):
+        return _reler()
+    if corpo.get('desvincular'):
+        alvo = str(corpo['desvincular'])
+        pastas = [p for p in _pastas() if p['id'] != alvo]
+        _gravar_pastas(pastas)
+        return {'pastas': pastas}
+
+    import pinterest
+    usuario, nome = pinterest.pasta_do_link(corpo.get('link'))
+    lida = pinterest.ler_pasta(usuario, nome)
+    pasta = {'id': ('%s/%s' % (usuario, nome)).lower(), 'usuario': usuario, 'pasta': nome,
+             'titulo': lida['titulo'],
+             'cat': pinterest.categoria_do_nome(lida['titulo']) or pinterest.categoria_do_nome(nome)}
+    vistos = _pins_vistos()
+    novos = [p for p in lida['pins'] if p['pin'] not in vistos]
+    pastas = [p for p in _pastas() if p['id'] != pasta['id']]
+    pastas.append({**pasta, 'vinculadaEm': _agora()})
+    _gravar_pastas(pastas)
+    return {'pasta': pasta, 'pastas': pastas, 'jaVistos': len(lida['pins']) - len(novos),
+            'total': len(lida['pins']), 'completa': lida.get('completa', False),
+            'faltam': max(0, len(novos) - MAX_LOTE), **_importar(novos, pasta)}
+
+
+def _reler():
+    """Uma pasta por vez, de olho no relógio: a que não coube nos 20 s fica
+    para a próxima abertura da esteira."""
+    import pinterest
+    inicio = time.time()
+    vistos = _pins_vistos()
+    resultado = []
+    for pasta in _pastas():
+        r = {'id': pasta['id'], 'titulo': pasta['titulo']}
+        if time.time() - inicio > TEMPO_RELEITURA:
+            resultado.append({**r, 'adiada': True})
+            continue
+        try:
+            lida = pinterest.ler_pasta(pasta['usuario'], pasta['pasta'])
+        except ValueError as e:
+            resultado.append({**r, 'erro': str(e)})
+            continue
+        novos = [p for p in lida['pins'] if p['pin'] not in vistos]
+        vistos |= {p['pin'] for p in novos}         # o mesmo pin em duas pastas entra uma vez
+        resultado.append({**r, 'total': len(lida['pins']), 'completa': lida.get('completa', False),
+                          'faltam': max(0, len(novos) - MAX_LOTE), **_importar(novos, pasta)})
+    return {'pastas': resultado}
+
+
+def _fichas():
+    # O Delimiter deixa as subpastas (`pins/`, `config/`) de fora: são
+    # milhares de marcas que não são ficha, e a tela relê a lista a cada 3 s
+    # enquanto processa.
+    pag = _s3.get_paginator('list_objects_v2')
+    for pagina in pag.paginate(Bucket=DADOS, Prefix='esteira/', Delimiter='/'):
         for obj in pagina.get('Contents', []):
             if not obj['Key'].endswith('.json'):
                 continue
             try:
                 r = _s3.get_object(Bucket=DADOS, Key=obj['Key'])
-                itens.append(_para_tela(json.loads(r['Body'].read())))
+                dados = json.loads(r['Body'].read())
             except (ClientError, ValueError):
                 continue
+            if isinstance(dados, dict) and dados.get('id'):
+                yield dados
+
+
+def listar():
+    """GET /api/esteira — mais novas primeiro. A foto que o trabalhador achou
+    repetida (já é peça do jogo, ou já está na esteira) sai daqui mesmo: a
+    tela só fica sabendo, para avisar. A marca do pin fica, então ela também
+    não volta pelo Pinterest."""
+    itens, repetidas = [], []
+    for f in _fichas():
+        if f.get('estado') == 'repetida':
+            _apagar('esteira/%s.json' % f['id'], f.get('entrada'), f.get('previa'), f.get('mestre'))
+            repetidas.append({'arquivo': f.get('arquivo') or '', 'de': f.get('repetidaDe') or {}})
+            print('esteira %s repetida de %s: descartada' % (f['id'], (f.get('repetidaDe') or {}).get('id')))
+            continue
+        itens.append(_para_tela(f))
     itens.sort(key=lambda i: i.get('criadoEm') or '', reverse=True)
-    return {'itens': itens}
+    return {'itens': itens, 'repetidas': repetidas}
 
 
 def guardar(item_id, corpo):
@@ -189,6 +347,11 @@ def guardar(item_id, corpo):
     if isinstance(corpo.get('medida'), dict):
         m = corpo['medida']
         dados['medida'] = {k: round(float(m.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+    elif corpo.get('medida') is False:
+        # Trocou a categoria: a medida da antiga não serve para a nova. É False
+        # e não None de propósito: None é só "ainda não medi", e não pode
+        # apagar o que foi medido em outro aparelho.
+        dados.pop('medida', None)
     _gravar(dados)
     return {'item': _para_tela(dados)}
 
@@ -214,6 +377,12 @@ def publicar(item_id, corpo):
                     ContentType='image/webp', MetadataDirective='REPLACE',
                     CacheControl='public, max-age=31536000, immutable')
     item = acervo.ficha_da_peca(peca_id, pedido, src, dados.get('path') or '')
+
+    # A assinatura da prévia original e o pin de onde veio: é por eles que a
+    # mesma roupa não entra de novo, mesmo depois de a peça ser editada.
+    for campo in ('assinatura', 'pin'):
+        if dados.get(campo):
+            item[campo] = dados[campo]
 
     if dados.get('mestre'):
         destino = 'mestres/%s.png' % peca_id

@@ -261,6 +261,41 @@ seguia sem `ListBucket` e o log mostrava o mesmo 403 em toda abertura.
 aws s3 ls s3://brecho-dados-108826053014/estado/
 ```
 
+## O save que apagava o outro aparelho — 06/10/2026
+
+O `PUT /api/estado` gravava por cima, sem perguntar. Uma aba esquecida aberta
+no celular, depois de uma tarde de jogo no computador, subia o guarda-roupa da
+manhã na primeira mexida, e a tarde sumia.
+
+Agora cada save tem **versão**, que é o ETag do objeto no S3. O `GET` devolve
+a versão, e o `PUT` manda `{ estado, versao }` com a versão em que a edição se
+baseou. O S3 só grava se o objeto ainda for aquele (`IfMatch`; `versao: null`
+vira `IfNoneMatch: *`). Quando a nuvem andou, a resposta é **409** e nada é
+gravado. Um `PUT` sem `versao` (aba aberta antes desta mudança) continua
+gravando por cima, como antes.
+
+| Rota | O que faz |
+|---|---|
+| `GET /api/estado` | `{ estado, atualizadoEm, versao }` |
+| `GET /api/estado?so=versao` | só `{ versao, atualizadoEm }`, um `HeadObject` sem baixar o save |
+| `PUT /api/estado` | `{ estado, versao }` → 200 com a versão nova, ou 409 |
+
+Do lado do `js/db.js`:
+
+- **Nota ao lado do save** (`bd:v1:estado:<id>:nuvem`): `{ versao, pendente }`.
+  No login, ela decide sem depender de relógio. Versão igual e nada pendente:
+  os dois saves são o mesmo. Versão igual e algo pendente: o daqui está adiante
+  e sobe. Versão diferente: a nuvem andou, e o save de lá entra. Save antigo,
+  sem nota, decide pela data, como antes.
+- **Ao voltar para a aba**, ela pergunta `?so=versao`. Se a nuvem andou, traz o
+  save de lá e recarrega a tela com um aviso.
+- **No conflito, a nuvem ganha.** Perder os segundos da aba velha é melhor do
+  que perder a tarde do outro aparelho. O aviso diz quando algo feito aqui não
+  foi guardado.
+- O `keepalive` ao fechar a aba só vai com corpo abaixo de 64 KB, o limite do
+  navegador. Antes, save maior falhava calado; agora o `pendente` na nota faz a
+  mudança subir no próximo login.
+
 ## A pegadinha do WAF — resolvida em 25/09/2026
 
 Ao criar uma distribuição **pelo console**, a CloudFront oferece assinar um

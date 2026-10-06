@@ -9,7 +9,8 @@
 //      que tira o fundo, faz a prévia e o contorno, e pede ao Claude o palpite
 //      da ficha.
 //   3. Aqui de novo: o cartão aparece com a prévia e a ficha já preenchida. O
-//      admin confere, mede no molde se quiser, e publica — sozinha ou em lote.
+//      admin confere, marca os cartões e publica pela barra de cima — peça
+//      sem medida passa pelo molde antes de entrar no jogo.
 //
 // Nada fica só neste navegador: a ficha mexida é guardada na esteira (PUT), e
 // por isso dá para fotografar no celular e revisar no computador.
@@ -116,6 +117,117 @@ function linhaDeEnvio(foto) {
   };
 }
 
+// ============================== Pinterest =================================
+// Pastas do Pinterest vinculadas: a API guarda quais são e, toda vez que a
+// esteira abre, traz o pin que nunca passou por ela (nuvem/lambda/esteira.py).
+// Publicar ou descartar não faz o pin voltar, então tudo pode ficar na pasta.
+// Quem baixa as fotos é a API: o navegador não lê o Pinterest (CORS).
+//
+// Peça que já está no jogo não precisa ser desmarcada: o trabalhador reconhece
+// a imagem e ela sai da esteira sozinha (ver `atualizar`).
+let pastasPinterest = [];              // as vinculadas, como a API guarda
+const estadoDaPasta = new Map();       // id -> o que aconteceu na última leitura
+let relendo = false;
+let ultimaLeitura = 0;
+const RELER_MS = 60 * 1000;            // voltar para a aba relê, no máximo uma vez por minuto
+
+const nFotos = (n) => `${n} ${n === 1 ? 'foto' : 'fotos'}`;
+
+function resumo(r) {
+  if (r.erro) return r.erro;
+  if (r.adiada) return 'fica para a próxima abertura';
+  const partes = [];
+  if (r.entraram) partes.push(`${r.entraram} ${r.entraram === 1 ? 'novo entrou' : 'novos entraram'}`);
+  if (r.falharam) partes.push(`${r.falharam} não ${r.falharam === 1 ? 'baixou' : 'baixaram'}`);
+  if (r.faltam) partes.push(`mais ${r.faltam} na próxima abertura`);
+  // Se o Pinterest não deixou ler a pasta inteira, a leitura viu só os 25 mais recentes.
+  const lidos = r.total == null ? ''
+    : r.completa ? `${r.total} pins na pasta · ` : `só os ${r.total} mais recentes · `;
+  return lidos + (partes.join(', ') || 'nada novo');
+}
+
+function desenharPastas() {
+  const lista = $('#es-pinterest-pastas');
+  lista.replaceChildren(...pastasPinterest.map(p => el('li', { class: 'es-pin-pasta' },
+    el('a', { href: `https://www.pinterest.com/${p.usuario}/${p.pasta}/`, target: '_blank', rel: 'noopener' },
+      '📌 ', p.titulo),
+    p.cat ? el('span', { class: 'es-pin-cat' }, rotuloDeCadastro(p.cat)) : null,
+    el('span', { class: 'es-pin-estado' }, estadoDaPasta.get(p.id) || ''),
+    el('button', {
+      class: 'es-pin-tirar', type: 'button', title: 'Desvincular', 'aria-label': `Desvincular ${p.titulo}`,
+      onclick: () => desvincularPasta(p),
+    }, '×'))));
+  lista.hidden = !pastasPinterest.length;
+}
+
+async function montarPinterest() {
+  try {
+    ({ pastas: pastasPinterest } = await api('/pinterest'));
+  } catch (e) {
+    return toast(`Não consegui ler as pastas do Pinterest: ${e.message}`, 'aviso');
+  }
+  desenharPastas();
+  await reler();
+}
+
+async function reler() {
+  if (relendo || !pastasPinterest.length) return;
+  relendo = true;
+  ultimaLeitura = Date.now();
+  for (const p of pastasPinterest) estadoDaPasta.set(p.id, 'lendo…');
+  desenharPastas();
+  try {
+    const { pastas } = await api('/pinterest', { metodo: 'POST', corpo: { reler: true } });
+    let total = 0;
+    for (const r of pastas) {
+      total += r.entraram || 0;
+      estadoDaPasta.set(r.id, resumo(r));
+    }
+    if (total) {
+      toast(`${nFotos(total)} nova${total === 1 ? '' : 's'} do Pinterest na esteira.`, 'rare');
+      await atualizar();
+    }
+  } catch (e) {
+    for (const p of pastasPinterest) estadoDaPasta.set(p.id, `não consegui ler: ${e.message}`);
+  } finally {
+    relendo = false;
+    desenharPastas();
+  }
+}
+
+// Colar o link vincula a pasta e já traz o que a esteira nunca viu.
+async function vincularPasta(link) {
+  const botao = $('#es-pinterest-ir');
+  botao.disabled = true;
+  botao.textContent = 'Trazendo…';
+  try {
+    const r = await api('/pinterest', { metodo: 'POST', corpo: { link } });
+    $('#es-pinterest-link').value = '';
+    pastasPinterest = r.pastas;
+    estadoDaPasta.set(r.pasta.id, resumo(r));
+    desenharPastas();
+    toast(`"${r.pasta.titulo}" vinculada${r.entraram ? `: ${nFotos(r.entraram)} na esteira` : ''}. ` +
+      'Pin novo nela entra sozinho quando a esteira abre.', 'rare');
+    if (r.entraram) await atualizar();
+  } catch (e) {
+    toast(`Pinterest: ${e.message}`, 'aviso');
+  } finally {
+    botao.disabled = false;
+    botao.textContent = 'Vincular';
+  }
+}
+
+async function desvincularPasta(p) {
+  if (!confirm(`Parar de ler "${p.titulo}"? O que já veio dela continua na esteira.`)) return;
+  try {
+    ({ pastas: pastasPinterest } = await api('/pinterest', { metodo: 'POST', corpo: { desvincular: p.id } }));
+  } catch (e) {
+    return toast(`Não consegui desvincular: ${e.message}`, 'aviso');
+  }
+  estadoDaPasta.delete(p.id);
+  desenharPastas();
+}
+
 // ============================== Lista =====================================
 async function atualizar() {
   let dados;
@@ -124,6 +236,15 @@ async function atualizar() {
   } catch (e) {
     return toast(`Não consegui ler a esteira: ${e.message}`, 'aviso');
   }
+  // Foto que o trabalhador reconheceu como peça que já existe: a API já tirou
+  // ela da esteira, a tela só avisa.
+  const repetidas = dados.repetidas || [];
+  if (repetidas.length) {
+    const noJogo = repetidas.filter(r => r.de?.onde === 'acervo').length;
+    toast(repetidas.length === 1
+      ? `"${repetidas[0].arquivo || 'uma foto'}" ${noJogo ? 'já está no jogo' : 'já estava na esteira'} e saiu sozinha.`
+      : `${repetidas.length} fotos já ${noJogo === repetidas.length ? 'estavam no jogo' : 'existiam'} e saíram da esteira sozinhas.`);
+  }
   const antes = new Map(itens.map(i => [i.id, i]));
   itens = dados.itens.map(novo => {
     const velho = antes.get(novo.id);
@@ -131,13 +252,17 @@ async function atualizar() {
     if (velho && guardando.has(novo.id)) return { ...novo, ficha: velho.ficha, medida: velho.medida };
     return novo;
   });
-  for (const id of [...selecionadas]) if (!itens.some(i => i.id === id && i.estado === 'pronta')) selecionadas.delete(id);
+  for (const id of [...selecionadas]) if (!itens.some(i => i.id === id && selecionavel(i))) selecionadas.delete(id);
   desenhar();
 
   const andando = itens.some(i => i.estado === 'enviando' || i.estado === 'processando');
   clearTimeout(vigia);
   if (andando) vigia = setTimeout(atualizar, VIGIA_MS);
 }
+
+// Pronta vai para publicar; com erro, só para descartar. As duas se marcam.
+const selecionavel = (item) => item.estado === 'pronta' || item.estado === 'erro';
+const marcadas = () => itens.filter(i => selecionadas.has(i.id));
 
 const fichaDe = (item) => {
   const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', ...(item.ficha || {}) };
@@ -199,7 +324,7 @@ function cartao(item) {
       item.previa
         ? el('img', { src: item.previa, alt: f.nome || item.arquivo || '', loading: 'lazy' })
         : el('span', { class: 'es-cartao-espera' }, ROTULO[item.estado] || item.estado),
-      pronta ? el('label', { class: 'es-cartao-marca', title: 'selecionar' },
+      selecionavel(item) ? el('label', { class: 'es-cartao-marca', title: 'selecionar' },
         el('input', {
           type: 'checkbox', checked: selecionadas.has(item.id),
           onchange: (e) => { e.target.checked ? selecionadas.add(item.id) : selecionadas.delete(item.id); desenhar(); },
@@ -224,26 +349,24 @@ function cartao(item) {
         campo('marca', el('input', { value: f.marca, placeholder: 'Marca', list: 'es-marcas', 'aria-label': 'Marca' }))),
     ),
 
-    pronta && (ia.cat || ia.nome)
+    pronta && ia.cat
       ? el('p', { class: 'es-ia', title: ia.modelo || '' },
           `✦ palpite da IA${conf != null ? ` · ${conf}% de certeza na categoria` : ''}`
           + (marcaIa ? ' · marca lida na peça' : ''))
       : null,
 
+    // Publicar e descartar são da barra de cima, sobre as selecionadas.
     el('footer', { class: 'es-acoes' },
-      el('button', { class: 'es-btn mini', onclick: () => descartar(item) }, 'Descartar'),
       item.estado === 'erro'
         ? el('button', { class: 'es-btn mini', onclick: () => refazer(item) }, 'Tentar de novo')
-        : el('button', { class: 'es-btn mini', disabled: !pronta, onclick: () => abrirMolde(item) }, 'Medir'),
-      el('button', { class: 'es-btn mini escuro', dataset: { acao: 'publicar' }, disabled: !pronta || !f.cat, onclick: () => publicar([item]) },
-        'Publicar')),
+        : el('button', { class: 'es-btn mini', disabled: !pronta, onclick: () => abrirMolde(item) }, 'Medir')),
   );
 
   no.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey)) return;
     if (e.key === 'Enter' && pronta) { e.preventDefault(); publicar([item]); }
     if ((e.key === 'm' || e.key === 'M') && pronta) { e.preventDefault(); abrirMolde(item); }
-    if (e.key === 'Delete') { e.preventDefault(); descartar(item); }
+    if (e.key === 'Delete') { e.preventDefault(); descartar([item]); }
   });
   return no;
 }
@@ -262,10 +385,6 @@ function mudarFicha(item, campo, valor) {
     if (hex && hex !== 'estampa') bolha.style.setProperty('--cor', hex);
     else bolha.style.removeProperty('--cor');
   }
-  if (no && campo === 'cat') {
-    const publicar = $('[data-acao="publicar"]', no);
-    if (publicar) publicar.disabled = item.estado !== 'pronta' || !valor;
-  }
   guardarDepois(item);
 }
 
@@ -283,13 +402,27 @@ function guardarDepois(item) {
 }
 
 // ============================== Ações =====================================
+// Peças esperando a medida para serem publicadas. Publicar sem ter medido
+// abre o molde; cada "Próxima" passa para a seguinte sem medida e, quando não
+// sobra nenhuma, publica todas. "← Anterior" volta uma peça (para corrigir a
+// categoria ou a medida); Cancelar ou Esc desiste da publicação, e as medidas
+// já confirmadas ficam guardadas.
+let filaPublicar = null;
+
 async function publicar(lista) {
   // Peça sem categoria fica para trás, mas não segura o lote inteiro.
   const semCat = lista.filter(i => i.estado === 'pronta' && !fichaDe(i).cat);
   const prontas = lista.filter(i => i.estado === 'pronta' && fichaDe(i).cat);
-  if (semCat.length) {
+  if (semCat.length && !filaPublicar) {
     toast(`${semCat.length === 1 ? 'Uma peça ficou' : `${semCat.length} peças ficaram`} de fora: falta a categoria.`, 'aviso');
   }
+  const semMedida = prontas.filter(i => !i.medida);
+  if (semMedida.length) {
+    filaPublicar = prontas;
+    abrirMolde(semMedida[0]);
+    return;
+  }
+  filaPublicar = null;
   let feitas = 0;
   for (const item of prontas) {
     clearTimeout(guardando.get(item.id));
@@ -299,7 +432,7 @@ async function publicar(lista) {
         metodo: 'POST', corpo: { ficha: fichaDe(item), medida: item.medida || null },
       });
       feitas++;
-      itens = itens.filter(i => i !== item);
+      itens = itens.filter(i => i.id !== item.id);   // por id: a lista pode ter sido relida enquanto media
       selecionadas.delete(item.id);
       if (prontas.length === 1) {
         toast(`${peca.nome || 'Peça'} entrou no jogo — ${RARIDADE[peca.raridade]?.nome ?? ''}.`, peca.raridade);
@@ -314,15 +447,22 @@ async function publicar(lista) {
   desenhar();
 }
 
-async function descartar(item) {
-  if (item.estado === 'pronta' && !confirm(`Descartar "${fichaDe(item).nome || item.arquivo}"?`)) return;
-  try {
-    await api(`/${item.id}`, { metodo: 'DELETE' });
-  } catch (e) {
-    return toast(`Não consegui descartar: ${e.message}`, 'aviso');
+async function descartar(lista) {
+  if (!lista.length) return;
+  const pergunta = lista.length === 1
+    ? `Descartar "${fichaDe(lista[0]).nome || lista[0].arquivo || 'esta peça'}"?`
+    : `Descartar ${lista.length} peças?`;
+  if (lista.some(i => i.estado === 'pronta') && !confirm(pergunta)) return;
+  for (const item of lista) {
+    try {
+      await api(`/${item.id}`, { metodo: 'DELETE' });
+    } catch (e) {
+      toast(`Não consegui descartar: ${e.message}`, 'aviso');
+      break;
+    }
+    itens = itens.filter(i => i.id !== item.id);   // por id: a lista pode ter sido relida enquanto media
+    selecionadas.delete(item.id);
   }
-  itens = itens.filter(i => i !== item);
-  selecionadas.delete(item.id);
   desenhar();
 }
 
@@ -337,24 +477,28 @@ async function refazer(item) {
 
 // ============================== Lote ======================================
 function atualizarLote() {
-  const prontas = itens.filter(i => i.estado === 'pronta');
-  $('#es-lote').hidden = prontas.length < 2;
-  const n = selecionadas.size;
-  $('#es-sel-conta').textContent = n ? `${n} selecionada${n > 1 ? 's' : ''}` : 'selecionar todas as prontas';
-  $('#es-todas').checked = n > 0 && n === prontas.length;
-  $('#es-lote-aplicar').disabled = !n;
-  $('#es-lote-publicar').disabled = !n;
-  $('#es-lote-publicar').textContent = n ? `Publicar ${n}` : 'Publicar selecionadas';
+  const marcaveis = itens.filter(selecionavel);
+  $('#es-lote').hidden = !marcaveis.length;
+  const sel = marcadas();
+  const n = sel.length;
+  const publicaveis = sel.filter(i => i.estado === 'pronta').length;
+  $('#es-sel-conta').textContent = n ? `${n} selecionada${n > 1 ? 's' : ''}` : 'selecionar todas';
+  $('#es-todas').checked = n > 0 && n === marcaveis.length;
+  $('#es-lote-aplicar').disabled = !publicaveis;
+  $('#es-lote-descartar').disabled = !n;
+  $('#es-lote-descartar').textContent = n > 1 ? `Descartar ${n}` : 'Descartar';
+  $('#es-lote-publicar').disabled = !publicaveis;
+  $('#es-lote-publicar').textContent = publicaveis > 1 ? `Publicar ${publicaveis}` : 'Publicar';
 }
 
 function aplicarLote() {
   const cat = $('#es-lote-cat').value;
   const raridade = $('#es-lote-rar').value;
   const marca = $('#es-lote-marca').value.trim();
-  for (const item of itens.filter(i => selecionadas.has(i.id))) {
+  for (const item of marcadas().filter(i => i.estado === 'pronta')) {
     const f = fichaDe(item);
     // Medida é de categoria: trocar a categoria invalida o que foi medido.
-    if (cat && cat !== f.cat) item.medida = null;
+    if (cat && cat !== f.cat) item.medida = false;   // false: apaga também a guardada
     item.ficha = { ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }) };
     guardarDepois(item);
   }
@@ -386,17 +530,67 @@ function abrirMolde(item) {
   $('#es-avatar').innerHTML = svgAvatar();
   $('#es-peca-img').src = item.previa;
   $('#es-molde-modal').hidden = false;
+  $('#es-molde-cat').value = f.cat;
+  atualizarNavegacao();
+  posicionar();
+}
+
+// Medindo para publicar: em que peça da fila se está, o que o botão faz
+// depois, e se dá para voltar à anterior.
+function atualizarNavegacao() {
+  const fila = filaPublicar;
+  const pos = fila ? fila.indexOf(medindo) : -1;
+  $('#es-molde-passo').textContent = fila && fila.length > 1 ? `Peça ${pos + 1} de ${fila.length}` : '';
+  $('#es-molde-voltar').hidden = !(pos > 0);
+  $('#es-molde-ok').textContent = rotuloDoPronto(medindo);
+}
+
+function rotuloDoPronto(item) {
+  if (!filaPublicar) return 'Pronto';
+  const faltam = filaPublicar.filter(i => i !== item && !i.medida).length;
+  if (faltam) return `Próxima (falta${faltam > 1 ? 'm' : ''} ${faltam})`;
+  return filaPublicar.length > 1 ? `Publicar ${filaPublicar.length}` : 'Publicar';
+}
+
+// Volta à peça anterior da fila para refazer a medida ou trocar a categoria.
+// O que se mexeu na de agora sem confirmar fica para trás; ela continua sem
+// medida, então o "Próxima" de lá traz de volta para ela.
+function voltarNaFila() {
+  const pos = filaPublicar?.indexOf(medindo) ?? -1;
+  if (pos > 0) abrirMolde(filaPublicar[pos - 1]);
+}
+
+// Categoria errada descoberta no molde. A medida é da categoria, então a que
+// havia não serve mais: a peça volta ao tamanho padrão da nova.
+function trocarCategoriaNoMolde(cat) {
+  if (!cat || cat === fichaDe(medindo).cat) return;
+  const atual = itens.find(i => i.id === medindo.id);
+  for (const i of new Set([medindo, atual].filter(Boolean))) {
+    i.ficha = { ...fichaDe(i), cat };
+    i.medida = false;                   // false: apaga também a guardada (ver guardar na API)
+  }
+  guardarDepois(medindo);
+  medida = medidaPadrao(cat);
+  desenhar();
+  atualizarNavegacao();
   posicionar();
 }
 
 function fecharMolde(guardar) {
   if (guardar && medindo) {
     medindo.medida = paraGravar();
+    // A lista pode ter sido relida enquanto media: o cartão novo também ganha.
+    const atual = itens.find(i => i.id === medindo.id);
+    if (atual) atual.medida = medindo.medida;
     guardarDepois(medindo);
     desenhar();
   }
   medindo = null;
   $('#es-molde-modal').hidden = true;
+  const fila = filaPublicar;
+  filaPublicar = null;
+  if (fila && guardar) publicar(fila);      // a próxima sem medida, ou publica
+  else if (fila) toast('Publicação cancelada.');
 }
 
 function posicionar() {
@@ -421,6 +615,7 @@ function usarNasIrmas() {
   const cat = fichaDe(medindo).cat;
   const irmas = itens.filter(i => i !== medindo && i.estado === 'pronta' && fichaDe(i).cat === cat);
   for (const i of irmas) { i.medida = paraGravar(); guardarDepois(i); }
+  atualizarNavegacao();                 // as irmãs saíram da fila
   toast(`Medida aplicada a ${irmas.length} ${irmas.length === 1 ? 'peça' : 'peças'} de ${CATEGORIAS[cat].nome}.`);
 }
 
@@ -465,6 +660,11 @@ function ligarMolde() {
   }, { passive: false });
 
   $('#es-molde-ok').addEventListener('click', () => fecharMolde(true));
+  $('#es-molde-cancelar').addEventListener('click', () => fecharMolde(false));
+  $('#es-molde-voltar').addEventListener('click', voltarNaFila);
+  const cat = $('#es-molde-cat');
+  cat.append(...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, rotuloDeCadastro(c))));
+  cat.addEventListener('change', () => trocarCategoriaNoMolde(cat.value));
   $('#es-molde-padrao').addEventListener('click', () => { medida = medidaPadrao(fichaDe(medindo).cat); posicionar(); });
   $('#es-molde-irmas').addEventListener('click', usarNasIrmas);
   $('#es-molde-modal').addEventListener('pointerdown', (e) => {
@@ -490,6 +690,11 @@ function ligarEntrada() {
     const fotos = [...(e.clipboardData?.files || [])];
     if (fotos.length) enviar(fotos, 'colado');
   });
+  $('#es-pinterest').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const link = $('#es-pinterest-link').value.trim();
+    if (link) vincularPasta(link);
+  });
   $('#es-arquivos').addEventListener('change', (e) => { enviar(e.target.files, 'tela'); e.target.value = ''; });
   $('#es-camera').addEventListener('change', (e) => { enviar(e.target.files, 'celular'); e.target.value = ''; });
 }
@@ -501,11 +706,12 @@ function ligarLote() {
 
   $('#es-todas').addEventListener('change', (e) => {
     selecionadas.clear();
-    if (e.target.checked) itens.filter(i => i.estado === 'pronta').forEach(i => selecionadas.add(i.id));
+    if (e.target.checked) itens.filter(selecionavel).forEach(i => selecionadas.add(i.id));
     desenhar();
   });
   $('#es-lote-aplicar').addEventListener('click', aplicarLote);
-  $('#es-lote-publicar').addEventListener('click', () => publicar(itens.filter(i => selecionadas.has(i.id))));
+  $('#es-lote-publicar').addEventListener('click', () => publicar(marcadas()));
+  $('#es-lote-descartar').addEventListener('click', () => descartar(marcadas()));
 }
 
 // As marcas do acervo viram autocomplete: escrever "Nike" sempre do mesmo jeito.
@@ -540,8 +746,14 @@ async function iniciar() {
   ligarMolde();
   carregarMarcas();
   await atualizar();
-  // Voltou para a aba (ex.: depois de fotografar no celular): confere a esteira.
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) atualizar(); });
+  montarPinterest();
+  // Voltou para a aba (ex.: depois de fotografar no celular ou de salvar pin
+  // novo): confere a esteira e relê as pastas do Pinterest.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    atualizar();
+    if (Date.now() - ultimaLeitura > RELER_MS) reler();
+  });
 }
 
 iniciar();

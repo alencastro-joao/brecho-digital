@@ -135,10 +135,14 @@ Resources:
                 Effect: Allow
                 Action: s3:ListBucket
                 Resource: !Sub arn:aws:s3:::${BucketDados}
+              # O acervo (marcas para o palpite) e as imagens das peças: é com
+              # elas que a foto repetida é reconhecida (repetidas.py).
               - Sid: MarcasDoAcervo
                 Effect: Allow
                 Action: s3:GetObject
-                Resource: !Sub arn:aws:s3:::${BucketSite}/assets/acervo.json
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketSite}/assets/acervo.json
+                  - !Sub arn:aws:s3:::${BucketSite}/assets/cloths/*
               - Sid: PalpiteDaFicha
                 Effect: Allow
                 Action: [bedrock:InvokeModel, bedrock:Converse]

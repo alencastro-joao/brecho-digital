@@ -2,6 +2,9 @@
 """
 O palpite da ficha, pelo Claude no Bedrock.
 
+O nome fica de fora de propósito: toda peça chega sem nome e o admin dá um se
+quiser.
+
 A prévia já recortada vai como imagem, e a resposta volta por uma ferramenta
 com esquema fechado: categoria e cor só podem ser das listas do jogo, então
 o que chega aqui já entra na tela sem tradução. É palpite — a tela de revisão
@@ -50,17 +53,13 @@ FERRAMENTA = {
             'properties': {
                 'cat': {'type': 'string', 'enum': list(CATEGORIAS)},
                 'cor': {'type': 'string', 'enum': CORES},
-                'nome': {'type': 'string', 'description':
-                         'Nome curto da peça em português, 2 a 4 palavras, '
-                         'sem a marca. Ex.: "Jaqueta corta-vento", '
-                         '"Tênis de cano alto", "Vestido midi floral".'},
                 'marca': {'type': 'string', 'description':
                           'Marca, só se houver logo ou escrita legível na peça. '
                           'Senão, string vazia.'},
                 'confianca': {'type': 'number', 'description':
                               'De 0 a 1: quão seguro está da categoria.'},
             },
-            'required': ['cat', 'cor', 'nome', 'marca', 'confianca'],
+            'required': ['cat', 'cor', 'marca', 'confianca'],
         }},
     }
 }
@@ -91,7 +90,7 @@ def _instrucao(marcas):
 
 
 def sugerir(webp, marcas=()):
-    """{cat, cor, nome, marca, confianca, modelo} — ou {} se a IA falhar.
+    """{cat, cor, marca, confianca, modelo} — ou {} se a IA falhar.
 
     Falha da IA não derruba a peça: ela entra sem palpite e o admin preenche.
     """
@@ -119,7 +118,6 @@ def sugerir(webp, marcas=()):
     saida = {
         'cat': dados.get('cat') if dados.get('cat') in CATEGORIAS else '',
         'cor': dados.get('cor') if dados.get('cor') in CORES else '',
-        'nome': str(dados.get('nome') or '').strip()[:60],
         'marca': str(dados.get('marca') or '').strip()[:40],
         'confianca': round(float(dados.get('confianca') or 0), 2),
         'modelo': MODELO,

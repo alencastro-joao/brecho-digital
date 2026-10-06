@@ -14,7 +14,7 @@
 
 import * as db from './db.js';
 import { guardarCartao } from './pessoas.js';
-import { miniatura, miniaturaBoard } from './render.js';
+import { imagemDoFeed, imagemDoFeedColagem } from './render.js';
 
 let posts = [];                 // a última leitura do servidor, mais novos primeiro
 let lidoEm = null;              // quando — null enquanto nunca deu certo
@@ -128,13 +128,15 @@ export async function apagarComentarioPublicado(post, comentarioId) {
 
 // --------------------------- O que dá para publicar -----------------------
 // O pacote que o servidor espera, a partir de um look ou de uma colagem salva.
-// A miniatura é a guardada; se a cota do navegador a jogou fora, desenha de novo.
+// A imagem é desenhada de novo, no tamanho do feed (render.js, imagemDoFeed):
+// a miniatura guardada no save é pequena demais para a coluna do mural. Sem
+// camadas para desenhar, vai a guardada mesmo.
 export async function pacoteDoLook(look, criadoEm) {
   return {
     chave: 'look:' + look.id,
     tipo: 'look',
     nome: look.nome,
-    thumb: look.thumb || await miniatura(look.camadas || []),
+    thumb: look.camadas?.length ? await imagemDoFeed(look.camadas) : look.thumb,
     pecas: (look.camadas || []).map(c => c.itemId),
     origem: { lookId: look.id },
     criadoEm,
@@ -146,7 +148,7 @@ export async function pacoteDaColagem(board, criadoEm) {
     chave: 'board:' + board.id,
     tipo: 'board',
     nome: board.nome,
-    thumb: board.thumb || await miniaturaBoard(board),
+    thumb: board.itens?.length ? await imagemDoFeedColagem(board) : board.thumb,
     pecas: (board.itens || []).map(i => i.itemId),
     origem: { boardId: board.id },
     criadoEm,

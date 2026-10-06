@@ -12,6 +12,7 @@ export const FORMATOS = {
   story: { w: 1080, h: 1920, nome: 'story' },
   post:  { w: 1080, h: 1350, nome: 'post'  },
   thumb: { w: 360,  h: 600,  nome: 'thumb' },
+  feed:  { w: 720,  h: 1200, nome: 'feed'  },   // ver imagemDoFeed
 };
 
 const cacheImgs = new Map();
@@ -107,6 +108,29 @@ export async function miniatura(camadas, aparencia = null) {
   const canvas = await renderizarLook(camadas, { formato: 'thumb', fundo: true, aparencia });
   try { return canvas.toDataURL('image/webp', 0.72); }
   catch { return canvas.toDataURL('image/jpeg', 0.7); }
+}
+
+// A imagem do post no feed. A coluna do mural tem ~320 px, e em tela de alta
+// densidade isso é o dobro: a miniatura (360 px, bem comprimida) borra. Esta
+// sai com o dobro da largura e menos compressão — só para o feed, porque não
+// cabe no save do navegador; quem guarda é o servidor (ou a memória, nos
+// perfis de exemplo).
+const FEED_ESCALA_COLAGEM = 0.68;           // 1080 × 0,68 ≈ 734 px de largura
+const FEED_QUALIDADE = 0.86;
+
+const comoWebp = (canvas, qualidade) => {
+  try { return canvas.toDataURL('image/webp', qualidade); }
+  catch { return canvas.toDataURL('image/jpeg', qualidade); }
+};
+
+export async function imagemDoFeed(camadas, aparencia = null) {
+  const canvas = await renderizarLook(camadas, { formato: 'feed', fundo: true, aparencia });
+  return comoWebp(canvas, FEED_QUALIDADE);
+}
+
+export async function imagemDoFeedColagem(board) {
+  const canvas = await renderizarBoard(board, { escala: FEED_ESCALA_COLAGEM });
+  return comoWebp(canvas, FEED_QUALIDADE);
 }
 
 export async function baixarLook(camadas, formato, nomeLook) {

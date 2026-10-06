@@ -7,14 +7,14 @@
 //   * os perfis de exemplo (PERFIS_MOCK) continuam locais: os looks deles saem
 //     do mesmo sorteio dos botões de gerar e servem para o feed nascer povoado.
 //
-// A tela é organizada em abas (Seguindo · Comunidade · Tudo), com um filtro de
-// tipo (looks ou colagens). Os posts formam um mural: colunas em que cada card
+// A tela é organizada em abas (Seguindo · Comunidade · Tudo), sempre com looks
+// e colagens juntos. Os posts formam um mural: colunas em que cada card
 // tem a altura da própria imagem, e passar o mouse mostra as peças usadas.
 
 import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, SERVICOS, RARIDADE } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
-import { miniatura, miniaturaBoard } from './render.js';
+import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
 import { aparenciaDoPerfil, aparenciaAtual, retrato } from './avatar.js';
 import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.js';
@@ -60,10 +60,8 @@ const ABAS = [
   ['comunidade', 'Comunidade', 'Só contas de verdade do brechó'],
   ['tudo', 'Tudo', 'Contas de verdade e perfis de exemplo'],
 ];
-const FILTROS = [['todos', 'Todos'], ['look', 'Looks'], ['board', 'Colagens']];
 
 let aba = null;                           // escolhida na primeira entrada
-let filtro = 'todos';
 let expandidos = new Set();               // posts com a conversa aberta
 const rascunhos = new Map();              // comentário meio escrito, por post
 
@@ -81,7 +79,7 @@ aoMudarPublicacoes(repintar);
 // O look dos perfis fictícios sai do mesmo sorteio dos botões de gerar,
 // só que tirando do acervo inteiro (menos a cápsula, que é conquistada).
 export function lookAleatorio(rnd = Math.random) {
-  return camadasParaAvatar(sortearConjunto(acervoParaLooks(), rnd), rnd);
+  return camadasParaAvatar(sortearConjunto(acervoParaLooks(), rnd));
 }
 
 // Quanto do feed é colagem em vez de look no avatar. As duas coisas são o
@@ -116,7 +114,7 @@ async function criarPostFicticio(rnd = Math.random, idadeHoras = null, quem = nu
   } else {
     // Look: renderizado no personagem de quem postou, não no seu.
     post.tipo = 'look';
-    post.camadas = camadasParaAvatar(pecas, rnd);
+    post.camadas = camadasParaAvatar(pecas);
     post.thumb = await miniatura(post.camadas, aparenciaDoPerfil(autor));
   }
 
@@ -241,7 +239,6 @@ function render() {
 function postsVisiveis() {
   const seguindo = db.state.usuario.seguindo;
   return todosOsPosts().filter(p => {
-    if (filtro !== 'todos' && (p.tipo || 'look') !== filtro) return false;
     if (aba === 'seguindo') return sou(p.autor) || seguindo.includes(p.autor);
     if (aba === 'comunidade') return !ehFicticio(p.autor);
     return true;
@@ -255,13 +252,6 @@ function renderAbas() {
       class: 'feed-aba' + (aba === id ? ' ativa' : ''),
       title: dica,
       onclick: () => { aba = id; render(); },
-    }, rotulo)));
-  }
-  const filtros = $('#feed-filtros');
-  if (filtros) {
-    filtros.replaceChildren(...FILTROS.map(([id, rotulo]) => el('button', {
-      class: 'feed-filtro' + (filtro === id ? ' ativo' : ''),
-      onclick: () => { filtro = id; render(); },
     }, rotulo)));
   }
 }
@@ -343,15 +333,14 @@ function mensagemVazia() {
   const ir = (rotulo, destino) => el('button', {
     class: 'link-btn', onclick: () => { aba = destino; render(); },
   }, rotulo);
-  const tipo = filtro === 'look' ? 'look' : filtro === 'board' ? 'colagem' : 'publicação';
 
   if (aba === 'seguindo') {
     return u.seguindo.length
-      ? [`Quem você segue ainda não tem ${tipo} por aqui. `, ir('Ver a comunidade', 'comunidade')]
+      ? ['Quem você segue ainda não publicou nada por aqui. ', ir('Ver a comunidade', 'comunidade')]
       : ['Você ainda não segue ninguém. Siga alguém na coluna ao lado ou ', ir('veja a comunidade', 'comunidade'), '.'];
   }
   if (aba === 'comunidade') {
-    return [`Nenhuma ${tipo} de conta de verdade ainda. Publique um look no Stylist ou uma colagem — `,
+    return ['Nenhuma publicação de conta de verdade ainda. Publique um look no Stylist ou uma colagem — ',
       'seus amigos veem aqui. ', ir('Ver tudo', 'tudo')];
   }
   return [acervoParaLooks().length < 4
@@ -361,25 +350,19 @@ function mensagemVazia() {
 
 // ================================ O card ==================================
 // A imagem manda: o card tem a altura dela. Por cima, o coração (curtir) e,
-// quando o post tem peça épica ou lendária, o selo dela; passando o mouse, as
-// peças usadas. Embaixo, quem postou, comentários e o menu.
+// passando o mouse, as peças usadas. Embaixo, quem postou, comentários e o menu.
 export function cardDoPost(post) {
   const meu = sou(post.autor);
   const autor = autorDe(post.autor);
   const segue = db.state.usuario.seguindo.includes(post.autor);
   post.comentarios ??= [];
   const pecas = pecasDoPost(post);
-  const rara = pecaQueBrilha(pecas);
 
-  return el('article', {
-    class: 'post' + (meu ? ' meu' : '') + (rara ? ' brilha' : ''),
-    style: rara ? coresDaRaridade(raridadeDaPeca(rara)) : undefined,
-  },
+  return el('article', { class: 'post' + (meu ? ' meu' : '') },
     el('div', { class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') },
       post.thumb
-        ? el('img', { src: post.thumb, alt: post.nome, loading: 'lazy' })
+        ? imagemDoPost(post)
         : el('div', { class: 'sem-thumb' }, 'sem prévia'),
-      rara ? el('span', { class: 'selo-rar' }, raridadeDaPeca(rara).nome) : null,
       el('button', {
         class: 'curtir' + (post.curtido ? ' on' : ''),
         title: post.curtido ? 'Descurtir' : 'Curtir',
@@ -425,6 +408,32 @@ export function cardDoPost(post) {
   );
 }
 
+// ============================ Imagem do post ==============================
+// O post guardado no save traz a miniatura pequena: a grande não caberia no
+// localStorage. Quando o post tem com o que desenhar (as camadas do look ou a
+// colagem — os dos perfis de exemplo e os seus de antes do servidor), a imagem
+// no tamanho do feed é feita aqui, uma vez por post, e fica só na memória. O
+// card abre com a miniatura e troca quando a grande fica pronta: a proporção é
+// a mesma, então nada pula no mural. Post do servidor já vem grande.
+const imagensGrandes = new Map();        // post.id → Promise<dataURL | null>
+
+function imagemGrande(post) {
+  if (!post.camadas?.length && !post.colagem?.itens?.length) return null;
+  if (!imagensGrandes.has(post.id)) {
+    imagensGrandes.set(post.id, (post.colagem
+      ? imagemDoFeedColagem(post.colagem)
+      : imagemDoFeed(post.camadas, aparenciaDe(post.autor))
+    ).catch(() => null));
+  }
+  return imagensGrandes.get(post.id);
+}
+
+function imagemDoPost(post) {
+  const img = el('img', { src: post.thumb, alt: post.nome, loading: 'lazy' });
+  imagemGrande(post)?.then(url => { if (url) img.src = url; });
+  return img;
+}
+
 // ============================ Peças do post ===============================
 // Post publicado no servidor traz a lista de ids; o dos perfis de exemplo tem
 // as camadas do look ou os itens da colagem. Peça que saiu do acervo some.
@@ -435,18 +444,6 @@ function pecasDoPost(post) {
 
 const raridadeDaPeca = (p) =>
   RARIDADE[p.raridade] || RARIDADE[db.raridadesFixas.get(p.id)] || RARIDADE.common;
-
-// Só épica e lendária viram selo no card: se todo card brilhasse, nenhum
-// chamaria atenção.
-const QUE_BRILHAM = ['legendary', 'epic'];
-const pecaQueBrilha = (pecas) =>
-  QUE_BRILHAM.map(id => pecas.find(p => raridadeDaPeca(p).id === id)).find(Boolean) || null;
-
-// A lendária tem aura de arco-íris na vitrine; aqui, numa cor só, fica o dourado.
-const coresDaRaridade = (r) => ({
-  '--rar-cor': r.cor, '--rar-bg': r.bg,
-  '--rar-aura': r.aura === 'arco-iris' ? '#c9a227' : (r.aura || '#b3aaa0'),
-});
 
 const PECAS_POR_CIMA = 6;
 

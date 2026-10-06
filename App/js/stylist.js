@@ -365,6 +365,9 @@ export function gerarLook() {
   const sorteadas = camadasParaAvatar(sortearConjunto(acervo));
   camadas = sorteadas.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
+  // O look sorteado é outro look: o nome do que estava aberto não vem junto,
+  // senão salvar criava uma segunda entrada com o nome do anterior.
+  if (lookAtualId) $('#outfit-nome').value = '';
   lookAtualId = null;
   palcoSorteado = true;
 

@@ -25,7 +25,7 @@ cp "$AQUI/../App/tools/pipeline.py" "$AQUI/lambda/pipeline.py"
 import os, zipfile
 alvo = os.environ['ZIP']
 with zipfile.ZipFile(alvo, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-    for nome in ('app.py', 'contas.py', 'estado.py', 'pessoas.py', 'estoque.py', 'acervo.py', 'esteira.py', 'feed.py', 'pipeline.py'):
+    for nome in ('app.py', 'contas.py', 'estado.py', 'pessoas.py', 'estoque.py', 'acervo.py', 'esteira.py', 'pinterest.py', 'feed.py', 'pipeline.py'):
         z.write(nome)
 print('empacotado: %.1f KB' % (os.path.getsize(alvo) / 1024))
 " )
