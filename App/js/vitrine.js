@@ -288,8 +288,11 @@ export function montarVitrine() {
     zonasProibidas.push({ x0: 0, y0: altura - 290, x1: 320, y1: altura });
   }
 
+  // A caixa padrão é o que limita o preenchimento de sobra (as peças que o
+  // Poisson não conseguiu encaixar): com 210px num celular de 375, sobravam
+  // 113px de faixa e a arara inteira se amontoava na metade da esquerda.
   const pontos = pontosPoisson(pecas.length, largura, altura, {
-    padding: 26, paddingTop: 88, itemW: 210, itemH: 250,
+    padding: 26, paddingTop: 88, itemW: Math.min(210, Math.round(largura * 0.3)), itemH: 250,
     minDist, rnd, excluir: zonasProibidas,
     tamanhos: medidas.map(m => m.caixa),
   });

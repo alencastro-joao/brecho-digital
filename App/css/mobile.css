@@ -1,0 +1,341 @@
+/* Celular e janela estreita (até 900px).
+
+   O app nasceu desktop-first: cada tela é uma linha de colunas (lateral fixa ·
+   miolo elástico · lateral fixa) e a barra de telas fica em pé à direita. Aqui
+   tudo isso vira uma coluna só:
+   - a barra de telas deita e vai para o rodapé, como num app de celular;
+   - cada tela empilha os seus painéis e rola na vertical, com o miolo (palco,
+     colagem, personagem) em cima e as laterais embaixo;
+   - os puxadores de painel somem, e a largura salva por eles (inline, ver
+     js/paineis.js) perde para o `!important` daqui.
+
+   Vem por último no <head> para ganhar dos arquivos de tela sem precisar de
+   seletor mais forte que o deles. */
+
+@media (max-width: 900px) {
+  :root {
+    /* Três peças por linha, descontados o respiro da tela (16px de cada lado) e
+       os dois vãos da grade (10px). */
+    --cel-peca: calc((100vw - 52px) / 3);
+    --nav-h: 62px;
+  }
+
+  html, body { overflow: hidden; }
+  body { -webkit-tap-highlight-color: transparent; }
+
+  /* Campo com letra abaixo de 16px faz o iPhone dar zoom ao focar. */
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="search"], select, textarea { font-size: 16px !important; }
+
+  .app {
+    min-width: 0;
+    height: 100dvh;
+    flex-direction: column;
+  }
+  .view { flex: 1 1 auto; min-height: 0; width: 100%; }
+
+  /* Os painéis deixam de ser ajustáveis: largura é a da tela. */
+  .divisor { display: none; }
+
+  /* ------------------------- Barra de telas ------------------------------ */
+  .app > .sidebar {
+    order: 2;
+    width: 100%; height: auto; flex: none;
+    flex-direction: row; justify-content: center;
+    padding: 7px 6px calc(7px + env(safe-area-inset-bottom));
+    border-left: 0; border-top: 1px solid var(--linha);
+  }
+  .app > .sidebar .sidebar-icons {
+    flex-direction: row; gap: 4px;
+    width: 100%; max-width: 560px;
+  }
+  .app > .sidebar .sidebar-btn {
+    flex: 1 1 0; min-width: 0;
+    width: auto; height: 46px; border-radius: 13px;
+  }
+  .app > .sidebar .sidebar-btn span { font-size: 8px; letter-spacing: 0; }
+  .app > .sidebar .sidebar-btn:hover { transform: none; }
+  .sidebar-btn.travada::after { transform: none; top: 1px; right: 3px; font-size: 10px; }
+  /* O nível continua na tela de Tarefas; aqui ele roubaria lugar dos botões. */
+  .app > .sidebar .sidebar-rodape { display: none; }
+
+  .toast-stack { bottom: calc(var(--nav-h) + 14px + env(safe-area-inset-bottom)); width: calc(100% - 32px); }
+  .toast { text-align: center; }
+
+  /* ------------------------------ Vitrine -------------------------------- */
+  .vitrine-head { padding: 12px 14px; gap: 8px; }
+  .vitrine-head > div { padding: 3px 10px 5px; }
+  .vitrine-title { font-size: 17px; }
+  .vitrine-sub { font-size: 11.5px; }
+  .vitrine-acoes { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .btn-admin { padding: 7px 11px; font-size: 11px; }
+  .picks-badge { min-width: 0; padding: 6px 11px; border-radius: 13px; }
+  .picks-badge #picks-left { font-size: 19px; }
+  .picks-badge small { font-size: 9.5px; }
+
+  /* A ficha deixa de seguir a peça (o JS a encosta ao lado dela, o que numa
+     tela de 375px cai em cima da própria roupa) e vira uma folha no rodapé. */
+  .ficha {
+    left: 12px !important; right: 12px; top: auto !important;
+    bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+    width: auto; max-width: 420px; margin: 0 auto;
+    display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: 14px;
+    align-items: start;
+  }
+  .ficha > * { grid-column: 2; }
+  .ficha .ficha-img { grid-column: 1; grid-row: 1 / span 6; height: 96px; margin: 0; }
+  .ficha .ficha-img img { max-height: 96px; }
+  .ficha .ficha-nome { margin-top: 6px; padding-right: 24px; }
+  .ficha .ficha-chance { margin-bottom: 10px; }
+  .ficha .btn-dark, .ficha .btn-ghost { padding: 10px 14px; }
+
+  .npc-art { width: 130px; }
+  .npc-bubble { max-width: 220px; margin-left: 20px; padding: 10px 14px; }
+  .npc-bubble p { font-size: 12.5px; }
+
+  /* ---------------------------- Guarda-roupa ----------------------------- */
+  .view-closet { flex-direction: column; }
+  .view-closet .cat-rail {
+    width: auto !important; flex: none;
+    flex-wrap: nowrap; justify-content: flex-start;
+    overflow-x: auto; overflow-y: hidden;
+    padding: 8px 12px; gap: 4px;
+    border-right: 0; border-bottom: 1px solid var(--linha);
+    scrollbar-width: none;
+  }
+  .view-closet .cat-rail::-webkit-scrollbar { display: none; }
+  .cat-btn { width: 44px; height: 44px; font-size: 19px; border-radius: 13px; }
+
+  .grid-wrapper { padding: 14px 16px 12px; }
+  .closet-head { flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .closet-acoes { justify-content: flex-start; gap: 8px; width: 100%; }
+  .btn-adicionar { padding: 8px 14px; }
+  .grid-title { font-size: 18px; }
+  /* Três colunas cravadas, não "quantas couberem": a barra de rolagem (que
+     alguns navegadores desenham por fora do conteúdo) roubava a terceira. */
+  .grid-container {
+    gap: 10px; scrollbar-gutter: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
+  .item-slot .peca-caixa { inset: 9px; }
+
+  /* O destaque vira uma faixa no pé da tela, e só quando há peça escolhida:
+     sem ela, a faixa seria só o "Selecione uma peça" comendo a grade. */
+  .view-closet .display-section {
+    width: auto !important; flex: none;
+    flex-direction: row; align-items: center;
+    gap: 12px; padding: 10px 16px 12px;
+    border-left: 0; border-top: 1px solid var(--linha);
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, .04);
+  }
+  .view-closet .display-section:has(#preview-meta[hidden]) { display: none; }
+  .view-closet .preview-wrapper {
+    flex: none; width: 92px; height: 92px; min-height: 0;
+    padding: 8px; border-radius: 14px;
+  }
+  .view-closet .preview-wrapper img { max-height: 76px; }
+  .view-closet .preview-meta {
+    flex: 1; min-width: 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .view-closet .preview-meta > :not(button) { grid-column: 1 / -1; }
+  .view-closet .preview-meta .rarity-tag { justify-self: start; }
+  .view-closet .preview-meta h3 { margin: 2px 0 0; font-size: 14px; }
+  .view-closet .preview-meta p { margin: 0 0 2px; font-size: 11.5px; }
+  .view-closet .preview-meta button { margin: 0; padding: 8px 6px; font-size: 11.5px; }
+
+  /* -------------------- Telas que empilham e rolam ------------------------ */
+  .view-stylist, .view-board, .view-social, .view-vestiario, .view-personagem {
+    flex-direction: column;
+    overflow-x: hidden; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .view-stylist > *, .view-board > *, .view-social > *,
+  .view-vestiario > *, .view-personagem > * {
+    flex: none; width: auto !important; min-width: 0;
+  }
+
+  /* Paletas de peças (Stylist e Colagem): embaixo do palco, com a grade
+     rolando por dentro para a lista longa não empurrar as ferramentas para
+     o fim do mundo. */
+  .stylist-palette, .board-palette {
+    order: 2;
+    padding: 16px 16px 14px; gap: 10px;
+    border-right: 0; border-top: 1px solid var(--linha);
+  }
+  .palette-grid {
+    flex: none; max-height: min(52dvh, 440px);
+    gap: 10px; scrollbar-gutter: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pal-item { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
+  .pal-item .peca-caixa { inset: 9px; }
+  .palette-cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .palette-cats::-webkit-scrollbar { display: none; }
+  .pal-cat { flex: none; }
+
+  .stylist-tools, .board-tools {
+    order: 3;
+    padding: 18px 16px 28px; gap: 18px;
+    border-left: 0; border-top: 1px solid var(--linha);
+    overflow: visible;
+  }
+  .tool-btn { height: 42px; }
+
+  /* ------------------------------ Stylist -------------------------------- */
+  .stylist-stage-area { order: 1; padding: 12px 16px 14px; gap: 10px; }
+  .stage-frame {
+    flex: none; height: min(56dvh, 540px);
+    padding: 10px; max-width: none;
+  }
+  /* Os botões do look e da exportação, dois por linha: em fila única eram
+     uma tela inteira só de botão. */
+  .stylist-tools .tool-block:not(#layer-tools) {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .stylist-tools .tool-block > .tool-label,
+  .stylist-tools .tool-block > .tool-hint,
+  .stylist-tools .tool-block > .saved-list { grid-column: 1 / -1; }
+  .stylist-tools .tool-block > button { margin: 0; padding: 10px 8px; }
+
+  /* ------------------------------ Colagem -------------------------------- */
+  .board-main { order: 1; }
+  .board-bar {
+    height: auto; flex-wrap: wrap;
+    gap: 8px 12px; padding: 8px 12px;
+  }
+  .bar-btn { width: 34px; height: 34px; }
+  .bar-dir { margin-left: 0; }
+  .board-scroll { flex: none; height: min(62dvh, 600px); padding: 34px 30px; }
+  .board-rodape { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  #board-nome { flex: 1 1 100%; width: auto; }
+  .board-dica { display: none; }
+  .rodape-acoes { margin-left: 0; flex-wrap: wrap; flex: 1 1 100%; }
+  .acao-btn { flex: 1 1 auto; padding: 9px 12px; }
+  .board-tools .saved-list { max-height: none; }
+
+  /* -------------------------------- Feed --------------------------------- */
+  .feed-wrapper { overflow: visible; padding: 0 16px 24px; }
+  .feed-head { padding: 14px 0 10px; }
+  .feed-head h1 { font-size: 19px; }
+  .feed-abas { flex-wrap: wrap; }
+  .mural { gap: 12px; margin-top: 14px; }
+  .mural-coluna { gap: 16px; }
+  .feed-side {
+    padding: 20px 16px 28px; gap: 22px;
+    border-left: 0; border-top: 1px solid var(--linha);
+    overflow: visible;
+  }
+  /* Card estreito: o rodapé do post aperta, e o nome é quem cede. */
+  .post-pe { gap: 6px; }
+  /* Num card de 160px o "seguir" espremia o nome até virar uma letra. Seguir
+     continua a um toque: no perfil da pessoa e no "Quem seguir". */
+  .post-pe .btn-seguir.mini { display: none; }
+  .post-pecas { padding: 36px 10px 10px; }
+  .peca-mini { width: 34px; height: 34px; border-radius: 9px; }
+
+  /* ------------------------- Perfil e perfil público --------------------- */
+  .pf-layout {
+    grid-template-columns: minmax(0, 1fr); gap: 22px;
+    padding: 16px 16px 32px; width: 100%;
+  }
+  .pf-cartao { position: static; }
+  .pf-avatar { height: 210px; }
+  .pf-avatar .avatar-svg svg { height: 190px; }
+  .pf-secao-topo { flex-wrap: wrap; row-gap: 2px; }
+  .pf-secao-topo span { order: 3; flex-basis: 100%; }
+  .pf-grade { gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pf-grade-obras { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .pf-amigos { gap: 14px; }
+  .pf-dica { flex-wrap: wrap; }
+
+  /* ------------------------------ Tarefas -------------------------------- */
+  .tarefas-wrapper { padding: 20px 16px 36px; gap: 24px; }
+  .tarefas-head h1 { font-size: 21px; }
+  .tarefas-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .tarefas-stats .stat { min-width: 0; }
+  .missao { padding: 11px 13px; }
+  .collab { padding: 18px 16px; }
+  .collab-head { flex-direction: column; gap: 8px; }
+  .collab-grid { gap: 10px; }
+  .collab-item { padding: 9px; }
+  .collab-item .peca-caixa { inset: 9px; }
+  .collab .btn-dark, .collab .btn-ghost { max-width: none; }
+
+  /* ------------------------------ Inventário ----------------------------- */
+  .vs-palco { padding: 14px 16px 16px; gap: 12px; }
+  .vs-corpo { --col: 74px; flex: none; height: min(58dvh, 480px); gap: 10px; }
+  .vs-coluna { gap: 8px; }
+  .vs-slot { min-height: 0; border-radius: 13px; }
+  .vs-slot-icone { font-size: 18px; }
+  .vs-slot-nome { font-size: 7.5px; }
+  .vs-previa { padding: 8px; border-radius: 18px; }
+  .vs-ficha { flex-wrap: wrap; min-height: 0; padding: 12px; gap: 12px; }
+  .vs-ficha-arte { width: 78px; height: 78px; }
+  .vs-ficha-acoes { width: 100%; flex-direction: row; }
+  .vs-ficha-acoes > * { flex: 1; }
+  .view-vestiario .vs-painel {
+    /* Cinco casas por linha na largura da tela: 16px de respiro de cada lado e
+       quatro vãos de 8px. */
+    --casa: calc((100vw - 64px) / 5);
+    padding: 16px 16px 20px;
+    border-left: 0; border-top: 1px solid var(--linha);
+    overflow: visible;
+  }
+  .vs-paginacao { margin-top: 4px; }
+  .vs-pag-seta { width: 38px; height: 38px; }
+
+  /* ----------------------------- Personagem ------------------------------ */
+  .pg-palco { padding: 14px 16px; }
+  .pg-moldura { flex: none; padding: 12px; }
+  .pg-previa { height: min(46dvh, 420px); }
+  .pg-painel {
+    padding: 18px 16px 28px; gap: 20px;
+    border-left: 0; border-top: 1px solid var(--linha);
+    overflow: visible;
+  }
+  .pg-acoes { margin-top: 0; }
+  /* O painel agora tem a largura da tela: com 3 ou 4 por linha cada opção
+     virava um retrato de meio palmo. */
+  .pg-cortes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .pg-corpos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  /* ------------------------------- Modais -------------------------------- */
+  .modal { padding: 10px; }
+  .modal-caixa { max-height: calc(100dvh - 20px); border-radius: 18px; }
+  .modal-topo { padding: 14px 16px 12px; }
+  .modal-topo h2 { font-size: 17px; }
+  .modal-rodape { flex-wrap: wrap; padding: 12px 16px; gap: 8px; }
+  .modal-rodape .mp-aviso { flex-basis: 100%; order: -1; white-space: normal; }
+  .modal-rodape .btn-dark, .modal-rodape .btn-ghost { flex: 1 1 auto; padding: 10px 14px; }
+  .mp-colunas { padding: 16px; gap: 18px; }
+  .mp-solta { min-height: 220px; padding: 14px; }
+  #mp-previa { max-height: 240px; }
+  .mp-dica, .medindo .mp-dica { padding: 12px 16px 0; }
+  .mp-molde-area, .medindo .mp-molde-area { padding: 10px 16px; }
+  .mp-molde { height: min(430px, 50dvh); }
+  .medindo .mp-molde { height: calc(100dvh - 280px); }
+  .modal:has(.modal-caixa.medindo) { padding: 10px; }
+  .cx-corpo { padding: 16px; }
+  .aj-corpo { padding: 14px 16px 20px; }
+  .aj-corpo .conexao-lista { grid-template-columns: minmax(0, 1fr); }
+  .conexao-lista { grid-template-columns: minmax(0, 1fr); }
+  .up-post-corpo { padding: 12px 14px 16px; }
+
+  /* Ficha de peça e menus ficam por cima da barra de telas. */
+  .menu-compartilhar { max-width: calc(100vw - 24px); }
+
+  /* ------------------------------ Entrar --------------------------------- */
+  .auth { padding: 16px; place-items: start center; }
+  .auth-caixa { padding: 24px 20px 18px; margin: auto 0; }
+}
+
+/* Telefone deitado: a altura é que falta, então os palcos encolhem para
+   caber uma fileira de ferramentas embaixo sem precisar rolar. */
+@media (max-width: 900px) and (max-height: 500px) {
+  .stage-frame, .board-scroll { height: 80dvh; }
+  .vs-corpo { height: 80dvh; }
+  .app > .sidebar { padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+  .app > .sidebar .sidebar-btn { height: 38px; }
+}

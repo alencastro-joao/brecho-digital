@@ -261,13 +261,18 @@ function renderAbas() {
 // novo fica no alto à esquerda e abrir os comentários de um card só alonga a
 // coluna dele, sem embaralhar o mural inteiro.
 const LARGURA_MIN_COLUNA = 260;
+// No celular (css/mobile.css) o card pode ser bem mais estreito: duas colunas
+// de ~170px leem melhor que uma só, gigante, com um post por tela.
+const LARGURA_MIN_COLUNA_CELULAR = 150;
 const VAO_MURAL = 18;                     // o mesmo gap de .mural em social.css
+const celular = window.matchMedia('(max-width: 900px)');
 let colunasDesenhadas = 0;
 
 function colunasDoMural(caixa) {
   const largura = caixa?.clientWidth || 0;
   if (!largura) return 3;
-  return Math.max(1, Math.floor((largura + VAO_MURAL) / (LARGURA_MIN_COLUNA + VAO_MURAL)));
+  const minima = celular.matches ? LARGURA_MIN_COLUNA_CELULAR : LARGURA_MIN_COLUNA;
+  return Math.max(1, Math.floor((largura + VAO_MURAL) / (minima + VAO_MURAL)));
 }
 
 // Altura do card em larguras de coluna, antes de a imagem carregar: o look é
