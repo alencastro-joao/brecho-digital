@@ -20,8 +20,10 @@ Para cada foto:
      admin, com o BiRefNet. O modelo mora em `modelos/` no bucket de dados e
      desce para o /tmp na primeira chamada; as seguintes reaproveitam.
   3. Guarda o recorte em alta como rascunho de máster.
-  4. Faz a prévia leve (WebP, 460 px) e o contorno vetorial, iguais aos do
-     pipeline.
+  4. Faz a imagem do jogo em dois tamanhos — a prévia (WebP, 512 px), que é
+     a das miniaturas, e a grande (WebP, 1280 px), que a tela pede onde a
+     peça aparece grande ou em tela de alta densidade — e o contorno vetorial,
+     igual ao do pipeline.
      Antes de seguir, confere se a prévia é de uma peça que já está no jogo
      ou na esteira (repetidas.py). Se for, a foto para aqui como `repetida`
      — sem gastar o palpite da IA — e a API tira ela da esteira.
@@ -58,8 +60,11 @@ PASTA_MODELOS = os.environ.get('BGBATCH_MODELOS') or '/tmp/modelos'
 
 MAX_ENTRADA = 3000      # foto de câmera desce para isto antes do modelo
 MAX_MESTRE = 2048       # maior lado do máster guardado
-MAX_PREVIA = 460        # maior lado da imagem que o jogo usa (= adicionar.js)
-QUALIDADE = 75
+MAX_PREVIA = 512        # maior lado da miniatura (= MAX_LADO em editar.js)
+MAX_GRANDE = 1280       # maior lado da grande (= MAX_GRANDE em editar.js)
+# 88 e não 75: com 75 a estampa fina (croco, letra, renda) virava mancha, e a
+# mancha é o que mais aparece quando a tela amplia a peça.
+QUALIDADE = 88
 
 Image.MAX_IMAGE_PIXELS = 80_000_000   # 80 MP: acima disso é engano ou ataque
 
@@ -149,9 +154,10 @@ def recortar(img):
         raise FotoRuim(str(e))
 
 
-def previa_de(recorte):
+def webp_de(recorte, lado):
+    """(imagem reduzida a `lado`, bytes do WebP). Nunca amplia."""
     p = recorte.copy()
-    p.thumbnail((MAX_PREVIA, MAX_PREVIA), Image.LANCZOS)
+    p.thumbnail((lado, lado), Image.LANCZOS)
     buf = io.BytesIO()
     p.save(buf, 'WEBP', quality=QUALIDADE, method=6)
     return p, buf.getvalue()
@@ -174,7 +180,7 @@ def processar(chave):
             ficha.update(arquivo=meta['arquivo'], origem='pasta')
         recorte, sem_fundo = recortar(img)
 
-        previa, webp = previa_de(recorte)
+        previa, webp = webp_de(recorte, MAX_PREVIA)
         assinatura = repetidas.assinatura(previa)
         try:
             igual = repetidas.procurar(_s3, DADOS, SITE, assinatura, item_id) if SITE else None
@@ -201,6 +207,15 @@ def processar(chave):
         chave_previa = 'esteira/%s.webp' % item_id
         _s3.put_object(Bucket=DADOS, Key=chave_previa, Body=webp,
                        ContentType='image/webp')
+        # A grande só existe se o recorte for maior que a prévia: ampliar não
+        # traz detalhe nenhum, só peso.
+        chave_grande, wg, hg = '', 0, 0
+        if max(recorte.size) > MAX_PREVIA:
+            grande, webp_g = webp_de(recorte, MAX_GRANDE)
+            chave_grande = 'esteira/%s-g.webp' % item_id
+            _s3.put_object(Bucket=DADOS, Key=chave_grande, Body=webp_g,
+                           ContentType='image/webp')
+            wg, hg = grande.size
         caminho, _ = contour_of(previa.convert('RGBA'))
         segundos_recorte = time.time() - marca
 
@@ -216,8 +231,10 @@ def processar(chave):
     ficha.update(
         estado='pronta',
         previa=chave_previa,
+        previaG=chave_grande,
         mestre=mestre,
         w=previa.size[0], h=previa.size[1],
+        wG=wg, hG=hg,
         mw=recorte.size[0], mh=recorte.size[1],
         path=caminho,
         fundoRemovido=sem_fundo,

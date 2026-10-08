@@ -8,6 +8,7 @@ sem --nuvem) enxergar as peças novas:
 
     assets/acervo.json        substituído pelo da nuvem
     assets/cloths/<id>.webp   baixa só o que falta (o nome é o id: não muda)
+    assets/cloths/<id>-g.webp a grande, idem
 
 Lê pelo CloudFront, que é público — não precisa de credencial da AWS.
 
@@ -43,8 +44,10 @@ def main():
     except (OSError, ValueError):
         local = set()
 
-    faltam = [i['src'] for i in nuvem['items']
-              if i.get('src') and not os.path.exists(os.path.join(APP, i['src']))]
+    # As duas imagens de cada peça: a miniatura e a grande (peça antiga pode
+    # não ter a grande).
+    faltam = [c for i in nuvem['items'] for c in (i.get('src'), i.get('srcG'))
+              if c and not os.path.exists(os.path.join(APP, c))]
 
     def pegar(src):
         destino = os.path.join(APP, src)

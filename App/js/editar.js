@@ -11,8 +11,9 @@
 // todo mundo em vez de criar outra.
 //
 // Trocar a imagem: soltar um PNG de fundo transparente sobre a prévia. Ele é
-// aparado pelo alpha, reduzido e convertido para WebP aqui no navegador, e sobe
-// junto com a ficha. Foto com fundo vai pela esteira.
+// aparado pelo alpha, reduzido e convertido para WebP aqui no navegador — nos
+// dois tamanhos que o jogo usa, como na esteira —, e sobe junto com a ficha.
+// Foto com fundo vai pela esteira.
 //
 // Ferramenta de administração: só aparece em modo admin, e quem grava é a API
 // (PUT /api/pecas/<id>), que recusa quem não for administrador.
@@ -25,8 +26,10 @@ import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde, ancoraNoCorpo } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
 
-const MAX_LADO = 460;          // maior lado da imagem guardada (= esteira)
-const QUALIDADE = 0.75;
+const MAX_LADO = 512;          // maior lado da miniatura (= MAX_PREVIA da esteira)
+const MAX_GRANDE = 1280;       // maior lado da grande (= MAX_GRANDE da esteira)
+const MAX_ORIGEM = 2048;       // a cópia de trabalho de girar e cortar
+const QUALIDADE = 0.88;
 
 let peca = null;               // a peça do acervo em edição
 let ficha = null;              // { cat, marca, cor, nome, raridade }
@@ -35,8 +38,8 @@ let medida = null;             // { x, y, w } em unidades do palco (600×1200)
 let aoSalvar = null;
 
 // Girar e cortar. Toda edição sai da `origem` (a imagem como chegou, em até
-// 1000 px), nunca do resultado da edição anterior: girar quatro vezes não pode
-// ir borrando a peça a cada WebP.
+// 2048 px, ou a grande da peça), nunca do resultado da edição anterior: girar
+// quatro vezes não pode ir borrando a peça a cada WebP.
 let origem = null;             // canvas da imagem sem edição (carregado sob demanda)
 let arquivoBase = null;        // o `arquivo` antes de girar/cortar — o "Restaurar"
 let passos = 0;                // quartos de volta, sentido horário
@@ -69,27 +72,39 @@ function caixaOpaca(canvas) {
   return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, opacos };
 }
 
-// Apara pelo alpha, reduz para o tamanho guardado e vira WebP.
-function codificar(canvas) {
-  const caixa = caixaOpaca(canvas);
-  if (!caixa) throw new Error('Não sobrou nada da peça — o corte ficou só no transparente.');
-  const k = Math.min(1, MAX_LADO / Math.max(caixa.w, caixa.h));
+// A caixa reduzida a `lado` (nunca ampliada), em WebP.
+function reduzir(canvas, caixa, lado) {
+  const k = Math.min(1, lado / Math.max(caixa.w, caixa.h));
   const saida = novoCanvas(caixa.w * k, caixa.h * k);
   const pincel = saida.getContext('2d', { willReadFrequently: true });
   pincel.imageSmoothingQuality = 'high';
   pincel.drawImage(canvas, caixa.x, caixa.y, caixa.w, caixa.h, 0, 0, saida.width, saida.height);
-
   let src;
   try { src = saida.toDataURL('image/webp', QUALIDADE); }
   catch { src = saida.toDataURL('image/png'); }
-  return { src, w: saida.width, h: saida.height, novo: true, cor: corDaImagem(pincel, saida.width, saida.height) };
+  return { src, saida, pincel };
+}
+
+// Apara pelo alpha e vira as duas imagens do jogo: a miniatura e, se a peça
+// tiver pixel para isso, a grande.
+function codificar(canvas) {
+  const caixa = caixaOpaca(canvas);
+  if (!caixa) throw new Error('Não sobrou nada da peça — o corte ficou só no transparente.');
+  const { src, saida, pincel } = reduzir(canvas, caixa, MAX_LADO);
+  const arq = { src, w: saida.width, h: saida.height, novo: true,
+                cor: corDaImagem(pincel, saida.width, saida.height) };
+  if (Math.max(caixa.w, caixa.h) > MAX_LADO) {
+    const g = reduzir(canvas, caixa, MAX_GRANDE);
+    Object.assign(arq, { srcG: g.src, wG: g.saida.width });
+  }
+  return arq;
 }
 
 // ============================ Trocar imagem ===============================
-// Uma cópia de até 1000 px, aparada pelo alpha: é a origem das edições.
+// Uma cópia de até 2048 px, aparada pelo alpha: é a origem das edições.
 async function prepararImagem(file) {
   const bitmap = await createImageBitmap(file);
-  const escala = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
+  const escala = Math.min(1, MAX_ORIGEM / Math.max(bitmap.width, bitmap.height));
   const trab = novoCanvas(bitmap.width * escala, bitmap.height * escala);
   trab.getContext('2d', { willReadFrequently: true }).drawImage(bitmap, 0, 0, trab.width, trab.height);
   bitmap.close?.();
@@ -171,8 +186,9 @@ function mostrarImagem() {
   $('#mp-previa').style.transform = '';
   const aviso = $('#mp-aviso');
   aviso.classList.remove('alerta');
+  const kb = Math.round(((arquivo.src?.length || 0) + (arquivo.srcG?.length || 0)) * 0.75 / 1024);
   aviso.textContent = arquivo.novo
-    ? `imagem nova · ${arquivo.w}×${arquivo.h} · ${Math.round(arquivo.src.length / 1024)} KB`
+    ? `imagem nova · ${arquivo.w}×${arquivo.h}${arquivo.wG ? ` (grande ${arquivo.wG} px)` : ''} · ${kb} KB`
     : '';
   $('#mp-restaurar').disabled = arquivo === arquivoBase;
 }
@@ -185,11 +201,13 @@ function zerarEdicao() {
 }
 
 // A peça já no editor vem do site (mesma origem), então o canvas pode lê-la.
+// Parte da grande quando ela existe: girar a miniatura e esticá-la de volta
+// seria perder a resolução que a grande guarda.
 async function garantirOrigem() {
   if (origem) return origem;
   const img = new Image();
   img.decoding = 'async';
-  img.src = arquivoBase.src;
+  img.src = arquivoBase.srcG || arquivoBase.src;
   await img.decode();
   const c = novoCanvas(img.naturalWidth, img.naturalHeight);
   c.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0);
@@ -465,7 +483,7 @@ async function irParaMedida() {
   $('#mp-passo2').hidden = false;
   $('#mp-caixa').classList.add('medindo');
   $('#mp-avatar').innerHTML = svgAvatar();
-  $('#mp-peca-img').src = arquivo.src;
+  $('#mp-peca-img').src = arquivo.srcG || arquivo.src;
   posicionarPeca();
 }
 
@@ -549,7 +567,10 @@ async function salvar() {
     ...ficha,
     ancora: { x: Math.round(real.x), y: Math.round(real.y), w: Math.round(real.w) },
   };
-  if (arquivo.novo) Object.assign(corpo, { src: arquivo.src, w: arquivo.w, h: arquivo.h });
+  if (arquivo.novo) {
+    Object.assign(corpo, { src: arquivo.src, w: arquivo.w, h: arquivo.h });
+    if (arquivo.srcG) Object.assign(corpo, { srcG: arquivo.srcG, wG: arquivo.wG });
+  }
 
   let salva;
   try {
@@ -570,7 +591,11 @@ async function salvar() {
 
   // A imagem trocada mantém o nome do arquivo; sem o sufixo o navegador
   // continuaria mostrando a antiga do cache.
-  if (arquivo.novo) salva.src += '?v=' + Date.now().toString(36);
+  if (arquivo.novo) {
+    const v = '?v=' + Date.now().toString(36);
+    salva.src += v;
+    if (salva.srcG) salva.srcG += v;
+  }
   db.registrarMarca(salva.marca);
   db.registrarCor(salva.cor);
   registrarPeca(salva, { permanente: true });
@@ -644,7 +669,8 @@ export function abrirEditar(alvo, callback) {
     cat: alvo.cat, marca: alvo.marca || '', cor: alvo.cor || '',
     nome: alvo.nome || '', raridade: alvo.raridade || 'common',
   };
-  arquivo = arquivoBase = { src: alvo.src, w: alvo.w || 1, h: alvo.h || 1, novo: false };
+  arquivo = arquivoBase = { src: alvo.src, srcG: alvo.srcG, wG: alvo.wG,
+                            w: alvo.w || 1, h: alvo.h || 1, novo: false };
   origem = null;
   sairDoCorte();
   zerarEdicao();

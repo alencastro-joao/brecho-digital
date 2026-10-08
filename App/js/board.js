@@ -10,7 +10,8 @@
 import { BOARD, escalaGrade, escalaMural } from './config.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
+         srcGrande } from './catalog.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
 import { miniaturaBoard, baixarBoard } from './render.js';
@@ -311,7 +312,8 @@ function criarItemDOM(it) {
     conteudo = el('span', { class: 'pr-texto' }, it.texto);
   } else {
     const peca = pecaDoCatalogo(it.itemId);
-    conteudo = el('img', { src: peca.src, alt: nomeDaPeca(peca), draggable: 'false' });
+    // Na prancheta a peça cresce na mão: vai a grande desde o começo.
+    conteudo = el('img', { src: srcGrande(peca), alt: nomeDaPeca(peca), draggable: 'false' });
     aplicarContorno(conteudo, peca);
   }
 

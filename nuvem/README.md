@@ -100,6 +100,26 @@ Se o Bedrock recusar, a peça entra sem palpite e nada trava.
 franquia gratuita de 400 mil GB-s/mês; ~US$ 0,001 de Bedrock por foto;
 centavos por mês para guardar os modelos.
 
+**Cada peça sai em dois tamanhos** (08/10/2026), WebP qualidade 88:
+
+| Arquivo | Campo no acervo | Maior lado | Para quê |
+|---|---|---|---|
+| `assets/cloths/<id>.webp` | `src`, `w`, `h` | 512 px | miniaturas, grades |
+| `assets/cloths/<id>-g.webp` | `srcG`, `wG` | 1280 px | mural, ficha, prancheta, palco, exportação |
+
+Antes era uma só, de 460 px e qualidade 75, e a tela esticava até 3x num
+celular — era o borrado. O front escolhe por `imagemDaPeca(peca, largura)`
+(`js/catalog.js`): com a largura em que a peça aparece, manda as duas num
+`srcset` e o navegador pega pela densidade da tela; sem ela, vai a grande.
+Peça sem `srcG` (antiga, sem máster) continua com a pequena.
+
+As peças de antes ganharam a grande a partir do máster, com
+`python nuvem/infra/imagens-grandes.py` (`--ver` só confere). O script pula a
+peça cujo máster não bate com a miniatura atual — girada ou cortada no editor
+depois de publicada. A miniatura antiga não é refeita: é imutável no cache.
+
+Do Pinterest vem a foto original; a de 736 px só se a original falhar.
+
 **Foto que mata o processo** (memória, tempo) não consegue gravar "erro". O
 trabalhador anota `iniciadoEm` ao começar, e a API mostra como travada a que
 passa de 15 min em "processando".

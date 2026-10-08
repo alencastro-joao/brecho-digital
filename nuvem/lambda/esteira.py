@@ -22,6 +22,7 @@ Tudo o que é da esteira mora no bucket de dados, que é privado:
     entrada/<id>.<ext>            a foto crua
     esteira/<id>.json             estado + palpite da IA + ficha do admin
     esteira/<id>.webp             a prévia (vira assets/cloths/<peça>.webp)
+    esteira/<id>-g.webp           a grande (vira assets/cloths/<peça>-g.webp)
     esteira/<id>.png              o recorte em alta (vira mestres/<peça>.png)
     esteira/pins/<pin>            marca de "esse pin já entrou" (ver Pinterest)
     esteira/config/pinterest.json as pastas do Pinterest vinculadas
@@ -322,7 +323,8 @@ def listar():
     itens, repetidas = [], []
     for f in _fichas():
         if f.get('estado') == 'repetida':
-            _apagar('esteira/%s.json' % f['id'], f.get('entrada'), f.get('previa'), f.get('mestre'))
+            _apagar('esteira/%s.json' % f['id'], f.get('entrada'), f.get('previa'),
+                    f.get('previaG'), f.get('mestre'))
             repetidas.append({'arquivo': f.get('arquivo') or '', 'de': f.get('repetidaDe') or {}})
             print('esteira %s repetida de %s: descartada' % (f['id'], (f.get('repetidaDe') or {}).get('id')))
             continue
@@ -384,6 +386,14 @@ def publicar(item_id, corpo):
         if dados.get(campo):
             item[campo] = dados[campo]
 
+    if dados.get('previaG'):
+        src_g = 'assets/cloths/%s-g.webp' % peca_id
+        _s3.copy_object(Bucket=SITE, Key=src_g,
+                        CopySource={'Bucket': DADOS, 'Key': dados['previaG']},
+                        ContentType='image/webp', MetadataDirective='REPLACE',
+                        CacheControl='public, max-age=31536000, immutable')
+        item.update(srcG=src_g, wG=int(dados.get('wG') or 0))
+
     if dados.get('mestre'):
         destino = 'mestres/%s.png' % peca_id
         _s3.copy_object(Bucket=DADOS, Key=destino,
@@ -393,11 +403,14 @@ def publicar(item_id, corpo):
     try:
         acervo.anexar(item)
     except Exception:
-        _s3.delete_object(Bucket=SITE, Key=src)  # sem peça no acervo, a imagem é órfã
+        # Sem peça no acervo, as imagens são órfãs.
+        for chave in (src, item.get('srcG')):
+            if chave:
+                _s3.delete_object(Bucket=SITE, Key=chave)
         raise
 
-    _apagar('esteira/%s.json' % item_id, dados.get('previa'), dados.get('mestre'),
-            dados.get('entrada'))
+    _apagar('esteira/%s.json' % item_id, dados.get('previa'), dados.get('previaG'),
+            dados.get('mestre'), dados.get('entrada'))
     print('esteira %s publicada como %s (%s)' % (item_id, peca_id, item['cat']))
     return {'item': item}
 
@@ -421,5 +434,5 @@ def refazer(item_id):
 def descartar(item_id):
     dados = _ler(_id(item_id))
     _apagar('esteira/%s.json' % dados['id'], dados.get('previa'),
-            dados.get('mestre'), dados.get('entrada'))
+            dados.get('previaG'), dados.get('mestre'), dados.get('entrada'))
     return {'ok': True}

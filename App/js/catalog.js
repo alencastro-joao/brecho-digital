@@ -92,6 +92,33 @@ export function nomeDaPeca(it) {
 }
 export const proporcao = (it) => (it.w && it.h ? it.w / it.h : 1);
 
+// A imagem da peça vem em dois tamanhos: `src` (até 512 px, a das miniaturas)
+// e `srcG` (até 1280 px). Peça antiga ou subida pelo navegador só tem a `src`.
+//
+// `largura` é a largura em px CSS em que a peça vai aparecer. Com ela, o
+// navegador recebe as duas e escolhe pela densidade da tela: um celular de
+// 3x pede a grande já numa miniatura de 200 px, um monitor comum fica com a
+// pequena. Sem ela (a peça que muda de tamanho na mão, a ficha aberta, a
+// exportação), vai a grande direto.
+export function imagemDaPeca(it, largura) {
+  if (!it?.srcG) return { src: it?.src };
+  if (!largura || !it.w || !it.wG) return { src: it.srcG };
+  return {
+    src: it.src,
+    srcset: `${it.src} ${it.w}w, ${it.srcG} ${it.wG}w`,
+    sizes: `${Math.max(1, Math.round(largura))}px`,
+  };
+}
+export const srcGrande = (it) => it?.srcG || it?.src;
+
+// O mesmo, numa <img> que já existe (a prévia que troca de peça).
+export function trocarImagem(img, it, largura) {
+  const { src, srcset, sizes } = imagemDaPeca(it, largura);
+  if (srcset) img.setAttribute('srcset', srcset); else img.removeAttribute('srcset');
+  if (sizes) img.setAttribute('sizes', sizes); else img.removeAttribute('sizes');
+  img.src = src;
+}
+
 // Uma <defs> global com um clipPath por peça, em coordenadas objectBoundingBox.
 function montarClipPaths() {
   document.getElementById('bd-clips')?.remove();

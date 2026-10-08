@@ -5,7 +5,7 @@
 // slots é persistida quando você arrasta.
 
 import { ADMIN, CATEGORIAS, RARIDADE, escalaGrade } from './config.js';
-import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
+import { item as pecaDoCatalogo, nomeDaPeca, proporcao, trocarImagem } from './catalog.js';
 import {
   agrupamento, categoriaDe, grupoDe, gruposDoInventario, seletorDeAgrupamento,
 } from './agrupamento.js';
@@ -256,7 +256,8 @@ function selecionar(peca) {
   const moldura = $('#preview-moldura');
   $('#placeholder').hidden = true;
   moldura.hidden = false;
-  img.src = cat.src;
+  // 300 px de altura é o teto da prévia (closet.css).
+  trocarImagem(img, cat, 300 * proporcao(cat));
 
   moldura.classList.remove('flutua');
   void moldura.offsetWidth;

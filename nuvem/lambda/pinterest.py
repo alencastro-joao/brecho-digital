@@ -160,9 +160,13 @@ def _ler_inteira(usuario, pasta):
             if not isinstance(p, dict) or p.get('type') != 'pin':
                 continue
             imagens = p.get('images') or {}
-            img = imagens.get('736x') or imagens.get('orig') or {}
+            # A original primeiro: a de 736 px já chega comprimida e, depois
+            # do recorte, a peça fica com uns 500 px — pouco para a tela.
+            img = imagens.get('orig') or imagens.get('736x') or {}
+            reserva = (imagens.get('736x') or {}).get('url')
             if img.get('url'):
                 pins.append({'pin': str(p['id']), 'imagem': img['url'],
+                             'reserva': reserva if reserva != img['url'] else None,
                              'titulo': (p.get('grid_title') or p.get('title') or '').strip()[:120]})
         marcador = resposta.get('bookmark')
         if not dados or not marcador or marcador == '-end-':
@@ -192,9 +196,13 @@ def _ler_rss(usuario, pasta):
         num = re.search(r'/pin/(\d+)', link)
         if not img or not num:
             continue
-        # O feed manda a miniatura de 236 px; a de 736 px tem a mesma chave.
-        imagem = re.sub(r'(i\.pinimg\.com/)[^/]+/', r'\g<1>736x/', img.group(1))
-        pins.append({'pin': num.group(1), 'imagem': imagem,
+        # O feed manda a miniatura de 236 px; a original e a de 736 px têm a
+        # mesma chave. A original pode ser PNG enquanto a miniatura é sempre
+        # JPG — aí o palpite erra, e a de 736 px fica de reserva.
+        def tamanho(pasta):
+            return re.sub(r'(i\.pinimg\.com/)[^/]+/', r'\g<1>%s/' % pasta, img.group(1))
+        pins.append({'pin': num.group(1), 'imagem': tamanho('originals'),
+                     'reserva': tamanho('736x'),
                      'titulo': (item.findtext('title') or '').strip()[:120]})
     return {'titulo': (canal.findtext('title') or pasta).strip(), 'pins': pins, 'completa': False}
 
@@ -202,13 +210,21 @@ def _ler_rss(usuario, pasta):
 def baixar_fotos(pins):
     """[(pin, bytes, tipo) | (pin, None, erro)] na ordem dos pins, em paralelo:
     a Lambda da API tem 30 s, e 25 fotos uma a uma não cabem."""
+    def baixar(url):
+        corpo, _, tipo = _baixar(url, MAX_FOTO)
+        tipo = tipo.split(';')[0].strip().lower()
+        if tipo not in ('image/jpeg', 'image/png', 'image/webp'):
+            raise ValueError('tipo %s' % (tipo or 'desconhecido'))
+        return corpo, tipo
+
     def uma(p):
         try:
-            corpo, _, tipo = _baixar(p['imagem'], MAX_FOTO)
-            tipo = tipo.split(';')[0].strip().lower()
-            if tipo not in ('image/jpeg', 'image/png', 'image/webp'):
-                raise ValueError('tipo %s' % (tipo or 'desconhecido'))
-            return p, corpo, tipo
+            return (p, *baixar(p['imagem']))
+        except Exception as e:                   # noqa: BLE001
+            if not p.get('reserva'):
+                return p, None, str(e)
+        try:
+            return (p, *baixar(p['reserva']))
         except Exception as e:                   # noqa: BLE001
             return p, None, str(e)
     with ThreadPoolExecutor(max_workers=8) as grupo:

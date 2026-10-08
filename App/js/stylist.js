@@ -7,7 +7,7 @@
 // z-index; dali a pessoa move, gira e redimensiona à vontade.
 
 import { CONFIG, escalaGrade, ancoraDaPeca } from './config.js';
-import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
+import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande } from './catalog.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
@@ -181,7 +181,8 @@ function renderCamadas() {
 
 function criarCamadaDOM(c) {
   const peca = pecaDoCatalogo(c.itemId);
-  const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), draggable: 'false' });
+  // No palco a peça cresce na mão: vai a grande desde o começo.
+  const img = el('img', { src: srcGrande(peca), alt: nomeDaPeca(peca), draggable: 'false' });
   aplicarContorno(img, peca);
 
   const no = el('div', {

@@ -14,7 +14,8 @@
 // na próxima abertura, que é o que o resgate significa.
 
 import { ADMIN, CONFIG, COLLAB, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno } from './catalog.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
+         imagemDaPeca, trocarImagem } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { falar, falarDe } from './npc.js';
@@ -305,7 +306,7 @@ export function montarVitrine() {
     const giro = (rnd() - 0.5) * 11;
 
     const img = el('img', {
-      src: peca.src, alt: nomeDaPeca(peca), loading: 'eager', decoding: 'async',
+      ...imagemDaPeca(peca, w), alt: nomeDaPeca(peca), loading: 'eager', decoding: 'async',
       style: { width: `${Math.round(w)}px`, height: `${Math.round(h)}px` },
     });
     const temContorno = aplicarContorno(img, peca);
@@ -447,7 +448,8 @@ function abrirFicha(peca, raridade, no) {
   const r = RARIDADE[raridade];
   pecaNaFicha = peca.id;
 
-  $('#ficha-img').src = peca.src;
+  // 116 px de altura é o teto da imagem na ficha (vitrine.css).
+  trocarImagem($('#ficha-img'), peca, 116 * proporcao(peca));
   $('#ficha-img').alt = nomeDaPeca(peca);
   $('#ficha-nome').textContent = nomeDaPeca(peca);
 

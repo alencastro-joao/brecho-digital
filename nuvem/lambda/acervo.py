@@ -6,6 +6,9 @@ e `DELETE /api/pecas/<id>`.
 Mesma lógica de `App/tools/servidor.py`, com o disco trocado pelo S3:
 
     assets/cloths/<id>.webp   bucket do site (público via CloudFront)
+    assets/cloths/<id>-g.webp a mesma em tamanho grande (`srcG` no acervo),
+                              para onde a peça aparece grande ou em tela de
+                              alta densidade; peça antiga pode não ter
     assets/acervo.json        bucket do site — a lista que o jogo lê
     mestres/<id>.png          bucket de dados (privado: é o arquivo de trabalho
                               do admin, não é para ninguém baixar)
@@ -110,13 +113,13 @@ def gravar_acervo(dados, etag):
 
 
 # --- Imagens --------------------------------------------------------------
-def salvar_imagem(item_id, data_url):
+def salvar_imagem(item_id, data_url, sufixo=''):
     cabeca, _, corpo = (data_url or '').partition(',')
     if not corpo or not cabeca.startswith('data:image/'):
         raise ValueError('imagem inválida')
     ext = 'webp' if 'webp' in cabeca else 'png'
     binario = base64.b64decode(corpo)
-    chave = 'assets/cloths/%s.%s' % (item_id, ext)
+    chave = 'assets/cloths/%s%s.%s' % (item_id, sufixo, ext)
     _s3.put_object(Bucket=BUCKET_SITE, Key=chave, Body=binario,
                    ContentType='image/' + ext,
                    CacheControl='public, max-age=31536000, immutable')
@@ -279,31 +282,48 @@ def editar_peca(item_id, corpo):
             ancora = corpo['ancora']
             item['ancora'] = {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')}
 
+        # A imagem sobe uma vez só; o que ela muda na ficha vale em toda
+        # tentativa, porque cada tentativa relê o acervo do zero.
         src = corpo.get('src') or ''
         if src.startswith('data:image/') and trocada is None:
-            antigo = item.get('src', '')
+            antigo, antigo_g = item.get('src', ''), item.get('srcG', '')
             novo, peso = salvar_imagem(item_id, src)
-            item['src'] = novo
-            item['w'] = int(corpo.get('w') or item.get('w') or 1)
-            item['h'] = int(corpo.get('h') or item.get('h') or 1)
-            item['path'] = contorno(novo)
+            imagem = {
+                'src': novo,
+                'w': int(corpo.get('w') or item.get('w') or 1),
+                'h': int(corpo.get('h') or item.get('h') or 1),
+                'path': contorno(novo),
+            }
             mestre = promover_mestre(corpo.get('mestre'), item_id)
             if mestre:
-                item['mestre'] = mestre
+                imagem['mestre'] = mestre
+            # A grande acompanha a pequena. Se a tela não mandou a grande
+            # (aba aberta antes dela existir), a antiga sai: ela mostraria a
+            # peça de antes de girar ou cortar.
+            novo_g = ''
+            if str(corpo.get('srcG') or '').startswith('data:image/'):
+                novo_g, _ = salvar_imagem(item_id, corpo['srcG'], '-g')
+                imagem.update(srcG=novo_g, wG=int(corpo.get('wG') or 0))
             # Troca de formato (png <-> webp) deixa o arquivo antigo órfão.
-            if antigo and antigo != novo:
-                try:
-                    _s3.delete_object(Bucket=BUCKET_SITE, Key=antigo)
-                except ClientError:
-                    pass
-            trocada = novo
-            print('imagem trocada: %s %.0f KB' % (item_id, peso / 1024))
+            for velho, atual in ((antigo, novo), (antigo_g, novo_g)):
+                if velho and velho != atual:
+                    try:
+                        _s3.delete_object(Bucket=BUCKET_SITE, Key=velho)
+                    except ClientError:
+                        pass
+            trocada = [c for c in (novo, novo_g, antigo_g) if c]
+            print('imagem trocada: %s %.0f KB%s' % (item_id, peso / 1024,
+                                                   ' (com a grande)' if novo_g else ''))
+        if trocada:
+            item.pop('srcG', None)
+            item.pop('wG', None)
+            item.update(imagem)
 
         item['editadoEm'] = _agora()
         if gravar_acervo(acervo, etag):
             # A imagem foi regravada com o mesmo nome: o cache tem a antiga.
             if trocada:
-                invalidar(['/' + trocada])
+                invalidar(['/' + c for c in dict.fromkeys(trocada)])
             print('peça editada: %s (%s)' % (item_id, item['cat']))
             return item
     raise RuntimeError('o acervo está sendo escrito por outra aba; tente de novo')
@@ -338,13 +358,14 @@ def apagar_peca(item_id):
 
     # Os arquivos só depois da lista: se algo falhar aqui, a peça já saiu do
     # jogo e sobra no máximo um arquivo órfão no bucket.
-    src = item.get('src') or ''
-    if src.startswith('assets/cloths/'):
+    imagens = [c for c in (item.get('src'), item.get('srcG'))
+               if (c or '').startswith('assets/cloths/')]
+    for chave in imagens:
         try:
-            _s3.delete_object(Bucket=BUCKET_SITE, Key=src)
+            _s3.delete_object(Bucket=BUCKET_SITE, Key=chave)
         except ClientError as e:
             print('imagem não apagada: %s' % e)
-        invalidar(['/' + src])
+    invalidar(['/' + c for c in imagens])
     mestre = item.get('mestre') or ''
     if mestre.startswith('mestres/') and BUCKET_DADOS:
         try:

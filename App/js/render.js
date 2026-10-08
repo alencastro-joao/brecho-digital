@@ -4,7 +4,7 @@
 // (Story 1080×1920 e Post 1080×1350), como no "gerador de assets para social".
 
 import { CONFIG, BOARD, ancoraDaPeca } from './config.js';
-import { item as pecaDoCatalogo, proporcao } from './catalog.js';
+import { item as pecaDoCatalogo, proporcao, srcGrande } from './catalog.js';
 import { avatarDataURL } from './avatar.js';
 import { alturaDe, posAssinatura, fonteCss } from './boardgeo.js';
 
@@ -76,7 +76,7 @@ export async function renderizarLook(camadas, opts = {}) {
     const peca = pecaDoCatalogo(c.itemId);
     if (!peca) continue;
     let img;
-    try { img = await carregarImagem(peca.src); } catch { continue; }
+    try { img = await carregarImagem(srcGrande(peca)); } catch { continue; }
 
     const larguraUnidades = ancoraDaPeca(peca).w * (c.escala ?? 1);
     const lw = larguraUnidades * escala;
@@ -181,7 +181,7 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
     const peca = pecaDoCatalogo(it.itemId);
     if (!peca) continue;
     let img;
-    try { img = await carregarImagem(peca.src); } catch { continue; }
+    try { img = await carregarImagem(srcGrande(peca)); } catch { continue; }
 
     const w = it.w * k;
     const h = w / proporcao(peca);
