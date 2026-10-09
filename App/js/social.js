@@ -431,17 +431,38 @@ export function cardDoPost(post) {
 // no tamanho do feed é feita aqui, uma vez por post, e fica só na memória. O
 // card abre com a miniatura e troca quando a grande fica pronta: a proporção é
 // a mesma, então nada pula no mural. Post do servidor já vem grande.
-const imagensGrandes = new Map();        // post.id → Promise<dataURL | null>
+//
+// O look é sempre desenhado no personagem de agora de quem postou: trocou o
+// cabelo, os posts antigos acompanham. Por isso a aparência entra na chave.
+// Post do servidor traz as camadas desde que elas passaram a subir junto; o
+// seu de antes disso usa o look salvo de origem, se ainda tem as mesmas peças.
+const imagensGrandes = new Map();        // post.id + aparência → Promise<dataURL | null>
+
+function camadasDoPost(post) {
+  if (post.camadas?.length) return post.camadas;
+  if (!sou(post.autor) || !post.lookId) return null;
+  const look = db.state.looks.find(l => l.id === post.lookId);
+  if (!look?.camadas?.length) return null;
+  const mesmas = (a, b) => a.length === b.length && a.every(id => b.includes(id));
+  const doLook = [...new Set(look.camadas.map(c => c.itemId))];
+  return mesmas(doLook, [...new Set(post.pecas || [])]) ? look.camadas : null;
+}
 
 function imagemGrande(post) {
-  if (!post.camadas?.length && !post.colagem?.itens?.length) return null;
-  if (!imagensGrandes.has(post.id)) {
-    imagensGrandes.set(post.id, (post.colagem
-      ? imagemDoFeedColagem(post.colagem)
-      : imagemDoFeed(post.camadas, aparenciaDe(post.autor))
-    ).catch(() => null));
+  if (post.colagem?.itens?.length) {
+    if (!imagensGrandes.has(post.id)) {
+      imagensGrandes.set(post.id, imagemDoFeedColagem(post.colagem).catch(() => null));
+    }
+    return imagensGrandes.get(post.id);
   }
-  return imagensGrandes.get(post.id);
+  const camadas = camadasDoPost(post);
+  if (!camadas) return null;
+  const aparencia = aparenciaDe(post.autor);
+  const chave = post.id + JSON.stringify(aparencia);
+  if (!imagensGrandes.has(chave)) {
+    imagensGrandes.set(chave, imagemDoFeed(camadas, aparencia).catch(() => null));
+  }
+  return imagensGrandes.get(chave);
 }
 
 function imagemDoPost(post) {
@@ -451,7 +472,14 @@ function imagemDoPost(post) {
     src: post.thumb, alt: post.nome, loading: 'lazy',
     width: 300, height: Math.round(300 * proporcaoDaImagem(post)),
   });
-  imagemGrande(post)?.then(url => { if (url) img.src = url; });
+  const grande = imagemGrande(post);
+  // O look redesenhado não mostra antes a imagem do dia: seria o personagem
+  // de antes piscando. Se o desenho falhar, ela volta.
+  if (grande && post.tipo !== 'board') img.style.visibility = 'hidden';
+  grande?.then(url => {
+    if (url) img.src = url;
+    img.style.visibility = '';
+  });
   return img;
 }
 

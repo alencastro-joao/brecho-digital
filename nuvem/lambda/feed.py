@@ -8,7 +8,7 @@ mais ninguém: o amigo abria o feed e não via nada, e vice-versa. Este módulo
 tira as publicações do save e põe num lugar que todo mundo lê.
 
     GET    /api/feed[?autor=<id>]              os posts, mais novos primeiro
-    POST   /api/feed                           publica { chave, tipo, nome, thumb, pecas, origem }
+    POST   /api/feed                           publica { chave, tipo, nome, thumb, pecas, origem, camadas }
     DELETE /api/feed/<id>                      o dono apaga
     POST   /api/feed/<id>/curtir               { curte }
     POST   /api/feed/<id>/comentarios          { texto }
@@ -20,6 +20,7 @@ O desenho, na mesma tabela das contas (nenhum índice novo):
                 thumb        caminho da miniatura no site (assets/posts/...)
                 pecas        lista dos ids de peça que aparecem no post
                 origem       { lookId } ou { boardId } — o editor de onde veio
+                camadas      JSON das camadas do look (vazio na colagem e nos antigos)
                 curtidas     conjunto (SS) de quem curtiu
                 comentarios  lista de { id, autor, texto, em }
 
@@ -44,6 +45,7 @@ O desenho, na mesma tabela das contas (nenhum índice novo):
 
 import base64
 import hashlib
+import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -109,6 +111,42 @@ def _origem(bruto, tipo):
     return {campo: valor} if isinstance(valor, str) and VALOR_OK.match(valor) else {}
 
 
+def _numero(valor, minimo, maximo, padrao=0):
+    try:
+        n = float(valor)
+    except (TypeError, ValueError):
+        return padrao
+    if n != n:                      # NaN
+        return padrao
+    return round(min(max(n, minimo), maximo), 2)
+
+
+def _camadas(bruto, tipo):
+    """Como o look foi montado: cada peça com posição, escala, giro e espelho.
+    É o que deixa a tela redesenhar o post com o personagem de agora de quem
+    postou, em vez de ficar com a imagem do dia. Guardado como texto (JSON):
+    o DynamoDB não aceita float, e ninguém consulta dentro disso."""
+    if tipo != 'look' or not isinstance(bruto, list):
+        return []
+    limpas = []
+    for c in bruto[:PECAS_MAX]:
+        if not isinstance(c, dict):
+            continue
+        item_id = c.get('itemId')
+        if not isinstance(item_id, str) or not VALOR_OK.match(item_id):
+            continue
+        limpas.append({
+            'itemId': item_id,
+            'x': _numero(c.get('x'), -2000, 3000),
+            'y': _numero(c.get('y'), -2000, 3000),
+            'z': int(_numero(c.get('z'), -1000, 1000)),
+            'escala': _numero(c.get('escala'), 0.05, 10, 1),
+            'rot': _numero(c.get('rot'), -360, 360),
+            'flip': bool(c.get('flip')),
+        })
+    return limpas
+
+
 def _imagem(data_url):
     """Data URL → (bytes, extensão, content-type). Confere os bytes mágicos:
     o cabeçalho do data URL é só o que o navegador diz que é."""
@@ -151,6 +189,7 @@ def _publico(item, eu_id):
         'thumb': item.get('thumb') or '',
         'criadoEm': item['criado_em'],
         'pecas': list(item.get('pecas') or []),
+        'camadas': json.loads(item.get('camadas') or '[]'),
         'curtidas': len(curtidas),
         'curtido': eu_id in curtidas,
         'comentarios': [dict(c) for c in item.get('comentarios') or []],
@@ -244,6 +283,7 @@ def publicar(eu_id, corpo):
         'thumb': caminho,
         'pecas': _pecas(corpo.get('pecas')),
         'origem': _origem(corpo.get('origem'), tipo),
+        'camadas': json.dumps(_camadas(corpo.get('camadas'), tipo), separators=(',', ':')),
         'comentarios': [],
     }
     try:

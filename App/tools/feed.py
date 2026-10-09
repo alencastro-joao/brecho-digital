@@ -58,7 +58,8 @@ def preparar():
               criado_em TEXT NOT NULL,
               thumb     TEXT NOT NULL,
               pecas     TEXT NOT NULL DEFAULT '[]',
-              origem    TEXT NOT NULL DEFAULT '{}'
+              origem    TEXT NOT NULL DEFAULT '{}',
+              camadas   TEXT NOT NULL DEFAULT '[]'
             );
             CREATE INDEX IF NOT EXISTS idx_posts_criado ON posts(criado_em);
             CREATE TABLE IF NOT EXISTS curtidas (
@@ -75,6 +76,11 @@ def preparar():
             );
             CREATE INDEX IF NOT EXISTS idx_comentarios_post ON comentarios(post, em);
         """)
+        # Banco de antes das camadas: a coluna entra vazia, e o post antigo
+        # continua com a imagem do dia.
+        colunas = {r[1] for r in con.execute('PRAGMA table_info(posts)')}
+        if 'camadas' not in colunas:
+            con.execute("ALTER TABLE posts ADD COLUMN camadas TEXT NOT NULL DEFAULT '[]'")
 
 
 # --- Validação ------------------------------------------------------------
@@ -100,6 +106,42 @@ def _origem(bruto, tipo):
     campo = 'boardId' if tipo == 'board' else 'lookId'
     valor = bruto.get(campo)
     return {campo: valor} if isinstance(valor, str) and VALOR_OK.match(valor) else {}
+
+
+def _numero(valor, minimo, maximo, padrao=0):
+    try:
+        n = float(valor)
+    except (TypeError, ValueError):
+        return padrao
+    if n != n:                      # NaN
+        return padrao
+    return round(min(max(n, minimo), maximo), 2)
+
+
+def _camadas(bruto, tipo):
+    """Como o look foi montado: cada peça com posição, escala, giro e espelho.
+    É o que deixa a tela redesenhar o post com o personagem de agora de quem
+    postou, em vez de ficar com a imagem do dia. Guardado como texto (JSON):
+    como pecas e origem."""
+    if tipo != 'look' or not isinstance(bruto, list):
+        return []
+    limpas = []
+    for c in bruto[:PECAS_MAX]:
+        if not isinstance(c, dict):
+            continue
+        item_id = c.get('itemId')
+        if not isinstance(item_id, str) or not VALOR_OK.match(item_id):
+            continue
+        limpas.append({
+            'itemId': item_id,
+            'x': _numero(c.get('x'), -2000, 3000),
+            'y': _numero(c.get('y'), -2000, 3000),
+            'z': int(_numero(c.get('z'), -1000, 1000)),
+            'escala': _numero(c.get('escala'), 0.05, 10, 1),
+            'rot': _numero(c.get('rot'), -360, 360),
+            'flip': bool(c.get('flip')),
+        })
+    return limpas
 
 
 def _imagem(data_url):
@@ -143,6 +185,7 @@ def _publico(con, linha, eu_id):
         'thumb': linha['thumb'],
         'criadoEm': linha['criado_em'],
         'pecas': json.loads(linha['pecas'] or '[]'),
+        'camadas': json.loads(linha['camadas'] or '[]'),
         'curtidas': len(curtidas),
         'curtido': eu_id in curtidas,
         'comentarios': comentarios,
@@ -219,12 +262,13 @@ def publicar(eu_id, corpo):
 
     with banco() as con:
         con.execute(
-            'INSERT OR IGNORE INTO posts (id, autor, tipo, nome, criado_em, thumb, pecas, origem)'
-            ' VALUES (?,?,?,?,?,?,?,?)',
+            'INSERT OR IGNORE INTO posts (id, autor, tipo, nome, criado_em, thumb, pecas, origem, camadas)'
+            ' VALUES (?,?,?,?,?,?,?,?,?)',
             (post_id, eu_id, tipo, nome, _quando(corpo.get('criadoEm')),
              'assets/posts/' + nome_arquivo,
              json.dumps(_pecas(corpo.get('pecas'))),
-             json.dumps(_origem(corpo.get('origem'), tipo))))
+             json.dumps(_origem(corpo.get('origem'), tipo)),
+             json.dumps(_camadas(corpo.get('camadas'), tipo), separators=(',', ':'))))
         return _com_autores(con, [_ler(con, post_id)], eu_id)
 
 

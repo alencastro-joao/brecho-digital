@@ -78,10 +78,10 @@ export function carregarFeed() {
 // ------------------------------- Publicar ---------------------------------
 // A chave é o look ou a colagem de origem: o servidor monta o id do post a
 // partir dela, então publicar de novo o mesmo look devolve o mesmo post.
-export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, origem, criadoEm }) {
+export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }) {
   const dados = await chamar('/api/feed', {
     method: 'POST',
-    body: JSON.stringify({ chave, tipo, nome, thumb, pecas, origem, criadoEm }),
+    body: JSON.stringify({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }),
   });
   return trocar(receber(dados)[0]);
 }
@@ -138,6 +138,9 @@ export async function pacoteDoLook(look, criadoEm) {
     nome: look.nome,
     thumb: look.camadas?.length ? await imagemDoFeed(look.camadas) : look.thumb,
     pecas: (look.camadas || []).map(c => c.itemId),
+    // Com as camadas, o feed redesenha o post no personagem de agora (social.js).
+    camadas: (look.camadas || []).map(({ itemId, x, y, z, escala, rot, flip }) =>
+      ({ itemId, x, y, z, escala, rot, flip })),
     origem: { lookId: look.id },
     criadoEm,
   };
