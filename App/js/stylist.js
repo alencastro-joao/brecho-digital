@@ -322,6 +322,7 @@ function ligarFerramentas() {
     desenharAvatar();
   });
   $('#btn-sortear').addEventListener('click', gerarLook);
+  ligarMenusDaBarra();
   $('#btn-salvar').addEventListener('click', () => salvarLook());
   $('#btn-publicar').addEventListener('click', () => publicarLook());
   $$('[data-export]').forEach(b => b.addEventListener('click', async () => {
@@ -331,6 +332,28 @@ function ligarFerramentas() {
     b.disabled = false;
     toast('PNG gerado. Confere os downloads.');
   }));
+}
+
+// Os menus da barra do look (Exportar e ⋯): um aberto por vez, e qualquer
+// toque fora, num item ou o Esc fecha.
+function ligarMenusDaBarra() {
+  const fechar = () => $$('#look-barra [data-menu]').forEach((b) => {
+    b.setAttribute('aria-expanded', 'false');
+    $('#' + b.dataset.menu).hidden = true;
+  });
+  $$('#look-barra [data-menu]').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = $('#' + b.dataset.menu);
+    const abrir = menu.hidden;
+    fechar();
+    menu.hidden = !abrir;
+    b.setAttribute('aria-expanded', String(abrir));
+  }));
+  $$('#look-barra .lb-menu button').forEach(i => i.addEventListener('click', fechar));
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#look-barra .lb-menu')) fechar();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fechar(); });
 }
 
 function limparPalco() {

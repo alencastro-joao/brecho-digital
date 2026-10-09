@@ -347,3 +347,62 @@
 @media (max-width: 900px) {
   .stylist-tools .tool-block > #btn-ver-todos { grid-column: 1 / -1; }
 }
+
+/* ---------------------------- Barra do look ----------------------------- */
+/* Gerar, salvar, publicar, exportar e o resto (⋯), numa linha embaixo do
+   palco. Antes eram dois blocos de botões na coluna da direita, que no
+   celular viravam uma tela inteira. */
+.look-barra {
+  display: flex; align-items: stretch; gap: 8px;
+  width: min(100%, 520px); justify-content: center;
+}
+.lb-grupo { position: relative; display: flex; }
+.lb-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 42px; padding: 0 16px;
+  border: 1px solid var(--linha); border-radius: 999px; background: #fff;
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--tinta);
+  white-space: nowrap;
+  transition: border-color .15s, transform .15s, background .15s;
+}
+.lb-btn:hover { border-color: var(--tinta); transform: translateY(-1px); }
+.lb-btn .lb-ico { font-size: 14px; line-height: 1; }
+.lb-btn.escuro { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.lb-btn.escuro:hover { background: #000; }
+.lb-btn.destaque { background: #fbf6e2; border-color: #e7dcb2; }
+.lb-btn.so-icone { width: 42px; padding: 0; font-size: 18px; }
+.lb-btn[aria-expanded="true"] { border-color: var(--tinta); background: #f6f1e8; }
+.lb-btn:disabled { opacity: .5; }
+
+/* Abre para cima: no PC a barra fica no pé da tela. */
+.lb-menu {
+  position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 50;
+  min-width: 200px; padding: 6px;
+  background: #fff; border: 1px solid var(--linha); border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .16);
+  display: flex; flex-direction: column;
+}
+.lb-menu[hidden] { display: none; }
+.lb-menu-titulo {
+  padding: 6px 12px 4px; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-suave);
+}
+.lb-menu button {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  border: 0; background: none; border-radius: 9px;
+  padding: 10px 12px; text-align: left; font: inherit; font-size: 13px; color: var(--tinta);
+}
+.lb-menu button small { color: var(--tinta-suave); font-size: 11px; }
+.lb-menu button:hover { background: #f6f1e8; }
+.lb-menu button:disabled { opacity: .5; }
+.lb-menu #btn-guia.ativo::after { content: '✓'; font-weight: 800; }
+
+@media (max-width: 900px) {
+  /* Cinco botões numa linha de celular: os três de texto dividem o espaço,
+     Exportar vira só o ícone. */
+  .look-barra { width: 100%; gap: 6px; }
+  .look-barra > .lb-btn { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 12.5px; gap: 4px; }
+  .look-barra .lb-grupo .lb-btn { width: 42px; padding: 0; }
+  .look-barra .lb-grupo .lb-txt { display: none; }
+  .lb-menu button { padding: 12px; font-size: 14px; }
+}

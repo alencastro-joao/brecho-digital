@@ -223,6 +223,34 @@
         <input id="outfit-nome" type="text" placeholder="Nome do look" maxlength="40">
         <span class="stage-sig">ASSINATURA</span>
       </div>
+      <!-- O que se faz com o look, numa barra só embaixo do palco: as ações
+           frequentes à vista, exportar e o resto em menus (js/stylist.js). -->
+      <div class="look-barra" id="look-barra">
+        <button class="lb-btn destaque" id="btn-sortear" title="Monta um look com as suas peças">
+          <span class="lb-ico">🎲</span><span class="lb-txt">Gerar</span></button>
+        <button class="lb-btn escuro" id="btn-salvar" title="Salvar look">
+          <span class="lb-ico">✓</span><span class="lb-txt">Salvar</span></button>
+        <button class="lb-btn" id="btn-publicar" title="Publicar no feed">
+          <span class="lb-ico">↗</span><span class="lb-txt">Publicar</span></button>
+        <div class="lb-grupo">
+          <button class="lb-btn" data-menu="lb-exportar" title="Exportar PNG para o Instagram"
+                  aria-haspopup="menu" aria-expanded="false">
+            <span class="lb-ico">⬇</span><span class="lb-txt">Exportar</span></button>
+          <div class="lb-menu" id="lb-exportar" role="menu" hidden>
+            <p class="lb-menu-titulo">PNG para o Instagram</p>
+            <button role="menuitem" data-export="story">Story <small>1080×1920</small></button>
+            <button role="menuitem" data-export="post">Post <small>1080×1350</small></button>
+          </div>
+        </div>
+        <div class="lb-grupo">
+          <button class="lb-btn so-icone" data-menu="lb-mais" title="Mais opções"
+                  aria-haspopup="menu" aria-expanded="false"><span class="lb-ico">⋯</span></button>
+          <div class="lb-menu" id="lb-mais" role="menu" hidden>
+            <button role="menuitem" id="btn-limpar">Limpar palco</button>
+            <button role="menuitem" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <aside class="stylist-tools">
@@ -243,23 +271,6 @@
           <input type="range" id="sld-rot" min="-180" max="180" value="0">
         </label>
         <p class="tool-empty" id="tool-empty">Nenhuma peça selecionada.</p>
-      </div>
-
-      <div class="tool-block">
-        <p class="tool-label">Look</p>
-        <button class="btn-ghost destaque" id="btn-sortear"
-                title="Monta um look com as suas peças">🎲 Gerar look</button>
-        <button class="btn-dark" id="btn-salvar">Salvar look</button>
-        <button class="btn-ghost" id="btn-publicar">Publicar no feed</button>
-        <button class="btn-ghost" id="btn-limpar">Limpar palco</button>
-        <button class="btn-ghost" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
-      </div>
-
-      <div class="tool-block">
-        <p class="tool-label">Exportar</p>
-        <button class="btn-ghost" data-export="story">Story 1080×1920</button>
-        <button class="btn-ghost" data-export="post">Post 1080×1350</button>
-        <p class="tool-hint">Gera o PNG pronto para o Instagram.</p>
       </div>
 
       <div class="tool-block">
