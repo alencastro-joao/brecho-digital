@@ -1,0 +1,26 @@
+/* Puxar para atualizar (js/puxar.js): a bolinha que desce do topo. */
+
+.puxar {
+  position: fixed; top: 0; left: 50%; z-index: 9000;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; color: #555;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+  transform: translate(-50%, -50px); opacity: 0;
+  pointer-events: none;
+}
+.puxar.voltando { transition: transform .2s ease, opacity .2s ease; }
+.puxar.pronta, .puxar.girando { color: #111; }
+
+.puxar-seta { font-size: 20px; line-height: 1; transition: transform .1s linear; }
+.puxar.girando .puxar-seta {
+  width: 18px; height: 18px; font-size: 0;
+  border: 2.5px solid #ddd; border-top-color: #111; border-radius: 50%;
+  animation: puxar-gira .7s linear infinite;
+}
+@keyframes puxar-gira { to { transform: rotate(360deg); } }
+
+/* Sem isso o navegador também tenta o puxão nativo onde ele existe. */
+@media (max-width: 900px) {
+  html, body { overscroll-behavior-y: contain; }
+}
