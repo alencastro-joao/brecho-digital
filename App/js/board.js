@@ -962,6 +962,7 @@ function ligarTeclado() {
       e.preventDefault();
       return e.shiftKey ? refazer() : desfazer();
     }
+    if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); return refazer(); }
     if (ctrl && e.key.toLowerCase() === 'd') { e.preventDefault(); return duplicarSelecionados(); }
     if (ctrl && e.key.toLowerCase() === 'a') {
       e.preventDefault();

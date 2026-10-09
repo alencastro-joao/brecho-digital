@@ -215,6 +215,12 @@
                 title="Ver, editar, renomear e favoritar os seus looks">
           ▦ Meus stylists <small id="meus-qtd"></small>
         </button>
+        <div class="st-historico">
+          <button type="button" class="st-hist-btn" id="st-undo" title="Desfazer (Ctrl+Z)"
+                  aria-label="Desfazer" disabled>↶</button>
+          <button type="button" class="st-hist-btn" id="st-redo" title="Refazer (Ctrl+Y)"
+                  aria-label="Refazer" disabled>↷</button>
+        </div>
         <div class="stage" id="stage">
           <div class="stage-avatar" id="stage-avatar"></div>
           <div class="stage-layers" id="stage-layers"></div>
@@ -249,6 +255,8 @@
           <div class="lb-menu" id="lb-mais" role="menu" hidden>
             <button role="menuitem" id="btn-limpar">Limpar palco</button>
             <button role="menuitem" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
+            <button role="menuitem" id="btn-apagar-look" class="perigo" disabled
+                    title="Apaga dos seus stylists o look aberto no palco">Apagar look salvo</button>
           </div>
         </div>
       </div>
@@ -324,7 +332,7 @@
       <div class="board-bar">
         <div class="bar-grupo">
           <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)">↶</button>
-          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Shift+Z)">↷</button>
+          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Y)">↷</button>
         </div>
         <div class="bar-grupo">
           <button class="bar-btn largo" id="bd-add-texto" title="Soltar uma etiqueta de texto">+ texto</button>

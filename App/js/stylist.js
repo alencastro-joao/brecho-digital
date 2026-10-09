@@ -27,6 +27,9 @@ let lookAtualId = null;
 let catPaleta = 'todas';   // o grupo aberto; a paleta abre mostrando o guarda-roupa inteiro
 let guiaLigado = false;
 let uidSeq = 1;
+// Desfazer/refazer: fotos do palco antes de cada mudança. Abrir outro look
+// zera as duas pilhas, como na Colagem.
+let historico = [], futuro = [];
 
 const stage = () => $('#stage');
 const unidades = (rect, px, eixo) =>
@@ -46,12 +49,24 @@ export function montarStylist() {
     selecionar(null);
   });
 
+  // Ctrl+Z desfaz; Ctrl+Y ou Ctrl+Shift+Z refaz.
+  document.addEventListener('keydown', (e) => {
+    if (document.body.dataset.view !== 'stylist' || !(e.ctrlKey || e.metaKey)) return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+    if (!$('#modal-meus')?.hidden) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z') { e.preventDefault(); e.shiftKey ? refazer() : desfazer(); }
+    else if (k === 'y') { e.preventDefault(); refazer(); }
+  });
+
   document.addEventListener('keydown', (e) => {
     if (document.body.dataset.view !== 'stylist' || !selecionado) return;
+    if (e.ctrlKey || e.metaKey) return;
     if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
     const c = camadas.find(c => c.uid === selecionado);
     if (!c) return;
     const passo = e.shiftKey ? 12 : 3;
+    if (e.key.startsWith('Arrow')) marcarJunto('setas');
     if (e.key === 'ArrowLeft')  { c.x -= passo; e.preventDefault(); }
     else if (e.key === 'ArrowRight') { c.x += passo; e.preventDefault(); }
     else if (e.key === 'ArrowUp')    { c.y -= passo; e.preventDefault(); }
@@ -134,6 +149,62 @@ function montarPaleta() {
   }, { categoriaAberta: catPaleta !== 'todas' });
 }
 
+// --- Desfazer / refazer ---------------------------------------------------
+const foto = () => JSON.stringify(camadas);
+
+function marcar() {
+  marcaAberta = null;
+  historico.push(foto());
+  if (historico.length > 60) historico.shift();
+  futuro.length = 0;
+  atualizarHistorico();
+}
+
+// Um gesto contínuo (setas seguidas, rodinha do mouse, arrastar um slider)
+// vira um passo só no histórico: marca na primeira vez e deixa o resto
+// passar até o gesto parar.
+let marcaAberta = null, marcaTimer = 0;
+function marcarJunto(tipo) {
+  clearTimeout(marcaTimer);
+  if (marcaAberta !== tipo) { marcar(); marcaAberta = tipo; }
+  marcaTimer = setTimeout(() => { marcaAberta = null; }, 700);
+}
+
+function restaurar(json) {
+  camadas = JSON.parse(json);
+  if (!camadas.some(c => c.uid === selecionado)) selecionado = null;
+  palcoSorteado = false;
+  renderCamadas();
+  montarPaleta();
+}
+
+function desfazer() {
+  if (!historico.length) return;
+  marcaAberta = null;
+  futuro.push(foto());
+  restaurar(historico.pop());
+  atualizarHistorico();
+}
+
+function refazer() {
+  if (!futuro.length) return;
+  marcaAberta = null;
+  historico.push(foto());
+  restaurar(futuro.pop());
+  atualizarHistorico();
+}
+
+function zerarHistorico() {
+  historico = []; futuro = []; marcaAberta = null;
+  atualizarHistorico();
+}
+
+function atualizarHistorico() {
+  const d = $('#st-undo'), r = $('#st-redo');
+  if (d) d.disabled = !historico.length;
+  if (r) r.disabled = !futuro.length;
+}
+
 // --- Camadas --------------------------------------------------------------
 // Cada categoria é um lugar no corpo, não uma pilha: o palco tem uma peça de
 // cada. Escolher outra calça troca a que está lá; clicar de novo na mesma peça
@@ -141,6 +212,7 @@ function montarPaleta() {
 export function vestirPeca(itemId) {
   const peca = pecaDoCatalogo(itemId);
   if (!peca) return;
+  marcar();
   palcoSorteado = false;
 
   if (camadas.some(c => c.itemId === itemId)) {
@@ -199,6 +271,7 @@ function criarCamadaDOM(c) {
   no.addEventListener('wheel', (e) => {
     if (c.uid !== selecionado) return;
     e.preventDefault();
+    marcarJunto('roda');
     c.escala = clamp(c.escala * (e.deltaY < 0 ? 1.06 : 0.94), 0.2, 2.2);
     posicionar(c);
     atualizarFerramentas();
@@ -239,8 +312,10 @@ function iniciarManipulacao(e, c, no) {
 
   no.setPointerCapture(e.pointerId);
   no.classList.add('manipulando');
+  let mexeu = false;   // só um clique para selecionar não entra no histórico
 
   const mover = (ev) => {
+    if (!mexeu) { marcar(); mexeu = true; }
     palcoSorteado = false;
     if (alca === 'esc') {
       const raio = Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y);
@@ -277,6 +352,7 @@ function selecionar(uid) {
 }
 
 function remover(uid) {
+  marcar();
   camadas = camadas.filter(c => c.uid !== uid);
   if (selecionado === uid) selecionado = null;
   renderCamadas();
@@ -288,8 +364,10 @@ function ligarFerramentas() {
   $$('#layer-tools .tool-btn').forEach(btn => btn.addEventListener('click', () => {
     const c = camadas.find(c => c.uid === selecionado);
     if (!c) return;
-    palcoSorteado = false;
     const act = btn.dataset.act;
+    if (act === 'del') return remover(c.uid);
+    marcar();
+    palcoSorteado = false;
     if (act === 'up')   c.z = Math.min(999, c.z + 1);
     if (act === 'down') c.z = Math.max(1, c.z - 1);
     if (act === 'flip') c.flip = !c.flip;
@@ -297,7 +375,6 @@ function ligarFerramentas() {
       const a = ancoraDaPeca(pecaDoCatalogo(c.itemId));
       Object.assign(c, { x: a.x, y: a.y, escala: 1, rot: 0, flip: false, z: a.z });
     }
-    if (act === 'del') return remover(c.uid);
     posicionar(c);
     atualizarFerramentas();
   }));
@@ -305,17 +382,27 @@ function ligarFerramentas() {
   $('#sld-escala').addEventListener('input', (e) => {
     const c = camadas.find(c => c.uid === selecionado);
     if (!c) return;
+    marcarJunto('escala');
     c.escala = Number(e.target.value) / 100;
     posicionar(c);
   });
   $('#sld-rot').addEventListener('input', (e) => {
     const c = camadas.find(c => c.uid === selecionado);
     if (!c) return;
+    marcarJunto('rot');
     c.rot = Number(e.target.value);
     posicionar(c);
   });
 
-  $('#btn-limpar').addEventListener('click', limparPalco);
+  $('#btn-limpar').addEventListener('click', () => {
+    if (camadas.length) marcar();
+    limparPalco({ manterHistorico: true });
+  });
+  $('#st-undo').addEventListener('click', desfazer);
+  $('#st-redo').addEventListener('click', refazer);
+  $('#btn-apagar-look').addEventListener('click', () => {
+    if (lookAtualId) apagarLook(lookAtualId);
+  });
   $('#btn-guia').addEventListener('click', (e) => {
     guiaLigado = !guiaLigado;
     e.currentTarget.classList.toggle('ativo', guiaLigado);
@@ -356,9 +443,10 @@ function ligarMenusDaBarra() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fechar(); });
 }
 
-function limparPalco() {
+function limparPalco({ manterHistorico = false } = {}) {
   camadas = []; selecionado = null; lookAtualId = null; palcoSorteado = false;
   $('#outfit-nome').value = '';
+  if (!manterHistorico) zerarHistorico();
   renderCamadas();
   montarPaleta();
   renderSalvos();
@@ -390,6 +478,7 @@ export function gerarLook() {
     return;
   }
 
+  if (camadas.length) marcar();
   const sorteadas = camadasParaAvatar(sortearConjunto(acervo));
   camadas = sorteadas.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
@@ -466,6 +555,9 @@ async function publicarLook() {
 // se estiver aberto.
 function renderSalvos() {
   const total = db.state.looks.length;
+  // "Apagar look salvo" no ⋯ só vale com um look salvo aberto no palco.
+  const apagar = $('#btn-apagar-look');
+  if (apagar) apagar.disabled = !db.state.looks.some(l => l.id === lookAtualId);
   const qtd = $('#meus-qtd');
   if (qtd) qtd.textContent = total ? String(total) : '';
   if (!$('#modal-meus')?.hidden) renderMeus();
@@ -478,6 +570,7 @@ export function abrirLook(id) {
   camadas = look.camadas.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
   $('#outfit-nome').value = look.nome;
+  zerarHistorico();
   renderCamadas();
   montarPaleta();
   renderSalvos();
@@ -664,6 +757,11 @@ function cartaoDoLook(l) {
       el('div', { class: 'ms-linha' },
         nome,
         el('button', {
+          type: 'button', class: 'ms-apagar', title: `Apagar "${l.nome}"`,
+          'aria-label': `Apagar "${l.nome}"`,
+          onclick: () => apagarLook(l.id),
+        }, '🗑'),
+        el('button', {
           type: 'button', class: 'ms-mais', title: 'Mais opções',
           'aria-haspopup': 'menu', 'aria-expanded': menu ? 'true' : 'false',
           onclick: () => { msMenuAberto = msMenuAberto === l.id ? null : l.id; renderMeus(); },
@@ -723,13 +821,13 @@ function apagarLook(id) {
   msMenuAberto = null;
   const aviso = `Excluir "${look.nome}"? Não dá para desfazer.` +
     (look.publicado ? '\nO post que já está no feed continua lá.' : '');
-  if (!confirm(aviso)) { renderMeus(); return; }
+  if (!confirm(aviso)) { if (!$('#modal-meus').hidden) renderMeus(); return; }
   db.state.looks.splice(db.state.looks.indexOf(look), 1);
   // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.
   if (id === lookAtualId) lookAtualId = null;
   db.salvar();
   renderSalvos();
-  renderMeus();
+  if (!$('#modal-meus').hidden) renderMeus();
   toast(`"${look.nome}" excluído.`);
 }
 
