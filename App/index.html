@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/vestiario.css">
 <link rel="stylesheet" href="css/auth.css">
 <link rel="stylesheet" href="css/perfil.css">
+<link rel="stylesheet" href="css/avisos.css">
 <link rel="stylesheet" href="css/mobile.css">
 <link rel="stylesheet" href="css/puxar.css">
 </head>
@@ -210,6 +211,10 @@
 
     <div class="stylist-stage-area">
       <div class="stage-frame">
+        <button type="button" class="btn-meus" id="btn-meus-stylists"
+                title="Ver, editar, renomear e favoritar os seus looks">
+          ▦ Meus stylists <small id="meus-qtd"></small>
+        </button>
         <div class="stage" id="stage">
           <div class="stage-avatar" id="stage-avatar"></div>
           <div class="stage-layers" id="stage-layers"></div>
@@ -218,6 +223,34 @@
       <div class="stage-caption">
         <input id="outfit-nome" type="text" placeholder="Nome do look" maxlength="40">
         <span class="stage-sig">ASSINATURA</span>
+      </div>
+      <!-- O que se faz com o look, numa barra só embaixo do palco: as ações
+           frequentes à vista, exportar e o resto em menus (js/stylist.js). -->
+      <div class="look-barra" id="look-barra">
+        <button class="lb-btn destaque" id="btn-sortear" title="Monta um look com as suas peças">
+          <span class="lb-ico">🎲</span><span class="lb-txt">Gerar</span></button>
+        <button class="lb-btn escuro" id="btn-salvar" title="Salvar look">
+          <span class="lb-ico">✓</span><span class="lb-txt">Salvar</span></button>
+        <button class="lb-btn" id="btn-publicar" title="Publicar no feed">
+          <span class="lb-ico">↗</span><span class="lb-txt">Publicar</span></button>
+        <div class="lb-grupo">
+          <button class="lb-btn" data-menu="lb-exportar" title="Exportar PNG para o Instagram"
+                  aria-haspopup="menu" aria-expanded="false">
+            <span class="lb-ico">⬇</span><span class="lb-txt">Exportar</span></button>
+          <div class="lb-menu" id="lb-exportar" role="menu" hidden>
+            <p class="lb-menu-titulo">PNG para o Instagram</p>
+            <button role="menuitem" data-export="story">Story <small>1080×1920</small></button>
+            <button role="menuitem" data-export="post">Post <small>1080×1350</small></button>
+          </div>
+        </div>
+        <div class="lb-grupo">
+          <button class="lb-btn so-icone" data-menu="lb-mais" title="Mais opções"
+                  aria-haspopup="menu" aria-expanded="false"><span class="lb-ico">⋯</span></button>
+          <div class="lb-menu" id="lb-mais" role="menu" hidden>
+            <button role="menuitem" id="btn-limpar">Limpar palco</button>
+            <button role="menuitem" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -240,30 +273,36 @@
         </label>
         <p class="tool-empty" id="tool-empty">Nenhuma peça selecionada.</p>
       </div>
-
-      <div class="tool-block">
-        <p class="tool-label">Look</p>
-        <button class="btn-ghost destaque" id="btn-sortear"
-                title="Monta um look com as suas peças">🎲 Gerar look</button>
-        <button class="btn-dark" id="btn-salvar">Salvar look</button>
-        <button class="btn-ghost" id="btn-publicar">Publicar no feed</button>
-        <button class="btn-ghost" id="btn-limpar">Limpar palco</button>
-        <button class="btn-ghost" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
-      </div>
-
-      <div class="tool-block">
-        <p class="tool-label">Exportar</p>
-        <button class="btn-ghost" data-export="story">Story 1080×1920</button>
-        <button class="btn-ghost" data-export="post">Post 1080×1350</button>
-        <p class="tool-hint">Gera o PNG pronto para o Instagram.</p>
-      </div>
-
-      <div class="tool-block">
-        <p class="tool-label">Meus looks</p>
-        <div class="saved-list" id="saved-list"></div>
-      </div>
     </aside>
   </section>
+
+  <!-- Meus stylists: todos os looks salvos, para abrir, renomear, favoritar,
+       duplicar e apagar (js/stylist.js). No celular ocupa a tela inteira. -->
+  <div class="modal" id="modal-meus" hidden>
+    <div class="modal-caixa ms-caixa" role="dialog" aria-modal="true" aria-labelledby="ms-titulo">
+      <header class="modal-topo">
+        <div class="ms-titulos">
+          <h2 id="ms-titulo">Meus stylists</h2>
+          <p class="ms-sub" id="ms-sub"></p>
+        </div>
+        <button class="modal-x" id="ms-fechar" title="Fechar">✕</button>
+      </header>
+      <div class="ms-barra">
+        <input type="search" id="ms-busca" placeholder="Buscar pelo nome" maxlength="40">
+        <div class="ms-filtros" id="ms-filtros"></div>
+        <select id="ms-ordem" title="Ordem">
+          <option value="recentes">Recentes</option>
+          <option value="antigos">Antigos</option>
+          <option value="nome">Nome A–Z</option>
+        </select>
+      </div>
+      <div class="ms-grade" id="ms-grade"></div>
+      <footer class="modal-rodape">
+        <span class="mp-aviso">★ escolhe até 3 looks para aparecer no seu perfil.</span>
+        <button class="btn-dark" id="ms-novo">+ Novo look</button>
+      </footer>
+    </div>
+  </div>
 
   <!-- ====================== COLAGEM (BOARD) ====================== -->
   <section class="view view-board" data-view="board" hidden>
@@ -818,6 +857,24 @@
       <div class="logo-mini">BD</div>
     </div>
   </aside>
+
+  <!-- ====================== AVISOS ======================
+       O sino fica fora da barra de telas de propósito: ele não leva a uma
+       tela, abre a lista do que aconteceu (js/avisos.js). -->
+  <button class="avisos-btn" id="avisos-btn" title="Avisos" aria-label="Avisos"
+          aria-haspopup="true" aria-expanded="false" aria-controls="avisos-painel">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>
+    <span class="avisos-contador" id="avisos-contador" hidden></span>
+  </button>
+  <section class="avisos-painel" id="avisos-painel" hidden aria-label="Avisos">
+    <header class="avisos-topo">
+      <h2>Avisos</h2>
+      <button class="link-btn" id="avisos-limpar" hidden>Limpar</button>
+    </header>
+    <ul class="avisos-lista" id="avisos-lista"></ul>
+    <p class="avisos-vazio" id="avisos-vazio">Nada por aqui ainda. Curtidas, comentários,
+      missões e a vitrine nova aparecem aqui.</p>
+  </section>
 
 
   <!-- ====================== PROCURAR PESSOAS ====================== -->

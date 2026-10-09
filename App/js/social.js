@@ -260,7 +260,11 @@ function renderAbas() {
 // As colunas são montadas aqui, e não com `columns` do CSS: assim o post mais
 // novo fica no alto à esquerda e abrir os comentários de um card só alonga a
 // coluna dele, sem embaralhar o mural inteiro.
-const LARGURA_MIN_COLUNA = 260;
+// Quantas colunas a tela pede: 2 no celular, 3 no PC e 4 a partir de 1280px.
+// A largura mínima só entra para a coluna não ficar estreita demais para o
+// rodapé do card (janela de PC pequena, com as duas barras laterais).
+const TELA_LARGA = window.matchMedia('(min-width: 1280px)');
+const LARGURA_MIN_COLUNA = 170;
 // No celular (css/mobile.css) o card pode ser bem mais estreito: duas colunas
 // de ~170px leem melhor que uma só, gigante, com um post por tela.
 const LARGURA_MIN_COLUNA_CELULAR = 150;
@@ -269,24 +273,31 @@ const celular = window.matchMedia('(max-width: 900px)');
 let colunasDesenhadas = 0;
 
 function colunasDoMural(caixa) {
+  const pedidas = celular.matches ? 2 : TELA_LARGA.matches ? 4 : 3;
   const largura = caixa?.clientWidth || 0;
-  if (!largura) return 3;
+  if (!largura) return pedidas;
   const minima = celular.matches ? LARGURA_MIN_COLUNA_CELULAR : LARGURA_MIN_COLUNA;
-  return Math.max(1, Math.floor((largura + VAO_MURAL) / (minima + VAO_MURAL)));
+  const cabem = Math.floor((largura + VAO_MURAL) / (minima + VAO_MURAL));
+  return Math.max(1, Math.min(pedidas, cabem));
 }
 
-// Altura do card em larguras de coluna, antes de a imagem carregar: o look é
-// a miniatura 3:5 do render, a colagem é 4:5 (ou 9:16). O rodapé soma um pouco.
-function alturaEstimada(post) {
-  const imagem = post.tipo === 'board'
-    ? (post.colagem?.formato === '9:16' ? 16 / 9 : 5 / 4)
-    : 5 / 3;
-  return imagem + 0.16;
-}
+// As colunas pares começam mais abaixo (o ::before de .mural-coluna em
+// social.css, 0,35 da largura, mais o gap). Sem isso, um feed só de looks —
+// todos 3:5 — vira uma grade de linhas alinhadas, e o mural perde o desencontro.
+const DESNIVEL_COLUNA_PAR = 0.45;
+
+// Altura da imagem em larguras de coluna, antes de ela carregar: o look é a
+// miniatura 3:5 do render, a colagem é 4:5 (ou 9:16).
+const proporcaoDaImagem = (post) => post.tipo === 'board'
+  ? (post.colagem?.formato === '9:16' ? 16 / 9 : 5 / 4)
+  : 5 / 3;
+
+// O card inteiro: a imagem e o rodapé, que soma um pouco.
+const alturaEstimada = (post) => proporcaoDaImagem(post) + 0.16;
 
 function montarMural(posts, colunas) {
-  const cols = Array.from({ length: colunas }, () => ({
-    altura: 0, no: el('div', { class: 'mural-coluna' }),
+  const cols = Array.from({ length: colunas }, (_, i) => ({
+    altura: i % 2 ? DESNIVEL_COLUNA_PAR : 0, no: el('div', { class: 'mural-coluna' }),
   }));
   for (const post of posts) {
     const c = cols.reduce((a, b) => (b.altura < a.altura ? b : a));
@@ -434,7 +445,12 @@ function imagemGrande(post) {
 }
 
 function imagemDoPost(post) {
-  const img = el('img', { src: post.thumb, alt: post.nome, loading: 'lazy' });
+  // width/height só guardam o lugar enquanto a imagem não chega (o card não
+  // nasce achatado e o mural não pula); carregada, vale a proporção dela.
+  const img = el('img', {
+    src: post.thumb, alt: post.nome, loading: 'lazy',
+    width: 300, height: Math.round(300 * proporcaoDaImagem(post)),
+  });
   imagemGrande(post)?.then(url => { if (url) img.src = url; });
   return img;
 }

@@ -5,7 +5,7 @@
 
 import { CONFIG, BOARD, ancoraDaPeca } from './config.js';
 import { item as pecaDoCatalogo, proporcao, srcGrande } from './catalog.js';
-import { avatarDataURL } from './avatar.js';
+import { avatarDataURL, aparenciaAtual } from './avatar.js';
 import { alturaDe, posAssinatura, fonteCss } from './boardgeo.js';
 
 export const FORMATOS = {
@@ -108,6 +108,26 @@ export async function miniatura(camadas, aparencia = null) {
   const canvas = await renderizarLook(camadas, { formato: 'thumb', fundo: true, aparencia });
   try { return canvas.toDataURL('image/webp', 0.72); }
   catch { return canvas.toDataURL('image/jpeg', 0.7); }
+}
+
+// A miniatura de um look salvo desenhada com o personagem de agora, não a
+// imagem guardada no save: trocou o cabelo ou o corpo, os looks acompanham.
+// Fica na memória por (aparência + camadas), então reabrir a lista não refaz
+// nada; `pronta` devolve na hora a que já existe, para o cartão não piscar.
+const lookDesenhado = new Map();
+const chaveDoLook = (camadas) => JSON.stringify([aparenciaAtual(), camadas]);
+
+export const miniaturaPronta = (camadas) => lookDesenhado.get(chaveDoLook(camadas))?.url || null;
+
+export function miniaturaAtual(camadas) {
+  const chave = chaveDoLook(camadas);
+  let feita = lookDesenhado.get(chave);
+  if (!feita) {
+    feita = { promessa: miniatura(camadas) };
+    lookDesenhado.set(chave, feita);
+    feita.promessa.then(url => { feita.url = url; }, () => lookDesenhado.delete(chave));
+  }
+  return feita.promessa;
 }
 
 // A imagem do post no feed. A coluna do mural tem ~320 px, e em tela de alta
