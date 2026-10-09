@@ -39,6 +39,7 @@ export function montarStylist() {
   ligarFerramentas();
   renderCamadas();
   renderSalvos();
+  montarMeusStylists();
 
   stage().addEventListener('pointerdown', (e) => {
     if (e.target.closest('.camada')) return;
@@ -314,12 +315,7 @@ function ligarFerramentas() {
     posicionar(c);
   });
 
-  $('#btn-limpar').addEventListener('click', () => {
-    camadas = []; selecionado = null; lookAtualId = null;
-    $('#outfit-nome').value = '';
-    renderCamadas();
-    montarPaleta();
-  });
+  $('#btn-limpar').addEventListener('click', limparPalco);
   $('#btn-guia').addEventListener('click', (e) => {
     guiaLigado = !guiaLigado;
     e.currentTarget.classList.toggle('ativo', guiaLigado);
@@ -335,6 +331,14 @@ function ligarFerramentas() {
     b.disabled = false;
     toast('PNG gerado. Confere os downloads.');
   }));
+}
+
+function limparPalco() {
+  camadas = []; selecionado = null; lookAtualId = null; palcoSorteado = false;
+  $('#outfit-nome').value = '';
+  renderCamadas();
+  montarPaleta();
+  renderSalvos();
 }
 
 function atualizarFerramentas() {
@@ -434,15 +438,29 @@ async function publicarLook() {
     : 'Sem conexão: publicado só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
+// A lista da lateral é um atalho: os últimos looks mexidos. O resto (e tudo o
+// que se faz com eles) mora no painel "Meus stylists", mais abaixo.
+const NA_LATERAL = 4;
+
 function renderSalvos() {
+  const total = db.state.looks.length;
+  const qtd = $('#meus-qtd');
+  if (qtd) qtd.textContent = total ? String(total) : '';
+  const verTodos = $('#btn-ver-todos');
+  if (verTodos) {
+    verTodos.hidden = !total;
+    verTodos.textContent = total > NA_LATERAL ? `Ver todos (${total})` : 'Organizar looks';
+  }
+  if (!$('#modal-meus')?.hidden) renderMeus();
+
   const lista = $('#saved-list');
   if (!lista) return;
   lista.innerHTML = '';
-  if (!db.state.looks.length) {
+  if (!total) {
     lista.append(el('p', { class: 'tool-hint' }, 'Nenhum look salvo ainda.'));
     return;
   }
-  for (const l of [...db.state.looks].reverse()) {
+  for (const l of ordenarLooks(db.state.looks, 'recentes').slice(0, NA_LATERAL)) {
     // A linha deixou de ser um botão só: a estrela é um segundo clique dentro
     // dela, e botão dentro de botão não vale em HTML.
     lista.append(el('div', {
@@ -472,6 +490,259 @@ export function abrirLook(id) {
   renderCamadas();
   montarPaleta();
   renderSalvos();
+}
+
+// --- Meus stylists -------------------------------------------------------
+// O painel com todos os looks salvos. No PC é um modal com uma grade de
+// cartões; no celular (mobile: ver stylist.css) ocupa a tela toda, duas
+// colunas. Cada cartão abre o look no palco para editar, e o ⋯ guarda o resto:
+// renomear, duplicar e apagar. A estrela é a mesma do resto do app.
+let msFiltro = 'todos';
+let msMenuAberto = null;      // id do look com o menu ⋯ aberto
+let msRenomeando = null;      // id do look com o nome virando campo
+// Look de save antigo pode ter perdido a miniatura (o db joga fora quando o
+// navegador fica sem espaço): esta é refeita na hora e fica só na memória.
+const thumbsRefeitas = new Map();
+
+const quandoDoLook = (l) => l.editadoEm || l.criadoEm || '';
+
+function ordenarLooks(looks, ordem) {
+  const lista = [...looks];
+  if (ordem === 'nome') return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  // Sem data (save muito antigo), vale a posição na lista: o último salvo é o mais novo.
+  const pos = new Map(looks.map((l, i) => [l.id, i]));
+  lista.sort((a, b) =>
+    quandoDoLook(b).localeCompare(quandoDoLook(a)) || pos.get(b.id) - pos.get(a.id));
+  return ordem === 'antigos' ? lista.reverse() : lista;
+}
+
+function dataCurta(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+    .replace(/ de /g, ' ').replace('.', '');
+}
+
+function montarMeusStylists() {
+  const modal = $('#modal-meus');
+  if (!modal) return;
+  $('#btn-meus-stylists').addEventListener('click', abrirMeus);
+  $('#btn-ver-todos').addEventListener('click', abrirMeus);
+  $('#ms-fechar').addEventListener('click', fecharMeus);
+  $('#ms-novo').addEventListener('click', () => {
+    limparPalco();
+    fecharMeus();
+    toast('Palco limpo: monte o look novo e salve.');
+  });
+  $('#ms-busca').addEventListener('input', renderMeus);
+  $('#ms-ordem').addEventListener('change', renderMeus);
+  modal.addEventListener('pointerdown', (e) => { if (e.target === modal) fecharMeus(); });
+  // Clicar fora do ⋯ fecha o menu dele.
+  modal.addEventListener('click', (e) => {
+    if (msMenuAberto && !e.target.closest('.ms-menu, .ms-mais')) {
+      msMenuAberto = null;
+      renderMeus();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || modal.hidden || msRenomeando) return;
+    if (msMenuAberto) { msMenuAberto = null; renderMeus(); return; }
+    fecharMeus();
+  });
+}
+
+function abrirMeus() {
+  msMenuAberto = null;
+  msRenomeando = null;
+  $('#ms-busca').value = '';
+  $('#modal-meus').hidden = false;
+  document.body.classList.add('com-modal');
+  renderMeus();
+}
+
+function fecharMeus() {
+  $('#modal-meus').hidden = true;
+  document.body.classList.remove('com-modal');
+  msMenuAberto = null;
+  msRenomeando = null;
+}
+
+function renderMeus() {
+  const looks = db.state.looks;
+  const favs = looks.filter(l => l.favorito).length;
+  const noFeed = looks.filter(l => l.publicado).length;
+
+  $('#ms-sub').textContent = looks.length
+    ? `${looks.length} ${looks.length === 1 ? 'look salvo' : 'looks salvos'} · ${favs} de 3 no perfil`
+    : '';
+
+  const filtros = $('#ms-filtros');
+  filtros.replaceChildren(...[
+    ['todos', 'Todos', looks.length],
+    ['fav', '★ Favoritos', favs],
+    ['feed', 'No feed', noFeed],
+  ].map(([id, nome, n]) => el('button', {
+    type: 'button',
+    class: 'ms-filtro' + (msFiltro === id ? ' ativo' : ''),
+    onclick: () => { msFiltro = id; renderMeus(); },
+  }, nome, el('small', {}, String(n)))));
+
+  const busca = $('#ms-busca').value.trim().toLocaleLowerCase('pt-BR');
+  const visiveis = ordenarLooks(looks, $('#ms-ordem').value).filter(l =>
+    (msFiltro === 'todos' || (msFiltro === 'fav' ? l.favorito : l.publicado)) &&
+    (!busca || l.nome.toLocaleLowerCase('pt-BR').includes(busca)));
+
+  const grade = $('#ms-grade');
+  grade.replaceChildren();
+  if (!looks.length) {
+    grade.append(el('div', { class: 'ms-vazio' },
+      el('strong', {}, 'Nenhum look salvo ainda'),
+      el('p', {}, 'Vista o avatar com as suas peças e toque em "Salvar look": ele aparece aqui.')));
+    return;
+  }
+  if (!visiveis.length) {
+    grade.append(el('div', { class: 'ms-vazio' },
+      el('p', {}, busca ? `Nenhum look com "${$('#ms-busca').value.trim()}".`
+        : msFiltro === 'fav' ? 'Nenhum favorito. Toque na ☆ de um look para ele ir para o seu perfil.'
+        : 'Nenhum look publicado no feed ainda.')));
+    return;
+  }
+  for (const l of visiveis) grade.append(cartaoDoLook(l));
+
+  const campo = grade.querySelector('.ms-renomear');
+  if (campo) { campo.focus(); campo.select(); }
+}
+
+function imagemDoCartao(l) {
+  const src = l.thumb || thumbsRefeitas.get(l.id);
+  if (src) return el('img', { src, alt: l.nome, loading: 'lazy' });
+  const vaga = el('span', { class: 'sem-thumb' }, '—');
+  if (l.camadas?.length && !thumbsRefeitas.has(l.id)) {
+    thumbsRefeitas.set(l.id, null);
+    miniatura(l.camadas).then((url) => {
+      thumbsRefeitas.set(l.id, url);
+      if (vaga.isConnected) vaga.replaceWith(el('img', { src: url, alt: l.nome }));
+    }).catch(() => {});
+  }
+  return vaga;
+}
+
+function cartaoDoLook(l) {
+  const aberto = l.id === lookAtualId;
+  const nPecas = l.camadas?.length || 0;
+
+  const nome = msRenomeando === l.id
+    ? el('input', {
+      class: 'ms-renomear', type: 'text', value: l.nome, maxlength: '40',
+      'aria-label': 'Novo nome do look',
+      onkeydown: (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
+        // Esc aqui só desiste do nome: não pode subir e fechar o painel.
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); msRenomeando = null; renderMeus(); }
+      },
+      onblur: (e) => { if (msRenomeando === l.id) renomearLook(l.id, e.currentTarget.value); },
+    })
+    : el('button', {
+      type: 'button', class: 'ms-nome', title: 'Renomear',
+      onclick: () => { msRenomeando = l.id; msMenuAberto = null; renderMeus(); },
+    }, l.nome);
+
+  const menu = msMenuAberto === l.id ? el('div', { class: 'ms-menu', role: 'menu' },
+    el('button', { type: 'button', role: 'menuitem', onclick: () => editarDoPainel(l.id) }, '✎ Abrir e editar'),
+    el('button', {
+      type: 'button', role: 'menuitem',
+      onclick: () => { msRenomeando = l.id; msMenuAberto = null; renderMeus(); },
+    }, 'Aa Renomear'),
+    el('button', { type: 'button', role: 'menuitem', onclick: () => duplicarLook(l.id) }, '⧉ Duplicar'),
+    el('button', { type: 'button', role: 'menuitem', class: 'perigo', onclick: () => apagarLook(l.id) }, '🗑 Excluir'),
+  ) : null;
+
+  return el('article', { class: 'ms-card' + (aberto ? ' aberto' : '') + (menu ? ' com-menu' : '') },
+    el('button', {
+      type: 'button', class: 'ms-thumb',
+      title: `Abrir "${l.nome}" no palco para editar`,
+      onclick: () => editarDoPainel(l.id),
+    },
+      imagemDoCartao(l),
+      el('span', { class: 'ms-editar' }, '✎ Editar'),
+      aberto ? el('span', { class: 'ms-selo' }, 'no palco') : null,
+      l.publicado ? el('span', { class: 'ms-selo feed' }, 'no feed') : null,
+    ),
+    el('div', { class: 'ms-fav' }, estrelaFavorito('look', l.id, renderSalvos)),
+    el('div', { class: 'ms-info' },
+      el('div', { class: 'ms-linha' },
+        nome,
+        el('button', {
+          type: 'button', class: 'ms-mais', title: 'Mais opções',
+          'aria-haspopup': 'menu', 'aria-expanded': menu ? 'true' : 'false',
+          onclick: () => { msMenuAberto = msMenuAberto === l.id ? null : l.id; renderMeus(); },
+        }, '⋯')),
+      el('small', {}, [dataCurta(quandoDoLook(l)),
+        nPecas === 1 ? '1 peça' : `${nPecas} peças`].filter(Boolean).join(' · '))),
+    menu);
+}
+
+function editarDoPainel(id) {
+  abrirLook(id);
+  fecharMeus();
+  const look = db.state.looks.find(l => l.id === id);
+  if (look) toast(`"${look.nome}" no palco. Mexa e toque em "Salvar look".`);
+}
+
+function renomearLook(id, valor) {
+  msRenomeando = null;
+  const look = db.state.looks.find(l => l.id === id);
+  const nome = String(valor || '').trim().slice(0, 40);
+  if (look && nome && nome !== look.nome) {
+    look.nome = nome;
+    if (id === lookAtualId) $('#outfit-nome').value = nome;
+    db.salvar();
+    toast(`Renomeado para "${nome}".`);
+  }
+  renderSalvos();
+  renderMeus();
+}
+
+function duplicarLook(id) {
+  const orig = db.state.looks.find(l => l.id === id);
+  if (!orig) return;
+  const agora = new Date().toISOString();
+  // A cópia é um look novo: não herda a estrela (o perfil tem três vagas) nem
+  // o "no feed" — quem foi publicado foi o original.
+  const copia = {
+    ...structuredClone(orig),
+    id: 'l' + Date.now(),
+    nome: `${orig.nome} (cópia)`.slice(0, 40),
+    criadoEm: agora,
+    editadoEm: agora,
+    publicado: false,
+    favorito: false,
+  };
+  if (!copia.thumb && thumbsRefeitas.get(id)) thumbsRefeitas.set(copia.id, thumbsRefeitas.get(id));
+  db.state.looks.push(copia);
+  msMenuAberto = null;
+  db.salvar();
+  renderSalvos();
+  renderMeus();
+  toast(`"${copia.nome}" criado.`);
+}
+
+function apagarLook(id) {
+  const look = db.state.looks.find(l => l.id === id);
+  if (!look) return;
+  msMenuAberto = null;
+  const aviso = `Excluir "${look.nome}"? Não dá para desfazer.` +
+    (look.publicado ? '\nO post que já está no feed continua lá.' : '');
+  if (!confirm(aviso)) { renderMeus(); return; }
+  db.state.looks.splice(db.state.looks.indexOf(look), 1);
+  thumbsRefeitas.delete(id);
+  // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.
+  if (id === lookAtualId) lookAtualId = null;
+  db.salvar();
+  renderSalvos();
+  renderMeus();
+  toast(`"${look.nome}" excluído.`);
 }
 
 export function aoEntrarNoStylist() {

@@ -169,3 +169,181 @@
 @media (max-width: 1180px) {
   .stylist-tools { width: 210px; }
 }
+
+/* -------------------------- Botão Meus stylists ------------------------- */
+/* Em cima do palco, no canto: é o mesmo lugar no PC e no celular, onde no
+   celular as ferramentas ficam lá embaixo da paleta. */
+.stage-frame { position: relative; }
+.btn-meus {
+  position: absolute; top: 12px; left: 12px; z-index: 20;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--linha); border-radius: 999px;
+  background: rgba(255, 255, 255, .92); backdrop-filter: blur(4px);
+  padding: 8px 14px; font: inherit; font-size: 12.5px; font-weight: 700;
+  color: var(--tinta); box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+  transition: border-color .15s, transform .15s;
+}
+.btn-meus:hover { border-color: var(--tinta); transform: translateY(-1px); }
+.btn-meus small {
+  min-width: 18px; padding: 1px 6px; border-radius: 999px;
+  background: var(--stylist); font-size: 10.5px; font-weight: 800; text-align: center;
+}
+.btn-meus small:empty { display: none; }
+
+/* --------------------------- Painel Meus stylists ----------------------- */
+.ms-caixa { width: min(1040px, 100%); height: min(88vh, 860px); }
+.ms-titulos { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.ms-sub { font-size: 12px; color: var(--tinta-suave); }
+
+.ms-barra {
+  flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 14px 26px; border-bottom: 1px solid var(--linha);
+}
+#ms-busca {
+  flex: 1 1 200px; min-width: 0;
+  border: 1px solid var(--linha); border-radius: 12px; background: #fff;
+  font: inherit; font-size: 13px; padding: 9px 12px;
+}
+#ms-busca:focus { outline: none; border-color: var(--tinta); }
+.ms-filtros { display: flex; gap: 6px; }
+.ms-filtro {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--linha); border-radius: 999px; background: #fff;
+  padding: 7px 12px; font: inherit; font-size: 12px; font-weight: 600; color: var(--tinta);
+  white-space: nowrap;
+}
+.ms-filtro small { font-size: 10px; color: var(--tinta-suave); font-weight: 700; }
+.ms-filtro.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.ms-filtro.ativo small { color: #d8d2c8; }
+#ms-ordem {
+  border: 1px solid var(--linha); border-radius: 12px; background: #fff;
+  font: inherit; font-size: 12.5px; padding: 8px 10px; color: var(--tinta);
+}
+
+.ms-grade {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 20px 26px 26px;
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  align-content: start;
+  background: #fbf8f4;
+}
+.ms-vazio {
+  grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+  color: var(--tinta-suave); font-size: 13px; line-height: 1.6;
+}
+.ms-vazio strong { display: block; color: var(--tinta); font-size: 15px; margin-bottom: 4px; }
+
+.ms-card {
+  position: relative;
+  background: #fff; border: 1px solid var(--linha); border-radius: 18px;
+  display: flex; flex-direction: column;
+  transition: box-shadow .15s, transform .15s;
+}
+.ms-card:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
+.ms-card.aberto { border-color: var(--tinta); box-shadow: inset 0 0 0 1px var(--tinta); }
+.ms-card.com-menu { z-index: 5; }
+
+.ms-thumb {
+  position: relative; display: block; width: 100%;
+  aspect-ratio: 3 / 4; padding: 10px;
+  border: 0; border-radius: 17px 17px 0 0;
+  background: var(--papel);
+  background-image: radial-gradient(#ece7df 1px, transparent 1px);
+  background-size: 18px 18px;
+  overflow: hidden;
+}
+.ms-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ms-thumb .sem-thumb { display: grid; place-items: center; height: 100%; font-size: 22px; }
+.ms-editar {
+  position: absolute; left: 50%; bottom: 12px; transform: translate(-50%, 6px);
+  background: var(--tinta); color: #fff; border-radius: 999px;
+  padding: 6px 14px; font-size: 12px; font-weight: 700; white-space: nowrap;
+  opacity: 0; transition: opacity .15s, transform .15s; pointer-events: none;
+}
+.ms-thumb:hover .ms-editar, .ms-thumb:focus-visible .ms-editar { opacity: 1; transform: translate(-50%, 0); }
+.ms-selo {
+  position: absolute; top: 10px; left: 10px;
+  background: var(--tinta); color: #fff; border-radius: 999px;
+  padding: 3px 9px; font-size: 10px; font-weight: 800; letter-spacing: .03em;
+}
+.ms-selo.feed { background: #6b8f4e; }
+.ms-selo + .ms-selo { top: 34px; }
+
+.ms-fav { position: absolute; top: 8px; right: 8px; }
+.ms-fav .fav-estrela.mini {
+  width: 32px; height: 32px; font-size: 17px;
+  background: rgba(255, 255, 255, .9); box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+}
+
+.ms-info { padding: 10px 10px 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ms-linha { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ms-nome {
+  flex: 1; min-width: 0; text-align: left;
+  border: 0; background: none; padding: 2px 0; font: inherit;
+  font-size: 13.5px; font-weight: 700; color: var(--tinta);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text;
+}
+.ms-nome:hover { text-decoration: underline dotted; text-underline-offset: 3px; }
+.ms-renomear {
+  flex: 1; min-width: 0;
+  border: 1px solid var(--tinta); border-radius: 8px;
+  font: inherit; font-size: 13.5px; font-weight: 700; padding: 3px 6px;
+}
+.ms-renomear:focus { outline: none; }
+.ms-info small { font-size: 11px; color: var(--tinta-suave); }
+.ms-mais {
+  flex: none; width: 30px; height: 30px; border-radius: 10px;
+  border: 1px solid transparent; background: none;
+  font-size: 18px; line-height: 1; color: var(--tinta-suave);
+}
+.ms-mais:hover, .ms-mais[aria-expanded="true"] { border-color: var(--linha); background: #f6f1e8; color: var(--tinta); }
+
+.ms-menu {
+  position: absolute; right: 8px; bottom: 50px; z-index: 10;
+  min-width: 180px; padding: 6px;
+  background: #fff; border: 1px solid var(--linha); border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .16);
+  display: flex; flex-direction: column;
+}
+.ms-menu button {
+  border: 0; background: none; border-radius: 9px;
+  padding: 10px 12px; text-align: left; font: inherit; font-size: 13px; color: var(--tinta);
+}
+.ms-menu button:hover { background: #f6f1e8; }
+.ms-menu button.perigo { color: #b3261e; }
+.ms-menu button.perigo:hover { background: #fdecea; }
+
+/* No celular o painel é uma tela: sem margem, sem cantos, duas colunas.
+   Seletores com o id para ganhar do .modal/.modal-caixa do mobile.css. */
+@media (max-width: 900px) {
+  .btn-meus { top: 8px; left: 8px; padding: 7px 12px; }
+  #modal-meus.modal { padding: 0; place-items: stretch; }
+  #modal-meus .modal-caixa {
+    width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0;
+  }
+  #modal-meus .modal-topo { padding: 12px 14px 10px; }
+  #modal-meus .modal-rodape { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  #modal-meus .modal-rodape .mp-aviso { display: none; }
+  .ms-barra { padding: 10px 14px; gap: 8px; }
+  /* Busca e ordem dividem a primeira linha; os filtros ganham a segunda. */
+  #ms-busca { flex: 1 1 0; }
+  #ms-ordem { flex: none; width: 128px; padding: 8px 6px; }
+  .ms-filtros { order: 3; flex: 1 1 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .ms-filtros::-webkit-scrollbar { display: none; }
+  .ms-grade {
+    padding: 12px 12px 20px; gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ms-card:hover { transform: none; box-shadow: none; }
+  .ms-editar { display: none; }
+  .ms-info { padding: 8px 6px 10px 10px; }
+  .ms-nome, .ms-renomear { font-size: 13px; }
+  .ms-mais { width: 36px; height: 36px; }
+  .ms-menu { left: 6px; right: 6px; min-width: 0; bottom: 52px; }
+  .ms-menu button { padding: 12px; font-size: 14px; }
+}
+#btn-ver-todos { margin-top: 2px; }
+@media (max-width: 900px) {
+  .stylist-tools .tool-block > #btn-ver-todos { grid-column: 1 / -1; }
+}
