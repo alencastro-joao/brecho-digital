@@ -21,6 +21,7 @@ import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import * as auth from './auth.js';
 import { svgAvatar } from './avatar.js';
+import { miniaturaAtual, miniaturaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
 import { chipNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
@@ -172,15 +173,29 @@ const pecasDaObra = (item) => [...new Set(
   (item.camadas || item.itens || []).map(c => c.itemId).filter(Boolean)
 )].map(pecaDoCatalogo).filter(Boolean);
 
-// O cartão é o mesmo das publicações no perfil dos outros (usuario.js).
-const cartaoFavorito = (item, abrir) => cartaoDeObra({
-  nome: item.nome,
-  thumb: item.thumb,
-  tipo: item.tipo,
-  pecas: pecasDaObra(item),
-  selo: item.publicado ? 'no feed' : null,
-  abrir,
-});
+// O cartão é o mesmo das publicações no perfil dos outros (usuario.js). O
+// look sai desenhado com o personagem de agora, como em "Meus stylists": a
+// miniatura do save fica com o cabelo e o corpo de quando ele foi salvo.
+function cartaoFavorito(item, abrir) {
+  const aoVivo = item.tipo === 'look' && item.camadas?.length;
+  const cartao = cartaoDeObra({
+    nome: item.nome,
+    thumb: aoVivo ? miniaturaPronta(item.camadas) || item.thumb : item.thumb,
+    tipo: item.tipo,
+    pecas: pecasDaObra(item),
+    selo: item.publicado ? 'no feed' : null,
+    abrir,
+  });
+  if (aoVivo && !miniaturaPronta(item.camadas)) {
+    const foto = cartao.querySelector('.pf-obra-foto img');
+    if (foto) foto.style.visibility = 'hidden';
+    miniaturaAtual(item.camadas).then(url => {
+      const vaga = cartao.querySelector('.pf-obra-foto img, .pf-obra-foto .sem-thumb');
+      vaga?.replaceWith(el('img', { src: url, alt: item.nome }));
+    }, () => { if (foto) foto.style.visibility = ''; });
+  }
+  return cartao;
+}
 
 // --------------------------------- Amigos ---------------------------------
 // Amigo é mão dupla: você segue e a pessoa segue de volta (usuario.js diz

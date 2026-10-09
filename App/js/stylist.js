@@ -12,7 +12,7 @@ import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
-import { miniatura, baixarLook } from './render.js';
+import { miniaturaAtual, miniaturaPronta, baixarLook } from './render.js';
 import { publicarOuGuardar, pacoteDoLook, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
@@ -409,7 +409,7 @@ export function gerarLook() {
 async function salvarLook({ silencioso = false } = {}) {
   if (!camadas.length) { toast('O palco está vazio.', 'aviso'); return null; }
   const nome = $('#outfit-nome').value.trim() || `Look ${db.state.looks.length + 1}`;
-  const thumb = await miniatura(camadas);
+  const thumb = await miniaturaAtual(estruturaLimpa());
 
   let look = db.state.looks.find(l => l.id === lookAtualId);
   if (look) {
@@ -491,9 +491,6 @@ export function abrirLook(id) {
 let msFiltro = 'todos';
 let msMenuAberto = null;      // id do look com o menu ⋯ aberto
 let msRenomeando = null;      // id do look com o nome virando campo
-// Look de save antigo pode ter perdido a miniatura (o db joga fora quando o
-// navegador fica sem espaço): esta é refeita na hora e fica só na memória.
-const thumbsRefeitas = new Map();
 
 const quandoDoLook = (l) => l.editadoEm || l.criadoEm || '';
 
@@ -604,17 +601,20 @@ function renderMeus() {
   if (campo) { campo.focus(); campo.select(); }
 }
 
+// O cartão desenha o look com o personagem de agora (render.js), não a
+// miniatura do save: ela é de quando o look foi salvo e fica com o cabelo e o
+// corpo de antes. A do save só aparece se o desenho falhar.
 function imagemDoCartao(l) {
-  const src = l.thumb || thumbsRefeitas.get(l.id);
-  if (src) return el('img', { src, alt: l.nome, loading: 'lazy' });
-  const vaga = el('span', { class: 'sem-thumb' }, '—');
-  if (l.camadas?.length && !thumbsRefeitas.has(l.id)) {
-    thumbsRefeitas.set(l.id, null);
-    miniatura(l.camadas).then((url) => {
-      thumbsRefeitas.set(l.id, url);
-      if (vaga.isConnected) vaga.replaceWith(el('img', { src: url, alt: l.nome }));
-    }).catch(() => {});
+  if (!l.camadas?.length) {
+    return l.thumb ? el('img', { src: l.thumb, alt: l.nome, loading: 'lazy' })
+      : el('span', { class: 'sem-thumb' }, '—');
   }
+  const pronta = miniaturaPronta(l.camadas);
+  if (pronta) return el('img', { src: pronta, alt: l.nome });
+  const vaga = el('span', { class: 'sem-thumb' });
+  miniaturaAtual(l.camadas).then(
+    (url) => { if (vaga.isConnected) vaga.replaceWith(el('img', { src: url, alt: l.nome })); },
+    () => { if (vaga.isConnected && l.thumb) vaga.replaceWith(el('img', { src: l.thumb, alt: l.nome })); });
   return vaga;
 }
 
@@ -709,7 +709,6 @@ function duplicarLook(id) {
     publicado: false,
     favorito: false,
   };
-  if (!copia.thumb && thumbsRefeitas.get(id)) thumbsRefeitas.set(copia.id, thumbsRefeitas.get(id));
   db.state.looks.push(copia);
   msMenuAberto = null;
   db.salvar();
@@ -726,7 +725,6 @@ function apagarLook(id) {
     (look.publicado ? '\nO post que já está no feed continua lá.' : '');
   if (!confirm(aviso)) { renderMeus(); return; }
   db.state.looks.splice(db.state.looks.indexOf(look), 1);
-  thumbsRefeitas.delete(id);
   // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.
   if (id === lookAtualId) lookAtualId = null;
   db.salvar();
