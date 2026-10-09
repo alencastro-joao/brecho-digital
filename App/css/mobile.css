@@ -331,6 +331,22 @@
   .auth-caixa { padding: 24px 20px 18px; margin: auto 0; }
 }
 
+/* Celular em pé: looks e colagens do perfil viram uma fileira de arrastar
+   para o lado, um cartão por vez, com a beirada do próximo aparecendo. A
+   fileira vai até a borda da tela (come os 16px de respiro do .pf-layout) e
+   devolve o respiro por dentro, para o primeiro cartão alinhar com o título. */
+@media (max-width: 767px) {
+  .pf-grade-obras {
+    display: flex; gap: 10px;
+    margin: 0 -16px; padding: 4px 16px 8px;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding: 0 16px;
+    scrollbar-width: none;
+  }
+  .pf-grade-obras::-webkit-scrollbar { display: none; }
+  .pf-grade-obras > .pf-obra { flex: 0 0 80%; scroll-snap-align: start; }
+}
+
 /* Telefone deitado: a altura é que falta, então os palcos encolhem para
    caber uma fileira de ferramentas embaixo sem precisar rolar. */
 @media (max-width: 900px) and (max-height: 500px) {
