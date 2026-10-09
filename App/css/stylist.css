@@ -343,10 +343,6 @@
   .ms-menu { left: 6px; right: 6px; min-width: 0; bottom: 52px; }
   .ms-menu button { padding: 12px; font-size: 14px; }
 }
-#btn-ver-todos { margin-top: 2px; }
-@media (max-width: 900px) {
-  .stylist-tools .tool-block > #btn-ver-todos { grid-column: 1 / -1; }
-}
 
 /* ---------------------------- Barra do look ----------------------------- */
 /* Gerar, salvar, publicar, exportar e o resto (⋯), numa linha embaixo do

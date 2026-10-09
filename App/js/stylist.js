@@ -461,46 +461,14 @@ async function publicarLook() {
     : 'Sem conexão: publicado só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
-// A lista da lateral é um atalho: os últimos looks mexidos. O resto (e tudo o
-// que se faz com eles) mora no painel "Meus stylists", mais abaixo.
-const NA_LATERAL = 4;
-
+// Os looks salvos moram só no painel "Meus stylists" (mais abaixo), aberto
+// pelo botão em cima do palco; aqui só se atualiza o número dele e o painel,
+// se estiver aberto.
 function renderSalvos() {
   const total = db.state.looks.length;
   const qtd = $('#meus-qtd');
   if (qtd) qtd.textContent = total ? String(total) : '';
-  const verTodos = $('#btn-ver-todos');
-  if (verTodos) {
-    verTodos.hidden = !total;
-    verTodos.textContent = total > NA_LATERAL ? `Ver todos (${total})` : 'Organizar looks';
-  }
   if (!$('#modal-meus')?.hidden) renderMeus();
-
-  const lista = $('#saved-list');
-  if (!lista) return;
-  lista.innerHTML = '';
-  if (!total) {
-    lista.append(el('p', { class: 'tool-hint' }, 'Nenhum look salvo ainda.'));
-    return;
-  }
-  for (const l of ordenarLooks(db.state.looks, 'recentes').slice(0, NA_LATERAL)) {
-    // A linha deixou de ser um botão só: a estrela é um segundo clique dentro
-    // dela, e botão dentro de botão não vale em HTML.
-    lista.append(el('div', {
-      class: 'saved-item' + (l.id === lookAtualId ? ' ativo' : ''),
-    },
-      el('button', {
-        class: 'saved-abrir',
-        title: 'Abrir "' + l.nome + '"',
-        onclick: () => abrirLook(l.id),
-      },
-        l.thumb ? el('img', { src: l.thumb, alt: l.nome }) : el('span', { class: 'sem-thumb' }, '—'),
-        el('span', {}, l.nome),
-        l.publicado ? el('small', { class: 'pub' }, 'no feed') : null
-      ),
-      estrelaFavorito('look', l.id, renderSalvos)
-    ));
-  }
 }
 
 export function abrirLook(id) {
@@ -551,7 +519,6 @@ function montarMeusStylists() {
   const modal = $('#modal-meus');
   if (!modal) return;
   $('#btn-meus-stylists').addEventListener('click', abrirMeus);
-  $('#btn-ver-todos').addEventListener('click', abrirMeus);
   $('#ms-fechar').addEventListener('click', fecharMeus);
   $('#ms-novo').addEventListener('click', () => {
     limparPalco();
