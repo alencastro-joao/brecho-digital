@@ -38,6 +38,9 @@
    altura da própria imagem — o desalinhado é o ritmo do feed. */
 .mural { display: flex; gap: 18px; align-items: flex-start; margin-top: 20px; }
 .mural-coluna { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+/* As colunas pares começam mais abaixo: com cards da mesma proporção (só
+   looks) as linhas não se alinham. A conta casa com DESNIVEL_COLUNA_PAR. */
+.mural-coluna:nth-child(even)::before { content: ''; aspect-ratio: 20 / 7; }
 .feed-vazio {
   color: var(--tinta-suave); font-size: 14px; line-height: 1.6;
   margin-top: 26px; max-width: 520px;
