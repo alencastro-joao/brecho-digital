@@ -195,6 +195,19 @@ def listar(eu_id, autor=None):
         return _com_autores(con, linhas, eu_id)
 
 
+# --- Miniatura de favorito -----------------------------------------------
+def subir_miniatura(eu_id, corpo):
+    """A miniatura de um look ou colagem favoritos (ver a da Lambda)."""
+    corpo = corpo if isinstance(corpo, dict) else {}
+    binario, extensao = _imagem(corpo.get('thumb'))
+    impressao = hashlib.sha256(binario).hexdigest()[:10]
+    nome_arquivo = 'perfil-%s-%s.%s' % (eu_id, impressao, extensao)
+    os.makedirs(PASTA_THUMBS, exist_ok=True)
+    with open(os.path.join(PASTA_THUMBS, nome_arquivo), 'wb') as f:
+        f.write(binario)
+    return {'thumb': 'assets/posts/' + nome_arquivo}
+
+
 # --- Publicar e apagar ----------------------------------------------------
 def publicar(eu_id, corpo):
     corpo = corpo if isinstance(corpo, dict) else {}

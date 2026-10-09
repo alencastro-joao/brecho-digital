@@ -16,12 +16,16 @@
 //     `agendarPerfil`); enquanto ela nunca enviou, cai no sorteio do id, como
 //     qualquer perfil fictício;
 //   * as publicações dela vêm do feed compartilhado (publicacoes.js), e não
-//     do seu save — onde só moram as dos perfis fictícios.
+//     do seu save — onde só moram as dos perfis fictícios;
+//   * a página dela mostra o mesmo que o perfil dela mostra a ela: os amigos e
+//     os favoritos (peças, looks e colagens com estrela), que só vêm na leitura
+//     da página (`carregarPerfil`) — a busca e o feed trazem só o cartão.
 //
 // Nada aqui é chamado no carregamento do módulo — só em tempo de execução.
 
 import { PERFIS_MOCK } from './config.js';
 import * as db from './db.js';
+import { LIMITE_FAVORITOS } from './favoritos.js';
 import { roupasSorteadas } from './roupinhas.js';
 import { sementeDoTexto } from './util.js';
 
@@ -65,11 +69,20 @@ function paraPerfil(c) {
     nSeguindo: c.seguindo,
     voceSegue: Boolean(c.voceSegue),
     segueVoce: Boolean(c.segueVoce),
+    // Só a página completa traz estes dois; undefined quer dizer "não sei".
+    favoritos: c.favoritos,
+    amigos: c.amigos?.map(a => guardar(a).id),
   };
 }
 
 function guardar(cartao) {
   const perfil = paraPerfil(cartao);
+  // Um cartão curto (busca, feed, seguir) não apaga o que a página já trouxe.
+  const antes = reais.get(perfil.id);
+  if (antes) {
+    perfil.favoritos ??= antes.favoritos;
+    perfil.amigos ??= antes.amigos;
+  }
   reais.set(perfil.id, perfil);
   return perfil;
 }
@@ -112,6 +125,16 @@ export async function seguirNoServidor(id, segue) {
   return guardar(usuario);
 }
 
+// Quem segue você, a cada leitura que deu certo. Os avisos (js/avisos.js)
+// comparam com a anterior; quem se inscreve depois do boot recebe a última na
+// hora, sem pedir de novo ao servidor.
+const leitoresDeSeguidores = new Set();
+let ultimosSeguidores = null;
+export function aoLerSeguidores(fn) {
+  leitoresDeSeguidores.add(fn);
+  if (ultimosSeguidores) fn(ultimosSeguidores);
+}
+
 // Casa a lista de quem você segue com a do servidor. Os fictícios só existem no
 // save (não há o que perguntar ao servidor); as contas reais são do servidor,
 // e ele vence: seguir de um aparelho tem que valer no outro, e deixar de seguir
@@ -128,6 +151,8 @@ export async function sincronizarSocial() {
 
   dados.seguindo.forEach(guardar);
   dados.seguidores.forEach(guardar);
+  ultimosSeguidores = dados.seguidores.map(c => c.id).sort();
+  leitoresDeSeguidores.forEach(fn => fn(ultimosSeguidores));
 
   const u = db.state.usuario;
   const antes = JSON.stringify(u.seguindo);
@@ -141,27 +166,86 @@ export async function sincronizarSocial() {
 }
 
 // ------------------------- O que os outros leem de mim ---------------------
-// A bio, o rosto e a roupa moram no save, e o save é meu — outra conta não o
-// lê. Então o front manda o pedaço público, pequeno, sempre que ele muda.
+// A bio, o rosto, a roupa e os favoritos moram no save, e o save é meu — outra
+// conta não o lê. Então o front manda o pedaço público, pequeno, sempre que ele
+// muda.
 const ESPERA_PERFIL = 3000;
 let ultimoEnviado = '';
 let timerPerfil = null;
 
-const fotoDoPerfil = () => JSON.stringify({
+// As miniaturas dos looks e colagens favoritos são data URLs no save: grandes
+// demais para irem no perfil. Cada uma sobe uma vez (/api/perfil/miniatura) e
+// o perfil leva só o caminho dela no site. O que já subiu fica lembrado neste
+// navegador, pela impressão da imagem, para não subir de novo a cada visita.
+const CHAVE_MINIATURAS = 'bd-miniaturas-publicas';
+const impressao = (dataUrl) => `${sementeDoTexto(dataUrl).toString(16)}-${dataUrl.length}`;
+
+function miniaturasSubidas() {
+  try { return JSON.parse(localStorage.getItem(CHAVE_MINIATURAS) || '{}'); } catch { return {}; }
+}
+
+async function miniaturaPublica(thumb) {
+  if (!thumb || !thumb.startsWith('data:image/')) return '';
+  const chave = impressao(thumb);
+  const subidas = miniaturasSubidas();
+  if (subidas[chave]) return subidas[chave];
+  try {
+    const { thumb: caminho } = await chamar('/api/perfil/miniatura', {
+      method: 'POST', body: JSON.stringify({ thumb }),
+    });
+    subidas[chave] = caminho;
+    try { localStorage.setItem(CHAVE_MINIATURAS, JSON.stringify(subidas)); } catch {}
+    return caminho;
+  } catch (e) {
+    console.warn('não consegui subir a miniatura do favorito.', e.message);
+    return '';
+  }
+}
+
+// Do mais novo para o mais velho, e só as vagas do perfil — como perfil.js.
+const obrasFavoritas = (tipo) => db.favoritos(tipo)
+  .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
+  .slice(0, LIMITE_FAVORITOS[tipo])
+  .map(o => ({
+    nome: o.nome || '',
+    thumb: o.thumb || '',
+    pecas: [...new Set((o.camadas || o.itens || []).map(c => c.itemId).filter(Boolean))],
+  }));
+
+const fotoDoPerfil = () => ({
   bio: db.state.usuario.bio || '',
   avatar: { ...db.state.usuario.avatar },
   equipado: db.roupasEquipadas(),
+  favoritos: {
+    pecas: db.favoritos('peca').map(p => p.id),
+    looks: obrasFavoritas('look'),
+    colagens: obrasFavoritas('colagem'),
+  },
 });
+
+// A foto com cada miniatura trocada pela impressão: é o que diz se algo mudou
+// sem carregar data URLs na comparação.
+const assinatura = (foto) => JSON.stringify(foto, (k, v) =>
+  k === 'thumb' && v ? impressao(v) : v);
 
 async function enviarPerfil() {
   // Depois de sair da conta o estado volta ao inicial ('local-user'): não há
   // quem publicar.
   if (!db.state.usuario || db.state.usuario.id === 'local-user') return;
   const foto = fotoDoPerfil();
-  if (foto === ultimoEnviado) return;
+  const marca = assinatura(foto);
+  if (marca === ultimoEnviado) return;
   try {
-    await chamar('/api/perfil', { method: 'PUT', body: foto });
-    ultimoEnviado = foto;
+    // Miniatura que não subiu vai sem imagem agora e tenta de novo depois.
+    let faltou = false;
+    const { favoritos } = foto;
+    for (const obra of [...favoritos.looks, ...favoritos.colagens]) {
+      const tinha = obra.thumb;
+      obra.thumb = await miniaturaPublica(tinha);
+      if (tinha.startsWith('data:image/') && !obra.thumb) faltou = true;
+    }
+    await chamar('/api/perfil', { method: 'PUT', body: JSON.stringify(foto) });
+    if (!faltou) ultimoEnviado = marca;
   } catch (e) {
     console.warn('não consegui publicar o seu perfil.', e.message);
   }

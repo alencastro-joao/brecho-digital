@@ -57,7 +57,8 @@ MODO_NUVEM = '--nuvem' in sys.argv[1:]
 
 LIMITE_LOGIN = 8 * 1024            # cadastro e login são texto curto
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
-ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil')
+ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil',
+                    '/api/perfil/miniatura')
 ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 LIMITE_POST = 1536 * 1024          # a miniatura em base64 e um pouco de texto
 
@@ -242,9 +243,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     self.responder(200, {'usuario': pessoas.seguir(
                         eu, corpo.get('id'), bool(corpo.get('segue')))})
             elif rota == '/api/perfil' and metodo == 'PUT':
-                corpo = self.ler_corpo(LIMITE_LOGIN)
+                corpo = self.ler_corpo(32 * 1024)
                 if corpo is not None:
                     self.responder(200, {'perfil': pessoas.atualizar_perfil(eu, corpo)})
+            elif rota == '/api/perfil/miniatura' and metodo == 'POST':
+                corpo = self.ler_corpo(1536 * 1024)
+                if corpo is not None:
+                    self.responder(200, feed.subir_miniatura(eu, corpo))
             else:
                 self.responder(404, {'erro': 'rota desconhecida'})
         except contas.ErroDeConta as e:

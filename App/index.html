@@ -524,8 +524,10 @@
        comentário ou uma sugestão do feed. -->
   <section class="view view-usuario" data-view="usuario" hidden>
     <!-- O mesmo desenho do seu perfil (#/perfil), visto de fora: o cartão de
-         quem a pessoa é à esquerda e, à direita, outras pessoas, as peças e as
-         publicações dela. js/usuario.js. -->
+         quem a pessoa é à esquerda e, à direita, o mesmo que o perfil dela
+         mostra a ela: amigos, roupas, looks e colagens favoritos. Perfil de
+         exemplo (sem favoritos) mostra outras pessoas e as publicações.
+         js/usuario.js. -->
     <div class="pf-layout">
       <aside class="pf-cartao">
         <div class="pf-avatar" id="up-avatar"></div>
@@ -545,7 +547,7 @@
       <main class="pf-vitrine">
         <section class="pf-secao">
           <header class="pf-secao-topo">
-            <h2>Outros perfis</h2><span>quem mais está garimpando por aqui</span>
+            <h2 id="up-outros-titulo">Outros perfis</h2><span id="up-outros-sub">quem mais está garimpando por aqui</span>
             <button type="button" class="pf-link" id="up-buscar">+ Procurar pessoas</button>
           </header>
           <div class="pf-amigos" id="up-outros"></div>
@@ -555,7 +557,7 @@
 
         <section class="pf-secao" id="up-secao-pecas">
           <header class="pf-secao-topo">
-            <h2>Peças do guarda-roupa</h2><span id="up-pecas-sub"></span>
+            <h2 id="up-pecas-titulo">Peças do guarda-roupa</h2><span id="up-pecas-sub"></span>
           </header>
           <div class="pf-grade" id="up-pecas"></div>
         </section>
