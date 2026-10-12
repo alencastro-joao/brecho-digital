@@ -11,6 +11,8 @@
   transition: transform .2s, border-color .2s;
 }
 .avisos-btn:hover { transform: translateY(-1px); border-color: #d8d0c4; }
+/* No computador o Perfil continua na barra de telas. */
+.perfil-atalho { display: none; }
 .avisos-btn[aria-expanded="true"] { border-color: var(--tinta); }
 .avisos-btn svg {
   width: 21px; height: 21px;
@@ -111,6 +113,21 @@
   }
   .avisos-btn:hover { transform: none; }
   .avisos-btn svg { width: 21px; height: 21px; }
+
+  /* O Perfil sai da barra de baixo e vira o rosto do avatar, no canto, com o
+     sino logo à esquerda. */
+  .app > .sidebar .sidebar-btn.perfil { display: none; }
+  .avisos-btn { right: 54px; }
+  .perfil-atalho {
+    display: grid; place-items: center;
+    position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 12px;
+    width: 36px; height: 36px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--linha); background: var(--perfil);
+    overflow: hidden; z-index: 700;
+  }
+  .perfil-atalho-inicial { font-size: 15px; font-weight: 800; color: var(--tinta); }
+  body:has(.view-perfil:not([hidden])) .perfil-atalho,
+  body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--tinta); }
 
   .avisos-painel {
     top: calc(var(--topo-h) + 8px + env(safe-area-inset-top)); left: 10px; right: 10px;

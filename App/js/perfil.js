@@ -20,7 +20,7 @@
 import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import * as auth from './auth.js';
-import { svgAvatar } from './avatar.js';
+import { svgAvatar, retrato, aparenciaAtual } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
 import { chipNivel } from './nivel.js';
@@ -73,7 +73,33 @@ export function montarPerfil() {
   // repinta junto (o mesmo acordo do perfil público).
   aoAtualizarFeed(() => { if (viewAtual() === 'perfil') renderPerfil(); });
 
+  montarAtalho();
   renderPerfil();
+}
+
+// O botão de perfil do topo, no celular: o rosto do seu avatar, com a roupinha
+// (chapéu e óculos aparecem no recorte). Só redesenha quando o rosto muda —
+// o onChange dispara a cada save.
+function montarAtalho() {
+  const botao = $('#perfil-atalho');
+  botao.addEventListener('click', () => irPara('perfil'));
+  let ultimo = null;
+  const pintar = () => {
+    const u = db.state.usuario;
+    const roupas = db.roupasEquipadas();
+    const chave = JSON.stringify([u.avatar, roupas, u.nome]);
+    if (chave === ultimo) return;
+    ultimo = chave;
+    try {
+      botao.replaceChildren(retrato(aparenciaAtual(), 34, COR_PROPRIA, roupas));
+    } catch {
+      // Sem desenho possível, fica a inicial do nome.
+      botao.replaceChildren(el('span', { class: 'perfil-atalho-inicial' },
+        (u.nome || '?').trim().charAt(0).toUpperCase() || '?'));
+    }
+  };
+  db.onChange(pintar);
+  pintar();
 }
 
 export function renderPerfil() {
