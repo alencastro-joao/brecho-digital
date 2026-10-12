@@ -23,7 +23,7 @@ import { instalarPassThrough, precarregarAlpha } from './alpha.js';
 import { criarAura } from './aura.js';
 import { abrirEditar } from './editar.js';
 import {
-  el, $, clamp, pontosPoisson, mulberry32, sementeDoDia, shuffle, hojeISO,
+  el, $, clamp, mulberry32, sementeDoDia, shuffle, hojeISO,
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
 
@@ -110,24 +110,6 @@ export function poolDoDia(iso = hojeISO()) {
   return [...loja, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - loja.length))];
 }
 
-// A loja tem sempre o mesmo estoque: quantas peças o dono pendurou é regra de
-// negócio (CONFIG.PECAS_NA_VITRINE), não conta de quanto cabe na tela. O que a
-// janela decide é o *aperto* — a distância mínima entre as âncoras.
-//
-// Ela nasce do espaçamento natural de 25 âncoras nesta área (a raiz da área por
-// peça), com um desconto pequeno. O desconto grande é tentador — quanto menor a
-// distância, mais as roupas se encavalam — mas o Bridson cresce a partir de uma
-// semente e pára ao completar a conta: com a distância bem abaixo do
-// espaçamento natural, as 25 peças cabem todas em volta da semente e o mural
-// vira um amontoado num canto, com metade da arara vazia. O encavalamento vem
-// de outro lugar: a peça é mais larga que a distância entre as âncoras, e as
-// raras ainda ganham alguém por cima em `encobrirAsRaras`.
-function apertoDoMural(largura, altura) {
-  const area = largura * altura * 0.86;            // desconta cabeçalho e NPC
-  const qtd = CONFIG.PECAS_NA_VITRINE;
-  const minDist = clamp(Math.sqrt(area / qtd) * 0.92, 118, 230);
-  return { qtd, minDist };
-}
 
 // O que a peça ocupa no mural é mais que a imagem: o botão "Pegar" (ou o selo
 // "no closet") continua no layout mesmo invisível — só a opacidade muda no hover
@@ -233,6 +215,69 @@ function encobrirAsRaras(estoque, pontos, medidas, mural, rnd) {
 // parado, o mural é a arara de roupa; o brilho é a resposta a quem se
 // interessou pela peça. (No guarda-roupa a aura continua sempre visível — lá
 // ela é a marca do que você já tem.)
+// Espalha as peças pelo mural inteiro. A área livre (abaixo do cabeçalho, entre
+// as bordas) é cortada numa grade com uma célula por peça, e cada peça cai
+// perto do meio da sua célula, com um tremido para não parecer prateleira.
+// Antes era um Poisson (Bridson): ele cresce a partir de uma semente e pára ao
+// completar a conta, então a arara toda nascia em volta de um ponto — no
+// celular, um bolo de roupa no meio ou embaixo e o resto da tela vazio. Aqui a
+// conta é pelo *centro* da peça, e toda faixa da tela recebe alguém.
+//
+// O encavalamento continua: a peça é maior que a célula, e as raras ainda
+// ganham alguém por cima em `encobrirAsRaras`.
+function espalharPeloMural(caixas, mural, rnd) {
+  const n = caixas.length;
+  if (!n) return [];
+  const x0 = FOLGA_BORDA, x1 = mural.w - FOLGA_BORDA;
+  // Faixa do topo tomada quase de lado a lado (os botões de admin no celular):
+  // a grade começa abaixo dela, senão a primeira linha inteira seria empurrada
+  // para cima da segunda.
+  const y0 = mural.zonas.reduce((topo, z) =>
+    z.y0 <= topo && z.x1 - z.x0 > mural.w / 2 ? Math.max(topo, z.y1) : topo, mural.topo);
+  const y1 = mural.h - FOLGA_BORDA;
+  const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+
+  // Colunas e linhas na proporção da área, com o mínimo de células sobrando.
+  let cols = clamp(Math.round(Math.sqrt(n * w / h)), 1, n);
+  let linhas = Math.ceil(n / cols);
+  while (cols > 1 && (cols - 1) * linhas >= n) cols--;
+  const cw = w / cols, ch = h / linhas;
+
+  // Sobrando célula, a vaga sai sorteada — e não sempre a última linha, que
+  // deixaria o rodapé vazio de novo.
+  const celulas = shuffle([...Array(cols * linhas).keys()], rnd).slice(0, n);
+
+  const acomodar = (p, t) => ({
+    x: clamp(p.x, x0, Math.max(x0, x1 - t.w)),
+    y: clamp(p.y, y0, Math.max(y0, y1 - t.h)),
+  });
+  const proibido = (p, t) => mural.zonas.some(z =>
+    p.x + t.w > z.x0 && p.x < z.x1 && p.y + t.h > z.y0 && p.y < z.y1);
+
+  return caixas.map((t, i) => {
+    const cel = celulas[i];
+    const cx = x0 + (cel % cols + 0.5) * cw;
+    const cy = y0 + (Math.floor(cel / cols) + 0.5) * ch;
+    let melhor = null;
+    for (let tent = 0; tent < 12; tent++) {
+      const p = acomodar({
+        x: cx + (rnd() - 0.5) * cw * 0.8 - t.w / 2,
+        y: cy + (rnd() - 0.5) * ch * 0.8 - t.h / 2,
+      }, t);
+      melhor = melhor || p;
+      if (!proibido(p, t)) return p;
+    }
+    // Célula colada no cabeçalho ou no NPC: desce (ou sobe) até sair da zona.
+    for (const z of mural.zonas) {
+      if (!proibido(melhor, t)) break;
+      const abaixo = acomodar({ x: melhor.x, y: z.y1 }, t);
+      const acima = acomodar({ x: melhor.x, y: z.y0 - t.h }, t);
+      melhor = !proibido(abaixo, t) ? abaixo : !proibido(acima, t) ? acima : melhor;
+    }
+    return melhor;
+  });
+}
+
 function caixaDeAura(raridade, src) {
   const aura = criarAura(raridade, src);
   return aura ? el('span', { class: 'aura-cx', 'aria-hidden': 'true' }, aura) : null;
@@ -263,7 +308,7 @@ export function montarVitrine() {
   const altura = mural.clientHeight || window.innerHeight;
   tamanhoMontado = { w: largura, h: altura };
   observarMural();
-  const { qtd, minDist } = apertoDoMural(largura, altura);
+  const qtd = CONFIG.PECAS_NA_VITRINE;
 
   // A raridade do dia é decidida aqui, antes de pendurar: é ela que dá a ordem
   // da pilha. Rara primeiro — quem entra antes no mural fica embaixo, e a
@@ -280,25 +325,23 @@ export function montarVitrine() {
   // Não deixa peça cair atrás do cabeçalho — nem em cima do dono da loja,
   // quando ele está na tela. A faixa do cabeçalho é medida, não chutada: no
   // modo admin ela carrega os botões de administração e fica bem mais larga.
-  const acoes = $('.vitrine-acoes')?.getBoundingClientRect().width;
+  // A altura também é medida: no celular os botões de admin quebram linha e o
+  // bloco desce bem além dos 104px de sempre.
+  const caixaAcoes = $('.vitrine-acoes')?.getBoundingClientRect();
+  const topoMural = mural.getBoundingClientRect().top;
+  const acoes = caixaAcoes?.width;
+  const fundoAcoes = caixaAcoes?.height ? caixaAcoes.bottom - topoMural + 10 : 0;
   const zonasProibidas = [
-    { x0: largura - (acoes ? acoes + 48 : 210), y0: 0, x1: largura, y1: 104 },
+    { x0: largura - (acoes ? acoes + 48 : 210), y0: 0, x1: largura, y1: Math.max(104, fundoAcoes) },
   ];
   if (CONFIG.NPC_VISIVEL) {
     zonasProibidas.push({ x0: 0, y0: altura - 290, x1: 320, y1: altura });
   }
 
-  // A caixa padrão é o que limita o preenchimento de sobra (as peças que o
-  // Poisson não conseguiu encaixar): com 210px num celular de 375, sobravam
-  // 113px de faixa e a arara inteira se amontoava na metade da esquerda.
-  const pontos = pontosPoisson(pecas.length, largura, altura, {
-    padding: 26, paddingTop: 88, itemW: Math.min(210, Math.round(largura * 0.3)), itemH: 250,
-    minDist, rnd, excluir: zonasProibidas,
-    tamanhos: medidas.map(m => m.caixa),
-  });
+  const areaLivre = { w: largura, h: altura, topo: 88, zonas: zonasProibidas };
+  const pontos = espalharPeloMural(medidas.map(m => m.caixa), areaLivre, rnd);
 
-  encobrirAsRaras(estoque, pontos, medidas,
-    { w: largura, h: altura, topo: 88, zonas: zonasProibidas }, rnd);
+  encobrirAsRaras(estoque, pontos, medidas, areaLivre, rnd);
 
   const nos = [];
   estoque.forEach(({ peca, raridade }, i) => {
