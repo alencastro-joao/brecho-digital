@@ -92,6 +92,42 @@ export async function apagarPublicacao(post) {
   avisar();
 }
 
+// O id do post que o servidor dá a um look ou colagem (feed.py, publicar):
+// os 16 primeiros do sha256 de "autor|chave". Serve para achar o post mesmo
+// quando ele não veio na última leitura (o feed só traz os mais novos).
+async function idDoPost(chave) {
+  const bytes = new TextEncoder().encode(`${db.state.usuario.id}|${chave}`);
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  return 'p-' + [...hash].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+// Apagou o look (ou a colagem)? O post dele sai do feed junto: o do servidor
+// e o que ainda estivesse só no save. Devolve false se o servidor não deixou
+// (sem rede, por exemplo) — quem chamou avisa.
+export async function apagarDoFeedPorOrigem(tipo, id) {
+  const campo = tipo === 'board' ? 'boardId' : 'lookId';
+  const eu = db.state.usuario.id;
+  db.state.feed = db.state.feed.filter(p => !(p[campo] === id && p.autor === eu));
+
+  const ids = new Set(posts.filter(p => p[campo] === id && p.autor === eu).map(p => p.id));
+  try { ids.add(await idDoPost(`${tipo === 'board' ? 'board' : 'look'}:${id}`)); }
+  catch { /* sem crypto.subtle (http fora do localhost): fica só o que a leitura achou */ }
+
+  let tudoCerto = true;
+  for (const postId of ids) {
+    try {
+      await chamar('/api/feed/' + encodeURIComponent(postId), { method: 'DELETE' });
+    } catch (e) {
+      if (e.status === 404) continue;      // nunca foi publicado, ou já tinha saído
+      tudoCerto = false;
+      continue;
+    }
+    posts = posts.filter(p => p.id !== postId);
+  }
+  avisar();
+  return tudoCerto;
+}
+
 // ---------------------------- Curtir e comentar ---------------------------
 // Otimista: a tela muda na hora e o servidor confirma (ou desfaz) depois.
 export async function curtirPublicacao(post) {

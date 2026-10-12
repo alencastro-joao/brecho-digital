@@ -13,7 +13,7 @@ import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta, baixarLook } from './render.js';
-import { publicarOuGuardar, pacoteDoLook, jaPublicado } from './publicacoes.js';
+import { publicarOuGuardar, pacoteDoLook, jaPublicado, apagarDoFeedPorOrigem } from './publicacoes.js';
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
@@ -820,7 +820,7 @@ function apagarLook(id) {
   if (!look) return;
   msMenuAberto = null;
   const aviso = `Excluir "${look.nome}"? Não dá para desfazer.` +
-    (look.publicado ? '\nO post que já está no feed continua lá.' : '');
+    (jaPublicado('lookId', id) || look.publicado ? '\nO post dele sai do feed também.' : '');
   if (!confirm(aviso)) { if (!$('#modal-meus').hidden) renderMeus(); return; }
   db.state.looks.splice(db.state.looks.indexOf(look), 1);
   // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.
@@ -829,6 +829,10 @@ function apagarLook(id) {
   renderSalvos();
   if (!$('#modal-meus').hidden) renderMeus();
   toast(`"${look.nome}" excluído.`);
+  apagarDoFeedPorOrigem('look', id).then(ok => {
+    db.salvar();
+    if (!ok) toast('Não consegui tirar o post do feed agora. Apague por lá.', 'aviso');
+  });
 }
 
 export function aoEntrarNoStylist() {
