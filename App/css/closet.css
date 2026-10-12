@@ -87,6 +87,14 @@
   content: '★'; position: absolute; top: 6px; left: 8px;
   font-size: 12px; color: #d6a81f;
 }
+.closet-paginas {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  gap: 14px; padding-top: 14px;
+  font-size: 13px; font-weight: 700; color: var(--tinta-suave);
+}
+.closet-paginas[hidden] { display: none; }
+.closet-paginas button { width: auto; padding: 8px 16px; }
+.closet-paginas button:disabled { opacity: .35; cursor: default; }
 .closet-vazio {
   grid-column: 1 / -1; padding: 40px 0;
   color: var(--tinta-suave); font-size: 14px;

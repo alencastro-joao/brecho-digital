@@ -111,14 +111,19 @@
   .closet-acoes { justify-content: flex-start; gap: 8px; width: 100%; }
   .btn-adicionar { padding: 8px 14px; }
   .grid-title { font-size: 18px; }
-  /* Três colunas cravadas, não "quantas couberem": a barra de rolagem (que
-     alguns navegadores desenham por fora do conteúdo) roubava a terceira. */
+  /* Colunas cravadas, não "quantas couberem": a barra de rolagem (que alguns
+     navegadores desenham por fora do conteúdo) roubava a última. O
+     guarda-roupa usa quatro, com quadrados menores (24 por página). */
   .grid-container {
     gap: 10px; scrollbar-gutter: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
+  .view-closet .grid-container { gap: 7px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .view-closet .item-slot { padding: 6px; border-radius: 11px; border-width: 1.5px; }
+  .view-closet .item-slot .peca-caixa { inset: 6px; }
+  .view-closet .closet-paginas { padding-top: 10px; }
 
   /* O destaque vira uma faixa no pé da tela, e só quando há peça escolhida:
      sem ela, a faixa seria só o "Selecione uma peça" comendo a grade. */

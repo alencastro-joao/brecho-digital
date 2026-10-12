@@ -9,7 +9,7 @@ import { item as pecaDoCatalogo, nomeDaPeca, proporcao, trocarImagem } from './c
 import {
   agrupamento, categoriaDe, grupoDe, gruposDoInventario, seletorDeAgrupamento,
 } from './agrupamento.js';
-import { ordemAtual, ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
+import { ordemAtual, ordenar, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { abrirEditar } from './editar.js';
@@ -21,6 +21,7 @@ import { adicionar as soltarNaColagem } from './board.js';
 let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
 let selecionada = null;
+let pagina = 0;                 // a página aberta da grade (começa em 0)
 
 // A "Minha ordem" é a que a pessoa arrasta; os outros modos de organizar
 // (ordenacao.js, compartilhado com o Stylist e a Colagem) só ordenam a vista.
@@ -31,6 +32,8 @@ export function montarCloset() {
   montarSeletorDeAgrupamento();
   montarSeletorDeOrdem();
   carregarCategoria(categoriaAtual);
+  $('#closet-pag-ant').addEventListener('click', () => irParaPagina(pagina - 1));
+  $('#closet-pag-prox').addEventListener('click', () => irParaPagina(pagina + 1));
   $('#btn-para-stylist').addEventListener('click', () => {
     if (!selecionada) return;
     vestirPeca(selecionada);
@@ -76,7 +79,8 @@ export function montarCloset() {
   let t;
   window.addEventListener('resize', () => {
     clearTimeout(t);
-    t = setTimeout(preencherVazios, 140);
+    // No computador o tamanho da página depende da tela: refaz a grade.
+    t = setTimeout(() => carregarCategoria(categoriaAtual, { manterPagina: true }), 140);
   });
 }
 
@@ -123,39 +127,92 @@ function montarRail() {
   }
 }
 
-export function carregarCategoria(cat) {
+let pecasDaVista = [];           // as peças da categoria aberta, já ordenadas
+
+export function carregarCategoria(cat, { manterPagina = false } = {}) {
   const grupos = agrupamento().grupos;
   if (!grupos[cat]) cat = 'todas';
+  if (cat !== categoriaAtual || !manterPagina) pagina = 0;
   categoriaAtual = cat;
   document.querySelectorAll('.cat-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.cat === cat));
 
   limparPreview();
 
+  const tudo = cat === 'todas';
+  // Peça órfã (no inventário mas fora do catálogo) não ocupa quadrado.
+  pecasDaVista = db.state.inventario
+    .filter(p => (tudo || grupoDe(p) === cat) && pecaDoCatalogo(p.id));
+  ordenar(pecasDaVista);
+
+  const rotulo = tudo ? 'Todas as peças' : grupos[cat].nome;
+  const n = pecasDaVista.length;
+  $('#closet-sub').textContent = tudo
+    ? `${rotulo} · ${n} ${n === 1 ? 'peça' : 'peças'}`
+    : `${rotulo} · ${n} ${n === 1 ? 'peça' : 'peças'} · ` +
+      `${db.state.inventario.length} no total`;
+
+  desenharPagina();
+}
+
+// A grade é sempre cheia: um número fixo de quadrados por página (os que
+// sobram na última viram quadrados vazios) e botões para passar de página.
+function desenharPagina() {
   const grid = $('#inventory-grid');
   grid.innerHTML = '';
 
-  const tudo = cat === 'todas';
-  const pecas = db.state.inventario
-    .filter(p => tudo || grupoDe(p) === cat);
-  ordenar(pecas);
-
-  const rotulo = tudo ? 'Todas as peças' : grupos[cat].nome;
-  $('#closet-sub').textContent = tudo
-    ? `${rotulo} · ${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`
-    : `${rotulo} · ${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'} · ` +
-      `${db.state.inventario.length} no total`;
-
-  if (!pecas.length) {
+  if (!pecasDaVista.length) {
+    $('#closet-paginas').hidden = true;
     grid.append(el('p', { class: 'closet-vazio' },
-      tudo
+      categoriaAtual === 'todas'
         ? 'Guarda-roupa vazio. Garimpe na vitrine — o dono repõe todo dia.'
         : 'Nada nesta categoria ainda.'));
     return;
   }
 
-  preencherComGrupos(grid, pecas, criarSlot, { categoriaAberta: !tudo });
-  preencherVazios();
+  const porPagina = pecasPorPagina();
+  const total = Math.max(1, Math.ceil(pecasDaVista.length / porPagina));
+  pagina = Math.min(Math.max(0, pagina), total - 1);
+
+  const daPagina = pecasDaVista.slice(pagina * porPagina, (pagina + 1) * porPagina);
+  for (const p of daPagina) {
+    const slot = criarSlot(p);
+    if (slot) grid.append(slot);
+  }
+  for (let i = daPagina.length; i < porPagina; i++) {
+    grid.append(el('div', { class: 'item-slot vazio' }));
+  }
+
+  $('#closet-paginas').hidden = total < 2;
+  $('#closet-pag-num').textContent = `${pagina + 1} / ${total}`;
+  $('#closet-pag-ant').disabled = pagina === 0;
+  $('#closet-pag-prox').disabled = pagina >= total - 1;
+}
+
+function irParaPagina(n) {
+  pagina = n;
+  limparPreview();
+  desenharPagina();
+  $('#inventory-grid').scrollTop = 0;
+}
+
+// Celular: 4 colunas × 6 fileiras. Computador: as colunas que a largura
+// comporta × as fileiras que cabem sem rolar (mínimo de 3).
+function pecasPorPagina() {
+  if (matchMedia('(max-width: 900px)').matches) return 24;
+  const grid = $('#inventory-grid');
+  const wrapper = document.querySelector('.grid-wrapper');
+  const head = document.querySelector('.closet-head');
+  const pag = $('#closet-paginas');
+  const estilo = getComputedStyle(grid);
+  const colunas = estilo.gridTemplateColumns.split(' ').filter(Boolean).length || 4;
+  const gap = parseInt(estilo.gap) || 16;
+  const celula = parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue('--cel-peca')) || 140;
+  const disponivel = (wrapper?.clientHeight || 0) - (head?.offsetHeight || 0)
+    - 18 - (pag?.offsetHeight || 48) - 40;
+  const linhas = Math.max(3, Math.floor((disponivel + gap) / (celula + gap)));
+  return colunas * linhas;
 }
 
 function criarSlot(peca) {
@@ -201,7 +258,7 @@ function criarSlot(peca) {
     slot.classList.remove('alvo');
     if (manual() && arrastando && arrastando !== peca.id) {
       db.reordenarInventario(arrastando, peca.id);
-      carregarCategoria(categoriaAtual);
+      carregarCategoria(categoriaAtual, { manterPagina: true });
     }
   });
   slot.addEventListener('dragend', () => {
@@ -210,40 +267,6 @@ function criarSlot(peca) {
   });
 
   return slot;
-}
-
-// Completa a grade com slots vazios até fechar as linhas visíveis.
-function preencherVazios() {
-  const grid = $('#inventory-grid');
-  const wrapper = document.querySelector('.grid-wrapper');
-  const head = document.querySelector('.closet-head');
-  if (!grid || !wrapper || !grid.querySelector('.item-slot')) return;
-
-  grid.querySelectorAll('.item-slot.vazio').forEach(n => n.remove());
-
-  const estilo = getComputedStyle(grid);
-  const colunas = estilo.gridTemplateColumns.split(' ').filter(Boolean).length;
-  const gap = parseInt(estilo.gap) || 14;
-  const primeiro = grid.querySelector('.item-slot');
-  const alturaSlot = primeiro?.offsetHeight || 120;
-
-  const disponivel = wrapper.clientHeight - (head?.offsetHeight || 0) - 42;
-  const linhas = Math.max(1, Math.floor((disponivel + gap) / (alturaSlot + gap)));
-  const total = colunas * linhas;
-  // Com grupos, os rótulos quebram as linhas: completa só a última linha.
-  const slots = grid.querySelectorAll('.item-slot').length;
-  const faltam = grid.querySelector('.grupo-rotulo')
-    ? (colunas - ultimosDoGrupo(grid) % colunas) % colunas
-    : total - slots;
-
-  for (let i = 0; i < faltam; i++) grid.append(el('div', { class: 'item-slot vazio' }));
-}
-
-// Quantos slots tem o último grupo da grade.
-function ultimosDoGrupo(grid) {
-  let n = 0;
-  for (let no = grid.lastElementChild; no && !no.classList.contains('grupo-rotulo'); no = no.previousElementSibling) n++;
-  return n;
 }
 
 function selecionar(peca) {
@@ -312,7 +335,7 @@ export function aoEntrarNoCloset() {
   montarSeletorDeAgrupamento();
   montarSeletorDeOrdem();
   montarRail();
-  carregarCategoria(categoriaAtual);
+  carregarCategoria(categoriaAtual, { manterPagina: true });
 }
 
 export function darPecasAleatorias(qtd, itens) {
