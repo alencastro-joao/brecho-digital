@@ -18,7 +18,8 @@ esta função só responde `/api/*`.
     GET  /api/usuarios/<id>    a página pública de uma pessoa
     POST /api/seguir           segue ou deixa de seguir
     GET  /api/social           quem eu sigo e quem me segue
-    PUT  /api/perfil           o que os outros leem de mim: bio, rosto, roupa
+    PUT  /api/perfil           o que os outros leem de mim: bio, rosto, roupa, favoritos
+    POST /api/perfil/miniatura a miniatura de um look ou colagem favoritos (ver feed.py)
     /api/feed[/<id>[/...]]     o feed compartilhado: publicar, curtir, comentar (ver feed.py)
     POST /api/pecas            admin: peça nova no acervo
     PUT  /api/pecas/<id>       admin: edita a peça
@@ -62,11 +63,13 @@ LIMITE_LOGIN = 8 * 1024             # cadastro e login são texto curto
 LIMITE_PECA = 5 * 1024 * 1024       # a Function URL para em 6 MB: fique abaixo
 LIMITE_ESTADO = 5 * 1024 * 1024
 LIMITE_POST = 1536 * 1024           # a miniatura em base64 e um pouco de texto
+LIMITE_PERFIL = 32 * 1024           # bio, rosto, roupa e os ids dos favoritos
 
 ROTA_PECA = re.compile(r'^/api/pecas/([^/]+)$')
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
 ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$')
-ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil')
+ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil',
+                    '/api/perfil/miniatura')
 ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 
 
@@ -253,7 +256,10 @@ def rotas_de_pessoas(pedido):
 
     if rota == '/api/perfil' and metodo == 'PUT':
         return responder(200, {'perfil': pessoas.atualizar_perfil(
-            eu, pedido.corpo(LIMITE_LOGIN))})
+            eu, pedido.corpo(LIMITE_PERFIL))})
+
+    if rota == '/api/perfil/miniatura' and metodo == 'POST':
+        return responder(200, feed.subir_miniatura(eu, pedido.corpo(LIMITE_POST)))
     return None
 
 

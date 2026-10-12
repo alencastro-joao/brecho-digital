@@ -12,14 +12,14 @@ mesmo formato de resposta.
     GET  /api/usuarios/<id>    a página pública de uma pessoa
     POST /api/seguir           { id, segue }: segue ou deixa de seguir
     GET  /api/social           quem eu sigo e quem me segue
-    PUT  /api/perfil           o que os outros leem de mim: bio, rosto, roupa
+    PUT  /api/perfil           o que os outros leem de mim: bio, rosto, roupa, favoritos
 
 O desenho, na mesma tabela das contas (nenhum índice novo):
 
     USER#<id>   ganha três atributos:
         seguindo    conjunto (SS) de ids que esta conta segue
         seguidores  conjunto (SS) de ids que seguem esta conta
-        perfil      { bio, avatar, equipado } — a parte pública do save
+        perfil      { bio, avatar, equipado, favoritos } — a parte pública do save
 
 * **Seguir é uma transação de duas pontas.** `ADD` no `seguindo` de quem segue
   e `ADD` no `seguidores` de quem é seguido, juntos. Conjunto do DynamoDB é
@@ -37,6 +37,12 @@ O desenho, na mesma tabela das contas (nenhum índice novo):
 
 * **Nunca sai e-mail nem papel.** O cartão é o que qualquer pessoa logada pode
   saber de qualquer outra: nome, @, desde quando, bio, rosto, roupa e contagens.
+
+* **A página inteira mostra o mesmo que o perfil do dono.** `perfil_de` junta
+  ao cartão os favoritos (peças, looks e colagens com estrela — o que o dono
+  escolheu mostrar) e os amigos (quem a pessoa segue e a segue de volta). Só
+  ali: a busca e /api/social devolvem listas de cartões, e favoritos e amigos
+  de cada um pesariam à toa.
 
 Custo da busca: é uma varredura (`Scan`) da tabela, filtrada aqui. A tabela é
 minúscula e paga por uso, então isso é trocado por miúdos. Quando passar de
@@ -60,6 +66,10 @@ BIO_MAX = 140
 TERMO_MAX = 40
 RESULTADOS = 20
 LISTA_MAX = 60          # quantos cartões /api/social devolve de cada lado
+NOME_MAX = 60
+PECAS_FAV_MAX = 40      # peças favoritas na página (o front não tem teto)
+OBRAS_FAV_MAX = 3       # looks e colagens: as três vagas de favoritos.js
+PECAS_POR_OBRA = 40
 
 # Só o que o cartão usa. A varredura nunca traz a senha para a memória.
 _CAMPOS = {'#id': 'id', '#h': 'handle', '#n': 'nome', '#c': 'criado_em',
@@ -175,13 +185,30 @@ def buscar(eu_id, texto):
     return [_cartao(i, eu) for i in achados[:RESULTADOS]]
 
 
-def perfil_de(eu_id, alvo_id):
+def perfil_de(eu_id, alvo_id, completo=True):
+    """O cartão e, na página da pessoa (`completo`), o que o perfil dela mostra:
+    os favoritos e os amigos. Seguir devolve só o cartão."""
     if not ID_OK.match(str(alvo_id or '')):
         raise ErroDeConta('Perfil não encontrado.', 404)
     item = _pegar('USER#' + alvo_id)
     if not item:
         raise ErroDeConta('Perfil não encontrado.', 404)
-    return _cartao(item, _pegar('USER#' + eu_id) or {})
+    eu = _pegar('USER#' + eu_id) or {}
+    cartao = _cartao(item, eu)
+    if not completo:
+        return cartao
+
+    # Quem nunca enviou os favoritos (versão antiga do app) volta sem a chave,
+    # e a tela cai nas publicações, como antes.
+    favoritos = (item.get('perfil') or {}).get('favoritos')
+    if favoritos is not None:
+        cartao['favoritos'] = favoritos
+    # Amigo é mão dupla: ela segue e é seguida de volta.
+    mutuos = set(item.get('seguindo') or ()) & set(item.get('seguidores') or ())
+    ids = sorted(mutuos)[:LISTA_MAX]
+    donos = _cartoes(ids, eu)
+    cartao['amigos'] = [donos[i] for i in ids if i in donos]
+    return cartao
 
 
 # --- Seguir ---------------------------------------------------------------
@@ -208,7 +235,7 @@ def seguir(eu_id, alvo_id, segue):
                          ponta(alvo_id, 'seguidores', eu_id)])
     if falhou is not None:
         raise ErroDeConta('Perfil não encontrado.', 404)
-    return perfil_de(eu_id, alvo_id)
+    return perfil_de(eu_id, alvo_id, completo=False)
 
 
 def social(eu_id):
@@ -237,17 +264,67 @@ def _mapa(bruto, maximo):
     return saida
 
 
-def limpar_perfil(corpo):
-    corpo = corpo if isinstance(corpo, dict) else {}
+def _ids(bruto, maximo):
+    """Lista de ids de peça, sem repetir, validados como qualquer valor curto."""
+    if not isinstance(bruto, list):
+        return []
+    vistos = []
+    for p in bruto:
+        if isinstance(p, str) and VALOR_OK.match(p) and p not in vistos:
+            vistos.append(p)
+        if len(vistos) >= maximo:
+            break
+    return vistos
+
+
+def miniatura_ok(eu_id):
+    """A miniatura de um favorito só pode ser uma que o próprio dono subiu
+    (feed.subir_miniatura): nada de apontar para arquivo de outra pessoa ou
+    para fora do site."""
+    return re.compile(r'^assets/posts/perfil-%s-[0-9a-f]{10}\.(webp|jpg|png)$'
+                      % re.escape(str(eu_id or '')))
+
+
+def _obras(bruto, eu_id):
+    if not isinstance(bruto, list):
+        return []
+    thumb_ok = miniatura_ok(eu_id)
+    saida = []
+    for obra in bruto[:OBRAS_FAV_MAX]:
+        if not isinstance(obra, dict):
+            continue
+        thumb = str(obra.get('thumb') or '')
+        saida.append({
+            'nome': ' '.join(str(obra.get('nome') or '').split())[:NOME_MAX],
+            'thumb': thumb if thumb_ok.match(thumb) else '',
+            'pecas': _ids(obra.get('pecas'), PECAS_POR_OBRA),
+        })
+    return saida
+
+
+def limpar_favoritos(bruto, eu_id):
+    bruto = bruto if isinstance(bruto, dict) else {}
     return {
+        'pecas': _ids(bruto.get('pecas'), PECAS_FAV_MAX),
+        'looks': _obras(bruto.get('looks'), eu_id),
+        'colagens': _obras(bruto.get('colagens'), eu_id),
+    }
+
+
+def limpar_perfil(corpo, eu_id=None):
+    corpo = corpo if isinstance(corpo, dict) else {}
+    perfil = {
         'bio': str(corpo.get('bio') or '').strip()[:BIO_MAX],
         'avatar': _mapa(corpo.get('avatar'), 8),
         'equipado': _mapa(corpo.get('equipado'), 12),
     }
+    if 'favoritos' in corpo:
+        perfil['favoritos'] = limpar_favoritos(corpo.get('favoritos'), eu_id)
+    return perfil
 
 
 def atualizar_perfil(eu_id, corpo):
-    perfil = limpar_perfil(corpo)
+    perfil = limpar_perfil(corpo, eu_id)
     try:
         _dynamo.update_item(
             TableName=TABELA, Key={'pk': {'S': 'USER#' + str(eu_id or '')}},

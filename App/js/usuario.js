@@ -3,9 +3,15 @@
 // Aqui não há contas ligadas nem botões de teste: isso é do dono da conta. O
 // que se vê de fora é quem a pessoa é (avatar, bio, desde quando), o que ela
 // fez (looks e colagens publicados) e o que ela veste (as peças deles).
-// O desenho é o do seu perfil (perfil.js): o cartão à esquerda e a coluna da
-// direita com outras pessoas, as peças e as publicações. Clicar numa
-// publicação abre o cartão inteiro do feed, num modal, para curtir e comentar.
+// O desenho é o do seu perfil (perfil.js): o cartão à esquerda e, à direita,
+// o mesmo que o perfil da pessoa mostra a ela — os amigos e a vitrine das
+// roupas, looks e colagens que ela favoritou com a estrela. É o que uma conta
+// real manda ao servidor (pessoas.js); clicar num look ou colagem abre a
+// miniatura grande, com as peças, num modal.
+//
+// Perfil de exemplo, ou conta que ainda não mandou os favoritos (versão antiga
+// do app), não tem vitrine: aí a coluna mostra outras pessoas, as peças e as
+// publicações, e clicar numa publicação abre o cartão inteiro do feed.
 //
 // Os números não vêm de lugar nenhum — são sorteados a partir do id, como o
 // avatar (ver avatar.js). Mesma semente, mesma pessoa: @liamoreno tem sempre os
@@ -20,6 +26,7 @@ import { el, $, mulberry32, sementeDoTexto, tempoRelativo, toast } from './util.
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipNivel } from './nivel.js';
+import { LIMITE_FAVORITOS } from './favoritos.js';
 import { chipsDeRedes } from './conexoes.js';
 import { irPara, paramAtual, viewAtual } from './router.js';
 import {
@@ -31,6 +38,7 @@ const MAX_PECAS = 12;
 let idAtual = null;          // de quem é a página aberta
 let gerando = false;         // uma leva de colagens por vez
 let postAberto = null;       // o post aberto no modal, se houver
+let obraAberta = false;      // ou um look/colagem favorito
 
 // Fictício (PERFIS_MOCK) ou conta real (pessoas.js): o mesmo formato.
 export const perfilPublico = perfilDe;
@@ -125,6 +133,9 @@ const pecasDeUmPost = (post) => [...new Set(pecasDoPost(post).map(c => c.itemId)
   .map(pecaDoCatalogo).filter(Boolean);
 
 const plural = (n, um, muitos) => `${n} ${n === 1 ? um : muitos}`;
+
+// Ids de peça → peças do catálogo, sem as que saíram dele.
+const doCatalogo = (ids = []) => ids.map(pecaDoCatalogo).filter(Boolean);
 
 // --------------------------------- Tela -----------------------------------
 export function montarUsuario() {
@@ -223,11 +234,14 @@ function renderUsuario() {
 
   // Três números, como no seu cartão; as curtidas vão no título.
   // Fictício: o sorteio não sabe que você o seguiu, então soma você à mão.
-  // Conta real: o servidor já contou.
+  // Conta real: o servidor já contou — e, com a página completa, os amigos
+  // dela, como no seu cartão.
   const stats = [
     ['publicações', posts.length, `${plural(curtidas, 'curtida', 'curtidas')} nas publicações`],
     ['seguidores', n.seguidores + (!p.real && segue ? 1 : 0), ''],
-    ['seguindo', n.seguindo, ''],
+    p.amigos
+      ? ['amigos', p.amigos.length, `segue ${plural(n.seguindo, 'pessoa', 'pessoas')}`]
+      : ['seguindo', n.seguindo, ''],
   ];
   $('#up-stats').replaceChildren(...stats.map(([rotulo, valor, dica]) =>
     el('div', { class: 'pf-stat', title: dica },
@@ -242,21 +256,26 @@ function renderUsuario() {
   );
 
   renderOutros(p);
-  renderVazio(p, posts, segue);
-  renderPecas(p);
-  renderPosts(posts);
+  if (p.real && p.favoritos) {
+    const mostrados = renderVitrine(p.favoritos);
+    renderVazio(p, mostrados, segue, 'ainda não favoritou nada');
+  } else {
+    renderVazio(p, posts.length, segue, 'ainda não publicou nada');
+    renderPecas(p);
+    renderPosts(posts);
+  }
   if (postAberto) renderPostAberto();
 }
 
-// Sem publicação nenhuma, o lugar das seções vazias é um aviso só — o mesmo
+// Sem nada para mostrar, o lugar das seções vazias é um aviso só — o mesmo
 // bloco tracejado do "Complete a sua vitrine" do seu perfil.
-function renderVazio(p, posts, segue) {
+function renderVazio(p, quantos, segue, frase) {
   const caixa = $('#up-vazio');
-  caixa.hidden = posts.length > 0;
+  caixa.hidden = quantos > 0;
   if (caixa.hidden) return;
 
   caixa.replaceChildren(
-    el('h3', {}, `${p.nome.split(' ')[0]} ainda não publicou nada`),
+    el('h3', {}, `${p.nome.split(' ')[0]} ${frase}`),
     el('div', { class: 'pf-dica' },
       el('span', { class: 'pf-dica-icone', style: { background: 'var(--social)' } }, '♡'),
       el('div', {},
@@ -269,6 +288,7 @@ function renderVazio(p, posts, segue) {
 
 function renderPecas(p) {
   const pecas = pecasDe(p.id);
+  $('#up-pecas-titulo').textContent = 'Peças do guarda-roupa';
   $('#up-secao-pecas').hidden = !pecas.length;
   $('#up-pecas-sub').textContent = 'as que aparecem nas publicações';
   $('#up-pecas').replaceChildren(...gradeDePecas(pecas));
@@ -297,9 +317,70 @@ function renderPosts(posts) {
   secao('colagens', posts.filter(post => post.tipo === 'board'), 'colagem', 'colagens');
 }
 
-// Pular para a próxima pessoa sem voltar ao feed.
+// ------------------------------- A vitrine --------------------------------
+// O que o perfil da pessoa mostra a ela: roupas, looks e colagens com estrela,
+// nas mesmas seções e com os mesmos cartões do seu perfil (perfil.js).
+// Devolve quantos itens apareceram, para o aviso de vitrine vazia.
+function renderVitrine(favoritos) {
+  const pecas = doCatalogo(favoritos.pecas);
+  $('#up-pecas-titulo').textContent = 'Roupas favoritas';
+  $('#up-secao-pecas').hidden = !pecas.length;
+  $('#up-pecas-sub').textContent = plural(pecas.length, 'peça', 'peças');
+  $('#up-pecas').replaceChildren(...gradeDePecas(pecas));
+
+  const secao = (chave, tipo, lista = []) => {
+    $(`#up-secao-${chave}`).hidden = !lista.length;
+    $(`#up-${chave}-sub`).textContent = `${lista.length} de ${LIMITE_FAVORITOS[tipo]}`;
+    $(`#up-${chave}`).replaceChildren(...lista.map(obra => cartaoDeObra({
+      nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
+      thumb: obra.thumb,
+      tipo,
+      pecas: doCatalogo(obra.pecas),
+      abrir: () => abrirObra(obra, tipo),
+    })));
+    return lista.length;
+  };
+  return pecas.length
+    + secao('looks', 'look', favoritos.looks)
+    + secao('colagens', 'colagem', favoritos.colagens);
+}
+
+// Amigos dela, quando a página veio completa do servidor (conta real); senão,
+// outros perfis para pular para a próxima pessoa sem voltar ao feed.
 function renderOutros(p) {
+  if (p.amigos) {
+    const amigos = p.amigos.map(perfilPublico).filter(Boolean);
+    $('#up-outros-titulo').textContent = 'Amigos';
+    $('#up-outros-sub').textContent = amigos.length
+      ? `${plural(amigos.length, 'amigo', 'amigos')} · seguem e são seguidos de volta`
+      : 'ninguém por enquanto';
+    $('#up-outros').replaceChildren(...amigos.map(botaoDePerfil));
+    return;
+  }
+  $('#up-outros-titulo').textContent = 'Outros perfis';
+  $('#up-outros-sub').textContent = 'quem mais está garimpando por aqui';
   $('#up-outros').replaceChildren(...botoesDeOutrosPerfis(p.id));
+}
+
+// Um look ou colagem favorito, aberto grande no modal das publicações: a
+// miniatura e as peças que o compõem. Só leitura — é a vitrine de outra pessoa.
+function abrirObra(obra, tipo) {
+  fecharPost();
+  obraAberta = true;
+  const pecas = doCatalogo(obra.pecas);
+  $('#up-post-titulo').textContent = obra.nome || (tipo === 'look' ? 'Look' : 'Colagem');
+  $('#up-post-corpo').replaceChildren(
+    el('div', { class: `up-obra-foto ${tipo}` },
+      obra.thumb
+        ? el('img', { src: obra.thumb, alt: obra.nome || '' })
+        : el('span', { class: 'sem-thumb' }, 'sem prévia')),
+    pecas.length
+      ? el('div', { class: 'up-obra-pecas' },
+        el('small', {}, plural(pecas.length, 'peça', 'peças')),
+        el('div', { class: 'pf-grade' }, ...gradeDePecas(pecas)))
+      : null);
+  $('#modal-post').hidden = false;
+  document.body.classList.add('com-modal');
 }
 
 // ------------------------------ Post aberto -------------------------------
@@ -320,8 +401,9 @@ function renderPostAberto() {
 }
 
 function fecharPost() {
-  if (!postAberto) return;
+  if (!postAberto && !obraAberta) return;
   postAberto = null;
+  obraAberta = false;
   $('#modal-post').hidden = true;
   $('#up-post-corpo').replaceChildren();
   document.body.classList.remove('com-modal');

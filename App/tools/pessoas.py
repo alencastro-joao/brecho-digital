@@ -6,7 +6,7 @@ Pessoas: achar gente de verdade, ver a página dela e seguir — sobre SQLite.
 erros, mesmo formato de cartão. O desenho e o porquê de cada escolha estão
 naquele arquivo; aqui só muda *onde* mora:
 
-    usuarios.perfil   JSON com { bio, avatar, equipado } — a parte pública do save
+    usuarios.perfil   JSON com { bio, avatar, equipado, favoritos } — a parte pública do save
     segue(de, para)   uma linha por "fulano segue beltrano"
 
 Seguir é uma linha (`INSERT OR IGNORE`, idempotente) e as contagens são
@@ -29,6 +29,10 @@ BIO_MAX = 140
 TERMO_MAX = 40
 RESULTADOS = 20
 LISTA_MAX = 60
+NOME_MAX = 60
+PECAS_FAV_MAX = 40
+OBRAS_FAV_MAX = 3
+PECAS_POR_OBRA = 40
 
 
 def preparar():
@@ -136,12 +140,24 @@ def buscar(eu_id, texto):
         return [_cartao(con, l, eu_id) for l in achados[:RESULTADOS]]
 
 
-def perfil_de(eu_id, alvo_id):
+def perfil_de(eu_id, alvo_id, completo=True):
+    """O cartão e, na página da pessoa (`completo`), os favoritos e os amigos."""
     with banco() as con:
         linha = _linha(con, alvo_id)
         if not linha:
             raise ErroDeConta('Perfil não encontrado.', 404)
-        return _cartao(con, linha, eu_id)
+        cartao = _cartao(con, linha, eu_id)
+        if not completo:
+            return cartao
+        favoritos = _perfil(linha).get('favoritos')
+        if favoritos is not None:
+            cartao['favoritos'] = favoritos
+        amigos = con.execute(
+            'SELECT u.* FROM segue a JOIN segue b ON b.de = a.para AND b.para = a.de'
+            ' JOIN usuarios u ON u.id = a.para WHERE a.de=? ORDER BY u.id LIMIT ?',
+            (alvo_id, LISTA_MAX)).fetchall()
+        cartao['amigos'] = [_cartao(con, l, eu_id) for l in amigos]
+        return cartao
 
 
 # --- Seguir ---------------------------------------------------------------
@@ -158,7 +174,7 @@ def seguir(eu_id, alvo_id, segue):
                         (eu_id, alvo_id, iso(agora())))
         else:
             con.execute('DELETE FROM segue WHERE de=? AND para=?', (eu_id, alvo_id))
-    return perfil_de(eu_id, alvo_id)
+    return perfil_de(eu_id, alvo_id, completo=False)
 
 
 def social(eu_id):
@@ -188,17 +204,64 @@ def _mapa(bruto, maximo):
     return saida
 
 
-def limpar_perfil(corpo):
-    corpo = corpo if isinstance(corpo, dict) else {}
+def _ids(bruto, maximo):
+    if not isinstance(bruto, list):
+        return []
+    vistos = []
+    for p in bruto:
+        if isinstance(p, str) and VALOR_OK.match(p) and p not in vistos:
+            vistos.append(p)
+        if len(vistos) >= maximo:
+            break
+    return vistos
+
+
+def miniatura_ok(eu_id):
+    """Só uma miniatura que o próprio dono subiu (feed.subir_miniatura)."""
+    return re.compile(r'^assets/posts/perfil-%s-[0-9a-f]{10}\.(webp|jpg|png)$'
+                      % re.escape(str(eu_id or '')))
+
+
+def _obras(bruto, eu_id):
+    if not isinstance(bruto, list):
+        return []
+    thumb_ok = miniatura_ok(eu_id)
+    saida = []
+    for obra in bruto[:OBRAS_FAV_MAX]:
+        if not isinstance(obra, dict):
+            continue
+        thumb = str(obra.get('thumb') or '')
+        saida.append({
+            'nome': ' '.join(str(obra.get('nome') or '').split())[:NOME_MAX],
+            'thumb': thumb if thumb_ok.match(thumb) else '',
+            'pecas': _ids(obra.get('pecas'), PECAS_POR_OBRA),
+        })
+    return saida
+
+
+def limpar_favoritos(bruto, eu_id):
+    bruto = bruto if isinstance(bruto, dict) else {}
     return {
+        'pecas': _ids(bruto.get('pecas'), PECAS_FAV_MAX),
+        'looks': _obras(bruto.get('looks'), eu_id),
+        'colagens': _obras(bruto.get('colagens'), eu_id),
+    }
+
+
+def limpar_perfil(corpo, eu_id=None):
+    corpo = corpo if isinstance(corpo, dict) else {}
+    perfil = {
         'bio': str(corpo.get('bio') or '').strip()[:BIO_MAX],
         'avatar': _mapa(corpo.get('avatar'), 8),
         'equipado': _mapa(corpo.get('equipado'), 12),
     }
+    if 'favoritos' in corpo:
+        perfil['favoritos'] = limpar_favoritos(corpo.get('favoritos'), eu_id)
+    return perfil
 
 
 def atualizar_perfil(eu_id, corpo):
-    perfil = limpar_perfil(corpo)
+    perfil = limpar_perfil(corpo, eu_id)
     with banco() as con:
         feito = con.execute('UPDATE usuarios SET perfil=? WHERE id=?',
                             (json.dumps(perfil, ensure_ascii=False), eu_id)).rowcount

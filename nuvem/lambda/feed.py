@@ -13,6 +13,7 @@ tira as publicações do save e põe num lugar que todo mundo lê.
     POST   /api/feed/<id>/curtir               { curte }
     POST   /api/feed/<id>/comentarios          { texto }
     DELETE /api/feed/<id>/comentarios/<cid>    quem comentou (ou o dono do post) apaga
+    POST   /api/perfil/miniatura               { thumb }: a miniatura de um favorito do perfil
 
 O desenho, na mesma tabela das contas (nenhum índice novo):
 
@@ -251,6 +252,22 @@ def listar(eu_id, autor=None):
 
     itens.sort(key=lambda i: i['criado_em'], reverse=True)
     return _com_autores(itens[:LISTA_MAX], eu_id)
+
+
+# --- Miniatura de favorito -----------------------------------------------
+def subir_miniatura(eu_id, corpo):
+    """Sobe a miniatura de um look ou colagem favoritos e devolve o caminho
+    dela no site — é o que vai em `perfil.favoritos` (pessoas.py confere que o
+    caminho é deste dono). Mesmo lugar e mesmo cuidado das miniaturas de post;
+    o nome sai do hash do conteúdo, então subir a mesma imagem de novo cai no
+    mesmo arquivo."""
+    corpo = corpo if isinstance(corpo, dict) else {}
+    binario, extensao, tipo_mime = _imagem(corpo.get('thumb'))
+    impressao = hashlib.sha256(binario).hexdigest()[:10]
+    caminho = 'assets/posts/perfil-%s-%s.%s' % (eu_id, impressao, extensao)
+    _s3.put_object(Bucket=BUCKET_SITE, Key=caminho, Body=binario,
+                   ContentType=tipo_mime, CacheControl=ETERNO)
+    return {'thumb': caminho}
 
 
 # --- Publicar e apagar ----------------------------------------------------
