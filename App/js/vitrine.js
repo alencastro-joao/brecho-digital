@@ -116,6 +116,10 @@ export function poolDoDia(iso = hojeISO()) {
 // — e ele é mais largo que um anel ou um relógio. É essa caixa, e não a imagem,
 // que precisa caber no mural.
 const RODAPE_PECA = 48;         // botão + margem + a folga da flutuação
+// Na borda de baixo, porém, o rodapé pode sobrar para fora do mural: o botão é
+// invisível até o hover e a ficha também tem "Pegar". Contá-lo ali travava uma
+// faixa vazia de ~50px embaixo da arara, onde nenhuma roupa podia ficar.
+const fundoDaPeca = (caixa) => caixa.h - RODAPE_PECA;
 const LARGURA_MIN_PECA = 116;   // largura do botão: a caixa nunca é mais estreita
 const ALTURA_LIVRE = 0.72;      // quanto da altura do mural a maior peça pode ocupar
 // Teto de pano na arara: a soma das caixas pode passar da área do mural (é o
@@ -170,7 +174,7 @@ function encobrirAsRaras(estoque, pontos, medidas, mural, rnd) {
   // passa da borda, não sobe atrás do cabeçalho e não cai em cima do NPC.
   const acomodar = (p, caixa) => ({
     x: clamp(p.x, FOLGA_BORDA, Math.max(FOLGA_BORDA, mural.w - caixa.w - FOLGA_BORDA)),
-    y: clamp(p.y, mural.topo, Math.max(mural.topo, mural.h - caixa.h - FOLGA_BORDA)),
+    y: clamp(p.y, mural.topo, Math.max(mural.topo, mural.h - fundoDaPeca(caixa) - FOLGA_BORDA)),
   });
   const proibido = (p, caixa) => mural.zonas.some(z =>
     p.x + caixa.w > z.x0 && p.x < z.x1 && p.y + caixa.h > z.y0 && p.y < z.y1);
@@ -339,7 +343,8 @@ export function montarVitrine() {
   }
 
   const areaLivre = { w: largura, h: altura, topo: 88, zonas: zonasProibidas };
-  const pontos = espalharPeloMural(medidas.map(m => m.caixa), areaLivre, rnd);
+  const pontos = espalharPeloMural(
+    medidas.map(m => ({ w: m.caixa.w, h: fundoDaPeca(m.caixa) })), areaLivre, rnd);
 
   encobrirAsRaras(estoque, pontos, medidas, areaLivre, rnd);
 
@@ -369,7 +374,7 @@ export function montarVitrine() {
     const bruta = guardada || pontos[i] || { x: 26, y: 88 };
     const pos = {
       x: clamp(bruta.x, FOLGA_BORDA, Math.max(FOLGA_BORDA, largura - caixa.w - FOLGA_BORDA)),
-      y: clamp(bruta.y, FOLGA_BORDA, Math.max(FOLGA_BORDA, altura - caixa.h - FOLGA_BORDA)),
+      y: clamp(bruta.y, FOLGA_BORDA, Math.max(FOLGA_BORDA, altura - fundoDaPeca(caixa) - FOLGA_BORDA)),
     };
 
     const no = el('div', {
@@ -457,7 +462,7 @@ function ligarPeca(no, peca, raridade) {
       // O mural corta o que passa da borda, e peça cortada é peça perdida: o
       // arrasto pára na moldura em vez de deixar a roupa sair da tela.
       const limiteX = Math.max(FOLGA_BORDA, area.width - caixa.width - FOLGA_BORDA);
-      const limiteY = Math.max(FOLGA_BORDA, area.height - caixa.height - FOLGA_BORDA);
+      const limiteY = Math.max(FOLGA_BORDA, area.height - (caixa.height - RODAPE_PECA) - FOLGA_BORDA);
       no.style.left = Math.round(clamp(base.x + dx, FOLGA_BORDA, limiteX)) + 'px';
       no.style.top = Math.round(clamp(base.y + dy, FOLGA_BORDA, limiteY)) + 'px';
     };
