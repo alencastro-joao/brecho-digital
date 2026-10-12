@@ -22,6 +22,7 @@ import { falar, falarDe } from './npc.js';
 import { instalarPassThrough, precarregarAlpha } from './alpha.js';
 import { criarAura } from './aura.js';
 import { abrirEditar } from './editar.js';
+import { avisarLojaReposta } from './avisos.js';
 import {
   el, $, clamp, mulberry32, sementeDoDia, shuffle, hojeISO,
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
@@ -678,6 +679,7 @@ export function reporLoja() {
   montarVitrine();
   falarDe('boasVindas');
   toast('Loja reposta: estoque novo e resgates liberados.');
+  avisarLojaReposta();
 }
 
 // Devolver: o contrário do resgate. As roupas saem do guarda-roupa e voltam a

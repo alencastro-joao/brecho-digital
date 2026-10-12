@@ -78,6 +78,15 @@ function estadoInicial() {
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0 },
+    // O sino (js/avisos.js): a lista, até onde você já viu, e a última foto de
+    // cada fonte — é comparando com ela que se sabe o que é novo.
+    avisos: {
+      lista: [],          // { id, tipo, texto, em, ir: [tela, param], quem, junta, qtd }
+      vistoEm: null,      // abrir o painel marca tudo até aqui como visto
+      posts: {},          // id do seu post → { c: curtidas dos outros, k: ids de comentários }
+      seguidores: null,   // ids de quem segue você (null = ainda não olhou)
+      dia: null,          // o dia da vitrine que já foi avisado
+    },
   };
 }
 
@@ -108,6 +117,7 @@ function carregar() {
       : base.missoes;
     estado.progresso = { ...base.progresso, ...(salvo.progresso || {}) };
     estado.stats = { ...base.stats, ...(salvo.stats || {}) };
+    estado.avisos = { ...base.avisos, ...(salvo.avisos || {}) };
     estado.usuario = { ...base.usuario, ...(salvo.usuario || {}) };
     estado.usuario.assinatura = { ...base.usuario.assinatura, ...(salvo.usuario?.assinatura || {}) };
     estado.usuario.avatar = { ...base.usuario.avatar, ...(salvo.usuario?.avatar || {}) };

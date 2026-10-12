@@ -31,6 +31,7 @@ import { sincronizarSocial, agendarPerfil } from './pessoas.js';
 import { montarPersonagem, aoEntrarNoPersonagem } from './personagem.js';
 import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
+import { montarAvisos } from './avisos.js';
 import { toast } from './util.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
@@ -132,6 +133,7 @@ async function iniciar() {
   db.virarODiaSeNecessario();
 
   montarNivel();   // antes das telas: o selo da sidebar já nasce com o nível certo
+  montarAvisos();  // depois do social: os seguidores lidos no boot já valem de foto
   montarNPC();
   montarVitrine();
   montarCloset();

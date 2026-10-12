@@ -48,7 +48,7 @@ const autorDe = (id) => sou(id)
 const aparenciaDe = (id) => sou(id) ? aparenciaAtual() : aparenciaDoPerfil(autorDe(id));
 const roupasDe = (id) => sou(id) ? db.roupasEquipadas() : roupasDoPerfil(autorDe(id));
 
-const retratoDe = (id, tamanho = 34) =>
+export const retratoDe = (id, tamanho = 34) =>
   retrato(aparenciaDe(id), tamanho, autorDe(id).cor, roupasDe(id));
 
 // Clicar em quem assina abre o perfil: o seu é a tela de perfil de sempre,
