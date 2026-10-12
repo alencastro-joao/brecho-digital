@@ -7,7 +7,7 @@
 //   * os perfis de exemplo (PERFIS_MOCK) continuam locais: os looks deles saem
 //     do mesmo sorteio dos botões de gerar e servem para o feed nascer povoado.
 //
-// A tela é organizada em abas (Seguindo · Comunidade · Tudo), sempre com looks
+// A tela é organizada em abas (Seguindo · Tudo), sempre com looks
 // e colagens juntos. Os posts formam um mural: colunas em que cada card
 // tem a altura da própria imagem, e passar o mouse mostra as peças usadas.
 
@@ -57,7 +57,6 @@ export const abrirAutor = (id) => sou(id) ? irPara('perfil') : abrirPerfilDe(id)
 
 const ABAS = [
   ['seguindo', 'Seguindo', 'Você e quem você segue'],
-  ['comunidade', 'Comunidade', 'Só contas de verdade do brechó'],
   ['tudo', 'Tudo', 'Contas de verdade e perfis de exemplo'],
 ];
 
@@ -200,7 +199,7 @@ export function garantirFeed() {
 // ================================= Feed ===================================
 export async function montarSocial() {
   await semearFeed();
-  if (!aba) aba = db.state.usuario.seguindo.length ? 'seguindo' : 'comunidade';
+  if (!aba) aba = db.state.usuario.seguindo.length ? 'seguindo' : 'tudo';
   render();
   // Quem entrou no brechó desde a última vez aparece na coluna sem ninguém
   // digitar nada.
@@ -240,7 +239,6 @@ function postsVisiveis() {
   const seguindo = db.state.usuario.seguindo;
   return todosOsPosts().filter(p => {
     if (aba === 'seguindo') return sou(p.autor) || seguindo.includes(p.autor);
-    if (aba === 'comunidade') return !ehFicticio(p.autor);
     return true;
   });
 }
@@ -352,12 +350,8 @@ function mensagemVazia() {
 
   if (aba === 'seguindo') {
     return u.seguindo.length
-      ? ['Quem você segue ainda não publicou nada por aqui. ', ir('Ver a comunidade', 'comunidade')]
-      : ['Você ainda não segue ninguém. Siga alguém na coluna ao lado ou ', ir('veja a comunidade', 'comunidade'), '.'];
-  }
-  if (aba === 'comunidade') {
-    return ['Nenhuma publicação de conta de verdade ainda. Publique um look no Stylist ou uma colagem — ',
-      'seus amigos veem aqui. ', ir('Ver tudo', 'tudo')];
+      ? ['Quem você segue ainda não publicou nada por aqui. ', ir('Ver tudo', 'tudo')]
+      : ['Você ainda não segue ninguém. Siga alguém na coluna ao lado ou ', ir('veja tudo', 'tudo'), '.'];
   }
   return [acervoParaLooks().length < 4
     ? 'Sem peças no acervo ainda — os perfis de exemplo só postam quando houver roupa para vestir.'
