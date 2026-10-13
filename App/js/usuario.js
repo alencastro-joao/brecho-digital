@@ -222,7 +222,7 @@ function renderUsuario() {
   $('#up-avatar').style.background = p.cor;
 
   $('#up-nome').replaceChildren(p.nome,
-    ...(n.nivel == null ? [] : [chipNivel(n.nivel, { titulo: false })]));
+    ...(n.nivel == null ? [] : [chipNivel(n.nivel)]));
   // Numa conta real "segue você" é fato, então aparece antes de você seguir —
   // ao contrário dos fictícios, onde mostrar o sorteio cedo estragaria a graça.
   $('#up-handle').replaceChildren(

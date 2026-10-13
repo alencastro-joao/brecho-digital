@@ -9,11 +9,8 @@ import * as db from './db.js';
 import { el, $, toast } from './util.js';
 
 // Chip pequeno "Nv 3" para pendurar ao lado de um nome (feed, perfil, listas).
-export function chipNivel(n = db.nivel(), { titulo = true } = {}) {
-  return el('span', {
-    class: 'nivel-chip',
-    title: titulo ? `Nível ${n} · ${db.progresso().titulo}` : null,
-  }, `Nv ${n}`);
+export function chipNivel(n = db.nivel()) {
+  return el('span', { class: 'nivel-chip', title: `Nível ${n}` }, `Nv ${n}`);
 }
 
 export function montarNivel() {
@@ -21,7 +18,7 @@ export function montarNivel() {
     renderSeloNivel();
     if (evento.subiu) {
       const p = db.progresso();
-      toast(`Nível ${p.nivel}! Agora você é ${p.titulo.toLowerCase()}.`, 'legendary');
+      toast(`Subiu para o nível ${p.nivel}!`, 'legendary');
       anunciarDesbloqueios(evento.de, evento.nivel);
     } else if (evento.motivo) {
       toast(`+${evento.xp} XP — ${evento.motivo}.`);
@@ -43,8 +40,8 @@ export function renderSeloNivel() {
 
   selo.innerHTML = '';
   selo.title = p.maximo
-    ? `Nível máximo (${p.nivel}) · ${p.titulo}`
-    : `Nível ${p.nivel} · ${p.titulo} — faltam ${p.xpFaltando} XP para o ${p.nivel + 1}`;
+    ? `Nível máximo (${p.nivel})`
+    : `Nível ${p.nivel}: faltam ${p.xpFaltando} XP para o ${p.nivel + 1}`;
   selo.append(
     el('strong', {}, String(p.nivel)),
     el('small', {}, 'nível'),
@@ -61,7 +58,6 @@ export function barraDeNivel() {
   return el('div', { class: 'nivel-box' },
     el('div', { class: 'nivel-topo' },
       el('span', { class: 'nivel-num' }, `Nível ${p.nivel}`),
-      el('span', { class: 'nivel-titulo' }, p.titulo),
       el('span', { class: 'nivel-xp' }, p.maximo
         ? `${p.xpTotal} XP · nível máximo`
         : `${p.xpNoNivel}/${p.xpDoNivel} XP`)

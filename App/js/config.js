@@ -896,7 +896,6 @@ export function progressoDoNivel(total) {
   const dentro = total - base;
   return {
     nivel,
-    titulo: tituloDoNivel(nivel),
     xpTotal: total,
     xpNoNivel: dentro,
     xpDoNivel: falta,
@@ -905,18 +904,6 @@ export function progressoDoNivel(total) {
     maximo: nivel >= NIVEL.MAX,
   };
 }
-
-// Apelido que aparece junto do número, no perfil e no feed.
-export const FAIXAS = [
-  { ate: 2,  titulo: 'Curioso de vitrine' },
-  { ate: 5,  titulo: 'Garimpeiro' },
-  { ate: 9,  titulo: 'Colecionador' },
-  { ate: 14, titulo: 'Estilista de rua' },
-  { ate: 21, titulo: 'Diretor de arte' },
-  { ate: 99, titulo: 'Lenda do brechó' },
-];
-export const tituloDoNivel = (n) =>
-  FAIXAS.find(f => n <= f.ate)?.titulo ?? FAIXAS.at(-1).titulo;
 
 // ---------------------------- Ferramentas ---------------------------------
 // Cada tela é uma ferramenta com nível mínimo. Hoje está tudo em 1 (nada

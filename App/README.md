@@ -439,7 +439,7 @@ As missões e tudo que é progresso moram na aba **Tarefas**; o perfil ficou sen
 quem você é.
 
 Onde o nível aparece: selo fixo no rodapé da sidebar (número + barra do
-progresso), barra completa no topo das Tarefas (nível, apelido da faixa e quanto
+progresso), barra completa no topo das Tarefas (nível e quanto
 falta) e como chip ao lado do seu nome, no feed e no perfil.
 
 ### Ferramentas por nível
