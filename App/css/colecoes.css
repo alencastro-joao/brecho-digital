@@ -18,6 +18,14 @@
 .col-head-linha small { font-size: 12px; color: var(--tinta-suave); }
 .col-sub { font-size: 12.5px; line-height: 1.5; color: var(--tinta-suave); max-width: 70ch; }
 
+.col-grupos { display: flex; gap: 4px; background: #efe8de; padding: 4px; border-radius: 12px; align-self: flex-start; }
+.col-grupo {
+  border: 0; background: none; border-radius: 9px; padding: 7px 16px;
+  font-size: 13px; font-weight: 700; color: var(--tinta-suave);
+}
+.col-grupo.ativo { background: #fff; color: var(--tinta); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.col-bolinha { width: 12px; height: 12px; border-radius: 50%; flex: none; align-self: center; border: 1px solid rgba(0,0,0,.12); }
+
 .col-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
 .col-filtro {
   border: 1px solid var(--linha); background: #fff; border-radius: 20px;
@@ -47,6 +55,7 @@
 .col-cartao.completa .col-conta { color: #8a6d24; font-weight: 700; }
 
 .col-pecas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.col-pecas.muitas { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); }
 .col-peca {
   position: relative; aspect-ratio: 1; max-width: 100%;
   background: #fbf8f4; border: 1px solid var(--linha); border-radius: 12px;

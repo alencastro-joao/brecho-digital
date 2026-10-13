@@ -973,10 +973,39 @@ export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
 
 // Estilos dos itens do avatar. Os itens das coleções herdam o estilo da marca;
-// os de fora entram por esta lista. Item que não combina com nenhum fica sem.
+// os de fora entram por `itens`. Item que não combina com nenhum fica sem.
+//
+// Cada estilo também é uma coleção de peças da loja (tela de Coleções, aba
+// Estilos): entram todas as peças das `marcas` dele, mais as de `pecas`,
+// escolhidas olhando as fotos. Peça nova de uma dessas marcas já entra sozinha.
 export const ESTILOS = {
-  futebol: { nome: 'Futebol', brilho: '#3fae5a', itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'] },
-  skate:   { nome: 'Skate',   brilho: '#f08a24', itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'] },
+  futebol: {
+    nome: 'Futebol', brilho: '#3fae5a',
+    itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'],
+    marcas: ['Puma', 'Adidas', 'Umbro', 'USPA'],
+    pecas: [
+      'billabong-muynwwod46',      // bermuda branca de listra
+      'gel-nimbus-mudyvj7o', 'gel-nimbus-mudywpih',
+      'kenner-mugxru6y0',          // chinelo
+      'shirts-muvkxbg688',         // camisa 20
+      'tops-mug1f83z7', 'tops-mug1fgbz8', // polos
+      'tops-mugfthcl3',            // camisa do Brasil
+      'tops-murfcnyh82', 'tops-murfdqtm4c', // jaquetas de agasalho
+    ],
+  },
+  skate: {
+    nome: 'Skate', brilho: '#f08a24',
+    itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'],
+    marcas: ['Swear London', 'Borra', 'Jnco', 'Ecko', 'Hysteric'],
+    pecas: [
+      'hats-muvavz1s7f', 'hats-muvaw0j02f', 'hats-muvaw89z47', // boné e gorros
+      'pants-mug1egkr5', 'pants-muplm2007',                    // bermudas
+      'pants-muplqhfkd', 'pants-muplr0eie', 'pants-muplu7paj', // calças largas
+      'shoes-mugxi1y81', 'shoes-mugxikcg3',                    // tênis grossos
+      'shorts-muvm058s17', 'shorts-muvqo58le3', 'shorts-muynx0zt7f', // cargo
+      'tops-murfehjt0d',                                       // manga longa por baixo
+    ],
+  },
 };
 
 // ---------------------------- Ferramentas ---------------------------------

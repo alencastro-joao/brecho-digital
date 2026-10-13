@@ -1,22 +1,38 @@
-// Coleções (#/colecoes): uma página por marca da loja.
+// Coleções (#/colecoes): as peças da loja juntadas por marca, por cor e por
+// estilo, em três abas.
 //
-// Cada coleção mostra as peças da marca no acervo — as que você já garimpou e,
-// em cinza, as que faltam — e os itens do avatar que ela libera. A tela abre
+// Cada coleção mostra as peças do acervo — as que você já garimpou e, em
+// cinza, as que faltam — e os itens do avatar ligados a ela. Só a de marca
+// libera itens; as de cor e de estilo são para completar e mostram os itens
+// do avatar daquela cor ou estilo, que somam efeito quando vestidos juntos. A tela abre
 // pelo cartão "Coleções" da aba Tarefas e pelos emblemas do perfil; o botão de
 // Tarefas fica aceso enquanto ela está aberta (ver BOTAO_DA_VIEW, router.js).
 //
 // Nada aqui é gravado: o progresso é o guarda-roupa lido na hora
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
-import { COLECOES, ESTILOS, escalaGrade, RARIDADE } from './config.js';
-import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
-import { roupinha, svgRoupinha } from './roupinhas.js';
+import { COLECOES, ESTILOS, CORES, hexDaCor, escalaGrade, RARIDADE } from './config.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
+import { ROUPINHAS, roupinha, svgRoupinha, atributosDe } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $ } from './util.js';
 import { irPara, viewAtual } from './router.js';
 
 let filtro = 'todas';
+let grupo = 'marcas';
+
+const GRUPOS = [
+  ['marcas', 'Marcas'],
+  ['cores', 'Cores'],
+  ['estilos', 'Estilos'],
+];
+
+const EXPLICACAO = {
+  marcas: 'Garimpe peças de uma marca para liberar os itens dela no avatar. A 1ª peça abre o primeiro item, metade da coleção abre o segundo e a coleção completa abre o último. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
+  cores: 'Todas as peças da loja de uma mesma cor. Vestir 2 ou mais itens do avatar da mesma cor dá XP extra nas missões, de +5% a +20%.',
+  estilos: 'As peças da loja de cada estilo. Vestir 2 ou mais itens do avatar do mesmo estilo acende um brilho no seu avatar.',
+};
 
 const FILTROS = [
   ['todas', 'Todas'],
@@ -33,6 +49,45 @@ export function minhasColecoes() {
     .filter(c => c.total > 0)
     .map(c => ({ ...c, completa: c.tem >= c.total, pct: c.tem / c.total }));
 }
+
+// As peças do acervo (não as fotografadas por você) juntadas por um critério.
+const doAcervo = () => catalogo.itens.filter(i => i.permanente);
+const normal = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+function comProgresso(c) {
+  const tem = c.ids.filter(id => db.temPeca(id)).length;
+  return { ...c, total: c.ids.length, tem, completa: tem >= c.ids.length, pct: tem / c.ids.length };
+}
+
+// Uma coleção por cor da lista de cores; estampado fica de fora (não é cor
+// que um item do avatar tenha).
+export function colecoesPorCor() {
+  const pecas = doAcervo();
+  return CORES.filter(c => hexDaCor(c.nome) && hexDaCor(c.nome) !== 'estampa').map(c => ({
+    id: 'cor-' + normal(c.nome), tipo: 'cor', marca: c.nome, hex: c.hex,
+    ids: pecas.filter(p => normal(p.cor) === normal(c.nome)).map(p => p.id),
+    itens: ROUPINHAS.filter(r => atributosDe(r).cor === c.nome).map(r => r.id),
+    efeito: { texto: '2 itens dessa cor vestidos dão XP extra nas missões' },
+  })).filter(c => c.ids.length).map(comProgresso);
+}
+
+export function colecoesPorEstilo() {
+  const pecas = doAcervo();
+  return Object.entries(ESTILOS).map(([id, e]) => {
+    const marcas = new Set((e.marcas || []).map(normal));
+    const extras = new Set(e.pecas || []);
+    return {
+      id: 'estilo-' + id, tipo: 'estilo', marca: e.nome, hex: e.brilho,
+      ids: pecas.filter(p => extras.has(p.id) || marcas.has(normal(p.marca))).map(p => p.id),
+      itens: ROUPINHAS.filter(r => atributosDe(r).estilo === id).map(r => r.id),
+      efeito: { texto: `2 itens desse estilo vestidos acendem um brilho ${e.nome} no avatar` },
+    };
+  }).filter(c => c.ids.length).map(comProgresso);
+}
+
+const COLECOES_DO_GRUPO = {
+  marcas: minhasColecoes, cores: colecoesPorCor, estilos: colecoesPorEstilo,
+};
 
 // A mais perto de fechar sem estar fechada; empate vai para a que falta menos.
 export function colecaoMaisPerto() {
@@ -55,7 +110,14 @@ export function montarColecoes() {
 }
 
 export function renderColecoes() {
-  const todas = minhasColecoes();
+  $('#col-grupos').replaceChildren(...GRUPOS.map(([id, rotulo]) =>
+    el('button', {
+      class: 'col-grupo' + (grupo === id ? ' ativo' : ''),
+      onclick: () => { grupo = id; filtro = 'todas'; renderColecoes(); },
+    }, rotulo)));
+  $('#col-sub').textContent = EXPLICACAO[grupo];
+
+  const todas = COLECOES_DO_GRUPO[grupo]();
   const completas = todas.filter(c => c.completa).length;
   $('#col-resumo').textContent =
     `${completas} de ${todas.length} ${todas.length === 1 ? 'completa' : 'completas'}`;
@@ -74,27 +136,37 @@ export function renderColecoes() {
   $('#col-lista').replaceChildren(...(lista.length ? lista.map(cartaoDaColecao) : [
     el('p', { class: 'col-vazio' }, filtro === 'completas'
       ? 'Nenhuma coleção completa ainda. Garimpe as peças que faltam na vitrine.'
-      : 'Nenhuma coleção começada. A primeira peça de uma marca já abre um item do avatar.'),
+      : grupo === 'marcas'
+        ? 'Nenhuma coleção começada. A primeira peça de uma marca já abre um item do avatar.'
+        : 'Nenhuma coleção começada. Garimpe peças na vitrine para começar.'),
   ]));
 }
 
 function cartaoDaColecao(c) {
   const estilo = ESTILOS[c.estilo];
+  const deMarca = !c.tipo;
+  // Peças que você já tem primeiro: numa coleção de 30 peças, o que falta
+  // fica junto no fim.
+  const ids = deMarca ? c.ids
+    : [...c.ids].sort((a, b) => Number(db.temPeca(b)) - Number(db.temPeca(a)));
   return el('section', { class: 'col-cartao' + (c.completa ? ' completa' : '') },
     el('header', { class: 'col-topo' },
       el('div', { class: 'col-titulo' },
+        c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
         el('h2', {}, c.marca),
         estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null),
       el('small', { class: 'col-conta' }, c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
-    el('div', { class: 'col-pecas' }, ...c.ids.map(id => casaDaPeca(id))),
+    el('div', { class: 'col-pecas' + (ids.length > 10 ? ' muitas' : '') }, ...ids.map(id => casaDaPeca(id))),
     c.completa ? null : el('div', { class: 'barra' },
       el('span', { style: { width: (c.pct * 100) + '%' } })),
-    el('div', { class: 'col-itens' },
-      el('h3', {}, 'Itens do avatar'),
-      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))),
+    c.itens.length ? el('div', { class: 'col-itens' },
+      el('h3', {}, deMarca ? 'Itens do avatar'
+        : c.tipo === 'cor' ? 'Itens do avatar nessa cor' : 'Itens do avatar nesse estilo'),
+      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))) : null,
     el('p', { class: 'col-efeito' },
       el('strong', {}, 'Efeito ao vestir: '), c.efeito.texto,
-      el('span', { class: 'col-breve' }, c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%')));
+      el('span', { class: 'col-breve' }, !deMarca ? '2 itens +5% · 5 itens +20%'
+        : c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%')));
 }
 
 function casaDaPeca(id) {
