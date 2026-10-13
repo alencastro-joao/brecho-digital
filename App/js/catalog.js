@@ -52,6 +52,7 @@ async function carregarAcervo() {
     for (const it of itens) {
       if (it.raridade) db.raridadesFixas.set(it.id, it.raridade);
       if (it.marca?.trim()) db.marcasFixas.set(it.id, it.marca.trim());
+      db.coresFixas.set(it.id, (it.cor || '').trim());
     }
     if (itens.some(i => i.path)) catalogo.temContorno = true;
     return itens;
@@ -68,6 +69,7 @@ export function registrarPeca(peca, { permanente = false } = {}) {
   if (permanente) {
     if (peca.marca?.trim()) db.marcasFixas.set(peca.id, peca.marca.trim());
     else db.marcasFixas.delete(peca.id);
+    db.coresFixas.set(peca.id, (peca.cor || '').trim());
   }
   const i = catalogo.itens.findIndex(x => x.id === item.id);
   if (i >= 0) catalogo.itens[i] = item;
@@ -79,6 +81,7 @@ export function registrarPeca(peca, { permanente = false } = {}) {
 // A peça apagada do acervo sai do catálogo em memória, sem recarregar tudo.
 export function esquecerPeca(id) {
   db.marcasFixas.delete(id);
+  db.coresFixas.delete(id);
   catalogo.itens = catalogo.itens.filter(x => x.id !== id);
   catalogo.porId.delete(id);
 }

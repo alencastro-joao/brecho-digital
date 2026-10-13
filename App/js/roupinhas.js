@@ -17,7 +17,7 @@
 // bermuda do corpo estreito não fica larga, e a manga cai no mesmo pulso.
 
 import {
-  CONFIG, CORPOS, COLECOES, ESTILOS, colecao,
+  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
@@ -1169,20 +1169,34 @@ export const VESTIARIO_PADRAO = {
   torso: 'camiseta', pernas: 'calca', pes: 'tenis',
 };
 
+// Os itens das coleções de cor: o item de base pintado na cor (config.js).
+// `corNome` fixa a cor do atributo, sem passar pela leitura do tom.
+for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
+  const hex = hexDaCor(nomeDaCor);
+  itens.forEach(([base, nome], ordem) => {
+    const r = ROUPINHAS.find(x => x.id === base);
+    if (!r || !hex) return;
+    ROUPINHAS.push({
+      ...r, id: `${base}-${idDaCor(nomeDaCor).slice(4)}`, nome, cor: hex, corNome: nomeDaCor,
+      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: itens.length },
+    });
+  });
+}
+
 export const ROUPINHA = Object.fromEntries(ROUPINHAS.map(r => [r.id, r]));
 
 // ------------------------------ Coleções ----------------------------------
 // Os itens que uma marca adotou passam a abrir pela coleção dela. A regra de
 // antes fica em `antes`: quem já tinha o item por ela continua com ele (ver
 // db.roupinhasHerdadas).
-for (const c of COLECOES) {
-  c.itens.forEach((id, ordem) => {
-    const r = ROUPINHA[id];
-    if (!r) return;
-    r.antes = r.desbloqueio;
-    r.desbloqueio = { tipo: 'colecao', colecao: c.id, ordem, de: c.itens.length };
-  });
-}
+const adotar = (itens, colecao) => itens.forEach((id, ordem) => {
+  const r = ROUPINHA[id];
+  if (!r) return;
+  r.antes = r.desbloqueio;
+  r.desbloqueio = { tipo: 'colecao', colecao, ordem, de: itens.length };
+});
+for (const c of COLECOES) adotar(c.itens, c.id);
+for (const [id, e] of Object.entries(ESTILOS)) adotar(e.libera || [], idDoEstilo(id));
 
 // ------------------------------ Atributos ---------------------------------
 // Marca, cor e estilo: os três que se combinam no corpo. São lidos do resto do
@@ -1233,7 +1247,7 @@ export function atributosDe(r) {
   return {
     marca: c?.marca ?? null,
     colecao: c?.id ?? null,
-    cor: corDoGarimpo(corDaPeca(r)),
+    cor: r.corNome ?? corDoGarimpo(corDaPeca(r)),
     estilo,
     estiloNome: estilo ? ESTILOS[estilo].nome : null,
   };
@@ -1284,10 +1298,10 @@ export const METAS = {
   colecao: {
     rotulo: (d, p) => {
       const n = metaDaColecao(d, p);
-      const marca = colecao(d.colecao)?.marca ?? d.colecao;
+      const c = nomeDaColecao(d.colecao);
       return n === totalDaColecao(d, p) && n > 1
-        ? `Complete a coleção ${marca} (${n} peças)`
-        : `Garimpe ${n} ${n === 1 ? 'peça' : 'peças'} da ${marca}`;
+        ? `Complete a coleção ${c.nome} (${n} peças)`
+        : `Garimpe ${n} ${n === 1 ? 'peça' : 'peças'} ${c.de}`;
     },
     atual: (p, d) => p.colecoes?.[d.colecao]?.tem ?? 0,
     meta: (d, p) => metaDaColecao(d, p),

@@ -19,7 +19,7 @@ import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
   RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
   MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
-  COLECOES, normalizarMarca,
+  COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
 } from './config.js';
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
@@ -1094,6 +1094,9 @@ export const progressoDoJogador = () => ({
 // A marca de cada peça do acervo, por id. O catálogo preenche ao carregar
 // (como raridadesFixas): db não importa catalog.js.
 export const marcasFixas = new Map();
+// A cor de cada peça do acervo, por id ('' quando não tem). Toda peça do
+// acervo entra aqui, então as chaves também são a lista do acervo.
+export const coresFixas = new Map();
 
 const pecasDaMarca = (marca) => {
   const alvo = normalizarMarca(marca);
@@ -1107,9 +1110,22 @@ const pecasDaMarca = (marca) => {
 export function progressoDasColecoes() {
   const minhas = new Set(state.inventario.map(p => p.id));
   const out = {};
-  for (const c of COLECOES) {
-    const ids = pecasDaMarca(c.marca);
-    out[c.id] = { ids, total: ids.length, tem: ids.filter(id => minhas.has(id)).length };
+  const guardar = (id, ids) => {
+    out[id] = { ids, total: ids.length, tem: ids.filter(i => minhas.has(i)).length };
+  };
+  for (const c of COLECOES) guardar(c.id, pecasDaMarca(c.marca));
+
+  // Cor: as peças daquela cor. Estilo: as das marcas dele mais as escolhidas.
+  const acervo = [...coresFixas.keys()];
+  for (const cor of Object.keys(COLECOES_DE_COR)) {
+    const alvo = normalizarMarca(cor);
+    guardar(idDaCor(cor), acervo.filter(id => normalizarMarca(coresFixas.get(id)) === alvo));
+  }
+  for (const [id, e] of Object.entries(ESTILOS)) {
+    const marcas = new Set((e.marcas || []).map(normalizarMarca));
+    const extras = new Set(e.pecas || []);
+    guardar(idDoEstilo(id), acervo.filter(p =>
+      extras.has(p) || marcas.has(normalizarMarca(marcasFixas.get(p)))));
   }
   return out;
 }

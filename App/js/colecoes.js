@@ -2,18 +2,16 @@
 // estilo, em três abas.
 //
 // Cada coleção mostra as peças do acervo — as que você já garimpou e, em
-// cinza, as que faltam — e os itens do avatar ligados a ela. Só a de marca
-// libera itens; as de cor e de estilo são para completar e mostram os itens
-// do avatar daquela cor ou estilo, que somam efeito quando vestidos juntos. A tela abre
+// cinza, as que faltam — e os itens do avatar que ela libera. A tela abre
 // pelo cartão "Coleções" da aba Tarefas e pelos emblemas do perfil; o botão de
 // Tarefas fica aceso enquanto ela está aberta (ver BOTAO_DA_VIEW, router.js).
 //
 // Nada aqui é gravado: o progresso é o guarda-roupa lido na hora
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
-import { COLECOES, ESTILOS, CORES, hexDaCor, escalaGrade, RARIDADE } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
-import { ROUPINHAS, roupinha, svgRoupinha, atributosDe } from './roupinhas.js';
+import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE } from './config.js';
+import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
+import { ROUPINHAS, roupinha, svgRoupinha } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $ } from './util.js';
@@ -30,8 +28,8 @@ const GRUPOS = [
 
 const EXPLICACAO = {
   marcas: 'Garimpe peças de uma marca para liberar os itens dela no avatar. A 1ª peça abre o primeiro item, metade da coleção abre o segundo e a coleção completa abre o último. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
-  cores: 'Todas as peças da loja de uma mesma cor. Vestir 2 ou mais itens do avatar da mesma cor dá XP extra nas missões, de +5% a +20%.',
-  estilos: 'As peças da loja de cada estilo. Vestir 2 ou mais itens do avatar do mesmo estilo acende um brilho no seu avatar.',
+  cores: 'Todas as peças da loja de uma mesma cor. Cada cor libera itens do avatar pintados nela: a 1ª peça abre o primeiro, metade abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
+  estilos: 'As peças da loja de cada estilo. Cada estilo libera itens do avatar: a 1ª peça abre o primeiro, metade abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens do mesmo estilo acende um brilho no avatar.',
 };
 
 const FILTROS = [
@@ -50,39 +48,33 @@ export function minhasColecoes() {
     .map(c => ({ ...c, completa: c.tem >= c.total, pct: c.tem / c.total }));
 }
 
-// As peças do acervo (não as fotografadas por você) juntadas por um critério.
-const doAcervo = () => catalogo.itens.filter(i => i.permanente);
-const normal = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+// Cor e estilo: o progresso vem do mesmo lugar que o das marcas
+// (db.progressoDasColecoes); os itens são os que cada uma libera.
+const comProgresso = (c, prog) => {
+  const p = prog[c.id] || { ids: [], total: 0, tem: 0 };
+  return { ...c, ...p, completa: p.total > 0 && p.tem >= p.total, pct: p.total ? p.tem / p.total : 0 };
+};
+const itensQueLibera = (id) => ROUPINHAS
+  .filter(r => r.desbloqueio?.tipo === 'colecao' && r.desbloqueio.colecao === id)
+  .sort((a, b) => a.desbloqueio.ordem - b.desbloqueio.ordem)
+  .map(r => r.id);
 
-function comProgresso(c) {
-  const tem = c.ids.filter(id => db.temPeca(id)).length;
-  return { ...c, total: c.ids.length, tem, completa: tem >= c.ids.length, pct: tem / c.ids.length };
-}
-
-// Uma coleção por cor da lista de cores; estampado fica de fora (não é cor
-// que um item do avatar tenha).
 export function colecoesPorCor() {
-  const pecas = doAcervo();
-  return CORES.filter(c => hexDaCor(c.nome) && hexDaCor(c.nome) !== 'estampa').map(c => ({
-    id: 'cor-' + normal(c.nome), tipo: 'cor', marca: c.nome, hex: c.hex,
-    ids: pecas.filter(p => normal(p.cor) === normal(c.nome)).map(p => p.id),
-    itens: ROUPINHAS.filter(r => atributosDe(r).cor === c.nome).map(r => r.id),
-    efeito: { texto: '2 itens dessa cor vestidos dão XP extra nas missões' },
-  })).filter(c => c.ids.length).map(comProgresso);
+  const prog = db.progressoDasColecoes();
+  return Object.keys(COLECOES_DE_COR).map(nome => comProgresso({
+    id: idDaCor(nome), tipo: 'cor', marca: nome, hex: hexDaCor(nome),
+    itens: itensQueLibera(idDaCor(nome)),
+    efeito: { texto: '2 itens da mesma cor vestidos dão XP extra nas missões' },
+  }, prog)).filter(c => c.total > 0);
 }
 
 export function colecoesPorEstilo() {
-  const pecas = doAcervo();
-  return Object.entries(ESTILOS).map(([id, e]) => {
-    const marcas = new Set((e.marcas || []).map(normal));
-    const extras = new Set(e.pecas || []);
-    return {
-      id: 'estilo-' + id, tipo: 'estilo', marca: e.nome, hex: e.brilho,
-      ids: pecas.filter(p => extras.has(p.id) || marcas.has(normal(p.marca))).map(p => p.id),
-      itens: ROUPINHAS.filter(r => atributosDe(r).estilo === id).map(r => r.id),
-      efeito: { texto: `2 itens desse estilo vestidos acendem um brilho ${e.nome} no avatar` },
-    };
-  }).filter(c => c.ids.length).map(comProgresso);
+  const prog = db.progressoDasColecoes();
+  return Object.entries(ESTILOS).map(([id, e]) => comProgresso({
+    id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho,
+    itens: itensQueLibera(idDoEstilo(id)),
+    efeito: { texto: `2 itens de ${e.nome} vestidos acendem um brilho no avatar` },
+  }, prog)).filter(c => c.total > 0);
 }
 
 const COLECOES_DO_GRUPO = {
@@ -160,8 +152,7 @@ function cartaoDaColecao(c) {
     c.completa ? null : el('div', { class: 'barra' },
       el('span', { style: { width: (c.pct * 100) + '%' } })),
     c.itens.length ? el('div', { class: 'col-itens' },
-      el('h3', {}, deMarca ? 'Itens do avatar'
-        : c.tipo === 'cor' ? 'Itens do avatar nessa cor' : 'Itens do avatar nesse estilo'),
+      el('h3', {}, 'Itens do avatar'),
       el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))) : null,
     el('p', { class: 'col-efeito' },
       el('strong', {}, 'Efeito ao vestir: '), c.efeito.texto,

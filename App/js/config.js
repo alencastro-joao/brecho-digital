@@ -982,6 +982,7 @@ export const ESTILOS = {
   futebol: {
     nome: 'Futebol', brilho: '#3fae5a',
     itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'],
+    libera: ['chinelo', 'viseira', 'polo'],
     marcas: ['Puma', 'Adidas', 'Umbro', 'USPA'],
     pecas: [
       'billabong-muynwwod46',      // bermuda branca de listra
@@ -996,6 +997,7 @@ export const ESTILOS = {
   skate: {
     nome: 'Skate', brilho: '#f08a24',
     itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'],
+    libera: ['mochila', 'oculos-sol', 'xadrez'],
     marcas: ['Swear London', 'Borra', 'Jnco', 'Ecko', 'Hysteric'],
     pecas: [
       'hats-muvavz1s7f', 'hats-muvaw0j02f', 'hats-muvaw89z47', // boné e gorros
@@ -1007,6 +1009,42 @@ export const ESTILOS = {
     ],
   },
 };
+
+// Coleções de cor: todas as peças da loja de uma cor. Cada uma libera 3 itens
+// do avatar novos, que são um item que já existe pintado na cor dela — a
+// "Bota azul" é a bota com outra tinta. Eles não têm marca nem estilo.
+// Mesma regra das marcas: 1ª peça, metade e coleção completa.
+// [item de base, nome do item novo]
+export const COLECOES_DE_COR = {
+  Preto:    [['galocha', 'Galocha preta'], ['jaqueta', 'Jaqueta preta'], ['tiracolo', 'Bolsa a tiracolo preta']],
+  Branco:   [['bota', 'Bota branca'], ['cropped', 'Cropped branco'], ['cachecol', 'Cachecol branco']],
+  Cinza:    [['sapatilha', 'Sapatilha cinza'], ['sueter', 'Suéter cinza'], ['boina', 'Boina cinza']],
+  Bege:     [['sapato', 'Sapato bege'], ['blazer', 'Blazer bege'], ['cinto', 'Cinto bege']],
+  Marrom:   [['tenis', 'Tênis marrom'], ['gola-alta', 'Gola alta marrom'], ['gorro', 'Gorro marrom']],
+  Vermelho: [['cano-alto', 'Cano alto vermelho'], ['moletom', 'Moletom vermelho'], ['luvas', 'Luvas vermelhas']],
+  Rosa:     [['coturno', 'Coturno rosa'], ['colete', 'Colete rosa'], ['fones', 'Fones rosa']],
+  Laranja:  [['chinelo', 'Chinelo laranja'], ['regata', 'Regata laranja'], ['bucket', 'Bucket laranja']],
+  Amarelo:  [['salto', 'Salto amarelo'], ['camisa', 'Camisa amarela'], ['tiara', 'Tiara amarela']],
+  Verde:    [['pantufa', 'Pantufa verde'], ['cargo', 'Cargo verde'], ['bone', 'Boné verde']],
+  Azul:     [['bota', 'Bota azul'], ['jeans', 'Jeans azul'], ['viseira', 'Viseira azul']],
+  Roxo:     [['sapatilha', 'Sapatilha roxa'], ['kimono', 'Kimono roxo'], ['relogio', 'Relógio roxo']],
+};
+export const idDaCor = (nome) => 'cor-' + semAcento(nome);
+export const idDoEstilo = (id) => 'estilo-' + id;
+
+// O nome que a regra de desbloqueio mostra ("Garimpe 1 peça da Puma").
+export function nomeDaColecao(id) {
+  if (id.startsWith('cor-')) {
+    const c = Object.keys(COLECOES_DE_COR).find(n => idDaCor(n) === id);
+    return { nome: c ?? id, de: `da cor ${c ?? id}` };
+  }
+  if (id.startsWith('estilo-')) {
+    const e = ESTILOS[id.slice(7)];
+    return { nome: e?.nome ?? id, de: `de ${e?.nome ?? id}` };
+  }
+  const m = colecao(id)?.marca ?? id;
+  return { nome: m, de: `da ${m}` };
+}
 
 // ---------------------------- Ferramentas ---------------------------------
 // Cada tela é uma ferramenta com nível mínimo. Hoje está tudo em 1 (nada
