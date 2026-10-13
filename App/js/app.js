@@ -21,6 +21,7 @@ import { montarBoard, aoEntrarNoBoard } from './board.js';
 import { aoEntrarNoSocial } from './social.js';
 import { montarUsuario, aoEntrarNoUsuario } from './usuario.js';
 import { montarTarefas, aoEntrarNasTarefas } from './tarefas.js';
+import { montarColecoes, aoEntrarNasColecoes } from './colecoes.js';
 import { montarPerfil, aoEntrarNoPerfil } from './perfil.js';
 import { montarPlayer } from './player.js';
 import { montarPaineis } from './paineis.js';
@@ -140,6 +141,7 @@ async function iniciar() {
   montarStylist();
   montarBoard();
   montarTarefas();
+  montarColecoes();
   montarPerfil();
   montarEditar();
   montarConexoes();
@@ -156,6 +158,7 @@ async function iniciar() {
   onEnter('board', aoEntrarNoBoard);
   onEnter('social', aoEntrarNoSocial);
   onEnter('tarefas', aoEntrarNasTarefas);
+  onEnter('colecoes', aoEntrarNasColecoes);
   onEnter('perfil', aoEntrarNoPerfil);
   onEnter('usuario', aoEntrarNoUsuario);
   onEnter('personagem', aoEntrarNoPersonagem);

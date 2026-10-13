@@ -933,6 +933,47 @@ export function progressoDoNivel(total) {
   };
 }
 
+// ------------------------------ Coleções ----------------------------------
+// Cada coleção é uma marca da loja. Garimpar as peças dela vai liberando as
+// roupinhas do avatar que ela adotou: a primeira com a 1ª peça, a do meio com
+// metade da coleção e a última com ela completa (ver roupinhas.js).
+//
+// `marca` casa com o campo marca do acervo (sem diferenciar maiúscula). O
+// tamanho da coleção não fica aqui: é quantas peças daquela marca o acervo tem,
+// então peça nova cadastrada com a marca entra sozinha.
+//
+// `efeito` é o que vestir itens da marca faz no garimpo. Por enquanto é só o
+// texto: a etapa dos efeitos lê `efeito.tipo` (ver plano em project-files).
+export const COLECOES = [
+  { id: 'puma', marca: 'Puma', estilo: 'futebol',
+    itens: ['cano-alto', 'legging', 'corta-vento'],
+    efeito: { tipo: 'resgate-gratis', texto: 'Chance de o resgate não gastar o limite do dia' } },
+  { id: 'adidas', marca: 'Adidas', estilo: 'futebol',
+    itens: ['moletom', 'moletom-calca', 'gorro'],
+    efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Adidas e Puma na sua arara' } },
+  { id: 'swear-london', marca: 'Swear London', estilo: 'skate',
+    itens: ['coturno', 'bota', 'luvas'],
+    efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
+  { id: 'borra', marca: 'Borra', estilo: 'skate',
+    itens: ['jeans', 'corrente', 'bandana'],
+    efeito: { tipo: 'fichas', texto: 'Fichas extras a cada garimpo' } },
+  { id: 'jnco', marca: 'Jnco', estilo: 'skate',
+    itens: ['cargo', 'cinto'],
+    efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Jnco na sua arara' } },
+  { id: 'ecko', marca: 'Ecko', estilo: 'skate',
+    itens: ['bucket', 'pochete'],
+    efeito: { tipo: 'mais-raras', texto: 'Mais chance de peças raras na sua arara' } },
+];
+export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
+export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
+
+// Estilos dos itens do avatar. Os itens das coleções herdam o estilo da marca;
+// os de fora entram por esta lista. Item que não combina com nenhum fica sem.
+export const ESTILOS = {
+  futebol: { nome: 'Futebol', itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'] },
+  skate:   { nome: 'Skate',   itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'] },
+};
+
 // ---------------------------- Ferramentas ---------------------------------
 // Cada tela é uma ferramenta com nível mínimo. Hoje está tudo em 1 (nada
 // travado); subir o número aqui já tranca o botão na sidebar e a navegação,

@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/personagem.css">
 <link rel="stylesheet" href="css/usuario.css">
 <link rel="stylesheet" href="css/tarefas.css">
+<link rel="stylesheet" href="css/colecoes.css">
 <link rel="stylesheet" href="css/vestiario.css">
 <link rel="stylesheet" href="css/auth.css">
 <link rel="stylesheet" href="css/perfil.css">
@@ -687,11 +688,32 @@
         </div>
       </div>
 
+      <!-- A porta para as coleções: mostra a mais perto de fechar. -->
+      <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
+
       <section class="ferramentas">
         <h2>Ferramentas</h2>
         <p class="missoes-sub">O que cada nível abre no app.</p>
         <div id="ferramenta-box"></div>
       </section>
+    </div>
+  </section>
+
+  <!-- ====================== COLEÇÕES ====================== -->
+  <!-- Uma página por marca: as peças da loja que você tem, as que faltam e os
+       itens do avatar que a coleção libera. Abre por Tarefas e pelo perfil. -->
+  <section class="view view-colecoes" data-view="colecoes" hidden>
+    <div class="col-wrapper">
+      <header class="col-head">
+        <button type="button" class="col-voltar" id="col-voltar">‹ Tarefas</button>
+        <div class="col-head-linha">
+          <h1>Coleções</h1>
+          <small id="col-resumo"></small>
+        </div>
+        <p class="col-sub">Garimpe peças de uma marca para liberar os itens dela no avatar. A 1ª peça abre o primeiro item, metade da coleção abre o segundo e a coleção completa abre o último.</p>
+        <div class="col-filtros" id="col-filtros"></div>
+      </header>
+      <div class="col-lista" id="col-lista"></div>
     </div>
   </section>
 
@@ -794,6 +816,14 @@
           <h3>Complete a sua vitrine</h3>
           <div id="pf-dicas-lista"></div>
         </section>
+        <section class="pf-secao" id="pf-secao-colecoes">
+          <header class="pf-secao-topo">
+            <h2>Coleções</h2><span id="perfil-colecoes-sub"></span>
+            <button type="button" class="pf-link" data-goto="colecoes">Ver coleções →</button>
+          </header>
+          <div class="pf-emblemas" id="perfil-colecoes"></div>
+        </section>
+
         <section class="pf-secao" id="pf-secao-pecas">
           <header class="pf-secao-topo">
             <h2>Roupas favoritas</h2><span id="perfil-pecas-sub"></span>

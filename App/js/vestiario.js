@@ -43,7 +43,7 @@
 // saco como qualquer outra.
 
 import { RARIDADE } from './config.js';
-import { SLOTS, ORDEM_SLOTS, roupinha, svgRoupinha } from './roupinhas.js';
+import { SLOTS, ORDEM_SLOTS, roupinha, svgRoupinha, atributosDe } from './roupinhas.js';
 import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
@@ -410,6 +410,7 @@ function renderFicha() {
 
   const arte = el('div', { class: 'vs-ficha-arte' });
   arte.innerHTML = miniatura(r);
+  const atr = atributosDe(r);
 
   // replaceChildren não é o el(): um null aqui vira a palavra "null" na tela.
   ficha.replaceChildren(arte, el('div', { class: 'vs-ficha-info' }, ...[
@@ -419,6 +420,11 @@ function renderFicha() {
         RARIDADE[r.raridade].nome),
       el('span', { class: 'vs-tag' }, SLOTS[r.slot].nome),
       equipada(r) ? el('span', { class: 'vs-tag vestida' }, '✓ vestida') : null),
+    // Os três atributos que se combinam no corpo: marca, cor e estilo.
+    el('div', { class: 'vs-atributos' },
+      el('span', { class: 'vs-atr' }, el('small', {}, 'Marca'), atr.marca ?? '—'),
+      el('span', { class: 'vs-atr' }, el('small', {}, 'Cor'), atr.cor),
+      el('span', { class: 'vs-atr' }, el('small', {}, 'Estilo'), atr.estiloNome ?? '—')),
     // De onde ela veio. A peça já é sua, então isto não é uma meta: é a
     // procedência dela, que é metade do valor de uma peça de coleção.
     el('div', { class: 'vs-condicao ok' },

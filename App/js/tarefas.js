@@ -19,6 +19,7 @@ import {
 } from './util.js';
 import { barraDeNivel, listaDeFerramentas } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
+import { colecaoMaisPerto, minhasColecoes } from './colecoes.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -38,8 +39,39 @@ export function renderTarefas() {
   renderCarimbos();
   renderSemana();
   renderSemanas();
+  renderCartaoColecoes();
   $('#ferramenta-box').replaceChildren(listaDeFerramentas());
   renderPontinho();
+}
+
+// ------------------------------- Coleções ---------------------------------
+// O cartão que leva à tela de Coleções: puxa pela que está mais perto de
+// fechar, com as peças que você já tem dela empilhadas.
+function renderCartaoColecoes() {
+  const botao = $('#tarefas-colecoes');
+  const todas = minhasColecoes();
+  botao.hidden = !todas.length;
+  if (!todas.length) return;
+  const perto = colecaoMaisPerto();
+  const completas = todas.filter(c => c.completa).length;
+  const faltam = perto ? perto.total - perto.tem : 0;
+  const ids = perto ? perto.ids : todas[0].ids;
+  const pilha = [...ids.filter(id => db.temPeca(id)), ...ids.filter(id => !db.temPeca(id))]
+    .slice(0, 3).map(id => pecaDoCatalogo(id)).filter(Boolean);
+
+  botao.onclick = () => irPara('colecoes');
+  botao.replaceChildren(
+    el('span', { class: 'tf-col-pilha' }, ...pilha.map(miniPeca)),
+    el('span', { class: 'tf-col-info' },
+      el('strong', {}, 'Coleções'),
+      el('small', {}, perto
+        ? (perto.tem
+          ? `${perto.marca}: ${faltam === 1 ? 'falta 1 peça' : `faltam ${faltam} peças`} para fechar`
+          : `Garimpe uma peça ${perto.marca} para abrir o primeiro item`)
+        : 'Todas completas!'),
+      el('small', { class: 'tf-col-conta' },
+        `${completas} de ${todas.length} ${todas.length === 1 ? 'completa' : 'completas'}`)),
+    el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
 }
 
 function renderPontinho() {

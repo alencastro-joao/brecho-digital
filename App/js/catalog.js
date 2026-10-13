@@ -51,6 +51,7 @@ async function carregarAcervo() {
     const itens = (data.items || []).map(i => ({ ...i, permanente: true }));
     for (const it of itens) {
       if (it.raridade) db.raridadesFixas.set(it.id, it.raridade);
+      if (it.marca?.trim()) db.marcasFixas.set(it.id, it.marca.trim());
     }
     if (itens.some(i => i.path)) catalogo.temContorno = true;
     return itens;
@@ -64,6 +65,10 @@ export function registrarPeca(peca, { permanente = false } = {}) {
   const item = permanente ? { ...peca, permanente: true } : { ...peca, propria: true };
   item.cat = migrarCategoria(item.cat);
   if (permanente && peca.raridade) db.raridadesFixas.set(peca.id, peca.raridade);
+  if (permanente) {
+    if (peca.marca?.trim()) db.marcasFixas.set(peca.id, peca.marca.trim());
+    else db.marcasFixas.delete(peca.id);
+  }
   const i = catalogo.itens.findIndex(x => x.id === item.id);
   if (i >= 0) catalogo.itens[i] = item;
   else catalogo.itens.push(item);
@@ -73,6 +78,7 @@ export function registrarPeca(peca, { permanente = false } = {}) {
 
 // A peça apagada do acervo sai do catálogo em memória, sem recarregar tudo.
 export function esquecerPeca(id) {
+  db.marcasFixas.delete(id);
   catalogo.itens = catalogo.itens.filter(x => x.id !== id);
   catalogo.porId.delete(id);
 }

@@ -16,7 +16,9 @@
 // do corpo, engordados e cortados na altura que a peça pede — por isso a
 // bermuda do corpo estreito não fica larga, e a manga cai no mesmo pulso.
 
-import { CONFIG, CORPOS } from './config.js';
+import {
+  CONFIG, CORPOS, COLECOES, ESTILOS, colecao,
+} from './config.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
 
@@ -1168,6 +1170,74 @@ export const VESTIARIO_PADRAO = {
 };
 
 export const ROUPINHA = Object.fromEntries(ROUPINHAS.map(r => [r.id, r]));
+
+// ------------------------------ Coleções ----------------------------------
+// Os itens que uma marca adotou passam a abrir pela coleção dela. A regra de
+// antes fica em `antes`: quem já tinha o item por ela continua com ele (ver
+// db.roupinhasHerdadas).
+for (const c of COLECOES) {
+  c.itens.forEach((id, ordem) => {
+    const r = ROUPINHA[id];
+    if (!r) return;
+    r.antes = r.desbloqueio;
+    r.desbloqueio = { tipo: 'colecao', colecao: c.id, ordem, de: c.itens.length };
+  });
+}
+
+// ------------------------------ Atributos ---------------------------------
+// Marca, cor e estilo: os três que se combinam no corpo. São lidos do resto do
+// catálogo, não escritos em cada peça, para a coleção, a lista de estilos e a
+// cor desenhada continuarem sendo a única fonte de cada um.
+const colecaoDoItem = (r) => COLECOES.find(c => c.itens.includes(r.id)) || null;
+
+const rgb = (hex) => {
+  const n = parseInt(String(hex).slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+// A cor do garimpo que o olho dá para a cor desenhada. Por tom (HSL), não por
+// distância até uma amostra: as cores dos itens são todas acinzentadas, e a
+// distância puxava roxo escuro para preto e azul acinzentado para cinza.
+export function corDoGarimpo(hex) {
+  const [r, g, b] = rgb(hex).map(v => v / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2, c = max - min;
+  const s = c === 0 ? 0 : c / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (c) {
+    if (max === r) h = ((g - b) / c) % 6;
+    else if (max === g) h = (b - r) / c + 2;
+    else h = (r - g) / c + 4;
+    h = (h * 60 + 360) % 360;
+  }
+  if (l < 0.16 || (c < 0.07 && l < 0.3)) return 'Preto';
+  if (c < 0.07) return l > 0.85 ? 'Branco' : 'Cinza';
+  if (l > 0.88 && s < 0.5) return 'Branco';
+  if (h >= 10 && h < 50) {
+    if (l < 0.42) return 'Marrom';
+    if (s < 0.55 && l > 0.6) return 'Bege';
+    return h < 38 ? 'Laranja' : 'Amarelo';
+  }
+  if (h < 10 || h >= 335) return l > 0.6 ? 'Rosa' : 'Vermelho';
+  if (h < 70) return s > 0.4 ? 'Amarelo' : 'Verde';
+  if (h < 170) return 'Verde';
+  if (h < 250) return 'Azul';
+  if (h < 300) return 'Roxo';
+  return l > 0.55 ? 'Rosa' : (h < 320 ? 'Roxo' : 'Vermelho');
+}
+
+export function atributosDe(r) {
+  const c = colecaoDoItem(r);
+  const estilo = c?.estilo
+    ?? Object.keys(ESTILOS).find(id => ESTILOS[id].itens.includes(r.id)) ?? null;
+  return {
+    marca: c?.marca ?? null,
+    colecao: c?.id ?? null,
+    cor: corDoGarimpo(corDaPeca(r)),
+    estilo,
+    estiloNome: estilo ? ESTILOS[estilo].nome : null,
+  };
+}
 export const roupinha = (id) => ROUPINHA[id] || null;
 export const doSlot = (slot) => ROUPINHAS.filter(r => r.slot === slot);
 // Cada peça tem uma cor, e ela é da peça: o desenho e a cor são a mesma
@@ -1181,7 +1251,8 @@ export const corDaPeca = (r) => r?.cor ?? '#e9e4dc';
 // que alimenta isso só sobe.
 //
 // `progresso` é o que db.progressoDoJogador() devolve:
-// { nivel, resgates, looks, publicacoes, dias }.
+// { nivel, resgates, looks, publicacoes, dias, colecoes }, e `colecoes` é
+// { [id]: { tem, total } } — quantas peças da marca você tem e o acervo tem.
 export const METAS = {
   inicial: {
     rotulo: () => 'Você já começa com ela',
@@ -1207,15 +1278,39 @@ export const METAS = {
     rotulo: (d) => `Feche as missões do dia ${d.meta}×`,
     atual: (p) => p.dias, meta: (d) => d.meta,
   },
+  // A 1ª peça abre o primeiro item, metade da coleção abre o do meio e a
+  // coleção completa abre o último. Coleção sem peça no acervo (catálogo que
+  // ainda não carregou) não abre nada.
+  colecao: {
+    rotulo: (d, p) => {
+      const n = metaDaColecao(d, p);
+      const marca = colecao(d.colecao)?.marca ?? d.colecao;
+      return n === totalDaColecao(d, p) && n > 1
+        ? `Complete a coleção ${marca} (${n} peças)`
+        : `Garimpe ${n} ${n === 1 ? 'peça' : 'peças'} da ${marca}`;
+    },
+    atual: (p, d) => p.colecoes?.[d.colecao]?.tem ?? 0,
+    meta: (d, p) => metaDaColecao(d, p),
+  },
 };
+
+const totalDaColecao = (d, p) => p?.colecoes?.[d.colecao]?.total ?? 0;
+
+export function metaDaColecao(d, p) {
+  const total = totalDaColecao(d, p);
+  if (!total) return Infinity;
+  if (d.ordem === 0) return 1;
+  if (d.ordem >= d.de - 1) return total;
+  return Math.max(1, Math.ceil(total / 2));
+}
 
 export function estadoDoDesbloqueio(r, progresso) {
   const d = r.desbloqueio || { tipo: 'inicial' };
   const regra = METAS[d.tipo] || METAS.inicial;
-  const meta = regra.meta(d);
-  const atual = Math.max(0, regra.atual(progresso) ?? 0);
+  const meta = regra.meta(d, progresso);
+  const atual = Math.max(0, regra.atual(progresso, d) ?? 0);
   return {
-    rotulo: regra.rotulo(d),
+    rotulo: regra.rotulo(d, progresso),
     atual: Math.min(atual, meta),
     meta,
     liberada: atual >= meta,

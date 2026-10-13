@@ -40,6 +40,7 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 | **Colagem** | A colagem livre estilo board de moda, sempre em fundo branco: botão de sortear colagem, réguas e guias, ímã de alinhamento, assinatura, etiquetas de texto, seleção múltipla, undo/redo e exportação |
 | **Feed** | Abas Seguindo/Descobrir, 32 perfis fictícios publicando looks **e colagens** geradas na hora, com comentários, curtir, comentar, seguir, compartilhar, player da trilha do mês. A coluna "Quem seguir" procura por nome, sobrenome, @ ou bio — **contas reais incluídas**, é assim que se acha um amigo |
 | **Tarefas** | As missões do dia com barra de progresso, a trilha de níveis (XP, quanto falta, o que cada nível abre) e a cápsula do ilustrador |
+| **Coleções** | Uma página por marca da loja (Puma, Swear London, Borra, Adidas, Jnco, Ecko): as peças que você garimpou, as que faltam em cinza e os itens do avatar que a coleção libera (1ª peça, metade e coleção completa). Abre pelo cartão em Tarefas e pelos emblemas do perfil |
 | **Inventário** | O personagem no meio da metade da esquerda, com uma coluna de lugares do corpo de cada lado dele (Cabeça, Tronco, Pernas · Acessório, Cintura, Pés); à direita a mochila, uma página fixa de 5×5 casas com o passador embaixo. Um clique abre a peça, dois vestem; arrastar veste, tira e arruma o saco. As 66 peças aparecem soltas na casa, como item, e não recortadas do corpo. É o que o perfil veste |
 | **Perfil** | A sua página em duas colunas: à esquerda o cartão (avatar, bio, peças/seguidores/amigos, editar perfil, personagem, inventário) e o menu que abre contas conectadas, conta e testes num modal; à direita, no alto, os amigos e "Complete a sua vitrine" (com atalho para o que falta), e embaixo a vitrine curada — roupas favoritas e, em seções separadas, até 3 Stylists e 3 colagens favoritos (a estrela não deixa marcar mais) |
 | **Perfil de alguém** | A página pública de quem aparece no feed, no mesmo desenho do seu perfil: o cartão à esquerda (avatar, bio, redes ligadas, desde quando, publicações/seguidores/seguindo, seguir) e, à direita, outros perfis, as peças que ela veste e os looks (Stylists) e as colagens dela, em seções separadas, no mesmo cartão dos seus favoritos — o clique abre a publicação inteira num modal, com curtir e comentar |
@@ -78,6 +79,7 @@ App/
     conexoes.js         Instagram e Pinterest ligados ao perfil
     perfil.js           a sua página: identidade, vitrines de favoritos, amigos
     tarefas.js          missões do dia, trilha de níveis e cápsula
+    colecoes.js         coleções por marca: progresso, tela própria, cartão de Tarefas e emblemas
     favoritos.js        a estrela que escolhe o que vai para o perfil
     nivel.js            nível na interface: selo da sidebar, barra de XP, travas
     aura.js             brilho de raridade recortado na silhueta da peça

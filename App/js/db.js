@@ -19,6 +19,7 @@ import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
   RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
   MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
+  COLECOES, normalizarMarca,
 } from './config.js';
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
@@ -1052,9 +1053,55 @@ export const progressoDoJogador = () => ({
   looks: state.stats.looks ?? 0,
   publicacoes: state.stats.publicacoes ?? 0,
   dias: state.stats.diasCompletos ?? 0,
+  colecoes: progressoDasColecoes(),
 });
 
-export const estadoDaRoupinha = (r) => estadoDoDesbloqueio(r, progressoDoJogador());
+// --- Coleções -------------------------------------------------------------
+// A marca de cada peça do acervo, por id. O catálogo preenche ao carregar
+// (como raridadesFixas): db não importa catalog.js.
+export const marcasFixas = new Map();
+
+const pecasDaMarca = (marca) => {
+  const alvo = normalizarMarca(marca);
+  const ids = [];
+  for (const [id, m] of marcasFixas) if (normalizarMarca(m) === alvo) ids.push(id);
+  return ids;
+};
+
+// { [id da coleção]: { tem, total, ids } }: as peças da marca no acervo e
+// quantas delas estão no seu guarda-roupa.
+export function progressoDasColecoes() {
+  const minhas = new Set(state.inventario.map(p => p.id));
+  const out = {};
+  for (const c of COLECOES) {
+    const ids = pecasDaMarca(c.marca);
+    out[c.id] = { ids, total: ids.length, tem: ids.filter(id => minhas.has(id)).length };
+  }
+  return out;
+}
+
+// Os itens que trocaram de regra quando as coleções chegaram. Quem já tinha
+// um deles pela regra antiga continua com ele: a lista é tirada uma vez, do
+// progresso daquele momento, e gravada no save.
+export function roupinhasHerdadas() {
+  const v = state.vestiario;
+  if (!Array.isArray(v.herdadas)) {
+    const p = progressoDoJogador();
+    v.herdadas = ROUPINHAS
+      .filter(r => r.antes && estadoDoDesbloqueio({ desbloqueio: r.antes }, p).liberada)
+      .map(r => r.id);
+    salvar();
+  }
+  return v.herdadas;
+}
+
+export function estadoDaRoupinha(r) {
+  const p = progressoDoJogador();
+  const e = estadoDoDesbloqueio(r, p);
+  if (e.liberada || !r.antes || !roupinhasHerdadas().includes(r.id)) return e;
+  // Já era sua antes da coleção: a procedência é a regra antiga.
+  return { ...estadoDoDesbloqueio({ desbloqueio: r.antes }, p), liberada: true, pct: 100 };
+}
 
 export const roupinhaLiberada = (id) => {
   const r = ROUPINHA[id];

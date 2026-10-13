@@ -36,6 +36,8 @@ import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
+import { minhasColecoes, capaDaColecao } from './colecoes.js';
+import { escalaGrade } from './config.js';
 import {
   gradeDePecas, perfilPublico, segueDeVolta, mesAno, cartaoDeObra, botaoDePerfil,
 } from './usuario.js';
@@ -158,11 +160,38 @@ export function renderPerfil() {
         'Inventário'))
   );
 
+  renderEmblemas();
   const pecas = renderPecas();
   const obras = renderObras();
   renderAmigos(amigos);
   renderDicas({ pecas, ...obras, amigos: amigos.length, redes: redes.length });
   renderConexoes(renderPerfil);
+}
+
+// ------------------------------- Coleções ---------------------------------
+// Um emblema por marca: dourado quando a coleção está completa, com a barra
+// enquanto falta. O clique leva à tela de Coleções, que mora em Tarefas.
+function renderEmblemas() {
+  const todas = minhasColecoes()
+    .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct);
+  $('#pf-secao-colecoes').hidden = !todas.length;
+  const completas = todas.filter(c => c.completa).length;
+  $('#perfil-colecoes-sub').textContent = `${completas} de ${todas.length} completas`;
+  $('#perfil-colecoes').replaceChildren(...todas.map(c => {
+    const capa = capaDaColecao(c);
+    return el('button', {
+      class: 'pf-emblema' + (c.completa ? ' completa' : '') + (c.tem ? '' : ' longe'),
+      title: c.completa ? `Coleção ${c.marca} completa` : `${c.marca}: ${c.tem} de ${c.total} peças`,
+      onclick: () => irPara('colecoes'),
+    },
+      el('span', { class: 'pf-emblema-disco' },
+        capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
+          el('img', { src: capa.src, alt: '', loading: 'lazy' })) : null),
+      el('strong', {}, c.marca),
+      el('small', {}, c.completa ? 'Completa' : `${c.tem} de ${c.total}`),
+      c.completa ? null : el('span', { class: 'barra' },
+        el('span', { style: { width: (c.pct * 100) + '%' } })));
+  }));
 }
 
 // ------------------------------- Vitrines ---------------------------------
