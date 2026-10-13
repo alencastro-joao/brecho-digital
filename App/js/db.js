@@ -1115,17 +1115,15 @@ export function progressoDasColecoes() {
   };
   for (const c of COLECOES) guardar(c.id, pecasDaMarca(c.marca));
 
-  // Cor: as peças daquela cor. Estilo: as das marcas dele mais as escolhidas.
+  // Cor: as peças daquela cor. Estilo: as escolhidas para ele (config.ESTILOS).
   const acervo = [...coresFixas.keys()];
   for (const cor of Object.keys(COLECOES_DE_COR)) {
     const alvo = normalizarMarca(cor);
     guardar(idDaCor(cor), acervo.filter(id => normalizarMarca(coresFixas.get(id)) === alvo));
   }
   for (const [id, e] of Object.entries(ESTILOS)) {
-    const marcas = new Set((e.marcas || []).map(normalizarMarca));
-    const extras = new Set(e.pecas || []);
-    guardar(idDoEstilo(id), acervo.filter(p =>
-      extras.has(p) || marcas.has(normalizarMarca(marcasFixas.get(p)))));
+    const pecas = new Set(e.pecas || []);
+    guardar(idDoEstilo(id), acervo.filter(p => pecas.has(p)));
   }
   return out;
 }

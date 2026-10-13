@@ -950,41 +950,44 @@ export function progressoDoNivel(total) {
 // O bônus vestido (+5% a +20%, ver efeitos.js) é a chance, em pontos
 // percentuais; nos efeitos de arara ele é multiplicado (ver poolDoDia).
 export const COLECOES = [
-  { id: 'puma', marca: 'Puma', estilo: 'futebol',
+  { id: 'puma', marca: 'Puma',
     itens: ['cano-alto', 'legging', 'corta-vento'],
     efeito: { tipo: 'resgate-gratis', texto: 'Chance de o resgate não gastar o limite do dia' } },
-  { id: 'adidas', marca: 'Adidas', estilo: 'futebol',
+  { id: 'adidas', marca: 'Adidas',
     itens: ['moletom', 'moletom-calca', 'gorro'],
     efeito: { tipo: 'mais-da-marca', marcas: ['Adidas', 'Puma'], texto: 'Mais peças Adidas e Puma na sua arara' } },
-  { id: 'swear-london', marca: 'Swear London', estilo: 'skate',
+  { id: 'swear-london', marca: 'Swear London',
     itens: ['coturno', 'luvas', 'fones'],
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
-  { id: 'borra', marca: 'Borra', estilo: 'skate',
+  { id: 'borra', marca: 'Borra',
     itens: ['jeans', 'corrente', 'suspensorios'],
     efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
-  { id: 'jnco', marca: 'Jnco', estilo: 'skate',
+  { id: 'jnco', marca: 'Jnco',
     itens: ['cargo', 'cinto'],
     efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Jnco na sua arara' } },
-  { id: 'ecko', marca: 'Ecko', estilo: 'skate',
+  { id: 'ecko', marca: 'Ecko',
     itens: ['bucket', 'pochete'],
     efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
 
-// Estilos dos itens do avatar. Os itens das coleções herdam o estilo da marca;
-// os de fora entram por `itens`. Item que não combina com nenhum fica sem.
+// Estilos dos itens do avatar: entram os de `itens`. Item que não combina com
+// nenhum fica sem. Estilo e marca são independentes: o item de uma marca só
+// tem estilo se estiver nesta lista.
 //
 // Cada estilo também é uma coleção de peças da loja (tela de Coleções, aba
-// Estilos): entram todas as peças das `marcas` dele, mais as de `pecas`,
-// escolhidas olhando as fotos. Peça nova de uma dessas marcas já entra sozinha.
+// Estilos): as de `pecas`, escolhidas olhando as fotos, peça por peça.
 export const ESTILOS = {
   futebol: {
     nome: 'Futebol', brilho: '#3fae5a',
     itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'],
     libera: ['chinelo', 'viseira', 'polo'],
-    marcas: ['Puma', 'Adidas', 'Umbro', 'USPA'],
     pecas: [
+      'puma-muvc1c7y05', 'puma-muvc1eqe0c', 'puma-muvc1fuk92', 'puma-muvc1hlva9', // tênis e chuteiras
+      'umbro-mugft6wx2',           // regata da Inglaterra
+      'umbro-muvc1crzbc',          // chuteira
+      'uspa-muvl3amr99',           // polo
       'billabong-muynwwod46',      // bermuda branca de listra
       'gel-nimbus-mudyvj7o', 'gel-nimbus-mudywpih',
       'kenner-mugxru6y0',          // chinelo
@@ -998,8 +1001,9 @@ export const ESTILOS = {
     nome: 'Skate', brilho: '#f08a24',
     itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'],
     libera: ['mochila', 'oculos-sol', 'xadrez'],
-    marcas: ['Swear London', 'Borra', 'Jnco', 'Ecko', 'Hysteric'],
     pecas: [
+      'ecko-muynwvri84', 'ecko-muynx06b99', 'jnco-muvqo387b7', 'jnco-muvqo5vdeb', // camisetas
+      'hysteric-muvqo40be1',       // jaqueta college
       'hats-muvavz1s7f', 'hats-muvaw0j02f', 'hats-muvaw89z47', // boné e gorros
       'pants-mug1egkr5', 'pants-muplm2007',                    // bermudas
       'pants-muplqhfkd', 'pants-muplr0eie', 'pants-muplu7paj', // calças largas

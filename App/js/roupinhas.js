@@ -1242,8 +1242,7 @@ export function corDoGarimpo(hex) {
 
 export function atributosDe(r) {
   const c = colecaoDoItem(r);
-  const estilo = c?.estilo
-    ?? Object.keys(ESTILOS).find(id => ESTILOS[id].itens.includes(r.id)) ?? null;
+  const estilo = Object.keys(ESTILOS).find(id => ESTILOS[id].itens.includes(r.id)) ?? null;
   return {
     marca: c?.marca ?? null,
     colecao: c?.id ?? null,
