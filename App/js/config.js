@@ -844,22 +844,48 @@ export const MISSOES_SEMANA = [
 // semana, e 3 semanas carimbadas abrem o baú semanal (BAU_ESPECIAL).
 export const MARCOS_SEMANA = { fichas: { missoes: 3, fichas: 6 } };
 
-// Baú dos dias: 5 dias carimbados na mesma semana abrem XP e uma peça sorteada
-// do acervo. A faixa é a primeira da lista que ainda tem peça que você não tem
-// e que não esgotou — rara de preferência; épica ou incomum só se faltar rara.
+// Os baús crescem com o nível: quanto mais alto, mais peças e mais raras.
+// `pecas` é uma faixa por peça sorteada. Se a faixa não tem peça que você
+// ainda não tem (ou esgotou), o sorteio desce uma faixa, e só sobe se não
+// houver nada abaixo.
+//
+// Baú dos dias: 5 dias carimbados na mesma semana.
 export const PREMIO_SEMANA = {
   carimbos: 5,
-  xp: 200,
-  faixas: ['rare', 'epic', 'uncommon'],
+  porNivel: [
+    { desde: 1,  xp: 200, pecas: ['rare'] },
+    { desde: 5,  xp: 250, pecas: ['rare', 'uncommon'] },
+    { desde: 10, xp: 300, pecas: ['rare', 'rare'] },
+    { desde: 20, xp: 400, pecas: ['epic', 'rare', 'rare'] },
+    { desde: 30, xp: 500, pecas: ['epic', 'epic', 'rare'] },
+  ],
 };
 
-// Baú semanal: 3 semanas carimbadas (seguidas ou não) abrem o mesmo sorteio,
-// uma faixa acima.
+// Baú semanal: 3 semanas carimbadas (seguidas ou não).
 export const BAU_ESPECIAL = {
   semanas: 3,
-  xp: 300,
-  faixas: ['epic', 'rare', 'uncommon'],
+  porNivel: [
+    { desde: 1,  xp: 300, pecas: ['epic', 'rare'] },
+    { desde: 5,  xp: 400, pecas: ['epic', 'rare', 'rare'] },
+    { desde: 10, xp: 500, pecas: ['epic', 'epic', 'rare'] },
+    { desde: 20, xp: 650, pecas: ['legendary', 'epic', 'rare'] },
+    { desde: 30, xp: 800, pecas: ['legendary', 'epic', 'epic', 'rare'] },
+  ],
 };
+
+// O prêmio de um baú para o nível dado, e o próximo degrau (null no topo).
+export function premioDoBau(bau, nivel) {
+  const i = bau.porNivel.findLastIndex(f => nivel >= f.desde);
+  return { atual: bau.porNivel[Math.max(0, i)], proximo: bau.porNivel[i + 1] ?? null };
+}
+
+// Ordem de tentativa para uma faixa: ela, as de baixo (da mais perto para a
+// mais longe), depois as de cima.
+export function faixasDeTroca(faixa) {
+  const ids = RARIDADES.map(r => r.id);
+  const i = ids.indexOf(faixa);
+  return [faixa, ...ids.slice(0, i).reverse(), ...ids.slice(i + 1)];
+}
 
 // Fichas: o prêmio que vira garimpo, como as ampulhetas do TCG Pocket. O nome
 // é provisório até a lore do jogo. O teto protege a raridade da vitrine.

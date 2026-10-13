@@ -8,8 +8,8 @@
 // toque para sair — é o momento bom do dia.
 
 import {
-  MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS,
-  RARIDADE, escalaGrade,
+  MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
+  RARIDADE, RARIDADES, escalaGrade,
 } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
@@ -148,15 +148,11 @@ function renderCarimbos() {
   }));
 
   const premio = db.state.semana.premio;
-  const peca = premio?.id && pecaDoCatalogo(premio.id);
   linhaDeBau($('#carimbos-bau'), {
-    nome: 'Baú dos dias',
-    premio: `Uma peça ${nomeDaFaixa(PREMIO_SEMANA)} + ${PREMIO_SEMANA.xp} XP.`,
+    nome: 'Baú dos dias', bau: PREMIO_SEMANA,
     feitos: carimbados.length, meta: PREMIO_SEMANA.carimbos, unidade: 'dias carimbados',
     pronto: db.bauDosDiasPronto(), abrir: abrirBau,
-    aberto: premio && (peca
-      ? { peca, texto: `${nomeDaPeca(peca)} (${RARIDADE[premio.raridade]?.nome ?? ''}) + ${PREMIO_SEMANA.xp} XP` }
-      : { texto: `+${PREMIO_SEMANA.xp} XP` }),
+    aberto: premio && { pecas: db.pecasDoBauDosDias(), xp: premio.xp ?? premioDoBau(PREMIO_SEMANA, 1).atual.xp },
   });
 }
 
@@ -197,8 +193,7 @@ function renderSemanas() {
   $('#semanas-cartela').replaceChildren(...Array.from({ length: total }, (_, i) =>
     el('span', { class: 'selo' + (i < n ? ' on' : '') }, `S${i + 1}`)));
   linhaDeBau($('#semanas-bau'), {
-    nome: 'Baú semanal',
-    premio: `Uma peça ${nomeDaFaixa(BAU_ESPECIAL)} + ${BAU_ESPECIAL.xp} XP.`,
+    nome: 'Baú semanal', bau: BAU_ESPECIAL,
     feitos: n, meta: total, unidade: 'semanas carimbadas',
     pronto: db.bauEspecialPronto(), abrir: abrirEspecial, dourado: true,
   });
@@ -207,67 +202,82 @@ function renderSemanas() {
 // ---------------------------------- Baús -----------------------------------
 // Os dois baús usam a mesma linha: fechado com a barra dos carimbos, pronto
 // com o botão, ou aberto com a peça que saiu.
-function linhaDeBau(box, { nome, premio, feitos, meta, unidade, pronto, abrir, aberto, dourado }) {
+function linhaDeBau(box, { nome, bau, feitos, meta, unidade, pronto, abrir, aberto, dourado }) {
   if (aberto) {
+    const pecas = aberto.pecas.map(p => pecaDoCatalogo(p.id)).filter(Boolean);
     box.className = 'bau aberto';
     box.replaceChildren(
-      aberto.peca ? miniPeca(aberto.peca) : el('span', { class: 'bau-icone' }, '🎁'),
+      pecas.length ? el('div', { class: 'bau-pecas' }, ...pecas.slice(0, 3).map(miniPeca))
+                   : el('span', { class: 'bau-icone' }, '🎁'),
       el('div', { class: 'bau-info' },
-        el('strong', {}, `${nome} aberto`), el('small', {}, aberto.texto)),
-      ...(aberto.peca ? [el('button', { class: 'btn-ghost', onclick: () => irPara('closet') }, 'Ver')] : []));
+        el('strong', {}, `${nome} aberto`),
+        el('small', {}, [...pecas.map(nomeDaPeca), `${aberto.xp} XP`].join(' + '))),
+      ...(pecas.length ? [el('button', { class: 'btn-ghost', onclick: () => irPara('closet') }, 'Ver')] : []));
     return;
   }
+  const nivel = db.nivel();
+  const { atual, proximo } = premioDoBau(bau, nivel);
   box.className = 'bau' + (pronto ? ' pronto' : '') + (dourado ? ' dourado' : '');
   box.replaceChildren(
     el('span', { class: 'bau-icone' }, pronto ? '🎁' : dourado ? '👑' : '🔒'),
     el('div', { class: 'bau-info' },
       el('strong', {}, nome),
-      el('small', {}, premio),
+      el('small', {}, `${descreverPremio(atual)}.`),
       ...(pronto ? [] : [
         el('div', { class: 'barra' }, el('span', { style: { width: Math.min(100, feitos / meta * 100) + '%' } })),
-        el('small', { class: 'bau-conta' }, `${feitos} de ${meta} ${unidade}`)])),
+        el('small', { class: 'bau-conta' }, `${feitos} de ${meta} ${unidade}`)]),
+      ...(proximo ? [el('small', { class: 'bau-proximo' },
+        `No nível ${proximo.desde}: ${descreverPremio(proximo)}.`)] : [])),
     ...(pronto ? [botaoPremio('Abrir', abrir)] : []));
 }
 
-const nomeDaFaixa = (premio) => RARIDADE[premio.faixas[0]]?.nome.toLowerCase();
+// "2 peças (rara e incomum) + 250 XP"
+function descreverPremio({ pecas, xp }) {
+  const nomes = pecas.map(f => RARIDADE[f]?.nome.toLowerCase());
+  const lista = nomes.length > 1 ? `${nomes.slice(0, -1).join(', ')} e ${nomes.at(-1)}` : nomes[0];
+  return `${pecas.length === 1 ? '1 peça' : `${pecas.length} peças`} (${lista}) + ${xp} XP`;
+}
 
 function miniPeca(peca) {
   return el('div', { class: 'bau-peca', style: { '--esc': String(escalaGrade(peca)) } },
     el('div', { class: 'peca-caixa' }, el('img', { src: peca.src, alt: nomeDaPeca(peca) })));
 }
 
-// A peça de um baú: a primeira faixa da lista que ainda tem peça que você não
-// tem e que não esgotou.
-function sortearPremio(faixas) {
-  for (const faixa of faixas) {
-    const lista = catalogo.itens.filter(it =>
-      !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
-    if (lista.length) return { item: lista[Math.floor(Math.random() * lista.length)], faixa };
+// As peças de um baú: uma por faixa do degrau do seu nível. Cada uma é uma
+// peça que você ainda não tem e que não esgotou; sem nenhuma na faixa, tenta a
+// de baixo (e só sobe se não houver nada abaixo). Nunca repete no mesmo baú.
+function sortearPremio(bau) {
+  const { atual } = premioDoBau(bau, db.nivel());
+  const escolhidas = new Set();
+  const sorteadas = [];
+  for (const pedida of atual.pecas) {
+    for (const faixa of faixasDeTroca(pedida)) {
+      const lista = catalogo.itens.filter(it => !escolhidas.has(it.id) &&
+        !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
+      if (!lista.length) continue;
+      const item = lista[Math.floor(Math.random() * lista.length)];
+      escolhidas.add(item.id);
+      sorteadas.push({ item, raridade: faixa });
+      break;
+    }
   }
-  return { item: null, faixa: null };
+  return sorteadas;
 }
 
-function abrirBau() {
-  const { item, faixa } = sortearPremio(PREMIO_SEMANA.faixas);
-  const peca = db.abrirPremioDaSemana(item, faixa);
-  if (peca) {
-    estoque.levar([{ id: peca.id, raridade: peca.raridade }]);
-    toast(`Baú dos dias: ${nomeDaPeca(item)} (${RARIDADE[faixa].nome}) no seu guarda-roupa.`, faixa);
-  } else {
-    toast(`Baú dos dias aberto: +${PREMIO_SEMANA.xp} XP.`);
-  }
-}
-
-function abrirEspecial() {
-  const { item, faixa } = sortearPremio(BAU_ESPECIAL.faixas);
-  const r = db.abrirBauEspecial(item, faixa);
+function abrirUmBau(nome, bau, abrir) {
+  const r = abrir(sortearPremio(bau));
   if (!r) return;
-  if (r.peca) {
-    estoque.levar([{ id: r.peca.id, raridade: r.peca.raridade }]);
-    toast(`Baú semanal: ${nomeDaPeca(item)} (${RARIDADE[faixa].nome}) no seu guarda-roupa.`, faixa);
-  } else {
-    toast(`Baú semanal aberto: +${BAU_ESPECIAL.xp} XP.`);
-  }
+  if (r.pecas.length) estoque.levar(r.pecas.map(p => ({ id: p.id, raridade: p.raridade })));
+  const nomes = r.pecas.map(p => `${nomeDaPeca(pecaDoCatalogo(p.id))} (${RARIDADE[p.raridade]?.nome})`);
+  const melhor = r.pecas.map(p => p.raridade)
+    .sort((a, b) => ordemDaFaixa(b) - ordemDaFaixa(a))[0];
+  toast(nomes.length
+    ? `${nome}: ${nomes.join(', ')} no seu guarda-roupa. +${r.xp} XP.`
+    : `${nome} aberto: +${r.xp} XP.`, melhor);
 }
+
+const ordemDaFaixa = (f) => RARIDADES.findIndex(r => r.id === f);
+const abrirBau = () => abrirUmBau('Baú dos dias', PREMIO_SEMANA, db.abrirPremioDaSemana);
+const abrirEspecial = () => abrirUmBau('Baú semanal', BAU_ESPECIAL, db.abrirBauEspecial);
 
 export const aoEntrarNasTarefas = renderTarefas;

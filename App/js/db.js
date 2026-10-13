@@ -18,7 +18,7 @@
 import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
   RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
-  MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
+  MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
 } from './config.js';
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
@@ -953,35 +953,52 @@ export function carimbarSemana() {
   return { fichas: fichasGanhas };
 }
 
-// --- Baú dos dias ---------------------------------------------------------
-// 5 dias carimbados na semana. Abre com a peça já escolhida (quem sorteia é a
-// tela, que conhece o catálogo). Devolve a peça que entrou, ou null.
+// --- Baús -----------------------------------------------------------------
+// Os dois abrem com as peças já sorteadas (quem sorteia é a tela, que conhece
+// o catálogo): uma lista de { item, raridade }. O XP vem do degrau do nível
+// de quem abre, lido antes de o próprio XP do baú subir o nível.
+function guardarSorteadas(sorteadas, origem) {
+  return sorteadas
+    .map(({ item, raridade }) => item && adicionarPeca(item, { origem, raridade }))
+    .filter(Boolean)
+    .map(p => ({ id: p.id, raridade: p.raridade }));
+}
+
+// Baú dos dias: 5 dias carimbados na semana.
 export const bauDosDiasAberto = () => Boolean(state.semana.premio);
 export const bauDosDiasPronto = () =>
   !bauDosDiasAberto() && carimbosDaSemana().length >= PREMIO_SEMANA.carimbos;
 
-export function abrirPremioDaSemana(item, raridade) {
+export function abrirPremioDaSemana(sorteadas = []) {
   virarASemanaSeNecessario();
   if (!bauDosDiasPronto()) return null;
-  const peca = item ? adicionarPeca(item, { origem: 'semana', raridade }) : null;
-  state.semana.premio = { id: peca?.id ?? null, raridade: peca ? raridade : null,
-                          em: new Date().toISOString() };
-  ganharXP(PREMIO_SEMANA.xp, 'baú dos dias');
+  const { xp } = premioDoBau(PREMIO_SEMANA, nivel()).atual;
+  const pecas = guardarSorteadas(sorteadas, 'semana');
+  state.semana.premio = { pecas, xp, em: new Date().toISOString() };
+  ganharXP(xp, 'baú dos dias');
   salvar();
-  return peca;
+  return { pecas, xp };
+}
+
+// As peças do baú dos dias desta semana (aceita o formato antigo, de uma peça).
+export function pecasDoBauDosDias() {
+  const p = state.semana.premio;
+  if (!p) return [];
+  return p.pecas ?? (p.id ? [{ id: p.id, raridade: p.raridade }] : []);
 }
 
 // --- Baú semanal ----------------------------------------------------------
 export const semanasFechadas = () => state.semanasFechadas ?? 0;
 export const bauEspecialPronto = () => semanasFechadas() >= BAU_ESPECIAL.semanas;
 
-export function abrirBauEspecial(item, raridade) {
+export function abrirBauEspecial(sorteadas = []) {
   if (!bauEspecialPronto()) return null;
-  const peca = item ? adicionarPeca(item, { origem: 'bau-especial', raridade }) : null;
+  const { xp } = premioDoBau(BAU_ESPECIAL, nivel()).atual;
+  const pecas = guardarSorteadas(sorteadas, 'bau-especial');
   state.semanasFechadas = semanasFechadas() - BAU_ESPECIAL.semanas;
-  ganharXP(BAU_ESPECIAL.xp, 'baú semanal');
+  ganharXP(xp, 'baú semanal');
   salvar();
-  return { peca };
+  return { pecas, xp };
 }
 
 // Tem prêmio esperando o toque? Acende o pontinho do botão de Tarefas.

@@ -419,10 +419,12 @@ Missões).
   dia (+2 fichas e o carimbo no cartão da semana) — `MARCOS_DIA`.
 * **Semana** (`MISSOES_SEMANA`, zera na segunda): as diárias em dose maior. 3
   feitas dão 6 fichas; as 5 carimbam a semana — `MARCOS_SEMANA`.
-* **Baú dos dias**: 5 dias carimbados na mesma semana abrem um baú com peça
-  rara — `PREMIO_SEMANA`.
-* **Baú semanal**: 3 semanas carimbadas (seguidas ou não) abrem um baú com
-  peça épica — `BAU_ESPECIAL`.
+* **Baú dos dias**: 5 dias carimbados na mesma semana — `PREMIO_SEMANA`.
+* **Baú semanal**: 3 semanas carimbadas (seguidas ou não) — `BAU_ESPECIAL`.
+* Os dois crescem com o nível (`porNivel`): do nível 1 ao 30+, o baú dos dias
+  vai de 1 peça rara a 3 peças (épica, épica, rara), e o semanal de 2 peças
+  (épica, rara) a 4 (lendária, épica, épica, rara). Faixa sem peça disponível
+  desce uma; o card mostra o prêmio de agora e o do próximo degrau.
 * **Fichas** (nome provisório): 6 viram um resgate a mais no dia, no máximo um
   por dia — `FICHAS`.
 
