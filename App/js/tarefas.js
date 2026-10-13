@@ -37,7 +37,7 @@ export function renderTarefas() {
   renderDia();
   renderCarimbos();
   renderSemana();
-  renderBaus();
+  renderSemanas();
   $('#ferramenta-box').replaceChildren(listaDeFerramentas());
   renderPontinho();
 }
@@ -146,6 +146,18 @@ function renderCarimbos() {
       title: on ? `${nome}: dia carimbado` : nome,
     }, nome);
   }));
+
+  const premio = db.state.semana.premio;
+  const peca = premio?.id && pecaDoCatalogo(premio.id);
+  linhaDeBau($('#carimbos-bau'), {
+    nome: 'Baú dos dias',
+    premio: `Uma peça ${nomeDaFaixa(PREMIO_SEMANA)} + ${PREMIO_SEMANA.xp} XP.`,
+    feitos: carimbados.length, meta: PREMIO_SEMANA.carimbos, unidade: 'dias carimbados',
+    pronto: db.bauDosDiasPronto(), abrir: abrirBau,
+    aberto: premio && (peca
+      ? { peca, texto: `${nomeDaPeca(peca)} (${RARIDADE[premio.raridade]?.nome ?? ''}) + ${PREMIO_SEMANA.xp} XP` }
+      : { texto: `+${PREMIO_SEMANA.xp} XP` }),
+  });
 }
 
 // -------------------------------- Semana ----------------------------------
@@ -157,71 +169,67 @@ function renderSemana() {
     ...MISSOES_SEMANA.map(m => etiqueta(m, db.progressoSemanal(m.id))));
 
   const { fichas } = MARCOS_SEMANA;
-  const rodape = db.fichasDaSemanaProntas() && !db.semanaCompleta()
-    ? botaoPremio(`Pegar ${fichas.fichas} fichas`, () => {
-        const n = db.resgatarFichasDaSemana();
-        if (n) toast(`+${n} fichas da semana.`, 'rare');
-      })
-    : el('p', { class: 'cartao-nota' },
-        `Com ${fichas.missoes} pedidos: ${fichas.fichas} fichas. Com os ${MISSOES_SEMANA.length}: abre o baú da semana.`);
+  let rodape;
+  if (db.carimboDaSemanaPronto()) {
+    rodape = botaoPremio('Carimbar a semana', () => {
+      const r = db.carimbarSemana();
+      if (r) toast(`Semana carimbada!${r.fichas ? ` +${r.fichas} fichas.` : ''}`, 'rare');
+    });
+  } else if (db.fichasDaSemanaProntas()) {
+    rodape = botaoPremio(`Pegar ${fichas.fichas} fichas`, () => {
+      const n = db.resgatarFichasDaSemana();
+      if (n) toast(`+${n} fichas da semana.`, 'rare');
+    });
+  } else if (db.semanaCarimbada()) {
+    rodape = el('p', { class: 'cartao-nota ok' }, 'Semana carimbada. Segunda tem pedido novo.');
+  } else {
+    rodape = el('p', { class: 'cartao-nota' },
+      `Com ${fichas.missoes} pedidos: ${fichas.fichas} fichas. Com os ${MISSOES_SEMANA.length}: carimbo da semana.`);
+  }
   $('#semana-rodape').replaceChildren(rodape);
 }
 
-// ---------------------------------- Baús -----------------------------------
-// Uma fileira de 3 baús, um por semana fechada. O terceiro é o especial: além
-// do prêmio da semana, traz o do baú especial, num toque só.
-function renderBaus() {
+// --------------------------- Carimbos das semanas --------------------------
+function renderSemanas() {
   const total = BAU_ESPECIAL.semanas;
-  const aberto = !!db.state.semana.premio;
-  let n = db.semanasFechadas();
-  if (aberto && n === 0) n = total;           // o especial acabou de sair: fileira cheia até segunda
-  const atual = Math.min(aberto ? n - 1 : n, total - 1);
-  const pronto = db.semanaCompleta() && !aberto;
-  const feitas = db.semanaisFeitas();
-
-  $('#baus-titulo').textContent = `Baús · ${Math.min(n, total)} de ${total}`;
-  $('#baus-fila').replaceChildren(...Array.from({ length: total }, (_, i) => {
-    const especial = i === total - 1;
-    const nome = especial ? 'Especial' : `Semana ${i + 1}`;
-    const classe = 'bau-slot' + (especial ? ' especial' : '');
-
-    // Já aberto (numa semana anterior, ou nesta).
-    if (i < n && !(i === atual && db.bauEspecialPronto())) {
-      const peca = i === atual && aberto && db.state.semana.premio.id && pecaDoCatalogo(db.state.semana.premio.id);
-      return el('div', { class: classe + ' aberto' },
-        peca ? miniPeca(peca) : el('span', { class: 'bau-icone' }, '✓'),
-        el('strong', {}, nome), el('small', {}, i === atual && aberto ? 'aberto nesta semana' : 'aberto'));
-    }
-    // O especial que ficou para trás (semana 3 aberta antes desta tela existir).
-    if (especial && db.bauEspecialPronto()) {
-      return el('div', { class: classe + ' pronto' },
-        el('span', { class: 'bau-icone' }, '👑'), el('strong', {}, nome),
-        botaoPremio('Abrir', abrirEspecial));
-    }
-    // O baú desta semana.
-    if (i === atual) {
-      return el('div', { class: classe + (pronto ? ' pronto' : ' atual') },
-        el('span', { class: 'bau-icone' }, especial ? '👑' : '🎁'),
-        el('strong', {}, nome),
-        pronto
-          ? botaoPremio('Abrir', abrirBau)
-          : el('div', { class: 'bau-progresso' },
-              el('div', { class: 'barra' }, el('span', { style: { width: feitas / MISSOES_SEMANA.length * 100 + '%' } })),
-              el('small', {}, `${feitas} de ${MISSOES_SEMANA.length} pedidos`)));
-    }
-    // Semanas que ainda vêm.
-    return el('div', { class: classe + ' futuro' },
-      el('span', { class: 'bau-icone' }, especial ? '👑' : '🔒'),
-      el('strong', {}, nome), el('small', {}, 'próximas semanas'));
-  }));
-
-  const rara = RARIDADE[PREMIO_SEMANA.faixas[0]]?.nome.toLowerCase();
-  const epica = RARIDADE[BAU_ESPECIAL.faixas[0]]?.nome.toLowerCase();
-  $('#baus-nota').textContent =
-    `Cada baú dá uma peça ${rara} e ${PREMIO_SEMANA.xp} XP. ` +
-    `O ${total}º também traz uma peça ${epica} e mais ${BAU_ESPECIAL.xp} XP. ` +
-    'Não precisam ser semanas seguidas.';
+  const n = Math.min(db.semanasFechadas(), total);
+  $('#semanas-titulo').textContent = `Carimbos das semanas · ${n} de ${total}`;
+  $('#semanas-cartela').replaceChildren(...Array.from({ length: total }, (_, i) =>
+    el('span', { class: 'selo' + (i < n ? ' on' : '') }, `S${i + 1}`)));
+  linhaDeBau($('#semanas-bau'), {
+    nome: 'Baú semanal',
+    premio: `Uma peça ${nomeDaFaixa(BAU_ESPECIAL)} + ${BAU_ESPECIAL.xp} XP.`,
+    feitos: n, meta: total, unidade: 'semanas carimbadas',
+    pronto: db.bauEspecialPronto(), abrir: abrirEspecial, dourado: true,
+  });
 }
+
+// ---------------------------------- Baús -----------------------------------
+// Os dois baús usam a mesma linha: fechado com a barra dos carimbos, pronto
+// com o botão, ou aberto com a peça que saiu.
+function linhaDeBau(box, { nome, premio, feitos, meta, unidade, pronto, abrir, aberto, dourado }) {
+  if (aberto) {
+    box.className = 'bau aberto';
+    box.replaceChildren(
+      aberto.peca ? miniPeca(aberto.peca) : el('span', { class: 'bau-icone' }, '🎁'),
+      el('div', { class: 'bau-info' },
+        el('strong', {}, `${nome} aberto`), el('small', {}, aberto.texto)),
+      ...(aberto.peca ? [el('button', { class: 'btn-ghost', onclick: () => irPara('closet') }, 'Ver')] : []));
+    return;
+  }
+  box.className = 'bau' + (pronto ? ' pronto' : '') + (dourado ? ' dourado' : '');
+  box.replaceChildren(
+    el('span', { class: 'bau-icone' }, pronto ? '🎁' : dourado ? '👑' : '🔒'),
+    el('div', { class: 'bau-info' },
+      el('strong', {}, nome),
+      el('small', {}, premio),
+      ...(pronto ? [] : [
+        el('div', { class: 'barra' }, el('span', { style: { width: Math.min(100, feitos / meta * 100) + '%' } })),
+        el('small', { class: 'bau-conta' }, `${feitos} de ${meta} ${unidade}`)])),
+    ...(pronto ? [botaoPremio('Abrir', abrir)] : []));
+}
+
+const nomeDaFaixa = (premio) => RARIDADE[premio.faixas[0]]?.nome.toLowerCase();
 
 function miniPeca(peca) {
   return el('div', { class: 'bau-peca', style: { '--esc': String(escalaGrade(peca)) } },
@@ -244,11 +252,10 @@ function abrirBau() {
   const peca = db.abrirPremioDaSemana(item, faixa);
   if (peca) {
     estoque.levar([{ id: peca.id, raridade: peca.raridade }]);
-    toast(`Baú aberto: ${nomeDaPeca(item)} (${RARIDADE[faixa].nome}) no seu guarda-roupa.`, faixa);
+    toast(`Baú dos dias: ${nomeDaPeca(item)} (${RARIDADE[faixa].nome}) no seu guarda-roupa.`, faixa);
   } else {
-    toast(`Baú aberto: +${PREMIO_SEMANA.xp} XP.`);
+    toast(`Baú dos dias aberto: +${PREMIO_SEMANA.xp} XP.`);
   }
-  if (db.bauEspecialPronto()) abrirEspecial();
 }
 
 function abrirEspecial() {
@@ -257,9 +264,9 @@ function abrirEspecial() {
   if (!r) return;
   if (r.peca) {
     estoque.levar([{ id: r.peca.id, raridade: r.peca.raridade }]);
-    toast(`Baú especial: ${nomeDaPeca(item)} (${RARIDADE[faixa].nome}) no seu guarda-roupa.`, faixa);
+    toast(`Baú semanal: ${nomeDaPeca(item)} (${RARIDADE[faixa].nome}) no seu guarda-roupa.`, faixa);
   } else {
-    toast(`Baú especial aberto: +${BAU_ESPECIAL.xp} XP.`);
+    toast(`Baú semanal aberto: +${BAU_ESPECIAL.xp} XP.`);
   }
 }
 

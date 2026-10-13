@@ -840,19 +840,21 @@ export const MISSOES_SEMANA = [
   { id: 'curtir',   evento: 'curtir',   nome: 'Curtir 10 looks de outras pessoas', meta: 10, xp: 80 },
 ];
 
-// Marcos da semana: 3 missões dão fichas (um resgate extra); as 5 abrem o baú.
+// Marcos da semana: 3 missões dão fichas (um resgate extra); as 5 carimbam a
+// semana, e 3 semanas carimbadas abrem o baú semanal (BAU_ESPECIAL).
 export const MARCOS_SEMANA = { fichas: { missoes: 3, fichas: 6 } };
 
-// Fechar a semana inteira: XP e uma peça sorteada do acervo. A faixa é a
-// primeira da lista que ainda tem peça que você não tem e que não esgotou —
-// rara de preferência; épica ou incomum só se o acervo não tiver rara.
+// Baú dos dias: 5 dias carimbados na mesma semana abrem XP e uma peça sorteada
+// do acervo. A faixa é a primeira da lista que ainda tem peça que você não tem
+// e que não esgotou — rara de preferência; épica ou incomum só se faltar rara.
 export const PREMIO_SEMANA = {
+  carimbos: 5,
   xp: 200,
   faixas: ['rare', 'epic', 'uncommon'],
 };
 
-// Três baús da semana abertos (seguidos ou não) abrem o baú especial: o mesmo
-// sorteio, uma faixa acima.
+// Baú semanal: 3 semanas carimbadas (seguidas ou não) abrem o mesmo sorteio,
+// uma faixa acima.
 export const BAU_ESPECIAL = {
   semanas: 3,
   xp: 300,

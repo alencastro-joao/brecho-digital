@@ -138,25 +138,21 @@
 .ferramenta-info small { font-size: 11px; color: var(--tinta-suave); }
 
 /* -------------------------------- Baús ---------------------------------- */
-/* Três baús lado a lado; o último, o especial, é maior e dourado. */
-.baus { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 10px; align-items: end; }
-.bau-slot {
-  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
-  border: 1.5px dashed #d8cfc2; border-radius: 14px; padding: 12px 8px; min-height: 128px;
-  justify-content: center; background: #fff;
+.cartela-semanas { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 162px; }
+.bau {
+  display: flex; align-items: center; gap: 14px; margin-top: 12px;
+  background: #fff; border: 1px dashed var(--linha); border-radius: 14px; padding: 12px 16px;
 }
-.bau-slot strong { font-size: 12.5px; font-weight: 700; }
-.bau-slot small { font-size: 11px; color: var(--tinta-suave); }
-.bau-slot .bau-icone { font-size: 26px; line-height: 1.1; }
-.bau-slot.especial { min-height: 150px; background: #fbf6e8; border-color: #e3d3a5; }
-.bau-slot.especial strong { color: #8a6d24; }
-.bau-slot.especial .bau-icone { font-size: 34px; }
-.bau-slot.atual { border-style: solid; border-color: var(--tinta-suave); }
-.bau-slot.pronto { border-style: solid; border-color: #e8c46a; background: #fff6d6; }
-.bau-slot.aberto { border-style: solid; border-color: #cfe3c0; background: #fbfdf9; }
-.bau-slot.aberto .bau-icone { color: #6b8f4e; font-weight: 800; }
-.bau-slot.futuro { opacity: .55; }
-.bau-slot .btn-premio { width: auto; padding: 6px 18px; margin-top: 2px; }
-.bau-progresso { width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 0 4px; }
-.bau-peca { position: relative; width: 48px; height: 48px; flex: none; }
+.bau.dourado { background: #fbf6e8; border-color: #e3d3a5; }
+.bau.dourado .bau-info strong { color: #8a6d24; }
+.bau.pronto { border: 1.5px solid #e8c46a; background: #fff6d6; }
+.bau.aberto { border: 1px solid #cfe3c0; background: #fbfdf9; }
+.bau-icone { font-size: 26px; width: 44px; text-align: center; flex: none; }
+.bau-peca { position: relative; width: 56px; height: 56px; flex: none; }
+.bau-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bau-info strong { font-size: 13px; font-weight: 700; }
+.bau-info small { font-size: 11.5px; color: var(--tinta-suave); }
+.bau-info .barra { margin-top: 3px; }
+.bau-info .bau-conta { font-size: 11px; }
+.bau .btn-ghost, .bau .btn-premio { width: auto; flex: none; padding-left: 18px; padding-right: 18px; }
 .bau-peca .peca-caixa { inset: 0; }

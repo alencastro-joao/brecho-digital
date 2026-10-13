@@ -79,7 +79,7 @@ function estadoInicial() {
     semana: missoesDaSemana(), // zera na segunda-feira
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
     fichas: 0,                 // ganhas nos marcos das missões, trocadas por resgate
-    semanasFechadas: 0,        // baús da semana abertos desde o último baú especial
+    semanasFechadas: 0,        // semanas carimbadas desde o último baú semanal
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0, semanasCompletas: 0 },
     // O sino (js/avisos.js): a lista, até onde você já viu, e a última foto de
@@ -937,25 +937,41 @@ export function resgatarFichasDaSemana() {
   return ganhas;
 }
 
-// Abre o baú da semana com a peça já escolhida (quem sorteia é a tela, que
-// conhece o catálogo). Paga junto as fichas dos 3, se ficaram para trás, e
-// conta uma semana fechada para o baú especial. Devolve a peça que entrou, ou
-// null se não dava.
+// Carimbo da semana: as 5 missões feitas, um toque carimba. Paga junto as
+// fichas dos 3, se ficaram para trás, e conta para o baú semanal.
+export const semanaCarimbada = () => Boolean(state.semana.marcos?.includes('carimbo'));
+export const carimboDaSemanaPronto = () => semanaCompleta() && !semanaCarimbada();
+
+export function carimbarSemana() {
+  virarASemanaSeNecessario();
+  if (!carimboDaSemanaPronto()) return null;
+  const fichasGanhas = pagarFichasDaSemana();
+  state.semana.marcos.push('carimbo');
+  state.stats.semanasCompletas = (state.stats.semanasCompletas ?? 0) + 1;
+  state.semanasFechadas = semanasFechadas() + 1;
+  salvar();
+  return { fichas: fichasGanhas };
+}
+
+// --- Baú dos dias ---------------------------------------------------------
+// 5 dias carimbados na semana. Abre com a peça já escolhida (quem sorteia é a
+// tela, que conhece o catálogo). Devolve a peça que entrou, ou null.
+export const bauDosDiasAberto = () => Boolean(state.semana.premio);
+export const bauDosDiasPronto = () =>
+  !bauDosDiasAberto() && carimbosDaSemana().length >= PREMIO_SEMANA.carimbos;
+
 export function abrirPremioDaSemana(item, raridade) {
   virarASemanaSeNecessario();
-  if (!semanaCompleta() || state.semana.premio) return null;
-  pagarFichasDaSemana();
+  if (!bauDosDiasPronto()) return null;
   const peca = item ? adicionarPeca(item, { origem: 'semana', raridade }) : null;
   state.semana.premio = { id: peca?.id ?? null, raridade: peca ? raridade : null,
                           em: new Date().toISOString() };
-  state.stats.semanasCompletas = (state.stats.semanasCompletas ?? 0) + 1;
-  state.semanasFechadas = (state.semanasFechadas ?? 0) + 1;
-  ganharXP(PREMIO_SEMANA.xp, 'todas as missões da semana');
+  ganharXP(PREMIO_SEMANA.xp, 'baú dos dias');
   salvar();
   return peca;
 }
 
-// --- Baú especial ---------------------------------------------------------
+// --- Baú semanal ----------------------------------------------------------
 export const semanasFechadas = () => state.semanasFechadas ?? 0;
 export const bauEspecialPronto = () => semanasFechadas() >= BAU_ESPECIAL.semanas;
 
@@ -963,15 +979,15 @@ export function abrirBauEspecial(item, raridade) {
   if (!bauEspecialPronto()) return null;
   const peca = item ? adicionarPeca(item, { origem: 'bau-especial', raridade }) : null;
   state.semanasFechadas = semanasFechadas() - BAU_ESPECIAL.semanas;
-  ganharXP(BAU_ESPECIAL.xp, 'baú especial');
+  ganharXP(BAU_ESPECIAL.xp, 'baú semanal');
   salvar();
   return { peca };
 }
 
 // Tem prêmio esperando o toque? Acende o pontinho do botão de Tarefas.
 export const temPremioParaResgatar = () =>
-  Boolean(marcoDoDiaPronto()) || fichasDaSemanaProntas() ||
-  (semanaCompleta() && !state.semana.premio) || bauEspecialPronto() || podeTrocarFichas();
+  Boolean(marcoDoDiaPronto()) || fichasDaSemanaProntas() || carimboDaSemanaPronto() ||
+  bauDosDiasPronto() || bauEspecialPronto() || podeTrocarFichas();
 
 // --- Nível e XP -----------------------------------------------------------
 // Quem quiser reagir ao XP (badge da sidebar, toast de nível novo) escuta aqui:

@@ -418,9 +418,11 @@ Missões).
   garimpar 3, montar 1 look, publicar 1 look. 2 feitas dão 1 ficha; 3 carimbam o
   dia (+2 fichas e o carimbo no cartão da semana) — `MARCOS_DIA`.
 * **Semana** (`MISSOES_SEMANA`, zera na segunda): as diárias em dose maior. 3
-  feitas dão 6 fichas; as 5 abrem o baú com peça rara — `MARCOS_SEMANA`.
-* **Baús**: uma fileira de 3, um por semana fechada (seguidas ou não). O 3º é
-  o especial: no mesmo toque traz também uma peça épica — `BAU_ESPECIAL`.
+  feitas dão 6 fichas; as 5 carimbam a semana — `MARCOS_SEMANA`.
+* **Baú dos dias**: 5 dias carimbados na mesma semana abrem um baú com peça
+  rara — `PREMIO_SEMANA`.
+* **Baú semanal**: 3 semanas carimbadas (seguidas ou não) abrem um baú com
+  peça épica — `BAU_ESPECIAL`.
 * **Fichas** (nome provisório): 6 viram um resgate a mais no dia, no máximo um
   por dia — `FICHAS`.
 

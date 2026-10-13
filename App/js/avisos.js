@@ -131,12 +131,12 @@ function aoGanharXP(evento) {
   } else if (evento.motivo.startsWith('missão da semana: ')) {
     avisar({ tipo: 'missao', ir: ['tarefas'],
              texto: `Missão da semana concluída: ${evento.motivo.slice(18)} (+${evento.xp} XP).` });
-  } else if (evento.motivo === 'todas as missões da semana') {
+  } else if (evento.motivo === 'baú dos dias') {
     avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Você fechou a semana inteira (+${evento.xp} XP).` });
-  } else if (evento.motivo === 'baú especial') {
+             texto: `Você abriu o baú dos dias (+${evento.xp} XP).` });
+  } else if (evento.motivo === 'baú semanal') {
     avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Você abriu o baú especial (+${evento.xp} XP).` });
+             texto: `Você abriu o baú semanal (+${evento.xp} XP).` });
   }
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
