@@ -44,6 +44,7 @@
 
 import { RARIDADE } from './config.js';
 import { SLOTS, ORDEM_SLOTS, roupinha, svgRoupinha, atributosDe } from './roupinhas.js';
+import { efeitosDoLook } from './efeitos.js';
 import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
@@ -231,6 +232,7 @@ function piscarBotao() {
 // -------------------------------- Render ----------------------------------
 export function renderVestiario() {
   renderPrevia();
+  renderEfeitos();
   renderColunas();
   renderAbas();
   renderGrade();
@@ -241,6 +243,37 @@ function renderPrevia() {
   $('#vs-previa').innerHTML = svgAvatar({ roupas: db.roupasEquipadas() });
   $('#vs-despir').disabled = !Object.keys(db.roupasEquipadas()).length;
 }
+
+// O painel de efeitos: primeiro o que está ativo, depois o que está a uma
+// peça de ativar. Cor solta não entra na lista de "quase": todo item tem cor,
+// e seis linhas de "vista mais um azul" seriam barulho.
+function renderEfeitos() {
+  const todos = efeitosDoLook(db.roupasEquipadas());
+  const ativos = todos.filter(e => e.ativo)
+    .sort((a, b) => b.pct - a.pct || ORDEM_TIPO[a.tipo] - ORDEM_TIPO[b.tipo]);
+  const quase = todos.filter(e => !e.ativo && e.tipo !== 'cor' && e.proximo)
+    .sort((a, b) => ORDEM_TIPO[a.tipo] - ORDEM_TIPO[b.tipo]);
+
+  const linhas = [...ativos, ...quase].map(e => el('div', {
+    class: 'vs-efeito' + (e.ativo ? ' ativo' : '') + (e.completa ? ' completa' : ''),
+  },
+    el('div', { class: 'vs-efeito-topo' },
+      el('span', { class: 'vs-efeito-tipo' }, e.tipoNome),
+      el('strong', {}, e.nome),
+      el('span', { class: 'vs-efeito-pct' }, e.ativo ? `+${e.pct}%` : `${e.n}/${e.meta}`)),
+    el('small', { class: 'vs-efeito-texto' }, e.texto),
+    e.completa ? el('small', { class: 'vs-efeito-prox' }, '✦ Coleção completa vestida')
+      : e.proximo ? el('small', { class: 'vs-efeito-prox' },
+        `Mais ${e.proximo.faltam} ${e.proximo.faltam === 1 ? 'item' : 'itens'}: +${e.proximo.pct}%`)
+        : null));
+
+  $('#vs-efeitos').replaceChildren(...(linhas.length ? linhas : [
+    el('p', { class: 'vs-efeitos-vazio' },
+      'Vista 2 itens com a mesma marca, cor ou estilo para ativar um efeito.'),
+  ]));
+}
+
+const ORDEM_TIPO = { marca: 0, estilo: 1, cor: 2 };
 
 // As duas colunas em volta do personagem: a primeira metade de ORDEM_SLOTS à
 // esquerda, a segunda à direita. Os nomes dos lugares do corpo ficam na caixa,

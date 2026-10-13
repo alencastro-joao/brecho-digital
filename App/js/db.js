@@ -1083,13 +1083,22 @@ export function progressoDasColecoes() {
 // Os itens que trocaram de regra quando as coleções chegaram. Quem já tinha
 // um deles pela regra antiga continua com ele: a lista é tirada uma vez, do
 // progresso daquele momento, e gravada no save.
+//
+// Cada item é conferido uma vez só (`herdadasChecadas`): item que entrar numa
+// coleção depois também é conferido, com o progresso do dia em que entrou.
 export function roupinhasHerdadas() {
   const v = state.vestiario;
-  if (!Array.isArray(v.herdadas)) {
+  const checadas = new Set(v.herdadasChecadas || []);
+  const novas = ROUPINHAS.filter(r => r.antes && !checadas.has(r.id));
+  if (novas.length) {
     const p = progressoDoJogador();
-    v.herdadas = ROUPINHAS
-      .filter(r => r.antes && estadoDoDesbloqueio({ desbloqueio: r.antes }, p).liberada)
-      .map(r => r.id);
+    const herdadas = new Set(v.herdadas || []);
+    for (const r of novas) {
+      if (estadoDoDesbloqueio({ desbloqueio: r.antes }, p).liberada) herdadas.add(r.id);
+      checadas.add(r.id);
+    }
+    v.herdadas = [...herdadas];
+    v.herdadasChecadas = [...checadas];
     salvar();
   }
   return v.herdadas;

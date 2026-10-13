@@ -130,8 +130,35 @@
 .vs-atr small { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-suave); }
 
 @media (max-width: 900px) {
+  .vs-efeitos { flex: none; overflow: visible; }
   .col-wrapper { padding: 20px 16px 36px; gap: 16px; }
   .col-head h1 { font-size: 21px; }
   .col-cartao { padding: 14px; }
   .col-pecas { gap: 6px; }
 }
+
+/* -------------------------- Efeitos no Inventário ------------------------ */
+.view-vestiario .vs-paginacao { margin-top: 0; }
+.vs-efeitos {
+  flex: 1 1 0; min-height: 60px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.vs-efeitos-vazio { font-size: 11.5px; line-height: 1.5; color: var(--tinta-suave); }
+.vs-efeito {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--branco); border: 1px dashed var(--linha); border-radius: 12px; padding: 7px 10px;
+}
+.vs-efeito.ativo { border: 1px solid #cfe3c0; background: #f7fbf3; }
+.vs-efeito.completa { border-color: #e3d3a5; background: #fbf6e8; }
+.vs-efeito-topo { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.vs-efeito-tipo {
+  font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--tinta-suave); flex: none;
+}
+.vs-efeito-topo strong { font-size: 12.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs-efeito-pct { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--tinta-suave); }
+.vs-efeito.ativo .vs-efeito-pct { color: #4f7a33; }
+.vs-efeito.completa .vs-efeito-pct { color: #8a6d24; }
+.vs-efeito-texto { font-size: 11px; color: var(--tinta); line-height: 1.35; }
+.vs-efeito:not(.ativo) .vs-efeito-texto { color: var(--tinta-suave); }
+.vs-efeito-prox { font-size: 10.5px; color: #8a6d24; }

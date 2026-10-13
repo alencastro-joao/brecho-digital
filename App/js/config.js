@@ -942,6 +942,9 @@ export function progressoDoNivel(total) {
 // tamanho da coleção não fica aqui: é quantas peças daquela marca o acervo tem,
 // então peça nova cadastrada com a marca entra sozinha.
 //
+// Os itens de uma coleção ficam em lugares diferentes do corpo: dá para vestir
+// todos ao mesmo tempo, e é isso que conta como coleção completa vestida.
+//
 // `efeito` é o que vestir itens da marca faz no garimpo. Por enquanto é só o
 // texto: a etapa dos efeitos lê `efeito.tipo` (ver plano em project-files).
 export const COLECOES = [
@@ -952,10 +955,10 @@ export const COLECOES = [
     itens: ['moletom', 'moletom-calca', 'gorro'],
     efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Adidas e Puma na sua arara' } },
   { id: 'swear-london', marca: 'Swear London', estilo: 'skate',
-    itens: ['coturno', 'bota', 'luvas'],
+    itens: ['coturno', 'luvas', 'fones'],
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
   { id: 'borra', marca: 'Borra', estilo: 'skate',
-    itens: ['jeans', 'corrente', 'bandana'],
+    itens: ['jeans', 'corrente', 'suspensorios'],
     efeito: { tipo: 'fichas', texto: 'Fichas extras a cada garimpo' } },
   { id: 'jnco', marca: 'Jnco', estilo: 'skate',
     itens: ['cargo', 'cinto'],
