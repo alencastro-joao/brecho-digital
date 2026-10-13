@@ -77,21 +77,24 @@ export function montarPerfil() {
   renderPerfil();
 }
 
-// O botão de perfil do topo, no celular: o rosto do seu avatar, com a roupinha
+// O botão de perfil do topo, ao lado do sino: o rosto do seu avatar, com a roupinha
 // (chapéu e óculos aparecem no recorte). Só redesenha quando o rosto muda —
 // o onChange dispara a cada save.
 function montarAtalho() {
   const botao = $('#perfil-atalho');
   botao.addEventListener('click', () => irPara('perfil'));
+  // No computador o botão é do tamanho do sino; no celular, menor.
+  const pc = matchMedia('(min-width: 901px)');
   let ultimo = null;
   const pintar = () => {
     const u = db.state.usuario;
     const roupas = db.roupasEquipadas();
-    const chave = JSON.stringify([u.avatar, roupas, u.nome]);
+    const tamanho = pc.matches ? 42 : 34;
+    const chave = JSON.stringify([u.avatar, roupas, u.nome, tamanho]);
     if (chave === ultimo) return;
     ultimo = chave;
     try {
-      botao.replaceChildren(retrato(aparenciaAtual(), 34, COR_PROPRIA, roupas));
+      botao.replaceChildren(retrato(aparenciaAtual(), tamanho, COR_PROPRIA, roupas));
     } catch {
       // Sem desenho possível, fica a inicial do nome.
       botao.replaceChildren(el('span', { class: 'perfil-atalho-inicial' },
@@ -99,6 +102,7 @@ function montarAtalho() {
     }
   };
   db.onChange(pintar);
+  pc.addEventListener('change', pintar);
   pintar();
 }
 

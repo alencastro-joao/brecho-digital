@@ -2,7 +2,7 @@
    que abre embaixo dele (js/avisos.js). */
 
 .avisos-btn {
-  position: fixed; top: 22px; right: calc(90px + 18px);
+  position: fixed; top: 22px; right: calc(90px + 18px + 44px + 10px);
   width: 44px; height: 44px; border-radius: 50%;
   border: 1px solid var(--linha); background: var(--branco);
   box-shadow: var(--sombra);
@@ -11,8 +11,22 @@
   transition: transform .2s, border-color .2s;
 }
 .avisos-btn:hover { transform: translateY(-1px); border-color: #d8d0c4; }
-/* No computador o Perfil continua na barra de telas. */
-.perfil-atalho { display: none; }
+/* O Perfil não fica na barra de telas: é o rosto do seu avatar, no canto, com o
+   sino logo à esquerda (no celular, mais embaixo, o mesmo em tamanho menor). */
+.app > .sidebar .sidebar-btn.perfil { display: none; }
+.perfil-atalho {
+  position: fixed; top: 22px; right: calc(90px + 18px);
+  width: 44px; height: 44px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--linha); background: var(--perfil);
+  box-shadow: var(--sombra);
+  display: grid; place-items: center;
+  overflow: hidden; z-index: 700;
+  transition: transform .2s, border-color .2s;
+}
+.perfil-atalho:hover { transform: translateY(-1px); border-color: #d8d0c4; }
+.perfil-atalho-inicial { font-size: 17px; font-weight: 800; color: var(--tinta); }
+body:has(.view-perfil:not([hidden])) .perfil-atalho,
+body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--tinta); }
 .avisos-btn[aria-expanded="true"] { border-color: var(--tinta); }
 .avisos-btn svg {
   width: 21px; height: 21px;
@@ -40,12 +54,12 @@
    contador de resgates ali, e os painéis da direita do Stylist, da Colagem e
    do Feed começam ali: o conteúdo abre espaço (22px do topo + 44 de botão). */
 @media (min-width: 901px) {
-  .view-vitrine .vitrine-head { padding-right: calc(34px + 58px); }
-  .stylist-tools, .board-tools, .feed-side { padding-top: 78px; }
+  .view-vitrine .vitrine-head { padding-right: calc(34px + 58px + 54px); }
+  .stylist-tools, .board-tools, .feed-side, .view-vestiario .vs-painel { padding-top: 78px; }
 }
 
 .avisos-painel {
-  position: fixed; top: 76px; right: calc(90px + 18px);
+  position: fixed; top: 76px; right: calc(90px + 18px + 54px);
   width: 360px; max-height: calc(100vh - 100px);
   display: flex; flex-direction: column;
   background: var(--branco); border: 1px solid var(--linha);
@@ -114,20 +128,13 @@
   .avisos-btn:hover { transform: none; }
   .avisos-btn svg { width: 21px; height: 21px; }
 
-  /* O Perfil sai da barra de baixo e vira o rosto do avatar, no canto, com o
-     sino logo à esquerda. */
-  .app > .sidebar .sidebar-btn.perfil { display: none; }
   .avisos-btn { right: 54px; }
   .perfil-atalho {
-    display: grid; place-items: center;
-    position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 12px;
-    width: 36px; height: 36px; padding: 0; border-radius: 50%;
-    border: 1px solid var(--linha); background: var(--perfil);
-    overflow: hidden; z-index: 700;
+    top: calc(8px + env(safe-area-inset-top)); right: 12px;
+    width: 36px; height: 36px; box-shadow: none;
   }
-  .perfil-atalho-inicial { font-size: 15px; font-weight: 800; color: var(--tinta); }
-  body:has(.view-perfil:not([hidden])) .perfil-atalho,
-  body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--tinta); }
+  .perfil-atalho:hover { transform: none; }
+  .perfil-atalho-inicial { font-size: 15px; }
 
   .avisos-painel {
     top: calc(var(--topo-h) + 8px + env(safe-area-inset-top)); left: 10px; right: 10px;
