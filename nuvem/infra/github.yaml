@@ -44,7 +44,11 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub repo:${Repositorio}:ref:refs/heads/main
+                # Job com "environment:" manda o nome do environment no sub, e
+                # não o branch; o environment producao só aceita o main.
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${Repositorio}:ref:refs/heads/main
+                  - !Sub repo:${Repositorio}:environment:producao
       Policies:
         - PolicyName: publicar
           PolicyDocument:
