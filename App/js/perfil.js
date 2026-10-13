@@ -171,40 +171,42 @@ export function renderPerfil() {
 }
 
 // ------------------------------- Coleções ---------------------------------
-// Um emblema por coleção, em três fileiras (marcas, cores e estilos): dourado
-// quando está completa, com a barra enquanto falta. O clique abre a coleção.
+// Uma faixa só: quantas de cada tipo estão completas e uma fileira de
+// emblemas pequenos — as completas primeiro, depois as mais adiantadas. A
+// lista inteira mora na tela de Coleções ("Ver coleções").
+const EMBLEMAS_NO_PERFIL = 8;
+
 function renderEmblemas() {
-  const grupos = GRUPOS_DE_COLECAO
-    .map(([id, nome, lista]) => [id, nome, lista()
-      .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct)])
-    .filter(([, , lista]) => lista.length);
+  const grupos = GRUPOS_DE_COLECAO.map(([id, nome, lista]) => [id, nome, lista()]);
   const todas = grupos.flatMap(([, , lista]) => lista);
   $('#pf-secao-colecoes').hidden = !todas.length;
   const completas = todas.filter(c => c.completa).length;
   $('#perfil-colecoes-sub').textContent = `${completas} de ${todas.length} completas`;
-  $('#perfil-colecoes').replaceChildren(...grupos.map(([id, nome, lista]) =>
-    el('div', { class: 'pf-emblemas-grupo' },
-      el('h3', {}, nome, el('small', {},
-        `${lista.filter(c => c.completa).length} de ${lista.length}`)),
-      el('div', { class: 'pf-emblemas' }, ...lista.map(emblema)))));
+
+  const destaque = todas.filter(c => c.tem > 0)
+    .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct)
+    .slice(0, EMBLEMAS_NO_PERFIL);
+  $('#perfil-colecoes').replaceChildren(
+    el('div', { class: 'pf-col-contas' }, ...grupos.filter(([, , l]) => l.length).map(([, nome, lista]) =>
+      el('span', {}, `${nome} `, el('strong', {}, `${lista.filter(c => c.completa).length}/${lista.length}`)))),
+    destaque.length
+      ? el('div', { class: 'pf-emblemas' }, ...destaque.map(emblema))
+      : el('p', { class: 'pf-col-vazio' }, 'Nenhuma coleção começada ainda.'));
 }
 
 function emblema(c) {
   const capa = capaDaColecao(c);
   return el('button', {
-    class: 'pf-emblema' + (c.completa ? ' completa' : '') + (c.tem ? '' : ' longe'),
+    class: 'pf-emblema' + (c.completa ? ' completa' : ''),
     title: c.completa ? `Coleção ${c.marca} completa` : `${c.marca}: ${c.tem} de ${c.total} peças`,
     onclick: () => abrirColecao(c.id),
   },
-    el('span', { class: 'pf-emblema-disco' },
+    el('span', { class: 'pf-emblema-disco', style: c.completa ? {} : { '--pct': (c.pct * 100) + '%' } },
       capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
         el('img', { src: capa.src, alt: '', loading: 'lazy' })) : null),
-    el('strong', {},
+    el('small', {},
       c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
-      c.marca),
-    el('small', {}, c.completa ? 'Completa' : `${c.tem} de ${c.total}`),
-    c.completa ? null : el('span', { class: 'barra' },
-      el('span', { style: { width: (c.pct * 100) + '%' } })));
+      c.marca));
 }
 
 // ------------------------------- Vitrines ---------------------------------
