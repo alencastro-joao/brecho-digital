@@ -78,6 +78,27 @@ export function msAteMeiaNoite() {
   return amanha - agora;
 }
 
+// A semana começa na segunda. A chave é a data dessa segunda, no mesmo formato
+// de hojeISO, então virar a semana é comparar dois textos.
+export function semanaISO(d = new Date()) {
+  const segunda = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7);
+  return hojeISO(segunda);
+}
+
+export function msAteSegunda() {
+  const agora = new Date();
+  const faltam = 7 - (agora.getDay() + 6) % 7;
+  const segunda = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + faltam, 0, 0, 5);
+  return segunda - agora;
+}
+
+// "2d 05h" quando passa de um dia; senão o mesmo "05h12" de formatarContagem.
+export function formatarDias(ms) {
+  const dias = Math.floor(Math.max(0, ms) / 86400e3);
+  if (!dias) return formatarContagem(ms);
+  return `${dias}d ${String(Math.floor((ms % 86400e3) / 3600e3)).padStart(2, '0')}h`;
+}
+
 export function formatarContagem(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = String(Math.floor(s / 3600)).padStart(2, '0');
