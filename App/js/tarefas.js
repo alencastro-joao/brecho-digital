@@ -17,7 +17,7 @@ import * as estoque from './estoque.js';
 import {
   el, $, toast, hojeISO, msAteMeiaNoite, msAteSegunda, formatarContagem, formatarDias,
 } from './util.js';
-import { barraDeNivel, listaDeFerramentas } from './nivel.js';
+import { barraDeNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { colecaoMaisPerto, todasAsColecoes } from './colecoes.js';
 
@@ -40,7 +40,6 @@ export function renderTarefas() {
   renderSemana();
   renderSemanas();
   renderCartaoColecoes();
-  $('#ferramenta-box').replaceChildren(listaDeFerramentas());
   renderPontinho();
 }
 
@@ -67,7 +66,7 @@ function renderCartaoColecoes() {
       el('small', {}, perto
         ? (perto.tem
           ? `${perto.marca}: ${faltam === 1 ? 'falta 1 peça' : `faltam ${faltam} peças`} para fechar`
-          : `Garimpe uma peça ${perto.tipo === 'cor' ? 'da cor ' : perto.tipo === 'estilo' ? 'de ' : ''}${perto.marca} para abrir o primeiro item`)
+          : `Garimpe peças ${perto.tipo === 'cor' ? 'da cor ' : perto.tipo === 'estilo' ? 'de ' : 'da '}${perto.marca} para abrir o primeiro item`)
         : 'Todas completas!'),
       el('small', { class: 'tf-col-conta' },
         `${completas} de ${todas.length} ${todas.length === 1 ? 'completa' : 'completas'}`)),
