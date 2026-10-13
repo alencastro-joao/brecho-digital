@@ -1,7 +1,8 @@
 // Vitrine do dia — o mural orgânico do brechó.
 //
-// O estoque é do dia: o sorteio das peças usa a data como semente, então a loja
-// tem as mesmas roupas do primeiro ao último acesso do dia. A *arrumação* é
+// O estoque é do dia e de cada pessoa: o sorteio usa a data e o id da conta
+// como semente (db.sementeDaLoja), então cada um tem a sua arara, com as mesmas
+// roupas do primeiro ao último acesso do dia. A *arrumação* é
 // outra história — ela é sorteada a cada carregamento da página, como se o dono
 // remexesse a arara toda vez que abre a porta. A cápsula do ilustrador não entra
 // aqui: ela é conquistada por missões.
@@ -24,7 +25,7 @@ import { criarAura } from './aura.js';
 import { abrirEditar } from './editar.js';
 import { avisarLojaReposta } from './avisos.js';
 import {
-  el, $, clamp, mulberry32, sementeDoDia, shuffle, hojeISO,
+  el, $, clamp, mulberry32, shuffle, hojeISO,
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
 
@@ -78,7 +79,8 @@ function levadaHoje(id, iso) {
 }
 
 export function poolDoDia(iso = hojeISO()) {
-  const rnd = mulberry32(sementeEstoque ?? sementeDoDia(iso));
+  const rnd = mulberry32(sementeEstoque ?? db.sementeDaLoja(iso));
+  const { naLoja } = db.modificadoresDaLoja();
   const raridade = (i) => {
     const r = db.raridadeDoDia(i.id, iso);
     return RARIDADE[r] ? r : 'common';
@@ -100,7 +102,8 @@ export function poolDoDia(iso = hojeISO()) {
 
   const arara = [];
   for (const r of [...RARIDADES].reverse()) {
-    if (r.naLoja) arara.push(...grupos[r.id].splice(0, sortearQuantidade(r.naLoja, rnd)));
+    const tabela = naLoja[r.id] ?? r.naLoja;
+    if (tabela) arara.push(...grupos[r.id].splice(0, sortearQuantidade(tabela, rnd)));
   }
 
   // Comum completa o resto; faltando comum, a incomum que sobrou. Rara para cima
