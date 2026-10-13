@@ -19,6 +19,12 @@ import { irPara, viewAtual } from './router.js';
 
 let filtro = 'todas';
 let grupo = 'marcas';
+let aberta = null;           // id da coleção aberta na tela dela; null = lista
+let pedida = null;           // a que abrirColecao pediu para a próxima entrada
+
+// Quantas peças o cartão da lista mostra. As que você tem vêm primeiro; o
+// resto fica na tela da coleção.
+const PECAS_NO_CARTAO = 6;
 
 const GRUPOS = [
   ['marcas', 'Marcas'],
@@ -98,10 +104,28 @@ export function capaDaColecao(c) {
 
 export function montarColecoes() {
   db.onChange(() => { if (viewAtual() === 'colecoes') renderColecoes(); });
-  $('#col-voltar').addEventListener('click', () => irPara('tarefas'));
+  $('#col-voltar').addEventListener('click', () => {
+    if (aberta) { aberta = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; }
+    else irPara('tarefas');
+  });
+}
+
+// Abre a tela de uma coleção (pelo emblema do perfil, por exemplo).
+export function abrirColecao(id) {
+  const g = Object.keys(COLECOES_DO_GRUPO).find(k => COLECOES_DO_GRUPO[k]().some(c => c.id === id));
+  if (g) { grupo = g; pedida = id; }
+  irPara('colecoes');
 }
 
 export function renderColecoes() {
+  const c = aberta && COLECOES_DO_GRUPO[grupo]().find(x => x.id === aberta);
+  if (aberta && !c) aberta = null;
+  $('#col-voltar').textContent = c ? '‹ Coleções' : '‹ Tarefas';
+  $('#col-head').hidden = Boolean(c);
+  $('#col-lista').hidden = Boolean(c);
+  $('#col-detalhe').hidden = !c;
+  if (c) { renderDetalhe(c); return; }
+
   $('#col-grupos').replaceChildren(...GRUPOS.map(([id, rotulo]) =>
     el('button', {
       class: 'col-grupo' + (grupo === id ? ' ativo' : ''),
@@ -134,43 +158,96 @@ export function renderColecoes() {
   ]));
 }
 
-function cartaoDaColecao(c) {
+const temPrimeiro = (ids) => [...ids].sort((a, b) => Number(db.temPeca(b)) - Number(db.temPeca(a)));
+
+const textoDoBonus = (c) => c.tipo ? '2 itens +5% · 5 itens +20%'
+  : c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%';
+
+function tituloDaColecao(c, tag = 'h2') {
   const estilo = ESTILOS[c.estilo];
-  const deMarca = !c.tipo;
-  // Peças que você já tem primeiro: numa coleção de 30 peças, o que falta
-  // fica junto no fim.
-  const ids = deMarca ? c.ids
-    : [...c.ids].sort((a, b) => Number(db.temPeca(b)) - Number(db.temPeca(a)));
-  return el('section', { class: 'col-cartao' + (c.completa ? ' completa' : '') },
-    el('header', { class: 'col-topo' },
-      el('div', { class: 'col-titulo' },
-        c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
-        el('h2', {}, c.marca),
-        estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null),
-      el('small', { class: 'col-conta' }, c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
-    el('div', { class: 'col-pecas' + (ids.length > 10 ? ' muitas' : '') }, ...ids.map(id => casaDaPeca(id))),
-    c.completa ? null : el('div', { class: 'barra' },
-      el('span', { style: { width: (c.pct * 100) + '%' } })),
-    c.itens.length ? el('div', { class: 'col-itens' },
-      el('h3', {}, 'Itens do avatar'),
-      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))) : null,
-    el('p', { class: 'col-efeito' },
-      el('strong', {}, 'Efeito ao vestir: '), c.efeito.texto,
-      el('span', { class: 'col-breve' }, !deMarca ? '2 itens +5% · 5 itens +20%'
-        : c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%')));
+  return el('div', { class: 'col-titulo' },
+    c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
+    el(tag, {}, c.marca),
+    estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null);
 }
 
-function casaDaPeca(id) {
+// O cartão da lista: sempre o mesmo tamanho — 6 casas de peça, a barra e os
+// itens do avatar em miniatura. Tocar abre a tela da coleção.
+function cartaoDaColecao(c) {
+  const ids = temPrimeiro(c.ids);
+  const cabem = ids.length > PECAS_NO_CARTAO ? PECAS_NO_CARTAO - 1 : PECAS_NO_CARTAO;
+  const resto = ids.length - cabem;
+  const abertos = c.itens.filter(id => roupinha(id) && db.estadoDaRoupinha(roupinha(id)).liberada).length;
+  return el('button', {
+    type: 'button',
+    class: 'col-cartao' + (c.completa ? ' completa' : ''),
+    onclick: () => { aberta = c.id; renderColecoes(); $('.view-colecoes').scrollTop = 0; },
+  },
+    el('header', { class: 'col-topo' },
+      tituloDaColecao(c),
+      el('small', { class: 'col-conta' }, c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
+    el('div', { class: 'col-pecas' },
+      ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
+      resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null),
+    el('div', { class: 'barra' + (c.completa ? ' cheia' : '') },
+      el('span', { style: { width: (c.pct * 100) + '%' } })),
+    el('div', { class: 'col-rodape' },
+      el('div', { class: 'col-mini-itens' }, ...c.itens.map(id => miniItem(id)).filter(Boolean)),
+      el('small', {}, `${abertos} de ${c.itens.length} itens`),
+      el('span', { class: 'col-seta' }, '›')));
+}
+
+function miniItem(id) {
+  const r = roupinha(id);
+  if (!r) return null;
+  const aberto = db.estadoDaRoupinha(r).liberada;
+  const arte = el('span', { class: 'col-mini' + (aberto ? ' aberto' : ''), title: r.nome });
+  arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+  return arte;
+}
+
+// A tela da coleção: todas as peças (as que faltam em cinza, com raridade),
+// os itens do avatar com o que falta para cada um e o efeito ao vestir.
+function renderDetalhe(c) {
+  const ids = temPrimeiro(c.ids);
+  const faltam = c.total - c.tem;
+  $('#col-detalhe').replaceChildren(
+    el('header', { class: 'col-det-topo' + (c.completa ? ' completa' : '') },
+      tituloDaColecao(c, 'h1'),
+      el('p', { class: 'col-det-conta' }, c.completa
+        ? `✓ Coleção completa · ${c.total} peças`
+        : `${c.tem} de ${c.total} peças · ${faltam === 1 ? 'falta 1' : `faltam ${faltam}`}`),
+      el('div', { class: 'barra' + (c.completa ? ' cheia' : '') },
+        el('span', { style: { width: (c.pct * 100) + '%' } }))),
+    el('section', { class: 'col-det-secao' },
+      el('h3', {}, 'Itens do avatar'),
+      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))),
+    el('section', { class: 'col-det-secao' },
+      el('h3', {}, 'Efeito ao vestir'),
+      el('p', { class: 'col-efeito' }, c.efeito.texto,
+        el('span', { class: 'col-breve' }, textoDoBonus(c)))),
+    el('section', { class: 'col-det-secao' },
+      el('h3', {}, 'Peças'),
+      el('div', { class: 'col-det-pecas' }, ...ids.map(id => casaDaPeca(id, true)))));
+}
+
+function casaDaPeca(id, comNome = false) {
   const peca = pecaDoCatalogo(id);
   if (!peca) return null;
   const tem = db.temPeca(id);
   const rar = RARIDADE[peca.raridade];
-  return el('div', {
+  const casa = el('div', {
     class: 'col-peca' + (tem ? '' : ' falta'),
     title: tem ? nomeDaPeca(peca) : `Falta: ${nomeDaPeca(peca)}${rar ? ` (${rar.nome.toLowerCase()})` : ''}`,
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
       el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })));
+  if (!comNome) return casa;
+  return el('figure', { class: 'col-det-peca' + (tem ? '' : ' falta') },
+    casa,
+    el('figcaption', {},
+      el('strong', {}, nomeDaPeca(peca)),
+      el('small', {}, tem ? '✓ No guarda-roupa' : `Falta${rar ? ` · ${rar.nome.toLowerCase()}` : ''}`)));
 }
 
 function itemDaColecao(id) {
@@ -190,4 +267,9 @@ function itemDaColecao(id) {
       el('small', {}, e.liberada ? '✓ No inventário' : `🔒 ${e.rotulo}`)));
 }
 
-export const aoEntrarNasColecoes = renderColecoes;
+// Entrar pela navegação abre a lista; pelo emblema, a coleção dele.
+export function aoEntrarNasColecoes() {
+  aberta = pedida;
+  pedida = null;
+  renderColecoes();
+}

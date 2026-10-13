@@ -36,7 +36,7 @@ import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
-import { minhasColecoes, capaDaColecao } from './colecoes.js';
+import { minhasColecoes, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
@@ -184,7 +184,7 @@ function renderEmblemas() {
     return el('button', {
       class: 'pf-emblema' + (c.completa ? ' completa' : '') + (c.tem ? '' : ' longe'),
       title: c.completa ? `Coleção ${c.marca} completa` : `${c.marca}: ${c.tem} de ${c.total} peças`,
-      onclick: () => irPara('colecoes'),
+      onclick: () => abrirColecao(c.id),
     },
       el('span', { class: 'pf-emblema-disco' },
         capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
