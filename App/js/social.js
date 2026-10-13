@@ -4,8 +4,9 @@
 //   * as publicações de contas de verdade — a sua e as dos amigos — vêm do
 //     servidor (publicacoes.js → /api/feed). Curtir e comentar nelas também é
 //     no servidor, então todo mundo vê a mesma coisa;
-//   * os perfis de exemplo (PERFIS_MOCK) continuam locais: os looks deles saem
-//     do mesmo sorteio dos botões de gerar e servem para o feed nascer povoado.
+//   * os perfis de exemplo (PERFIS_MOCK) também postam no servidor: a nuvem
+//     publica por eles de tempos em tempos (nuvem/lambda/gerador.py), com as
+//     peças e uma semente; o desenho é feito aqui (prepararGerado).
 //
 // A tela é organizada em abas (Seguindo · Tudo), sempre com looks
 // e colagens juntos. Os posts formam um mural: colunas em que cada card
@@ -28,7 +29,7 @@ import { abrirPerfilDe } from './usuario.js';
 import { renderPessoas, atualizarPessoas } from './busca.js';
 import { ehFicticio, seguirNoServidor, perfilDe, roupasDoPerfil } from './pessoas.js';
 import {
-  publicacoes, feedLidoEm, carregarFeed, aoMudarPublicacoes, apagarPublicacao,
+  publicacoes, feedLidoEm, carregarFeed, aoMudarPublicacoes, apagarPublicacao, gerarNoServidor,
   curtirPublicacao, comentarPublicacao, apagarComentarioPublicado,
 } from './publicacoes.js';
 
@@ -133,30 +134,50 @@ async function criarPostFicticio(rnd = Math.random, idadeHoras = null, quem = nu
 
 // Versão da semente: subindo o número, quem já tinha o feed antigo (só looks no
 // avatar, antes das colagens) recebe o novo — sem perder o que você publicou.
-const VERSAO_SEED = 4;
+const VERSAO_SEED = 5;
 
 function acervoParaLooks() {
   return catalogo.itens.filter(i => !COLLAB.itens.includes(i.id));
 }
 
+// Versão 5: os perfis de exemplo passaram a postar no servidor, iguais para
+// todo mundo. Os doze que cada navegador sorteava saem do save — ficam os seus.
 async function semearFeed() {
   if (db.state.feedSemeado === VERSAO_SEED) return;
-  // Sem acervo os fictícios postariam avatar pelado: melhor não semear ainda.
-  if (acervoParaLooks().length < 4) return;
-
   db.state.feed = db.state.feed.filter(p => sou(p.autor));
-  const rnd = mulberry32(20260901);
-  for (let i = 0; i < 12; i++) {
-    db.state.feed.push(await criarPostFicticio(rnd, 2 + i * 7));
-  }
   db.state.feedSemeado = VERSAO_SEED;
   db.salvar();
 }
 
-// Botão de teste: mais posts dos perfis de exemplo.
+// O post que a nuvem gerou traz as peças e a semente, não a imagem: o look é
+// vestido no personagem de quem postou, a colagem é montada com a semente
+// (sempre a mesma, então todo mundo vê a mesma colagem). Sem o acervo ainda
+// carregado, fica para o próximo desenho.
+function prepararGerado(post) {
+  if (!post.gerado || post.camadas?.length || post.colagem) return;
+  const pecas = [...new Set(post.pecas || [])].map(pecaDoCatalogo).filter(Boolean);
+  if (!pecas.length) return;
+  if (post.tipo === 'board') {
+    post.colagem = colagemAleatoria(pecas, mulberry32(post.semente || 1), {
+      assinatura: { texto: autorDe(post.autor).handle, visivel: true },
+    });
+  } else {
+    post.camadas = camadasParaAvatar(pecas);
+  }
+}
+
+// Botão de teste: mais posts dos perfis de exemplo. Para o admin, a nuvem
+// posta no feed de todo mundo; sem permissão (ou sem servidor), o jeito
+// antigo, só neste navegador.
 export async function gerarPostsFicticios(quantos = 3) {
   if (acervoParaLooks().length < 4) {
     return toast('Poucas peças no acervo para montar look. Adicione algumas primeiro.', 'aviso');
+  }
+  try {
+    const feitos = await gerarNoServidor(quantos);
+    return toast(`${feitos} posts novos no feed de todo mundo.`);
+  } catch (e) {
+    console.warn('gerador do servidor indisponível, gerando aqui.', e.message);
   }
   for (let i = 0; i < quantos; i++) {
     db.state.feed.unshift(await criarPostFicticio(Math.random, Math.random() * 6));
@@ -366,11 +387,12 @@ export function cardDoPost(post) {
   const autor = autorDe(post.autor);
   const segue = db.state.usuario.seguindo.includes(post.autor);
   post.comentarios ??= [];
+  prepararGerado(post);
   const pecas = pecasDoPost(post);
 
   return el('article', { class: 'post' + (meu ? ' meu' : '') },
     el('div', { class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') },
-      post.thumb
+      post.thumb || post.gerado
         ? imagemDoPost(post)
         : el('div', { class: 'sem-thumb' }, 'sem prévia'),
       el('button', {
@@ -463,13 +485,13 @@ function imagemDoPost(post) {
   // width/height só guardam o lugar enquanto a imagem não chega (o card não
   // nasce achatado e o mural não pula); carregada, vale a proporção dela.
   const img = el('img', {
-    src: post.thumb, alt: post.nome, loading: 'lazy',
+    src: post.thumb || null, alt: post.nome, loading: 'lazy',
     width: 300, height: Math.round(300 * proporcaoDaImagem(post)),
   });
   const grande = imagemGrande(post);
   // O look redesenhado não mostra antes a imagem do dia: seria o personagem
   // de antes piscando. Se o desenho falhar, ela volta.
-  if (grande && post.tipo !== 'board') img.style.visibility = 'hidden';
+  if (grande && (post.tipo !== 'board' || !post.thumb)) img.style.visibility = 'hidden';
   grande?.then(url => {
     if (url) img.src = url;
     img.style.visibility = '';
@@ -693,12 +715,14 @@ async function apagarPost(post) {
   toast('Post apagado do feed.');
 }
 
-function baixarPost(post) {
-  if (!post.thumb) return toast('Esse post não tem imagem guardada.', 'aviso');
-  const ext = /webp/.test(post.thumb) ? 'webp' : /jpe?g/.test(post.thumb) ? 'jpg' : 'png';
+async function baixarPost(post) {
+  // O post gerado não tem imagem guardada: baixa a que foi desenhada aqui.
+  const src = post.thumb || await imagemGrande(post);
+  if (!src) return toast('Esse post não tem imagem guardada.', 'aviso');
+  const ext = /webp/.test(src) ? 'webp' : /jpe?g/.test(src) ? 'jpg' : 'png';
   const a = document.createElement('a');
   a.download = `brecho-${(post.nome || 'post').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${ext}`;
-  a.href = post.thumb;
+  a.href = src;
   a.click();
 }
 

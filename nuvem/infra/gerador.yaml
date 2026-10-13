@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Brecho Digital - gerador de posts. O EventBridge Scheduler chama a Lambda
+  brecho-api de tempos em tempos e os perfis de exemplo postam no feed
+  (nuvem/lambda/gerador.py). Publicado por nuvem/infra/publicar-gerador.sh.
+
+Parameters:
+  Frequencia:
+    Type: String
+    Default: rate(3 hours)
+    Description: >
+      De quanto em quanto tempo roda. rate(1 hour), rate(6 hours), ou um
+      cron(...) do Scheduler. Cada rodada publica 1 post (as vezes 2; de
+      madrugada quase nunca) e anima os posts gerados dos ultimos 3 dias.
+  Ligado:
+    Type: String
+    Default: ENABLED
+    AllowedValues: [ENABLED, DISABLED]
+  Funcao:
+    Type: String
+    Default: brecho-api
+
+Resources:
+  PapelDoAgendador:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: brecho-gerador-agendador
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { 'aws:SourceAccount': !Ref AWS::AccountId }
+      Policies:
+        - PolicyName: chamar-a-api
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Funcao}
+      Tags:
+        - { Key: projeto, Value: brecho }
+
+  Agenda:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: brecho-gerador-posts
+      Description: Perfis de exemplo postando no feed (gerador.py)
+      ScheduleExpression: !Ref Frequencia
+      ScheduleExpressionTimezone: America/Sao_Paulo
+      State: !Ref Ligado
+      FlexibleTimeWindow:
+        Mode: FLEXIBLE
+        MaximumWindowInMinutes: 30         # nao cair sempre no minuto redondo
+      Target:
+        Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Funcao}
+        RoleArn: !GetAtt PapelDoAgendador.Arn
+        Input: '{"agendado": "gerar-posts"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 0          # rodada perdida nao se repete: vem a proxima
+
+Outputs:
+  Agenda:
+    Value: !Ref Frequencia

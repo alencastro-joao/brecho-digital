@@ -6,8 +6,9 @@
 // este módulo guarda a última leitura dele. Curtir e comentar num post de
 // verdade também é no servidor: a curtida do amigo aparece para você.
 //
-// Os perfis fictícios continuam no save (state.feed): são de exemplo, cada
-// navegador tem os seus, e o servidor nunca soube deles.
+// Os perfis de exemplo também postam aqui: quem posta por eles é a nuvem, de
+// tempos em tempos (nuvem/lambda/gerador.py). Esses posts chegam com `gerado`,
+// as peças e uma semente, sem imagem — social.js desenha.
 //
 // Os posts que você publicou antes disto — os que só existiam no seu save —
 // sobem sozinhos na primeira leitura que der certo (migrarPostsLocais).
@@ -84,6 +85,18 @@ export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, camadas,
     body: JSON.stringify({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }),
   });
   return trocar(receber(dados)[0]);
+}
+
+// Botão de teste do perfil (só o admin): os perfis de exemplo postam agora,
+// no feed de todo mundo.
+export async function gerarNoServidor(quantos = 3) {
+  const dados = await chamar('/api/feed/gerar', {
+    method: 'POST', body: JSON.stringify({ quantos }),
+  });
+  posts = receber(dados);
+  lidoEm = new Date();
+  avisar();
+  return (dados.publicados || []).length;
 }
 
 export async function apagarPublicacao(post) {

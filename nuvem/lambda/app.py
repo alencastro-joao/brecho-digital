@@ -21,6 +21,7 @@ esta função só responde `/api/*`.
     PUT  /api/perfil           o que os outros leem de mim: bio, rosto, roupa, favoritos
     POST /api/perfil/miniatura a miniatura de um look ou colagem favoritos (ver feed.py)
     /api/feed[/<id>[/...]]     o feed compartilhado: publicar, curtir, comentar (ver feed.py)
+    POST /api/feed/gerar       admin: os perfis de exemplo postam agora (ver gerador.py)
     POST /api/pecas            admin: peça nova no acervo
     PUT  /api/pecas/<id>       admin: edita a peça
     DELETE /api/pecas/<id>     admin: apaga a peça de vez
@@ -270,6 +271,12 @@ def rotas_de_feed(pedido):
     eu, metodo = usuario['id'], pedido.metodo
     post_id, acao, comentario_id = ROTA_FEED.match(pedido.rota).groups()
 
+    if post_id == 'gerar' and not acao and metodo == 'POST':
+        if usuario['papel'] != 'admin':
+            return responder(403, {'erro': 'só o administrador gera posts'})
+        import gerador
+        quantos = pedido.corpo(LIMITE_LOGIN).get('quantos') or 3
+        return responder(200, {**gerador.rodar(quantos), **feed.listar(eu)})
     if not post_id:
         if metodo == 'GET':
             return responder(200, feed.listar(eu, pedido.consulta.get('autor')))
@@ -391,6 +398,15 @@ def despachar(pedido):
 
 
 def handler(evento, _contexto):
+    # O EventBridge Scheduler (nuvem/infra/gerador.yaml) chama a função direto,
+    # sem passar pela Function URL. Pedido HTTP nunca tem esta chave no topo do
+    # evento — o corpo vem em `body` —, então ninguém de fora cai aqui.
+    if 'requestContext' not in evento and evento.get('agendado') == 'gerar-posts':
+        import gerador
+        feito = gerador.rodar(evento.get('quantos'), evento.get('espalhar_horas') or 0)
+        print('gerador: %r' % (feito,))
+        return feito
+
     # O CloudFront injeta o segredo em toda requisição de origem. Sem ele, o
     # pedido veio direto na Function URL — e aí não veio do nosso site.
     if SEGREDO:

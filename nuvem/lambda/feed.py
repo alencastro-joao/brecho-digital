@@ -63,6 +63,7 @@ _s3 = boto3.client('s3')
 _ser = TypeSerializer()
 
 ID_POST = re.compile(r'^p-[0-9a-f]{16}$')
+ID_FICTICIO = re.compile(r'^u-[a-z]{1,12}$')     # os perfis de exemplo (gerador.py)
 ID_COMENTARIO = re.compile(r'^c-[0-9a-f]{10}$')
 CHAVE_OK = re.compile(r'^[\w:.\-]{1,64}$')
 TIPOS = ('look', 'board')
@@ -198,6 +199,11 @@ def _publico(item, eu_id):
     }
     if item['autor'] == eu_id:
         post.update(item.get('origem') or {})
+    if item.get('gerado'):
+        # Post de perfil de exemplo (gerador.py): sem imagem, a tela desenha o
+        # look ou monta a colagem a partir das peças e desta semente.
+        post['gerado'] = True
+        post['semente'] = int(item.get('semente') or 1)
     return post
 
 
@@ -237,7 +243,7 @@ def listar(eu_id, autor=None):
         'ExpressionAttributeValues': {':p': {'S': 'POST#'}},
     }
     if autor:
-        if not ID_OK.match(str(autor)):
+        if not (ID_OK.match(str(autor)) or ID_FICTICIO.match(str(autor))):
             return {'posts': [], 'autores': {}}
         args['FilterExpression'] += ' AND autor = :a'
         args['ExpressionAttributeValues'][':a'] = {'S': autor}

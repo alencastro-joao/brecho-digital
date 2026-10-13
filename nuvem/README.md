@@ -227,7 +227,39 @@ POST#<id>   id, autor, tipo, nome, criado_em, thumb, pecas, origem,
 - **A listagem é um `Scan`**, como a busca de pessoas. Nenhuma permissão nova:
   o papel já tinha `Scan`, `PutItem`/`UpdateItem`/`DeleteItem` e escrita em
   `assets/*` do site.
-- Os perfis de exemplo continuam locais (no save de cada navegador).
+- Os perfis de exemplo postam no servidor também: ver a seção abaixo.
+
+## O gerador de posts — 13/10/2026
+
+`lambda/gerador.py`. Os perfis de exemplo (PERFIS_MOCK) postam no feed
+compartilhado sozinhos, de tempos em tempos. Antes cada navegador sorteava os
+seus doze posts no save, e ninguém via o mesmo feed.
+
+```
+EventBridge Scheduler  brecho-gerador-posts  rate(3 hours), fuso de São Paulo
+   └─ invoca brecho-api com {"agendado": "gerar-posts"}   (papel brecho-gerador-agendador)
+```
+
+- **Cada rodada** publica 1 post (30% de chance de 2; de madrugada, 25% de
+  chance de 1) de alguém que não postou nas últimas rodadas, e anima os posts
+  gerados dos últimos 3 dias: curtidas dos outros perfis, às vezes um
+  comentário (alguns citam a peça pelo nome) e às vezes a resposta de quem
+  postou. Post de conta de verdade nunca é tocado.
+- **O post gerado não tem imagem**: guarda `pecas`, `semente` e `gerado`.
+  A tela veste o look no personagem de quem postou ou monta a colagem com a
+  semente (`social.js`, `prepararGerado`). Sem Pillow e sem nada no bucket.
+- **Teto de 80** posts gerados; os mais velhos saem.
+- **Mudar a frequência**: `FREQUENCIA="rate(1 hour)" bash nuvem/infra/publicar-gerador.sh`.
+  Pausar: `LIGADO=DISABLED bash nuvem/infra/publicar-gerador.sh`.
+- **Semear na hora**: `SEMEAR=12 bash nuvem/infra/publicar-gerador.sh` (12 posts
+  espalhados pelos últimos 3 dias). O admin também tem o botão de teste do
+  perfil, que chama `POST /api/feed/gerar { quantos }`.
+- Por que a chamada agendada não precisa do cabeçalho secreto: ela não passa
+  pela Function URL. Um pedido HTTP sempre traz `requestContext` e o corpo em
+  `body`, então ninguém de fora consegue montar `{"agendado": ...}` no topo do
+  evento.
+- O servidor local (`App/tools`) não tem o gerador: lá o botão de teste cai no
+  jeito antigo, posts só no navegador.
 
 ## O que ficou de fora
 
