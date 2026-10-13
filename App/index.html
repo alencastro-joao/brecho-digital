@@ -648,34 +648,49 @@
   <!-- As missões do dia, a trilha de níveis e a cápsula: o que o app pede de
        você. Quem você é fica no perfil. -->
   <section class="view view-tarefas" data-view="tarefas" hidden>
+    <!-- Cartão de fidelidade do brechó: os pedidos são etiquetas com barra de
+         progresso; dia e semana fechados viram carimbos. No computador, o dia
+         fica à esquerda e a semana à direita; no celular, um embaixo do outro. -->
     <div class="tarefas-wrapper">
       <header class="tarefas-head">
         <h1>Tarefas</h1>
-        <p class="missoes-sub" id="tarefas-sub"></p>
-        <div id="tarefas-nivel"></div>
-        <div class="tarefas-stats" id="tarefas-stats"></div>
+        <div class="tarefas-faixa" id="tarefas-faixa"></div>
       </header>
 
-      <section class="missoes">
-        <h2>Missões de hoje</h2>
-        <p class="missoes-sub" id="missoes-sub"></p>
-        <div class="missao-list" id="missao-list"></div>
-      </section>
+      <div class="tarefas-cartoes">
+        <div class="tarefas-col">
+          <section class="cartao-fid">
+            <header class="cartao-topo"><h2 id="dia-titulo">Pedidos de hoje</h2><small id="dia-prazo"></small></header>
+            <div class="etiquetas" id="dia-lista"></div>
+            <div class="cartao-rodape" id="dia-rodape"></div>
+          </section>
+          <section class="cartao-fid">
+            <header class="cartao-topo"><h2 id="carimbos-titulo">Carimbos da semana</h2></header>
+            <div class="cartela" id="carimbos-cartela"></div>
+            <p class="cartao-nota">Fechar 3 pedidos do dia carimba o dia.</p>
+          </section>
+        </div>
 
-      <section class="missoes">
-        <h2>Missões da semana</h2>
-        <p class="missoes-sub" id="semana-sub"></p>
-        <div class="missao-list" id="semana-list"></div>
-        <div class="bau" id="semana-bau"></div>
-      </section>
+        <div class="tarefas-col">
+          <section class="cartao-fid">
+            <header class="cartao-topo"><h2 id="semana-titulo">Pedidos da semana</h2><small id="semana-prazo"></small></header>
+            <div class="etiquetas" id="semana-lista"></div>
+            <div class="cartao-rodape" id="semana-rodape"></div>
+            <div class="bau" id="semana-bau"></div>
+          </section>
+          <section class="cartao-fid">
+            <header class="cartao-topo"><h2 id="especial-titulo">Semanas fechadas</h2></header>
+            <div class="cartela cartela-especial" id="especial-cartela"></div>
+            <div class="cartao-rodape" id="especial-rodape"></div>
+          </section>
+        </div>
+      </div>
 
       <section class="ferramentas">
         <h2>Ferramentas</h2>
         <p class="missoes-sub">O que cada nível abre no app.</p>
         <div id="ferramenta-box"></div>
       </section>
-
-      <section class="collab" id="collab-box"></section>
     </div>
   </section>
 

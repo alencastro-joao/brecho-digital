@@ -256,17 +256,10 @@
   .pf-dica { flex-wrap: wrap; }
 
   /* ------------------------------ Tarefas -------------------------------- */
-  .tarefas-wrapper { padding: 20px 16px 36px; gap: 24px; }
+  .tarefas-wrapper { padding: 20px 16px 36px; gap: 20px; }
   .tarefas-head h1 { font-size: 21px; }
-  .tarefas-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .tarefas-stats .stat { min-width: 0; }
-  .missao { padding: 11px 13px; }
-  .collab { padding: 18px 16px; }
-  .collab-head { flex-direction: column; gap: 8px; }
-  .collab-grid { gap: 10px; }
-  .collab-item { padding: 9px; }
-  .collab-item .peca-caixa { inset: 9px; }
-  .collab .btn-dark, .collab .btn-ghost { max-width: none; }
+  .tarefas-faixa { padding: 14px; gap: 14px; }
+  .cartao-fid { padding: 14px; }
 
   /* ------------------------------ Inventário ----------------------------- */
   .vs-palco { padding: 14px 16px 16px; gap: 12px; }

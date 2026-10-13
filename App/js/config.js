@@ -807,30 +807,41 @@ export const ASSINATURA_PADRAO = {
 };
 
 // ------------------------------- Missões ----------------------------------
-// Missões do DIA: zeram junto com a vitrine, na virada da meia-noite. As metas
-// cabem num dia só (resgates acompanha RESGATES_POR_DIA) e cada uma paga XP.
+// O formato segue o Pokémon TCG Pocket: uma lista fixa de pedidos simples, e
+// cumprir só uma parte já paga. Cada missão escuta um `evento` (o que a tela
+// avisa com db.progredirMissao) — duas missões podem ouvir o mesmo, como
+// "garimpar 1" e "garimpar 3". A missão paga um pouco de XP ao fechar; os
+// prêmios de verdade saem dos marcos, resgatados com um toque na tela.
+
+// Missões do DIA: zeram junto com a vitrine, na virada da meia-noite. "Entrar"
+// já nasce feita (quem vê a lista está no app): é o progresso de presente.
 export const MISSOES = [
-  { id: 'resgates', nome: 'Garimpe 3 peças na vitrine', meta: CONFIG.RESGATES_POR_DIA, xp: 40 },
-  { id: 'looks',    nome: 'Monte 1 look no Stylist',    meta: 1, xp: 35 },
-  { id: 'publicar', nome: 'Publique 1 colagem no feed', meta: 1, xp: 30 },
-  { id: 'board',    nome: 'Monte 1 colagem',            meta: 1, xp: 35 },
-  { id: 'seguir',   nome: 'Siga 2 pessoas',             meta: 2, xp: 20 },
+  { id: 'entrar',   evento: 'entrar',   nome: 'Entrar no app',    meta: 1, xp: 0 },
+  { id: 'garimpo1', evento: 'resgates', nome: 'Garimpar 1 peça',  meta: 1, xp: 20 },
+  { id: 'resgates', evento: 'resgates', nome: 'Garimpar 3 peças', meta: CONFIG.RESGATES_POR_DIA, xp: 30 },
+  { id: 'looks',    evento: 'looks',    nome: 'Montar 1 look',    meta: 1, xp: 35 },
+  { id: 'publicar', evento: 'publicar', nome: 'Publicar 1 look',  meta: 1, xp: 30 },
 ];
 
-// Fechar o dia inteiro paga mais do que a soma das partes — é o que faz voltar.
-export const XP_BONUS_DIA = 60;
+// Marcos do dia: 2 missões dão uma ficha; 3 fecham o dia — mais fichas e o
+// carimbo do dia no cartão da semana. Quem só entra e garimpa uma peça já
+// leva a primeira ficha.
+export const MARCOS_DIA = { ficha: { missoes: 2, fichas: 1 },
+                            carimbo: { missoes: 3, fichas: 2, xp: 40 } };
 
-// Missões da SEMANA: zeram na segunda-feira, à meia-noite. São as mesmas ações
-// das diárias em dose maior — quem joga um dia só não fecha, quem volta fecha —,
-// mais duas que só fazem sentido somadas: fechar o dia inteiro algumas vezes e
-// curtir looks de outras pessoas (cada post conta uma vez por semana).
+// Missões da SEMANA: zeram na segunda-feira, à meia-noite. São as diárias em
+// dose maior. Curtir é provisória: a vaga é de "ativar um efeito de coleção",
+// que entra quando os atributos das roupinhas existirem.
 export const MISSOES_SEMANA = [
-  { id: 'dias',     nome: 'Feche todas as missões do dia 3 vezes', meta: 3,  xp: 150 },
-  { id: 'resgates', nome: 'Garimpe 12 peças na vitrine',            meta: 12, xp: 120 },
-  { id: 'looks',    nome: 'Monte 4 looks no Stylist',               meta: 4,  xp: 100 },
-  { id: 'publicar', nome: 'Publique 3 vezes no feed',               meta: 3,  xp: 100 },
-  { id: 'curtir',   nome: 'Curta 10 looks de outras pessoas',       meta: 10, xp: 80 },
+  { id: 'resgates', evento: 'resgates', nome: 'Garimpar 12 peças',           meta: 12, xp: 120 },
+  { id: 'raras',    evento: 'raras',    nome: 'Garimpar 2 peças raras',      meta: 2,  xp: 100 },
+  { id: 'looks',    evento: 'looks',    nome: 'Montar 5 looks',              meta: 5,  xp: 100 },
+  { id: 'publicar', evento: 'publicar', nome: 'Publicar 3 looks',            meta: 3,  xp: 100 },
+  { id: 'curtir',   evento: 'curtir',   nome: 'Curtir 10 looks de outras pessoas', meta: 10, xp: 80 },
 ];
+
+// Marcos da semana: 3 missões dão fichas (um resgate extra); as 5 abrem o baú.
+export const MARCOS_SEMANA = { fichas: { missoes: 3, fichas: 6 } };
 
 // Fechar a semana inteira: XP e uma peça sorteada do acervo. A faixa é a
 // primeira da lista que ainda tem peça que você não tem e que não esgotou —
@@ -838,6 +849,21 @@ export const MISSOES_SEMANA = [
 export const PREMIO_SEMANA = {
   xp: 200,
   faixas: ['rare', 'epic', 'uncommon'],
+};
+
+// Três baús da semana abertos (seguidos ou não) abrem o baú especial: o mesmo
+// sorteio, uma faixa acima.
+export const BAU_ESPECIAL = {
+  semanas: 3,
+  xp: 300,
+  faixas: ['epic', 'rare', 'uncommon'],
+};
+
+// Fichas: o prêmio que vira garimpo, como as ampulhetas do TCG Pocket. O nome
+// é provisório até a lore do jogo. O teto protege a raridade da vitrine.
+export const FICHAS = {
+  porResgate: 6,       // quantas fichas valem um resgate a mais
+  extrasPorDia: 1,     // resgates comprados com fichas, no máximo, por dia
 };
 
 // ------------------------------- Níveis -----------------------------------

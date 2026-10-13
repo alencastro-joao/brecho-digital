@@ -18,7 +18,7 @@
 import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
   RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
-  XP_BONUS_DIA, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
+  MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
 } from './config.js';
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
@@ -66,7 +66,8 @@ function estadoInicial() {
     pecasProprias: [],         // peças que você mesmo subiu: { id, cat, marca, nome, src, w, h, ancora }
     marcas: [],                // marcas já usadas: { nome, usos, em }
     cores: [],                 // cores já usadas: { nome, usos, em }
-    dia: { data: hojeISO(), resgates: 0, posicoes: {} },   // posicoes: peça arrastada no mural
+    dia: { data: hojeISO(), resgates: 0, extras: 0, posicoes: {} },   // posicoes: peça arrastada no mural
+                                                                    // extras: resgates comprados com fichas
     looks: [],                 // { id, nome, criadoEm, camadas[], thumb, publicado }
     boards: [],                // colagens: { id, nome, formato, margem, assinatura, itens[], guias }
     feed: [],                  // posts (meus + dos perfis fictícios)
@@ -77,6 +78,8 @@ function estadoInicial() {
     missoes: missoesDoDia(),   // zera na virada do dia (ver virarODiaSeNecessario)
     semana: missoesDaSemana(), // zera na segunda-feira
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
+    fichas: 0,                 // ganhas nos marcos das missões, trocadas por resgate
+    semanasFechadas: 0,        // baús da semana abertos desde o último baú especial
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0, semanasCompletas: 0 },
     // O sino (js/avisos.js): a lista, até onde você já viu, e a última foto de
@@ -96,21 +99,25 @@ function estadoInicial() {
 function missoesDoDia(data = hojeISO()) {
   return {
     data,
-    progresso: Object.fromEntries(MISSOES.map(m => [m.id, 0])),
-    pagas: [],          // missões cujo XP já foi creditado hoje
-    bonusPago: false,   // bônus de fechar o dia inteiro
+    // "Entrar" nasce feita: quem está vendo a lista está no app.
+    progresso: Object.fromEntries(MISSOES.map(m => [m.id, m.evento === 'entrar' ? m.meta : 0])),
+    pagas: MISSOES.filter(m => m.evento === 'entrar').map(m => m.id),   // XP já creditado hoje
+    marcos: [],         // marcos do dia já resgatados: 'ficha', 'carimbo'
   };
 }
 
 // O mesmo bloco, uma vez por semana. `curtidos` guarda os posts que já
 // contaram para a missão de curtir: descurtir e curtir de novo não soma.
-// `premio` é o que saiu do baú: null até abrir.
+// `premio` é o que saiu do baú: null até abrir. `carimbos` são os dias da
+// semana (ISO) que foram carimbados no cartão.
 function missoesDaSemana(data = semanaISO()) {
   return {
     data,
     progresso: Object.fromEntries(MISSOES_SEMANA.map(m => [m.id, 0])),
     pagas: [],
     curtidos: [],
+    marcos: [],         // 'fichas' quando o marco de 3 missões já foi resgatado
+    carimbos: [],
     premio: null,
   };
 }
@@ -129,6 +136,14 @@ function carregar() {
       ? { ...base.missoes, ...salvo.missoes,
           progresso: { ...base.missoes.progresso, ...salvo.missoes.progresso } }
       : base.missoes;
+    // Missão nova que escuta o mesmo evento de uma antiga ("garimpar 1" ao lado
+    // de "garimpar 3") começa do progresso da irmã, não do zero.
+    for (const m of MISSOES) {
+      const antigo = salvo.missoes?.progresso;
+      if (!antigo || m.id in antigo) continue;
+      const irma = MISSOES.find(o => o.evento === m.evento && o.id in antigo);
+      if (irma) estado.missoes.progresso[m.id] = Math.min(m.meta, antigo[irma.id]);
+    }
     estado.semana = salvo.semana?.progresso
       ? { ...base.semana, ...salvo.semana,
           progresso: { ...base.semana.progresso, ...salvo.semana.progresso } }
@@ -522,7 +537,7 @@ export async function sincronizarDaNuvem() {
 export function virarODiaSeNecessario() {
   const hoje = hojeISO();
   if (state.dia.data !== hoje) {
-    state.dia = { data: hoje, resgates: 0, posicoes: {} };
+    state.dia = { data: hoje, resgates: 0, extras: 0, posicoes: {} };
     state.missoes = missoesDoDia(hoje);   // vitrine nova, missões novas
     salvar();
     return true;
@@ -546,7 +561,27 @@ function virarASemanaSeNecessario() {
   return true;
 }
 
-export const resgatesRestantes = (limite) => Math.max(0, limite - state.dia.resgates);
+export const resgatesRestantes = (limite) =>
+  Math.max(0, limite + (state.dia.extras ?? 0) - state.dia.resgates);
+
+// O limite do dia já com os resgates comprados com fichas.
+export const resgatesDoDia = (base) => base + (state.dia.extras ?? 0);
+
+// --- Fichas ---------------------------------------------------------------
+export const fichas = () => state.fichas ?? 0;
+
+export const podeTrocarFichas = () =>
+  fichas() >= FICHAS.porResgate && (state.dia.extras ?? 0) < FICHAS.extrasPorDia;
+
+// Troca fichas por um resgate a mais hoje. Devolve se deu certo.
+export function trocarFichasPorResgate() {
+  virarODiaSeNecessario();
+  if (!podeTrocarFichas()) return false;
+  state.fichas = fichas() - FICHAS.porResgate;
+  state.dia.extras = (state.dia.extras ?? 0) + 1;
+  salvar();
+  return true;
+}
 
 // Onde a peça ficou depois de arrastada. Vale enquanto a página está aberta:
 // trocar de tela e voltar mantém a arara como você deixou.
@@ -787,28 +822,20 @@ export function desconectar(servico) {
 export const estaLigado = (servico) => Boolean(state.conexoes?.[servico]?.ligado);
 
 // --- Missões (diárias) ----------------------------------------------------
-// Progredir é sempre por aqui: a missão que fecha credita o XP na hora, uma vez
-// por dia, e o bônus sai quando as cinco estão completas.
-export function progredirMissao(id, delta = 1) {
+// Progredir é sempre por aqui, pelo evento (ver MISSOES em config.js): todas as
+// missões do dia e da semana que escutam o evento andam juntas. A missão que
+// fecha credita o XP na hora, uma vez só; os marcos esperam o toque na tela.
+// Evento sem missão (colagem, seguir) não faz nada — a tela pode avisar sempre.
+export function progredirMissao(evento, delta = 1) {
   virarODiaSeNecessario();
-  progredirSemana(id, delta);   // a semana conta mesmo depois que a diária fechou
-  const missao = MISSOES.find(m => m.id === id);
-  if (!missao || !(id in state.missoes.progresso)) return;
-
-  const antes = state.missoes.progresso[id];
-  if (antes >= missao.meta) return;
-
-  state.missoes.progresso[id] = Math.min(missao.meta, antes + delta);
-  if (!missaoCompleta(id) || state.missoes.pagas.includes(id)) return;
-
-  state.missoes.pagas.push(id);
-  ganharXP(missao.xp, `missão: ${missao.nome}`);
-
-  if (todasMissoesCompletas() && !state.missoes.bonusPago) {
-    state.missoes.bonusPago = true;
-    state.stats.diasCompletos = (state.stats.diasCompletos ?? 0) + 1;
-    ganharXP(XP_BONUS_DIA, 'todas as missões do dia');
-    progredirSemana('dias');
+  progredirSemana(evento, delta);   // a semana conta mesmo depois que a diária fechou
+  for (const missao of MISSOES.filter(m => m.evento === evento)) {
+    const antes = state.missoes.progresso[missao.id] ?? 0;
+    if (antes >= missao.meta) continue;
+    state.missoes.progresso[missao.id] = Math.min(missao.meta, antes + delta);
+    if (!missaoCompleta(missao.id) || state.missoes.pagas.includes(missao.id)) continue;
+    state.missoes.pagas.push(missao.id);
+    if (missao.xp) ganharXP(missao.xp, `missão: ${missao.nome.toLowerCase()}`);
   }
 }
 
@@ -817,31 +844,66 @@ export const progressoMissao = (id) => state.missoes.progresso[id] ?? 0;
 export const missaoCompleta = (id) =>
   progressoMissao(id) >= (MISSOES.find(m => m.id === id)?.meta ?? 1);
 
-export const todasMissoesCompletas = () => MISSOES.every(m => missaoCompleta(m.id));
-
 export const missoesFeitas = () => MISSOES.filter(m => missaoCompleta(m.id)).length;
+
+const marcoDoDiaPego = (marco) => state.missoes.marcos?.includes(marco);
+export const diaCarimbado = () => marcoDoDiaPego('carimbo');
+
+// O próximo prêmio do dia que já dá para resgatar: 'carimbo' (3 missões),
+// 'ficha' (2 missões) ou null.
+export function marcoDoDiaPronto() {
+  const feitas = missoesFeitas();
+  if (!marcoDoDiaPego('carimbo') && feitas >= MARCOS_DIA.carimbo.missoes) return 'carimbo';
+  if (!marcoDoDiaPego('ficha') && !marcoDoDiaPego('carimbo') &&
+      feitas >= MARCOS_DIA.ficha.missoes) return 'ficha';
+  return null;
+}
+
+// Resgata o marco pronto. Carimbar o dia também paga a ficha dos 2, se ela
+// ficou para trás. Devolve { marco, fichas } ou null.
+export function resgatarMarcoDoDia() {
+  virarODiaSeNecessario();
+  const marco = marcoDoDiaPronto();
+  if (!marco) return null;
+  state.missoes.marcos ??= [];
+  let ganhas = 0;
+  if (!marcoDoDiaPego('ficha')) { state.missoes.marcos.push('ficha'); ganhas += MARCOS_DIA.ficha.fichas; }
+  if (marco === 'carimbo') {
+    state.missoes.marcos.push('carimbo');
+    ganhas += MARCOS_DIA.carimbo.fichas;
+    state.stats.diasCompletos = (state.stats.diasCompletos ?? 0) + 1;
+    state.semana.carimbos ??= [];
+    if (!state.semana.carimbos.includes(state.missoes.data)) state.semana.carimbos.push(state.missoes.data);
+  }
+  state.fichas = fichas() + ganhas;
+  if (marco === 'carimbo') ganharXP(MARCOS_DIA.carimbo.xp, 'dia carimbado');
+  salvar();
+  return { marco, fichas: ganhas };
+}
+
+export const carimbosDaSemana = () => state.semana.carimbos ?? [];
 
 // --- Missões (semanais) ---------------------------------------------------
 // Mesma regra das diárias: fechou, paga o XP na hora e uma vez só. `chave`
 // serve à missão de curtir — o mesmo post não conta duas vezes na semana.
-export function progredirSemana(id, delta = 1, chave = null) {
+export function progredirSemana(evento, delta = 1, chave = null) {
   virarASemanaSeNecessario();
-  const missao = MISSOES_SEMANA.find(m => m.id === id);
   const s = state.semana;
-  if (!missao || !(id in s.progresso)) return;
+  const missoes = MISSOES_SEMANA.filter(m => m.evento === evento);
+  if (!missoes.length) return;
 
   if (chave != null) {
     if (s.curtidos.includes(chave)) return;
     s.curtidos.push(chave);
   }
-  const antes = s.progresso[id];
-  if (antes >= missao.meta) return;
-
-  s.progresso[id] = Math.min(missao.meta, antes + delta);
-  if (s.progresso[id] < missao.meta || s.pagas.includes(id)) return;
-
-  s.pagas.push(id);
-  ganharXP(missao.xp, `missão da semana: ${missao.nome}`);
+  for (const missao of missoes) {
+    const antes = s.progresso[missao.id] ?? 0;
+    if (antes >= missao.meta) continue;
+    s.progresso[missao.id] = Math.min(missao.meta, antes + delta);
+    if (s.progresso[missao.id] < missao.meta || s.pagas.includes(missao.id)) continue;
+    s.pagas.push(missao.id);
+    ganharXP(missao.xp, `missão da semana: ${missao.nome.toLowerCase()}`);
+  }
 }
 
 export const progressoSemanal = (id) => state.semana.progresso[id] ?? 0;
@@ -853,19 +915,63 @@ export const semanaCompleta = () => MISSOES_SEMANA.every(m => semanalCompleta(m.
 
 export const semanaisFeitas = () => MISSOES_SEMANA.filter(m => semanalCompleta(m.id)).length;
 
+const fichasDaSemanaPegas = () => state.semana.marcos?.includes('fichas');
+
+// As fichas do marco de 3 missões, prontas para resgatar?
+export const fichasDaSemanaProntas = () =>
+  !fichasDaSemanaPegas() && semanaisFeitas() >= MARCOS_SEMANA.fichas.missoes;
+
+function pagarFichasDaSemana() {
+  if (fichasDaSemanaPegas()) return 0;
+  state.semana.marcos ??= [];
+  state.semana.marcos.push('fichas');
+  state.fichas = fichas() + MARCOS_SEMANA.fichas.fichas;
+  return MARCOS_SEMANA.fichas.fichas;
+}
+
+export function resgatarFichasDaSemana() {
+  virarASemanaSeNecessario();
+  if (!fichasDaSemanaProntas()) return 0;
+  const ganhas = pagarFichasDaSemana();
+  salvar();
+  return ganhas;
+}
+
 // Abre o baú da semana com a peça já escolhida (quem sorteia é a tela, que
-// conhece o catálogo). Devolve a peça que entrou, ou null se não dava.
+// conhece o catálogo). Paga junto as fichas dos 3, se ficaram para trás, e
+// conta uma semana fechada para o baú especial. Devolve a peça que entrou, ou
+// null se não dava.
 export function abrirPremioDaSemana(item, raridade) {
   virarASemanaSeNecessario();
   if (!semanaCompleta() || state.semana.premio) return null;
+  pagarFichasDaSemana();
   const peca = item ? adicionarPeca(item, { origem: 'semana', raridade }) : null;
   state.semana.premio = { id: peca?.id ?? null, raridade: peca ? raridade : null,
                           em: new Date().toISOString() };
   state.stats.semanasCompletas = (state.stats.semanasCompletas ?? 0) + 1;
+  state.semanasFechadas = (state.semanasFechadas ?? 0) + 1;
   ganharXP(PREMIO_SEMANA.xp, 'todas as missões da semana');
   salvar();
   return peca;
 }
+
+// --- Baú especial ---------------------------------------------------------
+export const semanasFechadas = () => state.semanasFechadas ?? 0;
+export const bauEspecialPronto = () => semanasFechadas() >= BAU_ESPECIAL.semanas;
+
+export function abrirBauEspecial(item, raridade) {
+  if (!bauEspecialPronto()) return null;
+  const peca = item ? adicionarPeca(item, { origem: 'bau-especial', raridade }) : null;
+  state.semanasFechadas = semanasFechadas() - BAU_ESPECIAL.semanas;
+  ganharXP(BAU_ESPECIAL.xp, 'baú especial');
+  salvar();
+  return { peca };
+}
+
+// Tem prêmio esperando o toque? Acende o pontinho do botão de Tarefas.
+export const temPremioParaResgatar = () =>
+  Boolean(marcoDoDiaPronto()) || fichasDaSemanaProntas() ||
+  (semanaCompleta() && !state.semana.premio) || bauEspecialPronto() || podeTrocarFichas();
 
 // --- Nível e XP -----------------------------------------------------------
 // Quem quiser reagir ao XP (badge da sidebar, toast de nível novo) escuta aqui:

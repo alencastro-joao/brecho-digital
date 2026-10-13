@@ -14,7 +14,7 @@
 // vezes nenhuma. E peça pega *sai* da loja: some do mural na hora e não volta
 // na próxima abertura, que é o que o resgate significa.
 
-import { ADMIN, CONFIG, COLLAB, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural } from './config.js';
+import { ADMIN, CONFIG, COLLAB, FICHAS, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
          imagemDaPeca, trocarImagem } from './catalog.js';
 import * as db from './db.js';
@@ -588,7 +588,9 @@ async function pegar(id, noDOM) {
   }
   if (db.resgatesRestantes(CONFIG.RESGATES_POR_DIA) <= 0) {
     falarDe('acabou');
-    toast(`Resgates de hoje esgotados. Volta em ${formatarContagem(msAteMeiaNoite())}.`, 'aviso');
+    toast(db.podeTrocarFichas()
+      ? `Resgates de hoje esgotados. Dá para trocar ${FICHAS.porResgate} fichas por mais um em Tarefas.`
+      : `Resgates de hoje esgotados. Volta em ${formatarContagem(msAteMeiaNoite())}.`, 'aviso');
     $('#picks-badge')?.classList.add('shake');
     setTimeout(() => $('#picks-badge')?.classList.remove('shake'), 500);
     return;
@@ -611,6 +613,7 @@ async function pegar(id, noDOM) {
   db.state.dia.resgates += 1;
   db.state.stats.resgates += 1;
   db.progredirMissao('resgates');
+  if (['rare', 'epic', 'legendary'].includes(raridade)) db.progredirMissao('raras');
   db.salvar();
 
   voarParaOCloset(noDOM);
@@ -718,7 +721,7 @@ export function atualizarBadge() {
   if (campo) campo.textContent = restantes;
   const badge = $('#picks-badge');
   if (!badge) return;
-  badge.querySelector('.picks-total').textContent = '/' + CONFIG.RESGATES_POR_DIA;
+  badge.querySelector('.picks-total').textContent = '/' + db.resgatesDoDia(CONFIG.RESGATES_POR_DIA);
   badge.classList.toggle('esgotado', restantes === 0);
   badge.querySelector('small').textContent = restantes === 0
     ? `volta em ${formatarContagem(msAteMeiaNoite())}`

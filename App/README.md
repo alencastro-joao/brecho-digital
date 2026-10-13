@@ -401,7 +401,7 @@ seguintes filtram por categoria e só aparecem quando há peça nelas.
 ## Dados
 
 Tudo fica em `localStorage`, na chave `bd:v1:estado`, num formato que já imita o registro
-do DynamoDB: usuário, inventário, estado do dia, looks, feed, missões, XP e cápsula.
+do DynamoDB: usuário, inventário, estado do dia, looks, feed, missões, fichas, XP e cápsula.
 Trocar por uma API é substituir `carregar()` e `salvar()` em `js/db.js`.
 
 Em **Perfil → Testes** há como liberar os resgates do dia, ganhar 10 peças e apagar tudo.
@@ -410,9 +410,23 @@ As missões e o XP ficam na aba **Tarefas**.
 
 ## Níveis e XP
 
-As missões são **do dia**: zeram na virada da meia-noite, junto com a vitrine
-(`db.virarODiaSeNecessario`). Cada missão paga XP uma vez por dia e fechar as
-cinco paga um bônus (`XP_BONUS_DIA`). O XP nunca zera — é ele que dá o nível.
+A aba **Tarefas** é um cartão de fidelidade, no formato do Pokémon TCG Pocket:
+uma lista fixa de pedidos, e cumprir parte dela já paga (`config.js`, seção
+Missões).
+
+* **Dia** (`MISSOES`, zera à meia-noite com a vitrine): entrar, garimpar 1,
+  garimpar 3, montar 1 look, publicar 1 look. 2 feitas dão 1 ficha; 3 carimbam o
+  dia (+2 fichas e o carimbo no cartão da semana) — `MARCOS_DIA`.
+* **Semana** (`MISSOES_SEMANA`, zera na segunda): as diárias em dose maior. 3
+  feitas dão 6 fichas; as 5 abrem o baú com peça rara — `MARCOS_SEMANA`.
+* **Baú especial**: 3 baús da semana abertos (seguidos ou não) abrem um com
+  peça épica — `BAU_ESPECIAL`.
+* **Fichas** (nome provisório): 6 viram um resgate a mais no dia, no máximo um
+  por dia — `FICHAS`.
+
+Cada missão escuta um `evento` (`db.progredirMissao('resgates')`); duas missões
+podem ouvir o mesmo. A missão paga um pouco de XP ao fechar; os prêmios dos
+marcos esperam o toque na tela. O XP nunca zera — é ele que dá o nível.
 
 O nível não fica salvo: é **derivado** do XP acumulado por `nivelPorXP()`. Mexer
 na curva em `config.js` recalcula o nível de todo mundo, sem migração de save.
