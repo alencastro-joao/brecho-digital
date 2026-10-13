@@ -820,6 +820,26 @@ export const MISSOES = [
 // Fechar o dia inteiro paga mais do que a soma das partes — é o que faz voltar.
 export const XP_BONUS_DIA = 60;
 
+// Missões da SEMANA: zeram na segunda-feira, à meia-noite. São as mesmas ações
+// das diárias em dose maior — quem joga um dia só não fecha, quem volta fecha —,
+// mais duas que só fazem sentido somadas: fechar o dia inteiro algumas vezes e
+// curtir looks de outras pessoas (cada post conta uma vez por semana).
+export const MISSOES_SEMANA = [
+  { id: 'dias',     nome: 'Feche todas as missões do dia 3 vezes', meta: 3,  xp: 150 },
+  { id: 'resgates', nome: 'Garimpe 12 peças na vitrine',            meta: 12, xp: 120 },
+  { id: 'looks',    nome: 'Monte 4 looks no Stylist',               meta: 4,  xp: 100 },
+  { id: 'publicar', nome: 'Publique 3 vezes no feed',               meta: 3,  xp: 100 },
+  { id: 'curtir',   nome: 'Curta 10 looks de outras pessoas',       meta: 10, xp: 80 },
+];
+
+// Fechar a semana inteira: XP e uma peça sorteada do acervo. A faixa é a
+// primeira da lista que ainda tem peça que você não tem e que não esgotou —
+// rara de preferência; épica ou incomum só se o acervo não tiver rara.
+export const PREMIO_SEMANA = {
+  xp: 200,
+  faixas: ['rare', 'epic', 'uncommon'],
+};
+
 // ------------------------------- Níveis -----------------------------------
 // O XP só sobe; o nível é derivado do total acumulado (nivelPorXP). Assim,
 // mexer na curva aqui recalcula o nível de todo mundo sem migração de save.

@@ -634,13 +634,17 @@ function alternarThread(post) {
 }
 
 async function alternarCurtida(post) {
+  // Curtir o look de outra pessoa conta para a missão da semana (uma vez por post).
+  const conta = !post.curtido && !sou(post.autor);
   if (post.real) {
     try { await curtirPublicacao(post); }
-    catch (e) { toast(e.message || 'Não consegui curtir agora.', 'aviso'); }
+    catch (e) { return toast(e.message || 'Não consegui curtir agora.', 'aviso'); }
+    if (conta) { db.progredirSemana('curtir', 1, post.id); db.salvar(); }
     return;
   }
   post.curtido = !post.curtido;
   post.curtidas = Math.max(0, post.curtidas + (post.curtido ? 1 : -1));
+  if (conta) db.progredirSemana('curtir', 1, post.id);
   db.salvar();
   repintar();
 }
