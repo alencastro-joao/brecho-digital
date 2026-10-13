@@ -33,9 +33,9 @@ const GRUPOS = [
 ];
 
 const EXPLICACAO = {
-  marcas: 'Garimpe peças de uma marca para liberar os itens dela no avatar. A 1ª peça abre o primeiro item, metade da coleção abre o segundo e a coleção completa abre o último. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
-  cores: 'Todas as peças da loja de uma mesma cor. Cada cor libera itens do avatar pintados nela: a 1ª peça abre o primeiro, metade abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
-  estilos: 'As peças da loja de cada estilo. Cada estilo libera itens do avatar: a 1ª peça abre o primeiro, metade abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens do mesmo estilo acende um brilho no avatar.',
+  marcas: 'Garimpe peças de uma marca para liberar os itens dela no avatar. Um quarto da coleção abre o primeiro item, 60% abre o segundo e a coleção completa abre o último. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
+  cores: 'Todas as peças da loja de uma mesma cor. Cada cor libera itens do avatar pintados nela: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
+  estilos: 'As peças da loja de cada estilo. Cada estilo libera itens do avatar: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens do mesmo estilo acende um brilho no avatar.',
 };
 
 const FILTROS = [
@@ -161,7 +161,7 @@ export function renderColecoes() {
     el('p', { class: 'col-vazio' }, filtro === 'completas'
       ? 'Nenhuma coleção completa ainda. Garimpe as peças que faltam na vitrine.'
       : grupo === 'marcas'
-        ? 'Nenhuma coleção começada. A primeira peça de uma marca já abre um item do avatar.'
+        ? 'Nenhuma coleção começada. Garimpe peças de uma marca para abrir os itens dela.'
         : 'Nenhuma coleção começada. Garimpe peças na vitrine para começar.'),
   ]));
 }

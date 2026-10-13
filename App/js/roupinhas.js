@@ -248,7 +248,7 @@ export const ROUPINHAS = [
   {
     id: 'moletom', nome: 'Moletom', slot: 'torso', raridade: 'uncommon',
     cor: '#8fa5b8',
-    desbloqueio: { tipo: 'nivel', meta: 3 },
+    desbloqueio: { tipo: 'nivel', meta: 6 },
     // O capuz caído fica atrás do corpo — senão ele cobriria o queixo.
     atras: () => `<path d="M214 282 C202 194 244 166 300 166
                             C356 166 398 194 386 282 Z"/>`,
@@ -263,7 +263,7 @@ export const ROUPINHAS = [
   {
     id: 'colete', nome: 'Colete', slot: 'torso', raridade: 'uncommon',
     cor: '#6b5f52',
-    desbloqueio: { tipo: 'resgates', meta: 15 },
+    desbloqueio: { tipo: 'resgates', meta: 30 },
     arte: (m) => frenteAberta(m, -1, { ate: 570 }) + frenteAberta(m, 1, { ate: 570 }),
     detalhe: () => `<circle cx="300" cy="446" r="7" fill="rgba(0,0,0,.28)"/>
                     <circle cx="300" cy="500" r="7" fill="rgba(0,0,0,.28)"/>`,
@@ -271,7 +271,7 @@ export const ROUPINHAS = [
   {
     id: 'jaqueta', nome: 'Jaqueta', slot: 'torso', raridade: 'rare',
     cor: '#4e6a86',
-    desbloqueio: { tipo: 'nivel', meta: 6 },
+    desbloqueio: { tipo: 'nivel', meta: 16 },
     arte: (m, x) => {
       const aberta = { gola: 14, ombro: 10, barra: 14, ate: 552, v: 322, meio: 1 };
       return frenteAberta(m, -1, aberta) + frenteAberta(m, 1, aberta)
@@ -305,7 +305,7 @@ export const ROUPINHAS = [
   {
     id: 'manto', nome: 'Manto da coleção', slot: 'torso', raridade: 'legendary',
     cor: '#3b2f63',
-    desbloqueio: { tipo: 'nivel', meta: 12 },
+    desbloqueio: { tipo: 'nivel', meta: 24 },
     arte: (m, x) => tronco(m, {
       gola: 20, ombro: 14, peito: 16, barra: 46, ate: 980, decote: 302,
     }) + mangas(m, x, {}, 26),
@@ -325,7 +325,7 @@ export const ROUPINHAS = [
   {
     id: 'polo', nome: 'Camisa polo', slot: 'torso', raridade: 'common',
     cor: '#5f8d78',
-    desbloqueio: { tipo: 'nivel', meta: 3 },
+    desbloqueio: { tipo: 'nivel', meta: 7 },
     arte: (m, x) => tronco(m, { gola: 15, decote: 264, ate: 560 })
       + mangas(m, x, { ate: 424 }, 12),
     detalhe: (m, cor) => `
@@ -339,7 +339,7 @@ export const ROUPINHAS = [
   {
     id: 'camisa', nome: 'Camisa', slot: 'torso', raridade: 'uncommon',
     cor: '#e4e7ec',
-    desbloqueio: { tipo: 'nivel', meta: 7 },
+    desbloqueio: { tipo: 'nivel', meta: 18 },
     arte: (m, x) => tronco(m, { gola: 16, ombro: 10, peito: 10, barra: 12, ate: 586 })
       + mangas(m, x, {}, 20, 'butt')
       + nasMaos(cx => `<ellipse cx="${cx}" cy="646" rx="${m.braco + 11}" ry="12"/>`),
@@ -356,7 +356,7 @@ export const ROUPINHAS = [
   {
     id: 'sueter', nome: 'Suéter de tricô', slot: 'torso', raridade: 'uncommon',
     cor: '#c98f6b',
-    desbloqueio: { tipo: 'resgates', meta: 10 },
+    desbloqueio: { tipo: 'resgates', meta: 20 },
     arte: (m, x) => tronco(m, {
       gola: 22, ombro: 12, peito: 12, barra: 14, ate: 590, decote: 286,
     }) + mangas(m, x, {}, 24, 'butt')
@@ -393,7 +393,7 @@ export const ROUPINHAS = [
   {
     id: 'cropped', nome: 'Cropped', slot: 'torso', raridade: 'uncommon',
     cor: '#d9a3b5',
-    desbloqueio: { tipo: 'nivel', meta: 5 },
+    desbloqueio: { tipo: 'nivel', meta: 14 },
     // Para na cintura, não no quadril: é a única peça de cima daqui que deixa
     // aparecer o corpo embaixo dela.
     arte: (m, x) => tronco(m, { gola: 18, ombro: 6, peito: 4, barra: -4, ate: 438,
@@ -404,7 +404,7 @@ export const ROUPINHAS = [
   {
     id: 'gola-alta', nome: 'Gola alta', slot: 'torso', raridade: 'uncommon',
     cor: '#3d4a5c',
-    desbloqueio: { tipo: 'resgates', meta: 12 },
+    desbloqueio: { tipo: 'resgates', meta: 24 },
     // O tubo da gola começa em 174, logo abaixo do queixo: mais alto que isso
     // e ele come o rosto, que está desenhado no mesmo palco.
     arte: (m, x) => `<rect x="${300 - m.pescoco - 11}" y="174"
@@ -419,7 +419,7 @@ export const ROUPINHAS = [
   {
     id: 'xadrez', nome: 'Camisa xadrez', slot: 'torso', raridade: 'rare',
     cor: '#a8443f',
-    desbloqueio: { tipo: 'resgates', meta: 18 },
+    desbloqueio: { tipo: 'resgates', meta: 36 },
     arte: (m, x) => {
       const aberta = { gola: 12, ombro: 10, barra: 14, ate: 604, v: 300, meio: 7 };
       return frenteAberta(m, -1, aberta) + frenteAberta(m, 1, aberta)
@@ -519,7 +519,7 @@ export const ROUPINHAS = [
   {
     id: 'cargo', nome: 'Calça cargo', slot: 'pernas', raridade: 'rare',
     cor: '#7d7a5e',
-    desbloqueio: { tipo: 'resgates', meta: 30 },
+    desbloqueio: { tipo: 'resgates', meta: 60 },
     arte: (m, x) => cos(m) + pernas(m, x, {}, 14, 'butt') + bainha(m, 1086, 14),
     detalhe: (m, cor) => {
       const cx = noMembro(m.pernaX, Y_PERNA, 792);
@@ -549,7 +549,7 @@ export const ROUPINHAS = [
   {
     id: 'jeans', nome: 'Jeans', slot: 'pernas', raridade: 'common',
     cor: '#3f5a78',
-    desbloqueio: { tipo: 'nivel', meta: 2 },
+    desbloqueio: { tipo: 'nivel', meta: 3 },
     arte: (m, x) => cos(m) + pernas(m, x, {}, 13, 'butt') + bainha(m, 1086, 13),
     detalhe: (m, cor) => {
       const linha = escurecer(cor, .45);
@@ -567,7 +567,7 @@ export const ROUPINHAS = [
   {
     id: 'moletom-calca', nome: 'Calça de moletom', slot: 'pernas', raridade: 'uncommon',
     cor: '#8a8f98',
-    desbloqueio: { tipo: 'resgates', meta: 20 },
+    desbloqueio: { tipo: 'resgates', meta: 40 },
     // Termina no tornozelo, não no chão: o punho é o que diz que ela é de
     // moletom e não de alfaiataria.
     arte: (m, x) => cos(m) + pernas(m, x, { ate: 1046 }, 18, 'butt') + bainha(m, 1046, 18),
@@ -583,7 +583,7 @@ export const ROUPINHAS = [
   {
     id: 'legging', nome: 'Legging', slot: 'pernas', raridade: 'uncommon',
     cor: '#2f3038',
-    desbloqueio: { tipo: 'nivel', meta: 4 },
+    desbloqueio: { tipo: 'nivel', meta: 11 },
     // Folga 2: a legging é a própria perna, e é a única peça daqui em que não
     // sobra pano nenhum.
     arte: (m, x) => cos(m) + pernas(m, x, { ate: 1062 }, 2, 'butt') + bainha(m, 1062, 2),
@@ -600,7 +600,7 @@ export const ROUPINHAS = [
   {
     id: 'shortinho', nome: 'Short jeans', slot: 'pernas', raridade: 'common',
     cor: '#5b7da0',
-    desbloqueio: { tipo: 'nivel', meta: 3 },
+    desbloqueio: { tipo: 'nivel', meta: 8 },
     arte: (m, x) => cos(m) + pernas(m, x, { ate: 794 }, 14, 'butt') + bainha(m, 794, 14),
     detalhe: (m, cor) => {
       const linha = escurecer(cor, .45);
@@ -636,7 +636,7 @@ export const ROUPINHAS = [
   {
     id: 'plissada', nome: 'Saia plissada', slot: 'pernas', raridade: 'rare',
     cor: '#5c6b4a',
-    desbloqueio: { tipo: 'resgates', meta: 22 },
+    desbloqueio: { tipo: 'resgates', meta: 44 },
     arte: (m) => {
       const q = m.quadril + 8, l = m.quadril + 88;
       return `<path d="M${300 - q} 576 L${300 + q} 576
@@ -690,7 +690,7 @@ export const ROUPINHAS = [
   {
     id: 'sapatilha', nome: 'Sapatilha', slot: 'pes', raridade: 'uncommon',
     cor: '#c96f8a',
-    desbloqueio: { tipo: 'nivel', meta: 4 },
+    desbloqueio: { tipo: 'nivel', meta: 12 },
     arte: (m) => nosPes(cx => `<ellipse cx="${cx}" cy="1112" rx="${m.pe + 6}" ry="27"/>`),
     detalhe: (m) => nosPes(cx =>
       `<ellipse cx="${cx}" cy="1096" rx="${m.pe - 14}" ry="12" fill="rgba(0,0,0,.2)"/>`),
@@ -698,7 +698,7 @@ export const ROUPINHAS = [
   {
     id: 'bota', nome: 'Bota', slot: 'pes', raridade: 'rare',
     cor: '#6b4a35',
-    desbloqueio: { tipo: 'nivel', meta: 8 },
+    desbloqueio: { tipo: 'nivel', meta: 20 },
     arte: (m, x) => pernas(m, x, { de: 966 }, 12, 'butt')
       + nosPes(cx => `<ellipse cx="${cx}" cy="1108" rx="${m.pe + 9}" ry="32"/>`),
     detalhe: (m) => nosPes(cx => `
@@ -723,7 +723,7 @@ export const ROUPINHAS = [
   {
     id: 'chinelo', nome: 'Chinelo', slot: 'pes', raridade: 'common',
     cor: '#2f6f7a',
-    desbloqueio: { tipo: 'resgates', meta: 5 },
+    desbloqueio: { tipo: 'resgates', meta: 10 },
     arte: (m) => nosPes(cx => `<ellipse cx="${cx}" cy="1124" rx="${m.pe + 4}" ry="20"/>`),
     detalhe: (m, cor) => nosPes(cx => `
       <path d="M${cx - m.pe + 12} 1110 L${cx} 1124 L${cx + m.pe - 12} 1110" fill="none"
@@ -757,7 +757,7 @@ export const ROUPINHAS = [
   {
     id: 'cano-alto', nome: 'Tênis de cano alto', slot: 'pes', raridade: 'uncommon',
     cor: '#e8e4dc',
-    desbloqueio: { tipo: 'nivel', meta: 6 },
+    desbloqueio: { tipo: 'nivel', meta: 17 },
     arte: (m, x) => pernas(m, x, { de: 1006 }, 16, 'butt')
       + nosPes(cx => `<ellipse cx="${cx}" cy="1110" rx="${m.pe + 10}" ry="30"/>`),
     detalhe: (m, cor) => nosPes(cx => `
@@ -769,7 +769,7 @@ export const ROUPINHAS = [
   {
     id: 'galocha', nome: 'Galocha', slot: 'pes', raridade: 'uncommon',
     cor: '#3f7d6a',
-    desbloqueio: { tipo: 'resgates', meta: 14 },
+    desbloqueio: { tipo: 'resgates', meta: 28 },
     // Folga 14: com 22 os dois canos se encostavam no vão da canela e a
     // galocha virava um balde só.
     arte: (m, x) => pernas(m, x, { de: 926 }, 14, 'butt')
@@ -813,7 +813,7 @@ export const ROUPINHAS = [
     id: 'gorro', nome: 'Gorro', slot: 'cabeca', raridade: 'uncommon',
     cabelo: 110,
     cor: '#8c5a6b',
-    desbloqueio: { tipo: 'nivel', meta: 5 },
+    desbloqueio: { tipo: 'nivel', meta: 15 },
     arte: () => `<path d="M240 94 C240 34 266 16 300 16 C334 16 360 34 360 94 Z"/>
                  <rect x="236" y="82" width="128" height="32" rx="15"/>
                  <circle cx="300" cy="14" r="16"/>`,
@@ -822,7 +822,7 @@ export const ROUPINHAS = [
     id: 'bucket', nome: 'Chapéu bucket', slot: 'cabeca', raridade: 'rare',
     cabelo: 124,
     cor: '#7d7a5e',
-    desbloqueio: { tipo: 'resgates', meta: 25 },
+    desbloqueio: { tipo: 'resgates', meta: 50 },
     arte: () => `<path d="M246 94 C246 40 268 24 300 24 C332 24 354 40 354 94 Z"/>
                  <path d="M246 90 L206 122 C240 140 360 140 394 122 L354 90 Z"/>`,
   },
@@ -851,7 +851,7 @@ export const ROUPINHAS = [
   {
     id: 'fones', nome: 'Fones de ouvido', slot: 'cabeca', raridade: 'rare',
     cor: '#33333a',
-    desbloqueio: { tipo: 'nivel', meta: 9 },
+    desbloqueio: { tipo: 'nivel', meta: 22 },
     arte: (m, x) => `
       <path d="M240 108 C240 40 268 22 300 22 C332 22 360 40 360 108" fill="none"
             stroke-width="${18 + x}" stroke-linecap="round"/>
@@ -879,7 +879,7 @@ export const ROUPINHAS = [
   {
     id: 'viseira', nome: 'Viseira', slot: 'cabeca', raridade: 'common',
     cor: '#3f7d6a',
-    desbloqueio: { tipo: 'nivel', meta: 4 },
+    desbloqueio: { tipo: 'nivel', meta: 13 },
     // Sem `cabelo`: a viseira é aberta em cima, então o cabelo continua
     // inteiro por dentro dela — é o contrário do boné.
     arte: () => `<path d="M240 108 C242 78 266 66 300 66 C334 66 358 78 360 108
@@ -906,7 +906,7 @@ export const ROUPINHAS = [
   {
     id: 'bandana', nome: 'Bandana', slot: 'acessorio', z: 62, raridade: 'uncommon',
     cor: '#b8433f',
-    desbloqueio: { tipo: 'resgates', meta: 16 },
+    desbloqueio: { tipo: 'resgates', meta: 32 },
     arte: () => `<path d="M250 118 C270 108 330 108 350 118
                           C352 150 332 176 300 176 C268 176 248 150 250 118 Z"/>`,
     detalhe: (m, cor) => `
@@ -928,7 +928,7 @@ export const ROUPINHAS = [
   {
     id: 'oculos-sol', nome: 'Óculos escuros', slot: 'acessorio', z: 62, raridade: 'uncommon',
     cor: '#2b2b30',
-    desbloqueio: { tipo: 'nivel', meta: 3 },
+    desbloqueio: { tipo: 'nivel', meta: 9 },
     arte: (m, x) => `
       <path d="M254 94 L296 94 L294 122 C282 130 262 128 256 118 Z"/>
       <path d="M346 94 L304 94 L306 122 C318 130 338 128 344 118 Z"/>
@@ -951,7 +951,7 @@ export const ROUPINHAS = [
     id: 'luvas', nome: 'Luvas', slot: 'acessorio', z: 55, raridade: 'uncommon',
     cor: '#3a3a3f',
     caixa: [104, 596, 140, 140],
-    desbloqueio: { tipo: 'nivel', meta: 7 },
+    desbloqueio: { tipo: 'nivel', meta: 19 },
     arte: (m, x) => mangas(m, x, { de: 632 }, 8)
       + nasMaos(cx => `<circle cx="${cx}" cy="694" r="${m.mao + 3}"/>`),
   },
@@ -969,7 +969,7 @@ export const ROUPINHAS = [
   {
     id: 'corrente', nome: 'Corrente', slot: 'acessorio', z: 58, raridade: 'common',
     cor: '#d8b45c',
-    desbloqueio: { tipo: 'nivel', meta: 3 },
+    desbloqueio: { tipo: 'nivel', meta: 10 },
     arte: (m, x) => `
       <path d="M${300 - m.pescoco - 8} 216 C300 268 300 268 ${300 + m.pescoco + 8} 216"
             fill="none" stroke-width="${9 + x}" stroke-linecap="round"/>
@@ -1012,7 +1012,7 @@ export const ROUPINHAS = [
   {
     id: 'relogio', nome: 'Relógio', slot: 'acessorio', z: 55, raridade: 'common',
     cor: '#2f3a44',
-    desbloqueio: { tipo: 'nivel', meta: 2 },
+    desbloqueio: { tipo: 'nivel', meta: 4 },
     // Um pulso só, como relógio de verdade. A caixa da miniatura vem daqui
     // (`caixa`): medida sozinha, ela pegaria os dois braços e o vão entre eles.
     caixa: [382, 600, 96, 96],
@@ -1028,7 +1028,7 @@ export const ROUPINHAS = [
   {
     id: 'suspensorios', nome: 'Suspensórios', slot: 'cintura', z: 31, raridade: 'uncommon',
     cor: '#4a3426',
-    desbloqueio: { tipo: 'nivel', meta: 8 },
+    desbloqueio: { tipo: 'nivel', meta: 21 },
     // z 31: por cima da peça de cima (30), que é onde suspensório fica.
     arte: (m, x) => {
       const o = m.ombro * .52, q = m.quadril - 24;
@@ -1075,7 +1075,7 @@ export const ROUPINHAS = [
   {
     id: 'cinto', nome: 'Cinto', slot: 'cintura', z: 24, raridade: 'common',
     cor: '#4a3426',
-    desbloqueio: { tipo: 'resgates', meta: 8 },
+    desbloqueio: { tipo: 'resgates', meta: 16 },
     // z 24: por cima da calça (20) e por baixo da peça de cima (30) — é onde
     // um cinto fica, e é por isso que ele some sob a camiseta comprida.
     arte: (m) => `<rect x="${300 - m.quadril - 6}" y="576" width="${(m.quadril + 6) * 2}"
@@ -1100,7 +1100,7 @@ export const ROUPINHAS = [
   {
     id: 'mochila', nome: 'Mochila', slot: 'cintura', raridade: 'common',
     cor: '#6b7a52',
-    desbloqueio: { tipo: 'nivel', meta: 2 },
+    desbloqueio: { tipo: 'nivel', meta: 5 },
     atras: (m) => {
       // Passa da camiseta e do braço de propósito, e sobe acima da linha do
       // ombro. Uma mochila do tamanho das costas some inteira: de frente, o
@@ -1127,7 +1127,7 @@ export const ROUPINHAS = [
   {
     id: 'capa', nome: 'Capa', slot: 'cintura', raridade: 'rare',
     cor: '#8c2f3a',
-    desbloqueio: { tipo: 'nivel', meta: 10 },
+    desbloqueio: { tipo: 'nivel', meta: 23 },
     atras: (m) => {
       const o = m.ombro + 16, b = m.ombro + 82;
       return `<path d="M${300 - o} 252 L${300 + o} 252
@@ -1291,7 +1291,7 @@ export const METAS = {
     rotulo: (d) => `Feche as missões do dia ${d.meta}×`,
     atual: (p) => p.dias, meta: (d) => d.meta,
   },
-  // A 1ª peça abre o primeiro item, metade da coleção abre o do meio e a
+  // Um quarto da coleção abre o primeiro item, 60% abre o do meio e a
   // coleção completa abre o último. Coleção sem peça no acervo (catálogo que
   // ainda não carregou) não abre nada.
   colecao: {
@@ -1312,9 +1312,11 @@ const totalDaColecao = (d, p) => p?.colecoes?.[d.colecao]?.total ?? 0;
 export function metaDaColecao(d, p) {
   const total = totalDaColecao(d, p);
   if (!total) return Infinity;
-  if (d.ordem === 0) return 1;
   if (d.ordem >= d.de - 1) return total;
-  return Math.max(1, Math.ceil(total / 2));
+  // Um quarto da coleção abre o primeiro e 60% abre o do meio: uma peça
+  // solta de cada cor não pode encher o inventário de uma vez.
+  const frac = d.ordem === 0 ? 0.25 : 0.6;
+  return Math.min(total, Math.max(d.ordem + 1, Math.ceil(total * frac)));
 }
 
 export function estadoDoDesbloqueio(r, progresso) {
