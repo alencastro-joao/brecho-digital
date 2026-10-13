@@ -36,7 +36,7 @@ import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
-import { minhasColecoes, capaDaColecao, abrirColecao } from './colecoes.js';
+import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
@@ -171,29 +171,40 @@ export function renderPerfil() {
 }
 
 // ------------------------------- Coleções ---------------------------------
-// Um emblema por marca: dourado quando a coleção está completa, com a barra
-// enquanto falta. O clique leva à tela de Coleções, que mora em Tarefas.
+// Um emblema por coleção, em três fileiras (marcas, cores e estilos): dourado
+// quando está completa, com a barra enquanto falta. O clique abre a coleção.
 function renderEmblemas() {
-  const todas = minhasColecoes()
-    .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct);
+  const grupos = GRUPOS_DE_COLECAO
+    .map(([id, nome, lista]) => [id, nome, lista()
+      .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct)])
+    .filter(([, , lista]) => lista.length);
+  const todas = grupos.flatMap(([, , lista]) => lista);
   $('#pf-secao-colecoes').hidden = !todas.length;
   const completas = todas.filter(c => c.completa).length;
   $('#perfil-colecoes-sub').textContent = `${completas} de ${todas.length} completas`;
-  $('#perfil-colecoes').replaceChildren(...todas.map(c => {
-    const capa = capaDaColecao(c);
-    return el('button', {
-      class: 'pf-emblema' + (c.completa ? ' completa' : '') + (c.tem ? '' : ' longe'),
-      title: c.completa ? `Coleção ${c.marca} completa` : `${c.marca}: ${c.tem} de ${c.total} peças`,
-      onclick: () => abrirColecao(c.id),
-    },
-      el('span', { class: 'pf-emblema-disco' },
-        capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
-          el('img', { src: capa.src, alt: '', loading: 'lazy' })) : null),
-      el('strong', {}, c.marca),
-      el('small', {}, c.completa ? 'Completa' : `${c.tem} de ${c.total}`),
-      c.completa ? null : el('span', { class: 'barra' },
-        el('span', { style: { width: (c.pct * 100) + '%' } })));
-  }));
+  $('#perfil-colecoes').replaceChildren(...grupos.map(([id, nome, lista]) =>
+    el('div', { class: 'pf-emblemas-grupo' },
+      el('h3', {}, nome, el('small', {},
+        `${lista.filter(c => c.completa).length} de ${lista.length}`)),
+      el('div', { class: 'pf-emblemas' }, ...lista.map(emblema)))));
+}
+
+function emblema(c) {
+  const capa = capaDaColecao(c);
+  return el('button', {
+    class: 'pf-emblema' + (c.completa ? ' completa' : '') + (c.tem ? '' : ' longe'),
+    title: c.completa ? `Coleção ${c.marca} completa` : `${c.marca}: ${c.tem} de ${c.total} peças`,
+    onclick: () => abrirColecao(c.id),
+  },
+    el('span', { class: 'pf-emblema-disco' },
+      capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
+        el('img', { src: capa.src, alt: '', loading: 'lazy' })) : null),
+    el('strong', {},
+      c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
+      c.marca),
+    el('small', {}, c.completa ? 'Completa' : `${c.tem} de ${c.total}`),
+    c.completa ? null : el('span', { class: 'barra' },
+      el('span', { style: { width: (c.pct * 100) + '%' } })));
 }
 
 // ------------------------------- Vitrines ---------------------------------

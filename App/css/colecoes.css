@@ -151,6 +151,15 @@
 .tf-col-seta { font-size: 24px; color: #8a6d24; flex: none; }
 
 /* --------------------------- Emblemas no perfil -------------------------- */
+.pf-emblemas-grupos { display: flex; flex-direction: column; gap: 16px; }
+.pf-emblemas-grupo { display: flex; flex-direction: column; gap: 8px; }
+.pf-emblemas-grupo h3 {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-suave);
+}
+.pf-emblemas-grupo h3 small { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.pf-emblema strong { display: flex; align-items: center; gap: 5px; }
+.pf-emblema strong .col-bolinha { width: 9px; height: 9px; }
 .pf-emblemas { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
 .pf-emblema {
   display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center;
@@ -189,6 +198,10 @@
   .col-cartao .col-pecas { gap: 5px; }
   .col-det-pecas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .col-det-topo h1 { font-size: 22px; }
+  .pf-emblemas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .pf-emblema { padding: 10px 4px; }
+  .pf-emblema-disco { width: 50px; height: 50px; }
+  .pf-emblema strong { font-size: 11.5px; }
 }
 
 /* -------------------------- Efeitos no Inventário ------------------------ */

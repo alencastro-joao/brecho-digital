@@ -88,8 +88,16 @@ const COLECOES_DO_GRUPO = {
 };
 
 // A mais perto de fechar sem estar fechada; empate vai para a que falta menos.
+// Marcas, cores e estilos juntos: o que o perfil e o cartão de Tarefas contam.
+export const GRUPOS_DE_COLECAO = [
+  ['marcas', 'Marcas', () => minhasColecoes()],
+  ['cores', 'Cores', () => colecoesPorCor()],
+  ['estilos', 'Estilos', () => colecoesPorEstilo()],
+];
+export const todasAsColecoes = () => GRUPOS_DE_COLECAO.flatMap(([, , lista]) => lista());
+
 export function colecaoMaisPerto() {
-  const abertas = minhasColecoes().filter(c => !c.completa);
+  const abertas = todasAsColecoes().filter(c => !c.completa);
   if (!abertas.length) return null;
   return abertas.sort((a, b) =>
     (b.pct - a.pct) || ((a.total - a.tem) - (b.total - b.tem)))[0];

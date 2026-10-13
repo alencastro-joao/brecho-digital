@@ -19,7 +19,7 @@ import {
 } from './util.js';
 import { barraDeNivel, listaDeFerramentas } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
-import { colecaoMaisPerto, minhasColecoes } from './colecoes.js';
+import { colecaoMaisPerto, todasAsColecoes } from './colecoes.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -49,7 +49,7 @@ export function renderTarefas() {
 // fechar, com as peças que você já tem dela empilhadas.
 function renderCartaoColecoes() {
   const botao = $('#tarefas-colecoes');
-  const todas = minhasColecoes();
+  const todas = todasAsColecoes();
   botao.hidden = !todas.length;
   if (!todas.length) return;
   const perto = colecaoMaisPerto();
@@ -67,7 +67,7 @@ function renderCartaoColecoes() {
       el('small', {}, perto
         ? (perto.tem
           ? `${perto.marca}: ${faltam === 1 ? 'falta 1 peça' : `faltam ${faltam} peças`} para fechar`
-          : `Garimpe uma peça ${perto.marca} para abrir o primeiro item`)
+          : `Garimpe uma peça ${perto.tipo === 'cor' ? 'da cor ' : perto.tipo === 'estilo' ? 'de ' : ''}${perto.marca} para abrir o primeiro item`)
         : 'Todas completas!'),
       el('small', { class: 'tf-col-conta' },
         `${completas} de ${todas.length} ${todas.length === 1 ? 'completa' : 'completas'}`)),
