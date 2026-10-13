@@ -20,6 +20,13 @@ PROVEDOR=$(aws iam list-open-id-connect-providers \
   --query "OpenIDConnectProviderList[?contains(Arn,'token.actions.githubusercontent.com')].Arn" \
   --output text)
 
+# Se o provedor foi criado por esta mesma pilha, não é "existente": passar o
+# ARN dele faria o CloudFormation apagá-lo ao rodar o script de novo.
+DA_PILHA=$(aws cloudformation describe-stack-resources --stack-name brecho-github \
+  --logical-resource-id ProvedorGithub \
+  --query "StackResources[0].PhysicalResourceId" --output text 2>/dev/null || true)
+if [ -n "$PROVEDOR" ] && [ "$PROVEDOR" = "$DA_PILHA" ]; then PROVEDOR=""; fi
+
 aws cloudformation deploy \
   --stack-name brecho-github \
   --template-file "$(win "$RAIZ/nuvem/infra/github.yaml")" \
