@@ -106,3 +106,13 @@ export const bonusDaCor = (equipado) => efeitosDoLook(equipado)
 export const estiloAtivo = (equipado) => efeitosDoLook(equipado)
   .filter(e => e.ativo && e.tipo === 'estilo')
   .sort((a, b) => b.pct - a.pct)[0] ?? null;
+
+// O brilho do estilo mais vestido, como filtro CSS para o SVG do avatar.
+// Cresce com o degrau: +5% é um contorno leve, +20% um halo forte.
+export function brilhoDoEstilo(equipado) {
+  const e = estiloAtivo(equipado);
+  const cor = e && ESTILOS[e.valor]?.brilho;
+  if (!cor) return '';
+  const raio = Math.round(e.pct * 0.9);
+  return `drop-shadow(0 0 ${raio}px ${cor}) drop-shadow(0 0 ${Math.round(raio / 3)}px ${cor})`;
+}

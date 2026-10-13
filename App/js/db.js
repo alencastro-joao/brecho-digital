@@ -24,6 +24,7 @@ import {
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
 } from './roupinhas.js';
+import { bonusDeEfeito, marcasAtivas, bonusDaCor } from './efeitos.js';
 
 const CHAVE_BASE = 'bd:v1:estado';
 
@@ -647,13 +648,46 @@ export function sementeDaLoja(iso = hojeISO()) {
   return id ? (sementeDoDia(iso) ^ Math.imul(numeroDe(id), 0x9E3779B1)) >>> 0 : sementeDoDia(iso);
 }
 
-// O que muda a sorte desta pessoa na loja. É a porta para os bônus que vierem
-// (coleção vestida, por exemplo); por enquanto ninguém tem modificador.
+// O que muda a sorte desta pessoa na loja.
 //   peso[raridade]:   multiplica o peso dela no sorteio da raridade do dia
 //   naLoja[raridade]: troca a tabela de quantas vêm na arara (ver config.js)
+//   marcas:           [{ marcas, pct }] — efeito "mais peças da marca na arara"
+//   maisRaras:        pct do efeito "mais chance de peças raras na arara"
+//
+// Os efeitos de marca valem pelo que estava vestido na primeira olhada do
+// dia e ficam gravados em `state.dia.loja`: trocar de roupa não embaralha a
+// arara de hoje, vale para a de amanhã. Antes do acervo carregar ninguém tem
+// coleção liberada, então a foto só é tirada depois dele.
 export function modificadoresDaLoja() {
-  return { peso: {}, naLoja: {} };
+  const d = state.dia;
+  if (!d.loja && state.usuario.id && marcasFixas.size) {
+    const eq = roupasEquipadas();
+    d.loja = {
+      marcas: marcasAtivas(eq)
+        .filter(m => m.colecao.efeito.tipo === 'mais-da-marca')
+        .map(m => ({ marcas: m.colecao.efeito.marcas || [m.colecao.marca], pct: m.pct })),
+      maisRaras: bonusDeEfeito(eq, 'mais-raras'),
+    };
+  }
+  return { peso: {}, naLoja: {}, marcas: [], maisRaras: 0, ...(d.loja || {}) };
 }
+
+// Os efeitos de marca que agem na hora do garimpo, em pontos percentuais.
+export function efeitosDoGarimpo() {
+  const eq = roupasEquipadas();
+  return {
+    gratis: bonusDeEfeito(eq, 'resgate-gratis'),
+    acima: bonusDeEfeito(eq, 'raridade-acima'),
+    fichas: bonusDeEfeito(eq, 'fichas'),
+  };
+}
+
+export function ganharFicha(n = 1) {
+  state.fichas = fichas() + n;
+}
+
+// XP de missão com o efeito das cores vestidas (+5% a +20% por cor).
+const xpDeMissao = (xp) => Math.round(xp * (1 + bonusDaCor(roupasEquipadas()) / 100));
 
 // Raridade do dia de uma peça: mesma semente da vitrine (a da sua loja), então
 // o que brilha no mural é exatamente o que entra no guarda-roupa.
@@ -836,7 +870,7 @@ export function progredirMissao(evento, delta = 1) {
     state.missoes.progresso[missao.id] = Math.min(missao.meta, antes + delta);
     if (!missaoCompleta(missao.id) || state.missoes.pagas.includes(missao.id)) continue;
     state.missoes.pagas.push(missao.id);
-    if (missao.xp) ganharXP(missao.xp, `missão: ${missao.nome.toLowerCase()}`);
+    if (missao.xp) ganharXP(xpDeMissao(missao.xp), `missão: ${missao.nome.toLowerCase()}`);
   }
 }
 
@@ -903,7 +937,7 @@ export function progredirSemana(evento, delta = 1, chave = null) {
     s.progresso[missao.id] = Math.min(missao.meta, antes + delta);
     if (s.progresso[missao.id] < missao.meta || s.pagas.includes(missao.id)) continue;
     s.pagas.push(missao.id);
-    ganharXP(missao.xp, `missão da semana: ${missao.nome.toLowerCase()}`);
+    ganharXP(xpDeMissao(missao.xp), `missão da semana: ${missao.nome.toLowerCase()}`);
   }
 }
 

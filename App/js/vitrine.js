@@ -14,7 +14,10 @@
 // vezes nenhuma. E peça pega *sai* da loja: some do mural na hora e não volta
 // na próxima abertura, que é o que o resgate significa.
 
-import { ADMIN, CONFIG, COLLAB, FICHAS, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural } from './config.js';
+import {
+  ADMIN, CONFIG, COLLAB, FICHAS, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural,
+  COLECOES, normalizarMarca,
+} from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
          imagemDaPeca, trocarImagem } from './catalog.js';
 import * as db from './db.js';
@@ -106,10 +109,24 @@ export function poolDoDia(iso = hojeISO()) {
     if (tabela) arara.push(...grupos[r.id].splice(0, sortearQuantidade(tabela, rnd)));
   }
 
+  // Efeitos de coleção vestida (ver db.modificadoresDaLoja). Têm sorteio
+  // próprio, com outra semente: sem efeito nenhum, a arara é exatamente a de
+  // sempre. O bônus vestido (+5% a +20%) vale 3× aqui — uma rara a mais ou uma
+  // peça da marca a mais é coisa rara de acontecer com 5%.
+  const { marcas, maisRaras } = db.modificadoresDaLoja();
+  const sorte = mulberry32(((sementeEstoque ?? db.sementeDaLoja(iso)) ^ 0x5EED) >>> 0);
+  if (maisRaras && grupos.rare.length && sorte() < maisRaras * 3 / 100) arara.push(grupos.rare.shift());
+
   // Comum completa o resto; faltando comum, a incomum que sobrou. Rara para cima
   // nunca entra de recheio — ela só vem pela própria tabela.
   const aVenda = (i) => !db.temPeca(i.id);
-  const recheio = [...grupos.common, ...grupos.uncommon].filter(aVenda);
+  let recheio = [...grupos.common, ...grupos.uncommon].filter(aVenda);
+  if (marcas.length) {
+    const daMarca = (i) => marcas.find(m =>
+      m.marcas.some(x => normalizarMarca(x) === normalizarMarca(i.marca)));
+    const frente = recheio.filter(i => { const m = daMarca(i); return m && sorte() < m.pct * 3 / 100; });
+    recheio = [...frente, ...recheio.filter(i => !frente.includes(i))];
+  }
   const loja = arara.filter(aVenda);
   return [...loja, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - loja.length))];
 }
@@ -596,9 +613,18 @@ async function pegar(id, noDOM) {
     return;
   }
 
+  // Efeito de coleção vestida: a peça pode vir uma raridade acima (nunca
+  // lendária: a tiragem dela é o que dá valor a ela).
+  const ef = db.efeitosDoGarimpo();
+  let raridade = db.raridadeDoDia(id);
+  let subiu = false;
+  if (ef.acima && Math.random() < ef.acima / 100) {
+    const acima = RARIDADES[RARIDADES.findIndex(r => r.id === raridade) + 1]?.id;
+    if (acima && acima !== 'legendary' && !estoque.esgotada(id, acima)) { raridade = acima; subiu = true; }
+  }
+
   // A cópia é reservada no servidor antes de entrar no guarda-roupa: a última
   // lendária disputada por duas pessoas vai para uma só.
-  const raridade = db.raridadeDoDia(id);
   pegando.add(id);
   const reserva = await estoque.levar([{ id, raridade }]);
   pegando.delete(id);
@@ -610,7 +636,10 @@ async function pegar(id, noDOM) {
   if (db.temPeca(id)) return;
 
   const nova = db.adicionarPeca(peca, { origem: 'vitrine', raridade });
-  db.state.dia.resgates += 1;
+  const gratis = ef.gratis && Math.random() < ef.gratis / 100;
+  const ficha = ef.fichas && Math.random() < ef.fichas / 100;
+  if (!gratis) db.state.dia.resgates += 1;
+  if (ficha) db.ganharFicha(1);
   db.state.stats.resgates += 1;
   db.progredirMissao('resgates');
   if (['rare', 'epic', 'legendary'].includes(raridade)) db.progredirMissao('raras');
@@ -625,8 +654,15 @@ async function pegar(id, noDOM) {
   else falarDe('pegou');
 
   toast(`${nomeDaPeca(peca)} — ${r.nome} · foi para o guarda-roupa`, nova.raridade);
+  if (subiu) toast(`Efeito ${marcaDoEfeito('raridade-acima')}: a peça veio ${r.nome.toLowerCase()}, uma raridade acima.`, nova.raridade);
+  if (gratis) toast(`Efeito ${marcaDoEfeito('resgate-gratis')}: este resgate não gastou o limite do dia.`, 'rare');
+  if (ficha) toast(`Efeito ${marcaDoEfeito('fichas')}: +1 ficha.`, 'rare');
   atualizarBadge();
 }
+
+// O nome da marca no aviso do efeito ("Efeito Puma: ...").
+const marcaDoEfeito = (tipo) =>
+  COLECOES.filter(c => c.efeito.tipo === tipo).map(c => c.marca).join(' / ') || 'de coleção';
 
 // Resgatar é tirar a peça da arara: o cabide fica vazio. Ela some do mural
 // junto com o voo para o closet e não volta no próximo carregamento — o sorteio

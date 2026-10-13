@@ -38,6 +38,7 @@ import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
 import { minhasColecoes, capaDaColecao } from './colecoes.js';
 import { escalaGrade } from './config.js';
+import { brilhoDoEstilo } from './efeitos.js';
 import {
   gradeDePecas, perfilPublico, segueDeVolta, mesAno, cartaoDeObra, botaoDePerfil,
 } from './usuario.js';
@@ -120,6 +121,7 @@ export function renderPerfil() {
   // fotografada cair no corpo sem duas roupas sobrepostas.
   const moldura = el('div', { class: 'avatar-svg' });
   moldura.innerHTML = svgAvatar({ roupas: db.roupasEquipadas() });
+  moldura.style.filter = brilhoDoEstilo(db.roupasEquipadas());
   $('#perfil-avatar').replaceChildren(moldura);
   $('#perfil-avatar').style.background = COR_PROPRIA;
 

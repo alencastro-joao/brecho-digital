@@ -94,7 +94,7 @@ function cartaoDaColecao(c) {
       el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))),
     el('p', { class: 'col-efeito' },
       el('strong', {}, 'Efeito ao vestir: '), c.efeito.texto,
-      el('span', { class: 'col-breve' }, 'em breve')));
+      el('span', { class: 'col-breve' }, c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%')));
 }
 
 function casaDaPeca(id) {

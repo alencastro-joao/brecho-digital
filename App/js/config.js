@@ -945,27 +945,29 @@ export function progressoDoNivel(total) {
 // Os itens de uma coleção ficam em lugares diferentes do corpo: dá para vestir
 // todos ao mesmo tempo, e é isso que conta como coleção completa vestida.
 //
-// `efeito` é o que vestir itens da marca faz no garimpo. Por enquanto é só o
-// texto: a etapa dos efeitos lê `efeito.tipo` (ver plano em project-files).
+// `efeito` é o que vestir itens da marca faz no garimpo; quem aplica é quem lê
+// `efeito.tipo` (db.efeitosDoGarimpo, db.modificadoresDaLoja, vitrine.js).
+// O bônus vestido (+5% a +20%, ver efeitos.js) é a chance, em pontos
+// percentuais; nos efeitos de arara ele é multiplicado (ver poolDoDia).
 export const COLECOES = [
   { id: 'puma', marca: 'Puma', estilo: 'futebol',
     itens: ['cano-alto', 'legging', 'corta-vento'],
     efeito: { tipo: 'resgate-gratis', texto: 'Chance de o resgate não gastar o limite do dia' } },
   { id: 'adidas', marca: 'Adidas', estilo: 'futebol',
     itens: ['moletom', 'moletom-calca', 'gorro'],
-    efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Adidas e Puma na sua arara' } },
+    efeito: { tipo: 'mais-da-marca', marcas: ['Adidas', 'Puma'], texto: 'Mais peças Adidas e Puma na sua arara' } },
   { id: 'swear-london', marca: 'Swear London', estilo: 'skate',
     itens: ['coturno', 'luvas', 'fones'],
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
   { id: 'borra', marca: 'Borra', estilo: 'skate',
     itens: ['jeans', 'corrente', 'suspensorios'],
-    efeito: { tipo: 'fichas', texto: 'Fichas extras a cada garimpo' } },
+    efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
   { id: 'jnco', marca: 'Jnco', estilo: 'skate',
     itens: ['cargo', 'cinto'],
     efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Jnco na sua arara' } },
   { id: 'ecko', marca: 'Ecko', estilo: 'skate',
     itens: ['bucket', 'pochete'],
-    efeito: { tipo: 'mais-raras', texto: 'Mais chance de peças raras na sua arara' } },
+    efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
@@ -973,8 +975,8 @@ export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
 // Estilos dos itens do avatar. Os itens das coleções herdam o estilo da marca;
 // os de fora entram por esta lista. Item que não combina com nenhum fica sem.
 export const ESTILOS = {
-  futebol: { nome: 'Futebol', itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'] },
-  skate:   { nome: 'Skate',   itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'] },
+  futebol: { nome: 'Futebol', brilho: '#3fae5a', itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'] },
+  skate:   { nome: 'Skate',   brilho: '#f08a24', itens: ['bone', 'mochila', 'xadrez', 'oculos-sol'] },
 };
 
 // ---------------------------- Ferramentas ---------------------------------

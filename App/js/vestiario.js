@@ -44,7 +44,7 @@
 
 import { RARIDADE } from './config.js';
 import { SLOTS, ORDEM_SLOTS, roupinha, svgRoupinha, atributosDe } from './roupinhas.js';
-import { efeitosDoLook } from './efeitos.js';
+import { efeitosDoLook, brilhoDoEstilo } from './efeitos.js';
 import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
@@ -241,6 +241,7 @@ export function renderVestiario() {
 
 function renderPrevia() {
   $('#vs-previa').innerHTML = svgAvatar({ roupas: db.roupasEquipadas() });
+  $('#vs-previa').style.filter = brilhoDoEstilo(db.roupasEquipadas());
   $('#vs-despir').disabled = !Object.keys(db.roupasEquipadas()).length;
 }
 
