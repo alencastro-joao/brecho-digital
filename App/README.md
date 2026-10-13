@@ -34,7 +34,7 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 | Tela | O que já funciona |
 |---|---|
 | **Entrar** | Primeira tela: entrar ou criar conta. Senha com `scrypt` no servidor, sessão em cookie `HttpOnly` de 30 dias — voltar amanhã não pede senha de novo |
-| **Vitrine** | Mural orgânico com 25 peças soltas (distribuição Poisson-disc), a rara por baixo de uma comum, sorteio diário com semente na data e cota por raridade, peças flutuando no tamanho real medido, aura de raridade no hover, arrastar para reorganizar, clique abre a ficha, limite de 3 resgates por dia |
+| **Vitrine** | Mural orgânico com 25 peças soltas (distribuição Poisson-disc), a rara por baixo de uma comum, sorteio diário diferente para cada conta (semente na data + id) e cota por raridade, peças flutuando no tamanho real medido, aura de raridade no hover, arrastar para reorganizar, clique abre a ficha, limite de 3 resgates por dia |
 | **Guarda-roupa** | Abre em **Todas as peças**; botão de adicionar peça própria; categorias com contador, raridade identificada pela cor do slot, arrastar para reordenar (persiste), destaque com ficha da peça |
 | **Stylist** | Palco 600×1200 com o avatar base, paleta com aba "todas", uma peça por categoria (escolher outra troca), botão de sortear look com as suas peças, peça entra encaixada no ponto de ancoragem da categoria, mover/girar/redimensionar/espelhar/camada, salvar, publicar, exportar Story 1080×1920 e Post 1080×1350 |
 | **Colagem** | A colagem livre estilo board de moda, sempre em fundo branco: botão de sortear colagem, réguas e guias, ímã de alinhamento, assinatura, etiquetas de texto, seleção múltipla, undo/redo e exportação |

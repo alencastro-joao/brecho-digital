@@ -584,18 +584,43 @@ export function esquecerPecas(ids) {
 }
 
 // Raridade é sorteada uma única vez, no resgate, e gravada com a peça.
-export function sortearRaridade(rnd = Math.random) {
-  const total = RARIDADES.reduce((acc, r) => acc + r.peso, 0);
+// `ajuste` multiplica o peso de cada raridade (ver modificadoresDaLoja).
+export function sortearRaridade(rnd = Math.random, ajuste = {}) {
+  const pesoDe = (r) => r.peso * (ajuste[r.id] ?? 1);
+  const total = RARIDADES.reduce((acc, r) => acc + pesoDe(r), 0);
   let n = rnd() * total;
   for (const r of RARIDADES) {
-    if (n < r.peso) return r.id;
-    n -= r.peso;
+    if (n < pesoDe(r)) return r.id;
+    n -= pesoDe(r);
   }
   return 'common';
 }
 
-// Raridade do dia de uma peça: mesma semente da vitrine, então o que brilha no
-// mural é exatamente o que entra no guarda-roupa.
+// Texto vira número estável (o mesmo id dá sempre a mesma semente).
+const numeroDe = (id) => {
+  const n = Number(id);
+  return Number.isFinite(n) ? n : String(id).split('')
+    .reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+};
+
+// A loja é de cada pessoa: a semente do dia mistura a data com o id da conta.
+// Cada um encontra uma arara diferente, e a sua continua a mesma do primeiro
+// ao último acesso do dia. Sem conta (antes do login) fica só a data.
+export function sementeDaLoja(iso = hojeISO()) {
+  const id = state.usuario.id;
+  return id ? (sementeDoDia(iso) ^ Math.imul(numeroDe(id), 0x9E3779B1)) >>> 0 : sementeDoDia(iso);
+}
+
+// O que muda a sorte desta pessoa na loja. É a porta para os bônus que vierem
+// (coleção vestida, por exemplo); por enquanto ninguém tem modificador.
+//   peso[raridade]:   multiplica o peso dela no sorteio da raridade do dia
+//   naLoja[raridade]: troca a tabela de quantas vêm na arara (ver config.js)
+export function modificadoresDaLoja() {
+  return { peso: {}, naLoja: {} };
+}
+
+// Raridade do dia de uma peça: mesma semente da vitrine (a da sua loja), então
+// o que brilha no mural é exatamente o que entra no guarda-roupa.
 export function raridadeDoDia(id, iso = hojeISO()) {
   // Peça do acervo do administrador já nasce com a raridade da ficha; o
   // catálogo preenche esse mapa ao carregar (evita db importar catalog.js).
@@ -605,10 +630,8 @@ export function raridadeDoDia(id, iso = hojeISO()) {
   const propria = state.pecasProprias.find(p => p.id === id);
   if (propria?.raridade) return propria.raridade;
 
-  const n = Number(id);
-  const semente = Number.isFinite(n) ? n : id.split('')
-    .reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-  return sortearRaridade(mulberry32(sementeDoDia(iso) + semente * 7919));
+  return sortearRaridade(mulberry32(sementeDaLoja(iso) + numeroDe(id) * 7919),
+    modificadoresDaLoja().peso);
 }
 
 // Raridades gravadas na própria peça (acervo permanente), por id.
