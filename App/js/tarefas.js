@@ -37,7 +37,7 @@ export function renderTarefas() {
   renderDia();
   renderCarimbos();
   renderSemana();
-  renderEspecial();
+  renderBaus();
   $('#ferramenta-box').replaceChildren(listaDeFerramentas());
   renderPontinho();
 }
@@ -163,38 +163,64 @@ function renderSemana() {
         if (n) toast(`+${n} fichas da semana.`, 'rare');
       })
     : el('p', { class: 'cartao-nota' },
-        `Com ${fichas.missoes}: ${fichas.fichas} fichas · com as ${MISSOES_SEMANA.length}: baú da semana.`);
+        `Com ${fichas.missoes} pedidos: ${fichas.fichas} fichas. Com os ${MISSOES_SEMANA.length}: abre o baú da semana.`);
   $('#semana-rodape').replaceChildren(rodape);
-
-  renderBau(db.semanaCompleta());
 }
 
-function renderBau(tudo) {
-  const box = $('#semana-bau');
-  const premio = db.state.semana.premio;
-  const faixa = RARIDADE[PREMIO_SEMANA.faixas[0]]?.nome.toLowerCase();
+// ---------------------------------- Baús -----------------------------------
+// Uma fileira de 3 baús, um por semana fechada. O terceiro é o especial: além
+// do prêmio da semana, traz o do baú especial, num toque só.
+function renderBaus() {
+  const total = BAU_ESPECIAL.semanas;
+  const aberto = !!db.state.semana.premio;
+  let n = db.semanasFechadas();
+  if (aberto && n === 0) n = total;           // o especial acabou de sair: fileira cheia até segunda
+  const atual = Math.min(aberto ? n - 1 : n, total - 1);
+  const pronto = db.semanaCompleta() && !aberto;
+  const feitas = db.semanaisFeitas();
 
-  if (premio) {
-    const peca = premio.id && pecaDoCatalogo(premio.id);
-    box.className = 'bau aberto';
-    box.replaceChildren(
-      peca ? miniPeca(peca) : el('span', { class: 'bau-icone' }, '🎁'),
-      el('div', { class: 'bau-info' },
-        el('strong', {}, 'Baú da semana aberto'),
-        el('small', {}, peca
-          ? `${nomeDaPeca(peca)} (${RARIDADE[premio.raridade]?.nome ?? ''}) + ${PREMIO_SEMANA.xp} XP`
-          : `+${PREMIO_SEMANA.xp} XP`)),
-      ...(peca ? [el('button', { class: 'btn-ghost', onclick: () => irPara('closet') }, 'Ver')] : []));
-    return;
-  }
+  $('#baus-titulo').textContent = `Baús · ${Math.min(n, total)} de ${total}`;
+  $('#baus-fila').replaceChildren(...Array.from({ length: total }, (_, i) => {
+    const especial = i === total - 1;
+    const nome = especial ? 'Especial' : `Semana ${i + 1}`;
+    const classe = 'bau-slot' + (especial ? ' especial' : '');
 
-  box.className = 'bau' + (tudo ? ' pronto' : '');
-  box.replaceChildren(
-    el('span', { class: 'bau-icone' }, tudo ? '🎁' : '🔒'),
-    el('div', { class: 'bau-info' },
-      el('strong', {}, 'Baú da semana'),
-      el('small', {}, `Uma peça ${faixa} sorteada + ${PREMIO_SEMANA.xp} XP.`)),
-    ...(tudo ? [el('button', { class: 'btn-premio', onclick: abrirBau }, 'Abrir')] : []));
+    // Já aberto (numa semana anterior, ou nesta).
+    if (i < n && !(i === atual && db.bauEspecialPronto())) {
+      const peca = i === atual && aberto && db.state.semana.premio.id && pecaDoCatalogo(db.state.semana.premio.id);
+      return el('div', { class: classe + ' aberto' },
+        peca ? miniPeca(peca) : el('span', { class: 'bau-icone' }, '✓'),
+        el('strong', {}, nome), el('small', {}, i === atual && aberto ? 'aberto nesta semana' : 'aberto'));
+    }
+    // O especial que ficou para trás (semana 3 aberta antes desta tela existir).
+    if (especial && db.bauEspecialPronto()) {
+      return el('div', { class: classe + ' pronto' },
+        el('span', { class: 'bau-icone' }, '👑'), el('strong', {}, nome),
+        botaoPremio('Abrir', abrirEspecial));
+    }
+    // O baú desta semana.
+    if (i === atual) {
+      return el('div', { class: classe + (pronto ? ' pronto' : ' atual') },
+        el('span', { class: 'bau-icone' }, especial ? '👑' : '🎁'),
+        el('strong', {}, nome),
+        pronto
+          ? botaoPremio('Abrir', abrirBau)
+          : el('div', { class: 'bau-progresso' },
+              el('div', { class: 'barra' }, el('span', { style: { width: feitas / MISSOES_SEMANA.length * 100 + '%' } })),
+              el('small', {}, `${feitas} de ${MISSOES_SEMANA.length} pedidos`)));
+    }
+    // Semanas que ainda vêm.
+    return el('div', { class: classe + ' futuro' },
+      el('span', { class: 'bau-icone' }, especial ? '👑' : '🔒'),
+      el('strong', {}, nome), el('small', {}, 'próximas semanas'));
+  }));
+
+  const rara = RARIDADE[PREMIO_SEMANA.faixas[0]]?.nome.toLowerCase();
+  const epica = RARIDADE[BAU_ESPECIAL.faixas[0]]?.nome.toLowerCase();
+  $('#baus-nota').textContent =
+    `Cada baú dá uma peça ${rara} e ${PREMIO_SEMANA.xp} XP. ` +
+    `O ${total}º também traz uma peça ${epica} e mais ${BAU_ESPECIAL.xp} XP. ` +
+    'Não precisam ser semanas seguidas.';
 }
 
 function miniPeca(peca) {
@@ -222,24 +248,7 @@ function abrirBau() {
   } else {
     toast(`Baú aberto: +${PREMIO_SEMANA.xp} XP.`);
   }
-}
-
-// ------------------------------ Baú especial ------------------------------
-function renderEspecial() {
-  const n = Math.min(db.semanasFechadas(), BAU_ESPECIAL.semanas);
-  const pronto = db.bauEspecialPronto();
-  $('#especial-titulo').textContent = `Semanas fechadas · ${n} de ${BAU_ESPECIAL.semanas}`;
-  const selos = Array.from({ length: BAU_ESPECIAL.semanas }, (_, i) =>
-    el('span', { class: 'selo' + (i < n ? ' on' : '') }, `S${i + 1}`));
-  const faixa = RARIDADE[BAU_ESPECIAL.faixas[0]]?.nome.toLowerCase();
-  $('#especial-cartela').replaceChildren(...selos,
-    el('div', { class: 'bau-especial' + (pronto ? ' pronto' : '') },
-      el('strong', {}, 'Baú especial'),
-      el('small', {}, `peça ${faixa} + ${BAU_ESPECIAL.xp} XP`)));
-  $('#especial-rodape').replaceChildren(pronto
-    ? botaoPremio('Abrir baú especial', abrirEspecial)
-    : el('p', { class: 'cartao-nota' },
-        'Cada baú da semana aberto vale um carimbo. Não precisam ser semanas seguidas.'));
+  if (db.bauEspecialPronto()) abrirEspecial();
 }
 
 function abrirEspecial() {

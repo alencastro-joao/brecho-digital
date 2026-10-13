@@ -419,8 +419,8 @@ Missões).
   dia (+2 fichas e o carimbo no cartão da semana) — `MARCOS_DIA`.
 * **Semana** (`MISSOES_SEMANA`, zera na segunda): as diárias em dose maior. 3
   feitas dão 6 fichas; as 5 abrem o baú com peça rara — `MARCOS_SEMANA`.
-* **Baú especial**: 3 baús da semana abertos (seguidos ou não) abrem um com
-  peça épica — `BAU_ESPECIAL`.
+* **Baús**: uma fileira de 3, um por semana fechada (seguidas ou não). O 3º é
+  o especial: no mesmo toque traz também uma peça épica — `BAU_ESPECIAL`.
 * **Fichas** (nome provisório): 6 viram um resgate a mais no dia, no máximo um
   por dia — `FICHAS`.
 
