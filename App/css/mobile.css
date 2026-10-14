@@ -111,19 +111,19 @@
   /* Como um inventário: as categorias numa barra em cima, a grade de 3 × 5
      embaixo com as setas de página, e a peça tocada abre no lugar da grade
      (com voltar; o do aparelho também serve, ver js/closet.js). */
-  .view-closet { flex-direction: column; }
+  .view-closet { flex-direction: column; --linha-inv: #d6cec2; }
   .view-closet .cat-rail {
     width: auto !important; flex: none;
     flex-wrap: nowrap; justify-content: flex-start;
     overflow-x: auto; overflow-y: hidden;
     margin: 12px 16px 0; padding: 0; gap: 0;
-    border: 1.5px solid var(--linha); border-radius: 14px;
+    border: 1.5px solid var(--linha-inv); border-radius: 14px;
     scrollbar-width: none;
   }
   .view-closet .cat-rail::-webkit-scrollbar { display: none; }
   .view-closet .cat-btn {
     flex: 1 0 46px; width: auto; height: 46px; font-size: 19px;
-    border: 0; border-left: 1px solid var(--linha); border-radius: 0;
+    border: 0; border-left: 1px solid var(--linha-inv); border-radius: 0;
   }
   .view-closet .cat-btn:first-child { border-left: 0; }
   .view-closet .cat-btn:hover { transform: none; }
@@ -131,7 +131,7 @@
   .view-closet .cat-btn .cat-qtd { display: none; }
 
   .grid-wrapper { padding: 14px 16px 12px; }
-  .view-closet .grid-wrapper { flex: 1; min-height: 0; padding: 12px 16px 10px; }
+  .view-closet .grid-wrapper { flex: 1; min-height: 0; padding: 18px 34px 12px; }
   /* Fica só a grade: contagem, ordem e grupos saem da tela no celular. */
   .view-closet .closet-head { display: none; }
   .grid-container {
@@ -140,19 +140,31 @@
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
-  /* A grade preenche a altura: 3 colunas × 5 fileiras, sempre cheia. */
+  /* A grade preenche a altura: 3 colunas × 5 fileiras, sempre cheia, desenhada
+     como um inventário — uma moldura só, dividida por linhas. A raridade fica
+     no fundo de cada casa. */
   .view-closet .grid-container {
-    gap: 8px; overflow: hidden;
+    gap: 0; overflow: hidden;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: repeat(5, minmax(0, 1fr));
     align-content: stretch;
+    border: 1.5px solid var(--linha-inv); border-radius: 14px;
   }
-  .view-closet .item-slot { aspect-ratio: auto; padding: 8px; border-radius: 12px; border-width: 1.5px; }
-  .view-closet .item-slot .peca-caixa { inset: 8px; }
+  .view-closet .item-slot,
+  .view-closet .item-slot.vazio,
+  .view-closet .item-slot.r-legendary {
+    aspect-ratio: auto; padding: 10px; border-radius: 0;
+    border: 0; border-right: 1px solid var(--linha-inv); border-bottom: 1px solid var(--linha-inv);
+    background: var(--rar-bg, transparent); background-image: none;
+  }
+  .view-closet .item-slot.vazio { background: transparent; }
+  .view-closet .item-slot:nth-child(3n) { border-right: 0; }
+  .view-closet .item-slot:nth-last-child(-n + 3) { border-bottom: 0; }
+  .view-closet .item-slot .peca-caixa { inset: 10px; }
   .view-closet .item-slot:hover { transform: none; box-shadow: none; }
 
   /* Só as duas setas, grandes, nas pontas. */
-  .view-closet .closet-paginas { padding-top: 10px; justify-content: space-between; }
+  .view-closet .closet-paginas { padding-top: 12px; justify-content: space-between; }
   .view-closet .closet-paginas button {
     width: 56px; height: 44px; padding: 0; border-radius: 14px;
     font-size: 24px; line-height: 1;
