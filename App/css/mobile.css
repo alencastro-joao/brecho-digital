@@ -310,8 +310,12 @@
     background: color-mix(in srgb, var(--rar-borda) 30%, #fff) !important;
     border-color: var(--rar-borda) !important; color: var(--tinta);
   }
-  /* O nº da cópia na tiragem fica no computador; aqui a posição já está no topo. */
-  .view-closet .preview-numero { display: none; }
+  /* O nº da cópia na tiragem (nº 15/100), colado na raridade. */
+  .view-closet .preview-numero {
+    margin: 0; font-size: 11px; font-weight: 800; color: var(--tinta);
+    padding: 3px 10px; border-radius: 9px;
+    border: 2px solid var(--bloco-borda); background: var(--bloco);
+  }
   .view-closet .preview-meta h3 { margin: 6px 0 10px; font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px; }
   /* As linhas: rótulo pequeno em cima, valor embaixo, duas por linha. */
   .view-closet .preview-meta p {
