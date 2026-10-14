@@ -10,7 +10,7 @@ gravar, ponha o id em MARCAS_COM_LOGO (js/config.js).
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageChops, ImageOps
 
 LADO = 256
 OCUPA = 0.62
@@ -20,12 +20,16 @@ SAIDA = Path(__file__).resolve().parent.parent / 'assets' / 'marcas'
 
 
 def mascara(origem):
-    """Onde tem logo: a transparência do PNG, ou o escuro de uma imagem sem ela."""
+    """Onde tem logo: a transparência do PNG ou, sem ela, o que difere do fundo
+    (a cor do canto) — serve para logo escuro no branco e claro no colorido."""
     img = Image.open(origem).convert('RGBA')
     alfa = img.getchannel('A')
     if alfa.getextrema()[0] < 250:
         return alfa
-    return ImageOps.invert(img.convert('L'))
+    rgb = img.convert('RGB')
+    fundo = Image.new('RGB', rgb.size, rgb.getpixel((0, 0)))
+    dif = ImageChops.difference(rgb, fundo).convert('L')
+    return ImageOps.autocontrast(dif)
 
 
 def molde(origem):
