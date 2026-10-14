@@ -1012,6 +1012,13 @@ export const ESTILOS = {
       'tops-murfehjt0d',                                       // manga longa por baixo
     ],
   },
+  // Peças a escolher pelo João; os itens que libera vêm junto com elas.
+  brasil: {
+    nome: 'Brasil', brilho: '#e6b800',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
 };
 
 // Coleções de cor: todas as peças da loja de uma cor. Cada uma libera 3 itens

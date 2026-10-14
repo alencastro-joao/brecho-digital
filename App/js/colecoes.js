@@ -29,13 +29,13 @@ const PECAS_NO_CARTAO = 6;
 const GRUPOS = [
   ['marcas', 'Marcas'],
   ['cores', 'Cores'],
-  ['estilos', 'Estilos'],
+  ['estilos', 'Temas'],
 ];
 
 const EXPLICACAO = {
   marcas: 'Garimpe peças de uma marca para liberar os itens dela no avatar. Um quarto da coleção abre o primeiro item, 60% abre o segundo e a coleção completa abre o último. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
   cores: 'Todas as peças da loja de uma mesma cor. Cada cor libera itens do avatar pintados nela: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
-  estilos: 'As peças da loja de cada estilo. Cada estilo libera itens do avatar: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens do mesmo estilo acende um brilho no avatar.',
+  estilos: 'As peças da loja de cada tema. Cada tema libera itens do avatar: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
 };
 
 const FILTROS = [
@@ -80,7 +80,7 @@ export function colecoesPorEstilo() {
     id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho,
     itens: itensQueLibera(idDoEstilo(id)),
     efeito: { texto: `2 itens de ${e.nome} vestidos acendem um brilho no avatar` },
-  }, prog)).filter(c => c.total > 0);
+  }, prog));                 // tema ainda sem peças também aparece ("em breve")
 }
 
 const COLECOES_DO_GRUPO = {
@@ -92,12 +92,12 @@ const COLECOES_DO_GRUPO = {
 export const GRUPOS_DE_COLECAO = [
   ['marcas', 'Marcas', () => minhasColecoes()],
   ['cores', 'Cores', () => colecoesPorCor()],
-  ['estilos', 'Estilos', () => colecoesPorEstilo()],
+  ['estilos', 'Temas', () => colecoesPorEstilo()],
 ];
 export const todasAsColecoes = () => GRUPOS_DE_COLECAO.flatMap(([, , lista]) => lista());
 
 export function colecaoMaisPerto() {
-  const abertas = todasAsColecoes().filter(c => !c.completa);
+  const abertas = todasAsColecoes().filter(c => c.total > 0 && !c.completa);
   if (!abertas.length) return null;
   return abertas.sort((a, b) =>
     (b.pct - a.pct) || ((a.total - a.tem) - (b.total - b.tem)))[0];
@@ -193,7 +193,9 @@ function cartaoDaColecao(c) {
   },
     el('header', { class: 'col-topo' },
       tituloDaColecao(c),
-      el('small', { class: 'col-conta' }, c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
+      el('small', { class: 'col-conta' }, !c.total ? 'Em breve'
+        : c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
+    !c.total ? el('p', { class: 'col-vazio' }, 'As peças deste tema chegam em breve.') : null,
     el('div', { class: 'col-pecas' },
       ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
       resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null),
@@ -201,7 +203,7 @@ function cartaoDaColecao(c) {
       el('span', { style: { width: (c.pct * 100) + '%' } })),
     el('div', { class: 'col-rodape' },
       el('div', { class: 'col-mini-itens' }, ...c.itens.map(id => miniItem(id)).filter(Boolean)),
-      el('small', {}, `${abertos} de ${c.itens.length} itens`),
+      el('small', {}, c.itens.length ? `${abertos} de ${c.itens.length} itens` : ''),
       el('span', { class: 'col-seta' }, '›')));
 }
 
@@ -222,12 +224,12 @@ function renderDetalhe(c) {
   $('#col-detalhe').replaceChildren(
     el('header', { class: 'col-det-topo' + (c.completa ? ' completa' : '') },
       tituloDaColecao(c, 'h1'),
-      el('p', { class: 'col-det-conta' }, c.completa
+      el('p', { class: 'col-det-conta' }, !c.total ? 'As peças deste tema chegam em breve.' : c.completa
         ? `✓ Coleção completa · ${c.total} peças`
         : `${c.tem} de ${c.total} peças · ${faltam === 1 ? 'falta 1' : `faltam ${faltam}`}`),
       el('div', { class: 'barra' + (c.completa ? ' cheia' : '') },
         el('span', { style: { width: (c.pct * 100) + '%' } }))),
-    el('section', { class: 'col-det-secao' },
+    !c.itens.length ? null : el('section', { class: 'col-det-secao' },
       el('h3', {}, 'Itens do avatar'),
       el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))),
     el('section', { class: 'col-det-secao' },

@@ -29,7 +29,7 @@ export const BONUS_COLECAO_COMPLETA = 20;
 const TIPOS = {
   marca:  { nome: 'Marca',  area: 'garimpo' },
   cor:    { nome: 'Cor',    area: 'progresso' },
-  estilo: { nome: 'Estilo', area: 'visual' },
+  estilo: { nome: 'Tema',   area: 'visual' },
 };
 
 function textoDoEfeito(tipo, valor, pct) {

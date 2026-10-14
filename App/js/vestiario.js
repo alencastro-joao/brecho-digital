@@ -270,7 +270,7 @@ function renderEfeitos() {
 
   $('#vs-efeitos').replaceChildren(...(linhas.length ? linhas : [
     el('p', { class: 'vs-efeitos-vazio' },
-      'Vista 2 itens com a mesma marca, cor ou estilo para ativar um efeito.'),
+      'Vista 2 itens com a mesma marca, cor ou tema para ativar um efeito.'),
   ]));
 }
 
@@ -458,7 +458,7 @@ function renderFicha() {
     el('div', { class: 'vs-atributos' },
       el('span', { class: 'vs-atr' }, el('small', {}, 'Marca'), atr.marca ?? '—'),
       el('span', { class: 'vs-atr' }, el('small', {}, 'Cor'), atr.cor),
-      el('span', { class: 'vs-atr' }, el('small', {}, 'Estilo'), atr.estiloNome ?? '—')),
+      el('span', { class: 'vs-atr' }, el('small', {}, 'Tema'), atr.estiloNome ?? '—')),
     // De onde ela veio. A peça já é sua, então isto não é uma meta: é a
     // procedência dela, que é metade do valor de uma peça de coleção.
     el('div', { class: 'vs-condicao ok' },
