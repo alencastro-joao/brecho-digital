@@ -1144,14 +1144,18 @@ export function progressoDasColecoes() {
   const minhas = new Set(state.inventario.map(p => p.id));
   const out = {};
   const escolhas = state.vestiario.escolhas || {};
+  const herdadas = new Set(state.vestiario.herdadas || []);
   const guardar = (id, ids) => {
     const tem = ids.filter(i => minhas.has(i)).length;
     const itens = ITENS_DA_COLECAO.get(id) || [];
     // Item que saiu da coleção não conta como escolha feita.
     const escolhidas = (escolhas[id] || []).filter(i => itens.includes(i));
     const ganhas = escolhasDaColecao(tem, ids.length, itens.length);
+    // Item que você já tinha antes das coleções (herdado) não precisa ser
+    // escolhido: a escolha só vale enquanto sobrar item trancado.
+    const trancados = itens.filter(i => !escolhidas.includes(i) && !herdadas.has(i)).length;
     out[id] = { ids, total: ids.length, tem, escolhidas, ganhas,
-                livres: Math.max(0, ganhas - escolhidas.length) };
+                livres: Math.max(0, Math.min(ganhas - escolhidas.length, trancados)) };
   };
   for (const c of COLECOES) guardar(c.id, pecasDaMarca(c.marca));
 
