@@ -1168,7 +1168,8 @@ export function progressoDasColecoes() {
   }
   for (const [id, e] of Object.entries(ESTILOS)) {
     const pecas = new Set(e.pecas || []);
-    guardar(idDoEstilo(id), acervo.filter(p => pecas.has(p) || temasFixos.get(p) === id));
+    // O tema gravado na peça manda; a lista de config vale para quem não tem.
+    guardar(idDoEstilo(id), acervo.filter(p => (temasFixos.has(p) ? temasFixos.get(p) === id : pecas.has(p))));
   }
   return out;
 }

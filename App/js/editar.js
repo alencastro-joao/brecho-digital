@@ -18,7 +18,7 @@
 // Ferramenta de administração: só aparece em modo admin, e quem grava é a API
 // (PUT /api/pecas/<id>), que recusa quem não for administrador.
 
-import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, hexDaCor, ancoraPadrao,
+import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, ESTILOS, hexDaCor, ancoraPadrao,
          corDoPixel, distanciaEntreCores, rotuloDeCadastro } from './config.js';
 import { registrarPeca, esquecerPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
@@ -407,7 +407,20 @@ function capturarFicha() {
     marca: $('#mp-marca').value.trim(),
     cor: $('#mp-cor').value.trim(),
     nome: $('#mp-nome').value.trim(),
+    tema: $('#mp-tema').value,
   };
+}
+
+// Tema: o gravado na peça (`tema`, vindo da esteira ou daqui) ou, se ela não
+// tem, o da lista escolhida à mão em config.ESTILOS. 'nenhum' tira a peça
+// dessa lista sem mexer nela.
+const temaDaLista = (id) => Object.keys(ESTILOS).find(t => ESTILOS[t].pecas?.includes(id)) || '';
+const temaDaPeca = (p) => (p.tema === 'nenhum' ? '' : p.tema) || temaDaLista(p.id);
+
+function montarTemas() {
+  $('#mp-tema').replaceChildren(
+    el('option', { value: '' }, 'Nenhum'),
+    ...Object.entries(ESTILOS).map(([id, e]) => el('option', { value: id }, e.nome)));
 }
 
 // Marca e cor: campo livre, com o que já foi usado virando chip e autocomplete.
@@ -565,6 +578,7 @@ async function salvar() {
   const real = noMolde();
   const corpo = {
     ...ficha,
+    tema: ficha.tema || (temaDaLista(peca.id) ? 'nenhum' : ''),
     ancora: { x: Math.round(real.x), y: Math.round(real.y), w: Math.round(real.w) },
   };
   if (arquivo.novo) {
@@ -667,7 +681,7 @@ export function abrirEditar(alvo, callback) {
   aoSalvar = callback;
   ficha = {
     cat: alvo.cat, marca: alvo.marca || '', cor: alvo.cor || '',
-    nome: alvo.nome || '', raridade: alvo.raridade || 'common',
+    nome: alvo.nome || '', raridade: alvo.raridade || 'common', tema: temaDaPeca(alvo),
   };
   arquivo = arquivoBase = { src: alvo.src, srcG: alvo.srcG, wG: alvo.wG,
                             w: alvo.w || 1, h: alvo.h || 1, novo: false };
@@ -683,6 +697,8 @@ export function abrirEditar(alvo, callback) {
   $('#mp-marca').value = ficha.marca;
   $('#mp-cor').value = ficha.cor;
   $('#mp-nome').value = ficha.nome;
+  montarTemas();
+  $('#mp-tema').value = ficha.tema;
   montarRaridades();
   montarMarcas();
   montarCores();
@@ -714,7 +730,7 @@ export function montarEditar() {
   }
   solta.addEventListener('drop', (e) => trocarImagem(e.dataTransfer.files[0]));
 
-  for (const sel of ['#mp-cat', '#mp-nome']) $(sel).addEventListener('input', capturarFicha);
+  for (const sel of ['#mp-cat', '#mp-nome', '#mp-tema']) $(sel).addEventListener('input', capturarFicha);
   $('#mp-marca').addEventListener('input', () => { capturarFicha(); montarMarcas(); });
   $('#mp-cor').addEventListener('input', () => { capturarFicha(); montarCores(); });
   $('#mp-cat').addEventListener('change', () => { capturarFicha(); medida = medidaPadrao(ficha.cat); });
