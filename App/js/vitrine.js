@@ -671,6 +671,7 @@ async function pegar(id, noDOM) {
   if (db.temPeca(id)) return;
 
   const nova = db.adicionarPeca(peca, { origem: 'vitrine', raridade });
+  if (nova) estoque.numerar([nova]);
   const gratis = ef.gratis && Math.random() < ef.gratis / 100;
   const ficha = ef.fichas && Math.random() < ef.fichas / 100;
   if (!gratis) db.state.dia.resgates += 1;

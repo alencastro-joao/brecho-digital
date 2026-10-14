@@ -172,46 +172,45 @@
     box-shadow: 0 -8px 20px rgba(0, 0, 0, .04);
   }
   .view-closet .display-section:has(#preview-meta[hidden]) { display: none; }
-  /* A foto é a protagonista: grande, à esquerda, sobre o fundo da raridade.
-     Ao lado, só o nome, uma linha de detalhe e uma fileira de ações curtas. */
+  /* A foto é a protagonista: grande, à esquerda, num fundo neutro. Ao lado,
+     só raridade e número, nome, detalhes e os ícones das coleções. Stylist e
+     Colagem ficam fora do celular: a peça se veste e se cola nessas telas. */
+  .view-closet .display-section { align-items: stretch; gap: 14px; }
   .view-closet .preview-wrapper {
-    flex: none; width: 132px; height: 132px; min-height: 0;
-    padding: 10px; border-radius: 18px;
-    background: var(--rar-bg, var(--papel)); border: 1px solid var(--linha);
+    flex: none; width: min(46vw, 200px); height: auto; aspect-ratio: 1; min-height: 0;
+    padding: 8px; border-radius: 18px;
+    background: var(--papel); border: 0;
   }
-  .view-closet .preview-wrapper img { max-height: 112px; }
+  .view-closet .preview-wrapper img { max-height: min(42vw, 184px); }
   .view-closet .preview-meta {
     flex: 1; min-width: 0;
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    display: flex; flex-wrap: wrap; align-items: center; align-content: center;
+    column-gap: 0; row-gap: 6px;
   }
-  .view-closet .preview-meta > :not(button) { flex: 0 0 100%; min-width: 0; }
+  .view-closet .preview-meta > :not(button):not(.rarity-tag):not(.preview-numero) { flex: 0 0 100%; min-width: 0; }
   .view-closet .preview-meta .rarity-tag {
-    flex: none; justify-self: start; width: auto;
-    font-size: 9px; padding: 1px 7px; border-width: 1px;
+    flex: none; font-size: 9px; padding: 1px 7px; border-width: 1px;
   }
-  .view-closet .preview-meta h3 {
-    margin: 0; font-size: 17px; line-height: 1.2;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .view-closet .preview-meta p {
-    margin: 0; font-size: 11.5px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  /* Coleções numa fileira só, deslizando de lado. */
-  .view-closet .preview-meta .col-chips {
-    flex-wrap: nowrap; overflow-x: auto; gap: 5px; scrollbar-width: none;
-  }
-  .view-closet .preview-meta .col-chips::-webkit-scrollbar { display: none; }
+  .view-closet .preview-meta h3 { margin: 0; font-size: 17px; line-height: 1.2; }
+  .view-closet .preview-meta p { margin: 0; font-size: 11.5px; line-height: 1.35; }
+  /* Coleções só pelo ícone (o nome aparece ao tocar, na própria coleção). */
+  .view-closet .preview-meta .col-chips { gap: 6px; flex: 0 1 auto !important; margin-right: 8px; }
   .view-closet .preview-meta .col-chips:empty { display: none; }
-  .view-closet .preview-meta .col-chip { flex: 0 0 auto; padding: 2px 8px 2px 2px; font-size: 11px; gap: 4px; }
-  .view-closet .preview-meta .col-chip-disco { width: 18px; height: 18px; }
-  .view-closet .preview-meta button {
-    margin: 4px 0 0; padding: 8px 10px; font-size: 12px;
-    width: auto; flex: none; min-height: 34px;
+  .view-closet .preview-meta .col-chip {
+    padding: 0; border: 0; background: none; gap: 0; position: relative;
   }
-  .view-closet .preview-meta #btn-para-stylist { flex: 1; }
-  .view-closet .preview-meta .fav-estrela,
-  .view-closet .preview-meta .btn-editar { width: 34px; padding: 0; font-size: 15px; }
+  .view-closet .preview-meta .col-chip > :not(.col-chip-disco) { display: none; }
+  .view-closet .preview-meta .col-chip-disco {
+    width: 32px; height: 32px; box-shadow: 0 0 0 1.5px var(--linha);
+  }
+  .view-closet .preview-meta .col-chip.presente .col-chip-disco { box-shadow: 0 0 0 2px #c9a443; }
+  .view-closet #btn-para-stylist, .view-closet #btn-para-board { display: none; }
+  .view-closet .preview-meta button.fav-estrela,
+  .view-closet .preview-meta button.btn-editar {
+    margin: 2px 6px 0 0; width: 34px; height: 34px; padding: 0; flex: none;
+    font-size: 15px; border-radius: 50%;
+  }
+  .view-closet .preview-meta button.btn-editar[hidden] { display: none; }
   .view-closet .so-pc { display: none; }
   .view-closet .so-cel { display: inline; }
 

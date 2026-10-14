@@ -292,13 +292,16 @@ function selecionar(peca) {
 
   const meta = $('#preview-meta');
   meta.hidden = false;
-  // O fundo da foto em destaque leva a cor da raridade (no celular).
-  document.querySelector('.view-closet .display-section')?.style.setProperty('--rar-bg', r.bg);
   const tag = $('#preview-rarity');
   tag.textContent = r.nome;
   tag.style.background = r.bg;
   tag.style.borderColor = r.cor;
   $('#preview-nome').textContent = nomeDaPeca(cat);
+  // Que cópia da tiragem é esta. Só as peças levadas depois que o servidor
+  // passou a contar têm número.
+  const num = $('#preview-numero');
+  num.hidden = !peca.numero;
+  num.textContent = peca.numero ? `nº ${peca.numero} de ${r.tiragem}` : '';
   $('#btn-editar-peca').hidden = !(ADMIN && cat.permanente);
 
   rotularFavorito();

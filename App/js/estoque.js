@@ -15,6 +15,11 @@ import { RARIDADE } from './config.js';
 
 let mapa = {};
 let online = false;
+let numeros = {};              // o número da cópia de cada peça levada agora
+
+// Que cópia da tiragem a pessoa levou (a 12ª de 1000...). Só existe logo
+// depois do levar() que a reservou; quem chama grava na peça.
+export const numeroLevado = (id, raridade) => numeros[chave(id, raridade)] ?? null;
 
 const chave = (id, raridade) => `${id}|${raridade}`;
 const tiragem = (raridade) => RARIDADE[raridade]?.tiragem ?? Infinity;
@@ -56,10 +61,19 @@ export async function levar(pecas) {
   try {
     const feito = await chamar('/api/estoque/levar', { pecas });
     mapa = feito.mapa || mapa;
+    numeros = { ...numeros, ...(feito.numeros || {}) };
     online = true;
     return new Set(feito.levadas || []);
   } catch {
     return todas;
+  }
+}
+
+// Grava o número da cópia nas peças do inventário que acabaram de ser levadas.
+export function numerar(pecas) {
+  for (const p of pecas) {
+    const n = numeroLevado(p.id, p.raridade);
+    if (n) p.numero = n;
   }
 }
 

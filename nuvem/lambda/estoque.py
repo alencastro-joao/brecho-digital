@@ -64,23 +64,28 @@ def _garantir_item():
 def levar(pecas):
     """Reserva uma cópia de cada peça. Devolve as que conseguiu e as esgotadas."""
     _garantir_item()
-    ok, esgotadas = [], []
+    ok, esgotadas, numeros = [], [], {}
     for pid, rar in _validar(pecas):
         k = chave(pid, rar)
         try:
-            _dynamo.update_item(
+            # O valor novo do contador é o número da cópia: "nº 12 de 1000".
+            feito = _dynamo.update_item(
                 TableName=TABELA, Key={'pk': {'S': PK}},
                 UpdateExpression='SET levadas.#k = if_not_exists(levadas.#k, :zero) + :um',
                 ConditionExpression='attribute_not_exists(levadas.#k) OR levadas.#k < :lim',
                 ExpressionAttributeNames={'#k': k},
                 ExpressionAttributeValues={':zero': {'N': '0'}, ':um': {'N': '1'},
-                                           ':lim': {'N': str(LIMITES[rar])}})
+                                           ':lim': {'N': str(LIMITES[rar])}},
+                ReturnValues='UPDATED_NEW')
             ok.append(k)
+            n = feito.get('Attributes', {}).get('levadas', {}).get('M', {}).get(k, {}).get('N')
+            if n:
+                numeros[k] = int(n)
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise
             esgotadas.append(k)
-    return {'levadas': ok, 'esgotadas': esgotadas, 'mapa': mapa()}
+    return {'levadas': ok, 'esgotadas': esgotadas, 'numeros': numeros, 'mapa': mapa()}
 
 
 def devolver(pecas):

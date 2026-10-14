@@ -116,7 +116,8 @@ export function darPresente({ rnd = Math.random } = {}) {
   // O presente também sai da tiragem. Não espera a resposta: o que já esgotou
   // ficou fora do sorteio acima, e a corrida pela última cópia é rara demais
   // para segurar a primeira tela por ela.
-  estoque.levar(ganhas.map(({ peca }) => ({ id: peca.id, raridade: peca.raridade })));
+  estoque.levar(ganhas.map(({ peca }) => ({ id: peca.id, raridade: peca.raridade })))
+    .then(() => { estoque.numerar(ganhas.map(({ peca }) => peca)); db.salvar(); });
   return ganhas;
 }
 

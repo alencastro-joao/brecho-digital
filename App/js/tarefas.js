@@ -302,7 +302,10 @@ function sortearPremio(bau) {
 function abrirUmBau(nome, bau, abrir) {
   const r = abrir(sortearPremio(bau));
   if (!r) return;
-  if (r.pecas.length) estoque.levar(r.pecas.map(p => ({ id: p.id, raridade: p.raridade })));
+  if (r.pecas.length) {
+    estoque.levar(r.pecas.map(p => ({ id: p.id, raridade: p.raridade })))
+      .then(() => { estoque.numerar(r.pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean)); db.salvar(); });
+  }
   const nomes = r.pecas.map(p => `${nomeDaPeca(pecaDoCatalogo(p.id))} (${RARIDADE[p.raridade]?.nome})`);
   const melhor = r.pecas.map(p => p.raridade)
     .sort((a, b) => ordemDaFaixa(b) - ordemDaFaixa(a))[0];

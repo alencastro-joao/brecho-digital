@@ -57,16 +57,17 @@ def levar(pecas):
     lista = _validar(pecas)
     with _trava:
         dados = _ler()
-        ok, esgotadas = [], []
+        ok, esgotadas, numeros = [], [], {}
         for pid, rar in lista:
             k = chave(pid, rar)
             if dados.get(k, 0) < LIMITES[rar]:
                 dados[k] = dados.get(k, 0) + 1
                 ok.append(k)
+                numeros[k] = dados[k]
             else:
                 esgotadas.append(k)
         _gravar(dados)
-        return {'levadas': ok, 'esgotadas': esgotadas, 'mapa': dados}
+        return {'levadas': ok, 'esgotadas': esgotadas, 'numeros': numeros, 'mapa': dados}
 
 
 def devolver(pecas):

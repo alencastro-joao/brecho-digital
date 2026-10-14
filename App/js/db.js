@@ -64,7 +64,7 @@ function estadoInicial() {
     // *liberado* não mora aqui — é lido do progresso, como o nível é lido do
     // XP (ver roupinhaLiberada).
     vestiario: { equipado: { ...VESTIARIO_PADRAO }, conhecidas: [], novas: [], ordem: [] },
-    inventario: [],            // { id, cat, raridade, obtidoEm, origem, ordem }
+    inventario: [],            // { id, cat, raridade, obtidoEm, origem, ordem, numero? }
     pecasProprias: [],         // peças que você mesmo subiu: { id, cat, marca, nome, src, w, h, ancora }
     marcas: [],                // marcas já usadas: { nome, usos, em }
     cores: [],                 // cores já usadas: { nome, usos, em }
