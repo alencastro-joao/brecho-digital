@@ -20,7 +20,6 @@ body.com-modal .intro { display: none; }
   text-transform: uppercase; color: var(--tinta-suave); }
 .intro-dica { margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-suave); }
 .intro-premio { margin: 10px 0 0; font-size: 13.5px; font-weight: 700; }
-.intro-extras { margin: 10px 0 4px; font-size: 16px; font-weight: 800; }
 
 .intro-topo { display: flex; justify-content: space-between; align-items: center; }
 .intro-min { background: none; border: 0; width: 32px; height: 28px; margin-right: -8px;
@@ -35,29 +34,12 @@ body.com-modal .intro { display: none; }
 .intro-pontos + .intro-acoes { margin-top: 0; }
 .intro-acoes .btn-ghost, .intro-acoes .btn-dark { margin: 0; padding: 12px 14px; font-size: 14px; flex: 1 1 0; }
 
-/* Missão cumprida: o botão do prêmio chama atenção. */
-.intro .intro-pegar { background: #2f7a4a; border-color: #2f7a4a; animation: intro-pulso 1.4s ease-out infinite; }
-@keyframes intro-pulso {
-  0%   { box-shadow: 0 0 0 0 rgba(47, 122, 74, .55); }
-  70%  { box-shadow: 0 0 0 10px rgba(47, 122, 74, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(47, 122, 74, 0); }
-}
-
-/* As peças do prêmio, com a cor da raridade. */
-.intro-pecas { display: flex; gap: 10px; margin: 8px 0 6px; }
-.intro-peca { flex: 1 1 0; margin: 0; padding: 10px; text-align: center;
-  background: var(--fundo, #fff); border: 2px solid var(--borda, var(--linha)); border-radius: 16px; }
-.intro-peca img { width: 100%; height: 110px; object-fit: contain; }
-.intro-peca figcaption { font-size: 12.5px; font-weight: 700; line-height: 1.3; }
-.intro-peca small { display: block; font-weight: 600; color: var(--tinta-suave); }
-
 /* Minimizado: uma faixa de uma linha. */
 .intro[data-modo="barra"] { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 18px; }
 .intro-faixa { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px;
   background: none; border: 0; padding: 0; text-align: left; color: inherit; }
 .intro-num { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
   background: var(--papel); border: 1px solid var(--linha); font-size: 12px; font-weight: 800; }
-.intro.pronta .intro-num { background: #2f7a4a; border-color: #2f7a4a; color: #fff; }
 .intro-texto { min-width: 0; display: flex; flex-direction: column; }
 .intro-texto b, .intro-texto small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .intro-texto b { font-size: 14px; }

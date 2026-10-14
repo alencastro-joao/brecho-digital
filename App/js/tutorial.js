@@ -8,38 +8,33 @@
 //
 // Na tela é um cartão fixo acima da barra (no celular) ou ao lado dela (no
 // computador): aberto mostra a missão inteira; minimizado vira uma faixa com a
-// missão da vez e o botão de ir até ela. Fechar a missão abre o cartão sozinho,
-// com o prêmio esperando o toque.
+// missão da vez e o botão de ir até ela. Cumprir a missão entrega o prêmio na
+// hora (num aviso) e já passa para a próxima, sem tela de prêmio no meio.
 //
 // Começa sozinho na conta nova. Para testar de novo: Perfil › Testes ›
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
-import { INTRO, RARIDADE, faixasDeTroca } from './config.js';
+import { INTRO, RARIDADE, RARIDADES, faixasDeTroca } from './config.js';
 import { catalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { irPara } from './router.js';
 import { montarVitrine } from './vitrine.js';
-import { el, $ } from './util.js';
+import { el, $, toast } from './util.js';
 
 let caixa = null;
-let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'premio'
-let ganhos = null;        // o que saiu no último prêmio (para o cartão 'premio')
-let estavaPronta = false;
+let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra'
+let concluindo = false;
 
 export function montarTutorial() {
   $('#btn-tutorial')?.addEventListener('click', () => {
     $('#aj-fechar')?.click();   // fecha o modal de Testes antes
     comecar();
   });
-  db.onIntro(() => {
-    // A missão da vez acabou de ser cumprida: o cartão abre com o prêmio.
-    const pronta = db.introPronta();
-    if (pronta && !estavaPronta && modo !== 'premio' && modo !== 'boasvindas') modo = 'aberta';
-    estavaPronta = pronta;
-    desenhar();
-  });
-  estavaPronta = db.introPronta();
+  // Fora da pilha de quem fez a ação: o prêmio remonta a vitrine, e fazer isso
+  // no meio do resgate dela atropelaria o próprio resgate.
+  db.onIntro(() => setTimeout(() => { concluirProntas(); desenhar(); }));
+  concluirProntas();
   desenhar();
 }
 
@@ -52,7 +47,6 @@ export function comecar() {
   // Tira o ?tutorial do endereço: recarregar não recomeça de novo.
   if (pediuTutorialNaUrl()) history.replaceState(null, '', location.pathname + location.hash);
   modo = 'boasvindas';
-  ganhos = null;
   db.comecarIntro();
 }
 
@@ -83,7 +77,7 @@ function entregar(premio) {
     if (peca) r.pecas.push({ item, peca });
   }
   if (r.fichas) db.ganharFicha(r.fichas);
-  if (r.xp) db.ganharXP(r.xp, 'missão de introdução');
+  if (r.xp) db.ganharXP(r.xp);   // sem motivo: o aviso é o da missão (anunciar)
   db.salvar();
   if (r.pecas.length) {
     const pecas = r.pecas.map(({ peca }) => peca);
@@ -94,12 +88,41 @@ function entregar(premio) {
   return r;
 }
 
-function pegarPremio() {
-  const m = INTRO[db.state.intro.passo];
-  ganhos = { ...entregar(m.premio), ultima: db.state.intro.passo === INTRO.length - 1 };
-  modo = 'premio';
-  db.avancarIntro();
+// Paga e avança cada missão da vez que já está feita — em cadeia, porque fazer
+// a coisa antes de chegar na missão já vale. avancarIntro avisa os ouvintes, e
+// a trava impede que esse aviso entre aqui de novo no meio do laço.
+function concluirProntas() {
+  if (concluindo) return;
+  concluindo = true;
+  try {
+    while (db.introPronta()) {
+      const passo = db.state.intro.passo;
+      const m = INTRO[passo];
+      const r = entregar(m.premio);
+      const ultima = passo === INTRO.length - 1;
+      db.avancarIntro();
+      anunciar(m, r, ultima);
+    }
+  } finally {
+    concluindo = false;
+  }
 }
+
+// Um aviso só por missão, com tudo o que ela pagou.
+function anunciar(m, r, ultima) {
+  const coisas = [
+    ...r.pecas.map(({ item, peca }) => `${nomeDaPeca(item)} (${RARIDADE[peca.raridade]?.nome ?? ''})`),
+    r.fichas && (r.fichas === 1 ? '1 ficha' : `${r.fichas} fichas`),
+    r.xp && `${r.xp} XP`,
+  ].filter(Boolean);
+  const melhor = r.pecas.map(p => p.peca.raridade)
+    .sort((a, b) => ordem(b) - ordem(a))[0] || 'uncommon';
+  const ganhou = coisas.length ? ` Ganhou ${coisas.join(' e ')}.` : '';
+  toast(ultima
+    ? `Introdução completa!${ganhou} Agora as missões do dia, em Tarefas, continuam dando prêmio.`
+    : `✓ ${m.nome}.${ganhou}`, melhor);
+}
+const ordem = (f) => RARIDADES.findIndex(r => r.id === f);
 
 // ------------------------------- Desenho ----------------------------------
 const nomeFaixa = (f) => RARIDADE[f]?.nome?.toLowerCase() ?? f;
@@ -129,60 +152,33 @@ function htmlBoasVindas() {
     </div>`;
 }
 
-function htmlAberta(m, passo, pronta) {
+function htmlAberta(m, passo) {
   return `
     <div class="intro-topo">
       <span class="intro-sobre">Missão ${passo + 1} de ${INTRO.length}</span>
       <button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>
     </div>
-    <h2>${pronta ? '✓ ' : ''}${m.nome}</h2>
-    <p class="intro-dica">${pronta ? 'Missão cumprida! O prêmio é seu.' : m.dica}</p>
+    <h2>${m.nome}</h2>
+    <p class="intro-dica">${m.dica}</p>
     <p class="intro-premio">🎁 ${rotuloDoPremio(m.premio)}</p>
     ${pontos(passo)}
     <div class="intro-acoes">
-      ${pronta
-        ? '<button class="btn-dark intro-pegar" data-acao="pegar" type="button">Pegar prêmio</button>'
-        : `<button class="btn-ghost" data-acao="pular" type="button">Pular introdução</button>
-           <button class="btn-dark" data-acao="ir" type="button">Ir para lá</button>`}
+      <button class="btn-ghost" data-acao="pular" type="button">Pular introdução</button>
+      <button class="btn-dark" data-acao="ir" type="button">Ir para lá</button>
     </div>`;
 }
 
-function htmlBarra(m, passo, pronta) {
+function htmlBarra(m, passo) {
   return `
     <button class="intro-faixa" data-acao="abrir" type="button">
       <span class="intro-num">${passo + 1}/${INTRO.length}</span>
       <span class="intro-texto"><b>${m.nome}</b><small>🎁 ${rotuloDoPremio(m.premio)}</small></span>
     </button>
-    ${pronta
-      ? '<button class="btn-dark intro-pegar" data-acao="pegar" type="button">Pegar</button>'
-      : '<button class="btn-dark" data-acao="ir" type="button">Ir</button>'}`;
-}
-
-function htmlPremio() {
-  const g = ganhos;
-  const pecas = g.pecas.map(({ item, peca }) => `
-    <figure class="intro-peca" style="--fundo:${RARIDADE[peca.raridade]?.bg};--borda:${RARIDADE[peca.raridade]?.cor}">
-      <img src="${item.src}" alt="">
-      <figcaption>${nomeDaPeca(item)}<small>${RARIDADE[peca.raridade]?.nome ?? ''}</small></figcaption>
-    </figure>`).join('');
-  const extras = [g.fichas && `+${g.fichas} ${g.fichas === 1 ? 'ficha' : 'fichas'}`, g.xp && `+${g.xp} XP`]
-    .filter(Boolean).join(' · ');
-  return `
-    <p class="intro-sobre">${g.ultima ? 'Introdução completa' : 'Missão cumprida'}</p>
-    <h2>${g.ultima ? 'Você já sabe tudo! 🎉' : 'Você ganhou'}</h2>
-    ${pecas ? `<div class="intro-pecas">${pecas}</div>` : ''}
-    ${extras ? `<p class="intro-extras">${extras}</p>` : ''}
-    ${g.pecas.length ? '<p class="intro-dica">A peça já está no seu closet.</p>' : ''}
-    ${g.ultima ? '<p class="intro-dica">Agora as missões do dia, em Tarefas, continuam dando prêmio.</p>' : ''}
-    <div class="intro-acoes">
-      <button class="btn-dark" data-acao="${g.ultima ? 'fechar' : 'abrir'}" type="button">
-        ${g.ultima ? 'Começar a garimpar' : 'Próxima missão'}</button>
-    </div>`;
+    <button class="btn-dark" data-acao="ir" type="button">Ir</button>`;
 }
 
 function desenhar() {
-  const ativa = db.introAtiva();
-  if (!ativa && modo !== 'premio') { fechar(); return; }
+  if (!db.introAtiva()) { fechar(); return; }
 
   if (!caixa) {
     caixa = el('div', { class: 'intro', role: 'region', 'aria-label': 'Missões de introdução' });
@@ -193,14 +189,11 @@ function desenhar() {
 
   const passo = db.state.intro.passo;
   const m = INTRO[passo];
-  const pronta = db.introPronta();
   caixa.dataset.modo = modo;
-  caixa.classList.toggle('pronta', pronta);
   caixa.innerHTML =
     modo === 'boasvindas' ? htmlBoasVindas() :
-    modo === 'premio' ? htmlPremio() :
-    modo === 'aberta' ? htmlAberta(m, passo, pronta) :
-    htmlBarra(m, passo, pronta);
+    modo === 'aberta' ? htmlAberta(m, passo) :
+    htmlBarra(m, passo);
 }
 
 function fechar() {
@@ -215,7 +208,5 @@ function clique(e) {
   if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
   else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
   else if (acao === 'ir') { modo = 'barra'; irPara(INTRO[db.state.intro.passo].ir); desenhar(); }
-  else if (acao === 'pegar') pegarPremio();
   else if (acao === 'pular') { modo = 'barra'; db.pularIntro(); }
-  else if (acao === 'fechar') { modo = 'barra'; ganhos = null; fechar(); irPara('vitrine'); }
 }
