@@ -299,6 +299,10 @@ function selecionar(peca) {
   }
 
   const moldura = $('#preview-moldura');
+  // A cor da raridade pinta o bloco da foto (no celular), como na grade.
+  const quadro = document.querySelector('.view-closet .preview-wrapper');
+  quadro?.style.setProperty('--rar-borda', r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor);
+  quadro?.classList.toggle('lendaria', peca.raridade === 'legendary');
   $('#placeholder').hidden = true;
   moldura.hidden = false;
   // 300 px de altura é o teto da prévia (closet.css); a peça aberta no
@@ -315,6 +319,7 @@ function selecionar(peca) {
   tag.textContent = r.nome;
   tag.style.background = r.bg;
   tag.style.borderColor = r.cor;
+  tag.style.setProperty('--rar-borda', r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor);
   $('#preview-nome').textContent = nomeDaPeca(cat);
   // Que cópia da tiragem é esta. Só as peças levadas depois que o servidor
   // passou a contar têm número.
@@ -330,8 +335,10 @@ function selecionar(peca) {
   const partes = [tipo?.nome ?? 'Peça'];
   if (cat.cor?.trim()) partes.push(cat.cor.trim());
   if (cat.marca?.trim()) partes.push(cat.marca.trim());
-  partes.push(origem, `em ${new Date(peca.obtidoEm).toLocaleDateString('pt-BR')}`);
-  $('#preview-info').textContent = partes.join(' · ');
+  partes.push(origem, new Date(peca.obtidoEm).toLocaleDateString('pt-BR'));
+  // Cada informação num pedaço: no computador viram uma linha com " · "
+  // entre eles; no celular, etiquetas.
+  $('#preview-info').replaceChildren(...partes.map(t => el('span', { class: 'info-item' }, t)));
   $('#preview-colecoes').replaceChildren(...colecoesDaPeca(peca.id).map(chipDaColecao));
 }
 
