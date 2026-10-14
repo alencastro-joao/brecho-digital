@@ -98,3 +98,67 @@ body.com-modal .intro { display: none; }
 .intro-abertura .btn-dark { margin-top: 10px; padding: 14px 16px; font-size: 15px; }
 .intro-logo { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px;
   background: var(--tinta); color: #fff; font-weight: 800; font-size: 22px; }
+
+/* Prêmio de missão (anunciar em js/tutorial.js): um cartão no meio da tela
+   que comemora e some sozinho. Só o cartão recebe toque; o resto do app segue
+   usável por trás. */
+.premio {
+  --borda: #2f7a4a;
+  position: fixed; z-index: 950; left: 50%; top: 50%;
+  width: min(340px, calc(100vw - 32px));
+  padding: 22px 18px 14px; overflow: hidden;
+  transform: translate(-50%, -50%);
+  background: #fff; color: var(--tinta); text-align: center;
+  border: 3px solid var(--borda); border-radius: 26px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .3), 0 0 0 9999px rgba(0, 0, 0, .18);
+  animation: premio-entra .45s cubic-bezier(.2, .9, .3, 1.35);
+  cursor: pointer;
+}
+.premio.r-rare      { --borda: #2f7ff0; }
+.premio.r-epic      { --borda: #9b46f0; }
+.premio.r-legendary { --borda: #d4a514; }
+.premio.saindo { animation: premio-sai .25s ease-in forwards; }
+@keyframes premio-entra { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
+@keyframes premio-sai   { to   { opacity: 0; transform: translate(-50%, -46%) scale(.92); } }
+
+/* Raios girando atrás do conteúdo, na cor da melhor raridade. */
+.premio-brilho {
+  position: absolute; inset: -60%; z-index: 0; pointer-events: none; opacity: .14;
+  background: repeating-conic-gradient(var(--borda) 0 10deg, transparent 10deg 30deg);
+  animation: premio-gira 9s linear infinite;
+}
+@keyframes premio-gira { to { transform: rotate(360deg); } }
+.premio > :not(.premio-brilho) { position: relative; z-index: 1; }
+
+.premio-sobre { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--borda); }
+.premio h2 { margin: 4px 0 14px; font-size: 21px; line-height: 1.2; }
+
+.premio-pecas { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; }
+.premio-peca {
+  flex: 0 1 130px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 8px 10px; border-radius: 18px;
+  background: var(--bg); border: 2px solid var(--cor);
+  animation: premio-peca .5s cubic-bezier(.2, .9, .3, 1.5) backwards;
+}
+@keyframes premio-peca { from { opacity: 0; transform: translateY(14px) scale(.7); } }
+.premio-foto { width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
+.premio-foto img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.premio-rar { padding: 2px 9px; border-radius: 99px; background: var(--cor);
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.premio-nome { font-size: 12.5px; font-weight: 600; line-height: 1.25; color: var(--tinta-suave); }
+
+.premio-bonus-linha { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.premio-bonus {
+  padding: 8px 14px; border-radius: 99px; font-size: 17px; font-weight: 800;
+  animation: premio-peca .5s cubic-bezier(.2, .9, .3, 1.5) .35s backwards;
+}
+.premio-bonus.xp    { background: #fff4c7; color: #7a5a00; }
+.premio-bonus.ficha { background: #e3f4ea; color: #1f6a3c; }
+
+.premio-fim { margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: var(--tinta-suave); }
+.premio-toque { margin: 12px 0 0; font-size: 11px; color: var(--tinta-suave); opacity: .7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .premio, .premio-peca, .premio-bonus, .premio-brilho { animation: none; }
+}
