@@ -20,7 +20,7 @@
 
 import {
   CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
-  migrarCategoria, rotuloDeCadastro, ancoraPadrao,
+  migrarCategoria, rotuloDeCadastro,
   ESTILOS,
 } from './config.js';
 import { ancoraNoCorpo, ancoraNoMolde } from './proporcao.js';
@@ -593,8 +593,58 @@ let medida = null;                     // { x, y, w } em unidades do palco (600�
 
 // `medida` é a peça em cima do corpo, na proporção de agora; `item.medida` é
 // a mesma levada de volta ao molde (js/proporcao.js), que é o que se grava.
+//
+// Peça nova abre do tamanho e no lugar em que as já medidas da mesma
+// categoria costumam ficar: a mediana do acervo, lida ao abrir a esteira
+// (`medidasDoAcervo`). As âncoras de CATEGORIAS ficaram bem menores do que
+// o que se mede de verdade (camisa 250 contra ~430), por isso não servem.
+// Antes da leitura chegar, ou em categoria com menos de 3 medidas, vale a
+// tabela tirada do acervo em 14/10/2026. Tudo no molde (ver paraGravar).
+const PADRAO_MEDIDO = {
+  shoes: { x: 300, y: 1081, w: 266 },
+  pants: { x: 300, y: 842, w: 358 },
+  shorts: { x: 300, y: 752, w: 354 },
+  skirts: { x: 300, y: 685, w: 319 },
+  shirts: { x: 300, y: 408, w: 431 },
+  coats: { x: 300, y: 414, w: 486 },
+  cropped: { x: 300, y: 379, w: 297 },
+  glasses: { x: 300, y: 125, w: 134 },
+  hats: { x: 300, y: 84, w: 144 },
+  bags: { x: 432, y: 667, w: 252 },
+};
+const medidasDoAcervo = new Map();     // cat -> { x, y, w } no molde
+
+function lerMedidasDoAcervo(items) {
+  const porCat = new Map();
+  for (const i of items) {
+    const a = i.ancora;
+    if (!(a?.w > 0)) continue;
+    const cat = migrarCategoria(i.cat);
+    if (!CATEGORIAS[cat]) continue;
+    if (!porCat.has(cat)) porCat.set(cat, []);
+    porCat.get(cat).push(a);
+  }
+  const mediana = (v) => {
+    const o = [...v].sort((a, b) => a - b);
+    const m = o.length >> 1;
+    return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
+  };
+  for (const [cat, lista] of porCat) {
+    if (lista.length < 3) continue;
+    // Peça do meio do corpo fica no meio: só a bolsa e o relógio vão de lado.
+    const centrada = CATEGORIAS[cat].anchor.x === 300;
+    medidasDoAcervo.set(cat, {
+      x: centrada ? 300 : Math.round(mediana(lista.map(a => a.x))),
+      y: Math.round(mediana(lista.map(a => a.y))),
+      w: Math.round(mediana(lista.map(a => a.w))),
+    });
+  }
+}
+
+const padraoNoMolde = (cat) =>
+  medidasDoAcervo.get(cat) || PADRAO_MEDIDO[cat] || CATEGORIAS[cat]?.anchor || { x: 300, y: 600, w: 200 };
 const medidaPadrao = (cat) => {
-  const a = ancoraPadrao(cat);
+  const a = ancoraNoCorpo(CATEGORIAS[cat]?.regiao, padraoNoMolde(cat));
   return { x: a.x, y: a.y, w: a.w };
 };
 const regiaoDe = (item) => CATEGORIAS[fichaDe(item).cat]?.regiao;
@@ -729,7 +779,7 @@ function posicionar() {
 
   const cat = fichaDe(medindo).cat;
   const real = paraGravar();
-  const razao = real.w / CATEGORIAS[cat].anchor.w;
+  const razao = real.w / padraoNoMolde(cat).w;
   const fora = razao > 1.55 || razao < 0.6;
   const texto = $('#es-medida');
   texto.textContent = `largura ${real.w} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
@@ -835,10 +885,12 @@ function ligarLote() {
 }
 
 // As marcas do acervo viram autocomplete: escrever "Nike" sempre do mesmo jeito.
-async function carregarMarcas() {
+// As medidas dele viram o tamanho padrão do molde.
+async function carregarAcervo() {
   try {
     const r = await fetch(CONFIG.ACERVO, { cache: 'no-cache' });
     const { items = [] } = await r.json();
+    lerMedidasDoAcervo(items);
     const marcas = [...new Set(items.map(i => (i.marca || '').trim()).filter(Boolean))].sort();
     $('#es-marcas').replaceChildren(...marcas.map(m => el('option', { value: m })));
   } catch { /* sem autocomplete, segue */ }
@@ -864,7 +916,7 @@ async function iniciar() {
   ligarEntrada();
   ligarLote();
   ligarMolde();
-  carregarMarcas();
+  carregarAcervo();
   await atualizar();
   montarPinterest();
   // Voltou para a aba (ex.: depois de fotografar no celular ou de salvar pin
