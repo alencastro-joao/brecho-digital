@@ -1027,6 +1027,12 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
+  portugal: {
+    nome: 'Portugal', brilho: '#c8102e', icone: 'assets/temas/portugal.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
 };
 
 // Coleções de cor: todas as peças da loja de uma cor. Cada uma libera 3 itens
