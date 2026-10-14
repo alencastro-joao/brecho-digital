@@ -223,8 +223,6 @@
   100% { transform: translateY(0) scale(1); }
 }
 
-/* Peça que falta numa coleção que você começou */
-.item-tag .falta-colecao { color: #9a7b13; font-weight: 700; }
 .ficha .col-chips { justify-content: center; gap: 5px; margin: -4px 0 14px; }
 .ficha .col-chips:empty { display: none; }
 .ficha .col-chips-titulo { text-align: center; font-size: 10.5px; }

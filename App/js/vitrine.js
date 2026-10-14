@@ -26,14 +26,12 @@ import { falar, falarDe } from './npc.js';
 import { instalarPassThrough, precarregarAlpha } from './alpha.js';
 import { criarAura } from './aura.js';
 import { abrirEditar } from './editar.js';
-import { avisarColecaoDaPeca, colecoesDaPeca, chipDaColecao, todasAsColecoes, rendeEscolha } from './colecoes.js';
+import { avisarColecaoDaPeca, colecoesDaPeca, chipDaColecao, rendeEscolha } from './colecoes.js';
 import { avisarLojaReposta } from './avisos.js';
 import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
-
-const SELOS_NA_LOJA = 3;        // peças por loja que avisam a coleção que rende escolha
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -376,16 +374,6 @@ export function montarVitrine() {
   encobrirAsRaras(estoque, pontos, medidas, areaLivre, rnd);
 
   const nos = [];
-  const colecoes = todasAsColecoes();
-  // As 3 peças que dão escolha de item na coleção mais adiantada ganham o
-  // aviso "falta em" da coleção que rende a escolha.
-  const premios = new Map(estoque
-    .filter(({ peca }) => !db.temPeca(peca.id))
-    .map(({ peca }) => [peca.id, colecoesDaPeca(peca.id, colecoes).filter(rendeEscolha)
-      .sort((a, b) => b.pct - a.pct)[0]])
-    .filter(([, c]) => c)
-    .sort(([, a], [, b]) => b.pct - a.pct)
-    .slice(0, SELOS_NA_LOJA));
   estoque.forEach(({ peca, raridade }, i) => {
     // O tamanho é só a medida da peça — sem variação aleatória. O mural ganha
     // vida no giro e na flutuação, não no tamanho: sorteá-lo fazia duas
@@ -403,10 +391,6 @@ export function montarVitrine() {
     // A raridade do dia já vale na vitrine: a peça brilha antes de ser resgatada,
     // e é exatamente essa que entra no guarda-roupa.
     const r = RARIDADE[raridade];
-    // Peça que falta numa coleção começada diz isso na etiqueta.
-    const daPeca = db.temPeca(peca.id) ? [] : colecoesDaPeca(peca.id, colecoes);
-    const premio = premios.get(peca.id);
-    const falta = premio || daPeca.filter(c => c.tem > 0 && !c.completa).sort((a, b) => b.pct - a.pct)[0];
 
     // Peça arrastada fica onde você deixou, enquanto a página estiver aberta.
     // O clamp é a rede de segurança: nem ponto sorteado nem posição guardada de
@@ -442,8 +426,7 @@ export function montarVitrine() {
       el('span', { class: 'item-tag' },
         nomeDaPeca(peca),
         r.aura ? el('span', { class: 'raridade', style: { color: r.aura === 'arco-iris' ? '#b8860b' : r.aura } },
-          ' · ' + r.nome) : null,
-        falta ? el('span', { class: 'falta-colecao' }, ` · falta em ${falta.marca} ${falta.tem}/${falta.total}`) : null),
+          ' · ' + r.nome) : null),
       el('button', {
         class: 'btn-pegar',
         onclick: (ev) => { ev.stopPropagation(); pegar(peca.id, no); },
