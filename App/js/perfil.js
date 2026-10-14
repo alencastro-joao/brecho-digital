@@ -213,7 +213,7 @@ function emblema(c) {
           onerror: (e) => e.target.replaceWith(...fotoDaCapa(capa)) })
           : fotoDaCapa(capa)),
     el('small', {},
-      c.hex && c.tipo !== 'cor' ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
+      c.hex && c.tipo !== 'cor' && !logo ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
       c.marca));
 }
 

@@ -77,7 +77,7 @@ export function colecoesPorCor() {
 export function colecoesPorEstilo() {
   const prog = db.progressoDasColecoes();
   return Object.entries(ESTILOS).map(([id, e]) => comProgresso({
-    id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho,
+    id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho, icone: e.icone,
     itens: itensQueLibera(idDoEstilo(id)),
     efeito: { texto: `2 itens de ${e.nome} vestidos acendem um brilho no avatar` },
   }, prog));                 // tema ainda sem peças também aparece ("em breve")
@@ -179,7 +179,7 @@ function tituloDaColecao(c, tag = 'h2') {
     logo ? el('img', { class: 'col-logo', src: logo, alt: '', loading: 'lazy',
       onerror: (e) => e.target.remove() }) : null,
     c.tipo === 'cor' ? el('span', { class: 'col-logo col-amostra', style: { background: c.hex } })
-      : c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
+      : c.hex && !logo ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
     el(tag, {}, c.marca),
     estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null);
 }
@@ -227,7 +227,7 @@ function miniItem(id) {
 function renderDetalhe(c) {
   const ids = temPrimeiro(c.ids);
   const faltam = c.total - c.tem;
-  $('#col-detalhe').replaceChildren(
+  $('#col-detalhe').replaceChildren(...[
     el('header', { class: 'col-det-topo' + (c.completa ? ' completa' : '') },
       tituloDaColecao(c, 'h1'),
       el('p', { class: 'col-det-conta' }, !c.total ? 'As peças deste tema chegam em breve.' : c.completa
@@ -246,7 +246,7 @@ function renderDetalhe(c) {
         el('span', { class: 'col-breve' }, textoDoBonus(c)))),
     el('section', { class: 'col-det-secao' },
       el('h3', {}, 'Peças'),
-      el('div', { class: 'col-det-pecas' }, ...ids.map(id => casaDaPeca(id, true)))));
+      el('div', { class: 'col-det-pecas' }, ...ids.map(id => casaDaPeca(id, true))))].filter(Boolean)); // replaceChildren escreveria "null"
 }
 
 function casaDaPeca(id, comNome = false) {

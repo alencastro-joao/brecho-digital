@@ -953,7 +953,10 @@ export function progressoDoNivel(total) {
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
 export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra']);
-export const logoDaColecao = (c) => MARCAS_COM_LOGO.has(c.id) ? `assets/marcas/${c.id}.webp` : null;
+// Tema usa o `icone` dele em ESTILOS: bandeira redonda do circle-flags (MIT,
+// github.com/HatScripts/circle-flags; licença em assets/temas).
+export const logoDaColecao = (c) => c.icone
+  ?? (MARCAS_COM_LOGO.has(c.id) ? `assets/marcas/${c.id}.webp` : null);
 export const COLECOES = [
   { id: 'puma', marca: 'Puma',
     itens: ['cano-alto', 'legging', 'corta-vento'],
@@ -1019,7 +1022,7 @@ export const ESTILOS = {
   },
   // Peças a escolher pelo João; os itens que libera vêm junto com elas.
   brasil: {
-    nome: 'Brasil', brilho: '#e6b800',
+    nome: 'Brasil', brilho: '#e6b800', icone: 'assets/temas/brasil.svg',
     itens: [],
     libera: [],
     pecas: [],

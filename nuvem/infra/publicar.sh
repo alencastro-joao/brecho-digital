@@ -57,6 +57,12 @@ if [ -d "$APP/assets/marcas" ]; then
     --cache-control 'public, max-age=86400' --content-type 'image/webp' --exclude '*' --include '*.webp'
 fi
 
+# Ícones dos temas (bandeiras redondas em SVG), mesma regra dos logos.
+if [ -d "$APP/assets/temas" ]; then
+  aws s3 sync "$APP/assets/temas" "s3://$SITE/assets/temas" --delete \
+    --cache-control 'public, max-age=86400' --content-type 'image/svg+xml' --exclude '*' --include '*.svg'
+fi
+
 if [ -d "$APP/assets/audio" ] && [ -n "$(ls -A "$APP/assets/audio" 2>/dev/null)" ]; then
   aws s3 sync "$APP/assets/audio" "s3://$SITE/assets/audio" --cache-control "$ETERNO"
 fi
