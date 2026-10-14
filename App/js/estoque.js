@@ -79,6 +79,33 @@ export function numerar(pecas) {
 
 export const conseguiu = (resultado, id, raridade) => resultado.has(chave(id, raridade));
 
+// Peças pegas antes de o servidor numerar as cópias ficaram sem o "nº 127 de
+// 1000". Aqui cada uma reserva a próxima cópia da tiragem dela (é dela, então
+// ocupar a cópia é o certo) e grava o número. Esgotada, não há número a dar:
+// fica marcada para não tentar de novo. Sem servidor, nada muda e tenta na
+// próxima abertura. Devolve quantas mudaram.
+export async function numerarAntigas(inventario) {
+  const faltam = inventario.filter(p => !p.numero && !p.semNumero && RARIDADE[p.raridade]);
+  let mudou = 0;
+  for (let i = 0; i < faltam.length; i += 50) {
+    const lote = faltam.slice(i, i + 50);
+    let feito;
+    try {
+      feito = await chamar('/api/estoque/levar',
+        { pecas: lote.map(p => ({ id: p.id, raridade: p.raridade })) });
+    } catch { return mudou; }
+    mapa = feito.mapa || mapa;
+    const levou = new Set(feito.levadas || []);
+    for (const p of lote) {
+      const k = chave(p.id, p.raridade);
+      const n = feito.numeros?.[k];
+      if (n) { p.numero = n; mudou++; }
+      else if (!levou.has(k)) { p.semNumero = true; mudou++; }
+    }
+  }
+  return mudou;
+}
+
 // Ferramenta do admin: as cópias voltam para a loja. Falhar aqui não desfaz o
 // que o guarda-roupa já devolveu — o contador só fica mais apertado.
 export async function devolver(pecas) {

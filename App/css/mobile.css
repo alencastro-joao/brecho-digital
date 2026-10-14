@@ -274,14 +274,16 @@
   /* A foto: metade de cima do cartão, sempre em fundo branco. */
   .view-closet .preview-wrapper {
     position: relative; overflow: hidden;
-    flex: 1 1 auto; min-height: 180px; padding: 10px 46px;
+    flex: 1 1 auto; min-height: 180px; padding: 6px 46px;
     border: 2px solid var(--bloco-borda); border-bottom: 0;
     border-radius: 16px 16px 0 0; background: var(--bloco);
     touch-action: pan-y;
   }
   /* A roupa ocupa o bloco todo (contida, sem cortar). */
   .view-closet .preview-wrapper { place-items: stretch; }
-  .view-closet .preview-moldura { display: block; width: 100%; height: 100%; min-height: 0; }
+  /* Folga em cima e embaixo do tamanho da flutuação, para calça comprida
+     não encostar nem sair do bloco. */
+  .view-closet .preview-moldura { display: block; width: 100%; height: 100%; min-height: 0; padding: 14px 0; }
   .view-closet .preview-wrapper img {
     width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain;
   }

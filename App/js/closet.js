@@ -114,7 +114,13 @@ export function montarCloset() {
     toast(agora ? 'Peça favoritada — aparece no seu perfil.' : 'Peça desfavoritada.');
   });
   let t;
+  let larguraAntes = window.innerWidth;
   window.addEventListener('resize', () => {
+    // No celular, abrir o teclado (editar o nome da peça) muda só a altura:
+    // refazer a grade aí fecharia a ficha no meio da digitação.
+    if (window.innerWidth === larguraAntes && celular()) return;
+    larguraAntes = window.innerWidth;
+    if (tela()?.classList.contains('detalhe')) return;
     clearTimeout(t);
     // No computador o tamanho da página depende da tela: refaz a grade.
     t = setTimeout(() => carregarCategoria(categoriaAtual, { manterPagina: true }), 140);

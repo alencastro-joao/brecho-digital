@@ -10,7 +10,7 @@ import * as auth from './auth.js';
 import { pedirConta } from './telaauth.js';
 import { carregarCatalogo, catalogo } from './catalog.js';
 import * as db from './db.js';
-import { carregarEstoque } from './estoque.js';
+import { carregarEstoque, numerarAntigas } from './estoque.js';
 import { darPresente, resumoDoPresente, incomunsDoPresente } from './presente.js';
 import { montarNPC, falarDe } from './npc.js';
 import { iniciarRouter, onEnter } from './router.js';
@@ -172,6 +172,10 @@ async function iniciar() {
   // Depois do router: entrar na vitrine faz o dono da loja falar, e a fala do
   // presente é a que tem de ficar na tela na primeira abertura.
   anunciarPresente(presente);
+
+  // As peças de antes da numeração ganham o nº da cópia (uma vez, em segundo
+  // plano); o closet repinta a ficha aberta na próxima vez que mudar.
+  numerarAntigas(db.state.inventario).then(n => { if (n) db.salvar(); });
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
   if (nova || pediuTutorialNaUrl()) comecarIntro();
