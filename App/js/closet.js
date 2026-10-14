@@ -213,10 +213,10 @@ function irParaPagina(n) {
   $('#inventory-grid').scrollTop = 0;
 }
 
-// Celular: 3 colunas × 5 fileiras, como um inventário. Computador: as colunas que a largura
+// Celular: 4 colunas × 6 fileiras, como um inventário. Computador: as colunas que a largura
 // comporta × as fileiras que cabem sem rolar (mínimo de 3).
 function pecasPorPagina() {
-  if (celular()) return 15;
+  if (celular()) return 24;
   const grid = $('#inventory-grid');
   const wrapper = document.querySelector('.grid-wrapper');
   const head = document.querySelector('.closet-head');

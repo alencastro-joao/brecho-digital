@@ -111,68 +111,88 @@
   /* Como um inventário: as categorias numa barra em cima, a grade de 3 × 5
      embaixo com as setas de página, e a peça tocada abre no lugar da grade
      (com voltar; o do aparelho também serve, ver js/closet.js). */
-  .view-closet { flex-direction: column; --linha-inv: #d6cec2; }
+  /* Inspirado no editor de Mii: as categorias numa fileira de blocos e as
+     peças num painel de casas em bloco (4 por fileira), com as setas de
+     página em cima. Tudo na paleta do app; a casa ativa leva a cor do Closet.
+     A peça tocada abre no lugar da grade (ver js/closet.js). */
+  .view-closet {
+    flex-direction: column;
+    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --painel: #f3eee6;
+  }
   .view-closet .cat-rail {
     width: auto !important; flex: none;
     flex-wrap: nowrap; justify-content: flex-start;
     overflow-x: auto; overflow-y: hidden;
-    margin: 12px 16px 0; padding: 0; gap: 0;
-    border: 2px solid var(--linha-inv); border-radius: 17px;
+    margin: 12px 0 0; padding: 8px 16px; gap: 6px;
+    border: 0; background: var(--painel);
     scrollbar-width: none;
   }
   .view-closet .cat-rail::-webkit-scrollbar { display: none; }
   .view-closet .cat-btn {
-    flex: 1 0 46px; width: auto; height: 46px; font-size: 19px;
-    border: 0; border-left: 1.5px solid var(--linha-inv); border-radius: 0;
+    flex: 1 0 44px; width: auto; height: 46px; font-size: 19px;
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); box-shadow: inset 0 -3px 0 var(--bloco-fundo);
   }
-  .view-closet .cat-btn:first-child { border-left: 0; }
   .view-closet .cat-btn:hover { transform: none; }
-  .view-closet .cat-btn.active { background: #f4efe7; }
+  .view-closet .cat-btn.active {
+    background: var(--inventario); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
   .view-closet .cat-btn .cat-qtd { display: none; }
 
   .grid-wrapper { padding: 14px 16px 12px; }
-  .view-closet .grid-wrapper { flex: 1; min-height: 0; padding: 18px 34px 12px; }
-  /* Fica só a grade: contagem, ordem e grupos saem da tela no celular. */
-  .view-closet .closet-head { display: none; }
   .grid-container {
     gap: 10px; scrollbar-gutter: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
-  /* A grade preenche a altura: 3 colunas × 5 fileiras, sempre cheia, desenhada
-     como um inventário — uma moldura só, dividida por linhas. A raridade fica
-     no fundo de cada casa. */
+  .view-closet .grid-wrapper {
+    flex: 1; min-height: 0; margin: 12px 16px;
+    padding: 10px; border-radius: 20px;
+    background: var(--painel); border: 2px solid var(--bloco-borda);
+  }
+  /* Fica só a grade: contagem, ordem e grupos saem da tela no celular. */
+  .view-closet .closet-head { display: none; }
+  /* 4 colunas × 6 fileiras, preenchendo a altura do painel. */
   .view-closet .grid-container {
-    gap: 0; overflow: hidden;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 7px; overflow: hidden;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
     align-content: stretch;
-    border: 2px solid var(--linha-inv); border-radius: 17px;
   }
+  /* Cada casa é um bloco: borda clara e um degrau embaixo. A raridade pinta
+     o bloco com a cor viva dela, clareada para a peça aparecer. */
   .view-closet .item-slot,
-  .view-closet .item-slot.vazio,
   .view-closet .item-slot.r-legendary {
-    aspect-ratio: auto; padding: 10px; border-radius: 0;
-    border: 0; border-right: 1.5px solid var(--linha-inv); border-bottom: 1.5px solid var(--linha-inv);
-    /* Cor viva da raridade, clareada só o bastante para a peça aparecer. */
-    background: color-mix(in srgb, var(--rar-borda) 22%, #fff); background-image: none;
+    aspect-ratio: auto; padding: 6px; border-radius: 11px;
+    border: 2px solid var(--bloco-borda);
+    background: color-mix(in srgb, var(--rar-borda) 24%, #fff); background-image: none;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07);
   }
-  .view-closet .item-slot.r-legendary { background: color-mix(in srgb, var(--rar-borda) 40%, #fff); }
-  .view-closet .item-slot.r-common,
-  .view-closet .item-slot.vazio { background: transparent; }
-  .view-closet .item-slot:nth-child(3n) { border-right: 0; }
-  .view-closet .item-slot:nth-last-child(-n + 3) { border-bottom: 0; }
-  .view-closet .item-slot .peca-caixa { inset: 10px; }
-  .view-closet .item-slot:hover { transform: none; box-shadow: none; }
+  .view-closet .item-slot.r-legendary { background: color-mix(in srgb, var(--rar-borda) 42%, #fff); }
+  .view-closet .item-slot.r-common { background: var(--bloco); }
+  .view-closet .item-slot.vazio {
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); opacity: .55;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .05);
+  }
+  .view-closet .item-slot .peca-caixa { inset: 6px; }
+  .view-closet .item-slot:hover { transform: none; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07); }
+  .view-closet .item-slot:active { transform: translateY(1px); }
 
-  /* Só as duas setas, grandes, nas pontas. */
-  .view-closet .closet-paginas { padding-top: 12px; justify-content: space-between; }
-  .view-closet .closet-paginas button {
-    width: 56px; height: 44px; padding: 0; border-radius: 14px;
-    font-size: 24px; line-height: 1;
+  /* As setas em cima do painel, com a página entre elas. */
+  .view-closet .closet-paginas {
+    order: -1; padding: 0 0 10px; justify-content: center; gap: 22px;
   }
-  .view-closet #closet-pag-num { font-size: 12px; font-weight: 600; }
+  .view-closet .closet-paginas button {
+    width: 40px; height: 34px; padding: 0; border-radius: 11px;
+    font-size: 20px; line-height: 1;
+    border: 2px solid var(--bloco-borda); background: var(--bloco); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-closet #closet-pag-num { font-size: 15px; font-weight: 800; color: var(--tinta); min-width: 38px; text-align: center; }
   .view-closet .pag-txt { display: none; }
 
   /* A peça aberta: voltar, a foto grande e as informações embaixo. */
