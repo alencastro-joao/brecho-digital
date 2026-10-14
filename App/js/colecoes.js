@@ -9,7 +9,8 @@
 // Nada aqui é gravado: o progresso é o guarda-roupa lido na hora
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
-import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao } from './config.js';
+import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao,
+         CATEGORIAS, migrarCategoria } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha, escolhasDaColecao } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
@@ -215,7 +216,29 @@ export function renderColecoes() {
   ]));
 }
 
-const temPrimeiro = (ids) => [...ids].sort((a, b) => Number(db.temPeca(b)) - Number(db.temPeca(a)));
+// Os tipos de peça na ordem do corpo, de cima para baixo, e os acessórios no fim.
+const ORDEM_DO_ALBUM = ['hats', 'glasses', 'necklaces', 'shirts', 'cropped', 'coats', 'dresses',
+  'pants', 'shorts', 'skirts', 'shoes', 'bags', 'watches', 'bracelets'];
+const tipoDe = (id) => migrarCategoria(pecaDoCatalogo(id)?.cat);
+const posDoTipo = (id) => {
+  const i = ORDEM_DO_ALBUM.indexOf(tipoDe(id));
+  return i < 0 ? ORDEM_DO_ALBUM.length : i;
+};
+// As que você tem primeiro; dentro disso, por tipo de peça.
+const temPrimeiro = (ids) => [...ids].sort((a, b) =>
+  Number(db.temPeca(b)) - Number(db.temPeca(a)) || posDoTipo(a) - posDoTipo(b));
+
+// O álbum separado por tipo de peça: [[cat, ids]], cada grupo com as que você
+// tem na frente.
+function porTipo(ids) {
+  const grupos = new Map();
+  for (const id of [...ids].sort((a, b) => posDoTipo(a) - posDoTipo(b))) {
+    const t = tipoDe(id) || 'outros';
+    if (!grupos.has(t)) grupos.set(t, []);
+    grupos.get(t).push(id);
+  }
+  return [...grupos].map(([t, lista]) => [t, temPrimeiro(lista)]);
+}
 
 const textoDoBonus = (c) => c.tipo ? '2 itens +5% · 5 itens +20%'
   : c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%';
@@ -303,7 +326,6 @@ function miniItem(id) {
 // escolha, só quando há uma esperando; depois o álbum de peças, com as que
 // faltam em silhueta; e o efeito numa linha no fim.
 function renderDetalhe(c) {
-  const ids = temPrimeiro(c.ids);
   const faltam = c.total - c.tem;
   $('#col-detalhe').replaceChildren(...[
     el('header', { class: 'col-hero' + (c.completa ? ' completa' : '') },
@@ -318,7 +340,10 @@ function renderDetalhe(c) {
     c.livres > 0 ? blocoDeEscolha(c) : null,
     c.total ? el('section', { class: 'col-album' },
       el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
-      el('div', { class: 'col-album-grade' }, ...ids.map(casaDoAlbum))) : null,
+      ...porTipo(c.ids).map(([t, lista]) => el('div', { class: 'col-album-tipo' },
+        el('h4', {}, CATEGORIAS[t] ? `${CATEGORIAS[t].icone} ${CATEGORIAS[t].nome}` : 'Outras',
+          el('small', {}, `${lista.filter(id => db.temPeca(id)).length}/${lista.length}`)),
+        el('div', { class: 'col-album-grade' }, ...lista.map(casaDoAlbum))))) : null,
     el('p', { class: 'col-det-efeito' }, '✦ Vestindo: ', c.efeito.texto,
       el('small', {}, ` (${textoDoBonus(c)})`)),
   ].filter(Boolean));
