@@ -1015,7 +1015,7 @@ export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
 // Estilos): as de `pecas`, escolhidas olhando as fotos, peça por peça.
 export const ESTILOS = {
   futebol: {
-    nome: 'Futebol', brilho: '#3fae5a',
+    nome: 'Futebol', brilho: '#3fae5a', icone: 'assets/temas/futebol.svg',
     itens: ['tenis', 'bermuda', 'viseira', 'chinelo', 'polo'],
     libera: ['chinelo', 'viseira', 'polo'],
     pecas: [
@@ -1062,6 +1062,18 @@ export const ESTILOS = {
   },
   jamaica: {
     nome: 'Jamaica', brilho: '#009b3a', icone: 'assets/temas/jamaica.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  animal: {
+    nome: 'Animal print', brilho: '#c8893a', icone: 'assets/temas/animal.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  militar: {
+    nome: 'Militar print', brilho: '#6b7340', icone: 'assets/temas/militar.svg',
     itens: [],
     libera: [],
     pecas: [],
