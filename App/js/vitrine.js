@@ -573,8 +573,9 @@ function abrirFicha(peca, raridade, no) {
   const premio = nova && cols.find(rendeEscolha);
   const falta = nova && cols.some(c => c.tem > 0);
   $('#ficha-colecoes').replaceChildren(
-    ...(cols.length ? [el('span', { class: 'col-chips-titulo' },
-      premio ? `🎁 Pegue e escolha um item de ${premio.marca}` : falta ? 'Falta na sua coleção' : 'Coleções')] : []),
+    // O título só aparece quando diz algo: a peça falta numa coleção começada.
+    ...(premio || falta ? [el('span', { class: 'col-chips-titulo' },
+      premio ? `🎁 Pegue e escolha um item de ${premio.marca}` : 'Falta na sua coleção')] : []),
     ...cols.map(chipDaColecao));
 
   const acao = $('#ficha-acao');

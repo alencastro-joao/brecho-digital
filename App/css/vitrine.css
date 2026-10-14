@@ -233,5 +233,9 @@
   animation: selo-pulsa 1.8s ease-in-out infinite;
 }
 @keyframes selo-pulsa { 50% { transform: scale(1.15); } }
-.ficha .col-chips { justify-content: center; margin: 4px 0 2px; }
-.ficha .col-chips-titulo { text-align: center; }
+.ficha .col-chips { justify-content: center; gap: 5px; margin: -4px 0 14px; }
+.ficha .col-chips:empty { display: none; }
+.ficha .col-chips-titulo { text-align: center; font-size: 10.5px; }
+.ficha .col-chip { padding: 3px 9px 3px 3px; font-size: 11px; gap: 5px; }
+.ficha .col-chip small { font-size: 10px; }
+.ficha .col-chip-disco { width: 18px; height: 18px; }
