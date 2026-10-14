@@ -26,11 +26,14 @@ import { falar, falarDe } from './npc.js';
 import { instalarPassThrough, precarregarAlpha } from './alpha.js';
 import { criarAura } from './aura.js';
 import { abrirEditar } from './editar.js';
+import { avisarColecaoDaPeca, colecoesDaPeca, chipDaColecao, todasAsColecoes, rendeEscolha } from './colecoes.js';
 import { avisarLojaReposta } from './avisos.js';
 import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
+
+const SELOS_NA_LOJA = 3;        // peças com o selo 🎁 de coleção por loja
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -373,6 +376,16 @@ export function montarVitrine() {
   encobrirAsRaras(estoque, pontos, medidas, areaLivre, rnd);
 
   const nos = [];
+  const colecoes = todasAsColecoes();
+  // O selo 🎁 vai só nas 3 peças que dão escolha de item na coleção mais
+  // adiantada: em todas, ele viraria enfeite.
+  const premios = new Map(estoque
+    .filter(({ peca }) => !db.temPeca(peca.id))
+    .map(({ peca }) => [peca.id, colecoesDaPeca(peca.id, colecoes).filter(rendeEscolha)
+      .sort((a, b) => b.pct - a.pct)[0]])
+    .filter(([, c]) => c)
+    .sort(([, a], [, b]) => b.pct - a.pct)
+    .slice(0, SELOS_NA_LOJA));
   estoque.forEach(({ peca, raridade }, i) => {
     // O tamanho é só a medida da peça — sem variação aleatória. O mural ganha
     // vida no giro e na flutuação, não no tamanho: sorteá-lo fazia duas
@@ -390,6 +403,11 @@ export function montarVitrine() {
     // A raridade do dia já vale na vitrine: a peça brilha antes de ser resgatada,
     // e é exatamente essa que entra no guarda-roupa.
     const r = RARIDADE[raridade];
+    // Peça que falta numa coleção começada diz isso na etiqueta; a que dá uma
+    // escolha de item do avatar ao ser pega ganha também um selo à vista.
+    const daPeca = db.temPeca(peca.id) ? [] : colecoesDaPeca(peca.id, colecoes);
+    const premio = premios.get(peca.id);
+    const falta = premio || daPeca.filter(c => c.tem > 0 && !c.completa).sort((a, b) => b.pct - a.pct)[0];
 
     // Peça arrastada fica onde você deixou, enquanto a página estiver aberta.
     // O clamp é a rede de segurança: nem ponto sorteado nem posição guardada de
@@ -425,7 +443,9 @@ export function montarVitrine() {
       el('span', { class: 'item-tag' },
         nomeDaPeca(peca),
         r.aura ? el('span', { class: 'raridade', style: { color: r.aura === 'arco-iris' ? '#b8860b' : r.aura } },
-          ' · ' + r.nome) : null),
+          ' · ' + r.nome) : null,
+        falta ? el('span', { class: 'falta-colecao' }, ` · falta em ${falta.marca} ${falta.tem}/${falta.total}`) : null),
+      premio ? el('span', { class: 'selo-colecao', title: `Pegue e escolha um item da coleção ${premio.marca}` }, '🎁') : null,
       el('button', {
         class: 'btn-pegar',
         onclick: (ev) => { ev.stopPropagation(); pegar(peca.id, no); },
@@ -546,6 +566,17 @@ function abrirFicha(peca, raridade, no) {
     chance < 100 ? `${r.nome.toLowerCase()} aparece em ${chance}% das lojas` : null,
   ].filter(Boolean).join(' · ');
 
+  // As coleções da peça: um toque leva até elas. Peça que você ainda não tem
+  // e que falta numa coleção começada é motivo para pegar.
+  const cols = colecoesDaPeca(peca.id);
+  const nova = !db.temPeca(peca.id);
+  const premio = nova && cols.find(rendeEscolha);
+  const falta = nova && cols.some(c => c.tem > 0);
+  $('#ficha-colecoes').replaceChildren(
+    ...(cols.length ? [el('span', { class: 'col-chips-titulo' },
+      premio ? `🎁 Pegue e escolha um item de ${premio.marca}` : falta ? 'Falta na sua coleção' : 'Coleções')] : []),
+    ...cols.map(chipDaColecao));
+
   const acao = $('#ficha-acao');
   const possuida = db.temPeca(peca.id);
   acao.textContent = possuida ? 'Já está no seu closet' : 'Pegar';
@@ -657,6 +688,7 @@ async function pegar(id, noDOM) {
   else falarDe('pegou');
 
   toast(`${nomeDaPeca(peca)} — ${r.nome} · foi para o guarda-roupa`, nova.raridade);
+  avisarColecaoDaPeca(id);
   if (subiu) toast(`Efeito ${marcaDoEfeito('raridade-acima')}: a peça veio ${r.nome.toLowerCase()}, uma raridade acima.`, nova.raridade);
   if (gratis) toast(`Efeito ${marcaDoEfeito('resgate-gratis')}: este resgate não gastou o limite do dia.`, 'rare');
   if (ficha) toast(`Efeito ${marcaDoEfeito('fichas')}: +1 ficha.`, 'rare');

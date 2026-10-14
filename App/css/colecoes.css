@@ -364,3 +364,29 @@
 }
 .col-album-casa.tem { cursor: pointer; transition: transform .15s; }
 .col-album-casa.tem:active { transform: scale(.95); }
+
+/* Atalhos para as coleções em outras telas */
+.col-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.col-chips-titulo { width: 100%; font-size: 11px; font-weight: 700; color: var(--tinta-suave); letter-spacing: .02em; }
+.col-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px;
+  border: 1px solid #e6dccd; border-radius: 99px; background: #fff;
+  font-size: 12px; font-weight: 600; color: var(--tinta); cursor: pointer;
+}
+.col-chip small { font-size: 11px; color: var(--tinta-suave); font-weight: 700; }
+.col-chip.presente { border-color: #c9a443; background: #fbf0cc; }
+.col-chip.completa small { color: #2f7a4a; }
+.col-chip-disco {
+  width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+  display: grid; place-items: center; background: #f4efe7; position: relative;
+}
+.col-chip-disco img { width: 100%; height: 100%; object-fit: contain; }
+.col-chip-disco .peca-caixa { inset: 2px; }
+.col-chip-disco .col-disco-cor { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.toast.col-toast {
+  pointer-events: auto; cursor: pointer; border: 0; font: inherit; font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 10px; background: #2b2620; color: #fff;
+}
+.toast.col-toast strong { color: #f0d27a; }
+.toast.col-toast .col-chip-disco { background: #fff; }
+.vs-ficha-colecao { margin-top: 4px; }

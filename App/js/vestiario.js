@@ -49,6 +49,7 @@ import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
 import { irPara, viewAtual } from './router.js';
+import { todasAsColecoes, chipDaColecao } from './colecoes.js';
 
 let filtro = 'tudo';        // aba da coleção: 'tudo' ou um slot
 let pagina = 0;             // página da mochila, começando em 0
@@ -463,7 +464,16 @@ function renderFicha() {
     // procedência dela, que é metade do valor de uma peça de coleção.
     el('div', { class: 'vs-condicao ok' },
       el('strong', {}, '✓ ' + db.estadoDaRoupinha(r).rotulo)),
+    colecaoDoItem(r),
   ].filter(Boolean)), el('div', { class: 'vs-ficha-acoes' }, ...acoes(r)));
+}
+
+// Item que veio de uma coleção leva de volta a ela: lá estão os outros itens
+// dela e quanto falta para o próximo.
+function colecaoDoItem(r) {
+  const id = r.desbloqueio?.tipo === 'colecao' ? r.desbloqueio.colecao : null;
+  const c = id && todasAsColecoes().find(x => x.id === id);
+  return c ? el('div', { class: 'col-chips vs-ficha-colecao' }, chipDaColecao(c)) : null;
 }
 
 function acoes(r) {

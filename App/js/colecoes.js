@@ -11,7 +11,7 @@
 
 import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
-import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha } from './roupinhas.js';
+import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha, escolhasDaColecao } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
@@ -104,6 +104,57 @@ export function colecaoMaisPerto() {
 export function capaDaColecao(c) {
   const minha = c.ids.find(id => db.temPeca(id));
   return pecaDoCatalogo(minha ?? c.ids[0]) || null;
+}
+
+// ------------------------- Atalhos de fora da tela -------------------------
+// Outras telas levam às coleções: o aviso de peça nova, a peça no guarda-roupa,
+// a ficha da loja e o item do avatar em Roupas.
+
+// As coleções de que a peça do acervo faz parte (marca, cor, tema). Quem
+// chama várias vezes seguidas passa a lista pronta.
+export function colecoesDaPeca(id, lista = todasAsColecoes()) {
+  return lista.filter(c => c.ids?.includes(id));
+}
+
+// Pegar mais uma peça desta coleção dá uma escolha de item do avatar? Só
+// conta se ainda sobrar item trancado depois das escolhas que já esperam.
+export function rendeEscolha(c) {
+  const n = c.itens?.length || 0;
+  if (!n || c.completa) return false;
+  const trancados = c.itens.filter(id => roupinha(id) && !db.estadoDaRoupinha(roupinha(id)).liberada).length;
+  return trancados > (c.livres || 0) && escolhasDaColecao(c.tem + 1, c.total, n) > escolhasDaColecao(c.tem, c.total, n);
+}
+
+// Um botãozinho com o emblema, o nome e a conta; toca e abre a coleção.
+export function chipDaColecao(c) {
+  const disco = el('span', { class: 'col-chip-disco' }, discoDaColecao(c));
+  return el('button', {
+    type: 'button',
+    class: 'col-chip' + (c.livres > 0 ? ' presente' : '') + (c.completa ? ' completa' : ''),
+    title: `Ver a coleção ${c.marca}`,
+    onclick: (e) => { e.stopPropagation(); abrirColecao(c.id); },
+  }, disco, el('span', {}, c.marca), el('small', {}, c.completa ? '✓' : `${c.tem}/${c.total}`),
+  c.livres > 0 ? el('span', { class: 'col-chip-gift' }, '🎁') : null);
+}
+
+// Logo depois de ganhar uma peça: o aviso diz quanto a coleção andou e leva
+// até ela. Vai a que tem escolha esperando; senão, a mais perto de fechar.
+export function avisarColecaoDaPeca(id) {
+  const cols = colecoesDaPeca(id);
+  if (!cols.length) return;
+  const c = [...cols].sort((a, b) => (b.livres > 0) - (a.livres > 0) || b.pct - a.pct)[0];
+  const texto = c.livres > 0 ? `🎁 ${c.marca}: escolha um item do avatar`
+    : c.completa ? `✨ Coleção ${c.marca} completa!`
+    : `+1 em ${c.marca} · ${c.tem}/${c.total}`;
+  const stack = document.getElementById('toasts');
+  if (!stack) return;
+  const t = el('button', {
+    type: 'button', class: 'toast col-toast',
+    onclick: () => { t.remove(); abrirColecao(c.id); },
+  }, el('span', { class: 'col-chip-disco' }, discoDaColecao(c)), texto, el('strong', {}, 'Ver ›'));
+  stack.append(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 4500);
 }
 
 export function montarColecoes() {

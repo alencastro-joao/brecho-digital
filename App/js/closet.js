@@ -17,6 +17,7 @@ import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
 import { vestirPeca } from './stylist.js';
 import { adicionar as soltarNaColagem } from './board.js';
+import { colecoesDaPeca, chipDaColecao } from './colecoes.js';
 
 let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
@@ -307,6 +308,7 @@ function selecionar(peca) {
   if (cat.marca?.trim()) partes.push(cat.marca.trim());
   partes.push(origem, `em ${new Date(peca.obtidoEm).toLocaleDateString('pt-BR')}`);
   $('#preview-info').textContent = partes.join(' · ');
+  $('#preview-colecoes').replaceChildren(...colecoesDaPeca(peca.id).map(chipDaColecao));
 }
 
 // O rótulo do botão diz o que o clique vai fazer, não o estado atual.
