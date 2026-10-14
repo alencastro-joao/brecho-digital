@@ -11,6 +11,10 @@
 // missão da vez e o botão de ir até ela. Cumprir a missão entrega o prêmio na
 // hora (num aviso) e já passa para a próxima, sem tela de prêmio no meio.
 //
+// O cartão não pode ficar na frente do que a missão pede: a faixa fica em cima
+// ou embaixo conforme a missão (`lugar`, em INTRO), qualquer toque fora dela a
+// recolhe numa bolinha no canto, e tanto a faixa quanto a bolinha se arrastam.
+//
 // Começa sozinho na conta nova. Para testar de novo: Perfil › Testes ›
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
@@ -23,8 +27,13 @@ import { montarVitrine } from './vitrine.js';
 import { el, $, toast } from './util.js';
 
 let caixa = null;
-let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra'
+let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'bolha'
 let concluindo = false;
+// Onde a pessoa arrastou: a faixa só sobe e desce (y), a bolinha vai a
+// qualquer lugar. null = o lugar padrão da missão (CSS).
+const posicao = { barra: null, bolha: null };
+let arrasto = null;
+let acabouDeArrastar = false;
 
 export function montarTutorial() {
   $('#btn-tutorial')?.addEventListener('click', () => {
@@ -33,7 +42,19 @@ export function montarTutorial() {
   });
   // Fora da pilha de quem fez a ação: o prêmio remonta a vitrine, e fazer isso
   // no meio do resgate dela atropelaria o próprio resgate.
-  db.onIntro(() => setTimeout(() => { concluirProntas(); desenhar(); }));
+  db.onIntro(() => setTimeout(() => {
+    // Missão nova na vez: a faixa volta a aparecer para dizer qual é.
+    if (concluirProntas() && modo === 'bolha') modo = 'barra';
+    desenhar();
+  }));
+  // Tocar em qualquer coisa fora do cartão é ir fazer a missão: ele se recolhe.
+  // Em captura e sem impedir nada, então o toque segue para onde foi dado.
+  document.addEventListener('pointerdown', (e) => {
+    if (caixa && !caixa.contains(e.target) && (modo === 'barra' || modo === 'aberta')) {
+      modo = 'bolha';
+      desenhar();
+    }
+  }, true);
   concluirProntas();
   desenhar();
 }
@@ -92,8 +113,9 @@ function entregar(premio) {
 // a coisa antes de chegar na missão já vale. avancarIntro avisa os ouvintes, e
 // a trava impede que esse aviso entre aqui de novo no meio do laço.
 function concluirProntas() {
-  if (concluindo) return;
+  if (concluindo) return false;
   concluindo = true;
+  let alguma = false;
   try {
     while (db.introPronta()) {
       const passo = db.state.intro.passo;
@@ -102,10 +124,12 @@ function concluirProntas() {
       const ultima = passo === INTRO.length - 1;
       db.avancarIntro();
       anunciar(m, r, ultima);
+      alguma = true;
     }
   } finally {
     concluindo = false;
   }
+  return alguma;
 }
 
 // Um aviso só por missão, com tudo o que ela pagou.
@@ -177,12 +201,18 @@ function htmlBarra(m, passo) {
     <button class="btn-dark" data-acao="ir" type="button">Ir</button>`;
 }
 
+function htmlBolha(passo) {
+  return `<button class="intro-bolha" data-acao="barra" type="button"
+    aria-label="Missão ${passo + 1} de ${INTRO.length}: mostrar">${passo + 1}/${INTRO.length}</button>`;
+}
+
 function desenhar() {
   if (!db.introAtiva()) { fechar(); return; }
 
   if (!caixa) {
     caixa = el('div', { class: 'intro', role: 'region', 'aria-label': 'Missões de introdução' });
     caixa.addEventListener('click', clique);
+    caixa.addEventListener('pointerdown', comecarArrasto);
     document.body.append(caixa);
     document.body.classList.add('com-intro');
   }
@@ -190,22 +220,71 @@ function desenhar() {
   const passo = db.state.intro.passo;
   const m = INTRO[passo];
   caixa.dataset.modo = modo;
+  caixa.dataset.lugar = modo === 'boasvindas' ? 'baixo' : m.lugar;
+  document.body.classList.toggle('intro-embaixo', caixa.dataset.lugar === 'baixo' && modo !== 'bolha');
   caixa.innerHTML =
     modo === 'boasvindas' ? htmlBoasVindas() :
     modo === 'aberta' ? htmlAberta(m, passo) :
+    modo === 'bolha' ? htmlBolha(passo) :
     htmlBarra(m, passo);
+  posicionar();
 }
 
 function fechar() {
   caixa?.remove();
   caixa = null;
-  document.body.classList.remove('com-intro');
+  document.body.classList.remove('com-intro', 'intro-embaixo');
+}
+
+// --------------------------------- Arrastar -------------------------------
+const tipoDePosicao = () => (modo === 'bolha' ? 'bolha' : modo === 'barra' ? 'barra' : null);
+
+function posicionar() {
+  const tipo = tipoDePosicao();
+  const p = tipo && posicao[tipo];
+  const s = caixa.style;
+  s.top = s.left = s.right = s.bottom = '';
+  if (!p) return;
+  s.top = `${p.y}px`;
+  s.bottom = 'auto';
+  if (tipo === 'bolha') { s.left = `${p.x}px`; s.right = 'auto'; }
+}
+
+function comecarArrasto(e) {
+  if (!tipoDePosicao() || e.button > 0) return;
+  const r = caixa.getBoundingClientRect();
+  arrasto = { x0: e.clientX, y0: e.clientY, top: r.top, left: r.left, w: r.width, h: r.height, movendo: false };
+  window.addEventListener('pointermove', moverArrasto);
+  window.addEventListener('pointerup', soltarArrasto, { once: true });
+  window.addEventListener('pointercancel', soltarArrasto, { once: true });
+}
+
+function moverArrasto(e) {
+  const a = arrasto;
+  if (!a) return;
+  const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
+  if (!a.movendo && Math.hypot(dx, dy) < 6) return;   // abaixo disso é toque
+  a.movendo = true;
+  const tipo = tipoDePosicao();
+  const y = Math.min(Math.max(4, a.top + dy), innerHeight - a.h - 4);
+  const x = Math.min(Math.max(4, a.left + dx), innerWidth - a.w - 4);
+  posicao[tipo] = tipo === 'bolha' ? { x, y } : { y };
+  posicionar();
+}
+
+function soltarArrasto() {
+  window.removeEventListener('pointermove', moverArrasto);
+  // O click que vem depois de um arrasto não é toque: não abre nem vai.
+  if (arrasto?.movendo) acabouDeArrastar = true;
+  arrasto = null;
 }
 
 function clique(e) {
+  if (acabouDeArrastar) { acabouDeArrastar = false; return; }
   const acao = e.target.closest('[data-acao]')?.dataset.acao;
   if (!acao) return;
   if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
+  else if (acao === 'barra') { modo = 'barra'; desenhar(); }
   else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
   else if (acao === 'ir') { modo = 'barra'; irPara(INTRO[db.state.intro.passo].ir); desenhar(); }
   else if (acao === 'pular') { modo = 'barra'; db.pularIntro(); }

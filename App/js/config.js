@@ -1136,29 +1136,32 @@ export const FERRAMENTAS = [
 // sobe com a cadeia — a última é uma peça épica. `evento` é o mesmo de
 // progredirMissao; fazer a coisa antes de chegar na missão já vale.
 // `pecas` é uma faixa por peça (sem peça na faixa, desce: ver faixasDeTroca).
+// `lugar` é onde o cartão fica no celular enquanto a missão é feita: em cima
+// (sobre o cabeçalho) quando o que se toca na tela está embaixo — a mochila,
+// a paleta, a ficha da peça — e embaixo quando está em cima.
 export const INTRO = [
-  { evento: 'personagem', ir: 'personagem', nome: 'Crie o seu personagem',
+  { evento: 'personagem', ir: 'personagem', lugar: 'cima', nome: 'Crie o seu personagem',
     dica: 'Escolha corpo, pele e cabelo e toque em Salvar. É ele que veste os seus looks.',
     premio: { xp: 20 } },
-  { evento: 'vestir', ir: 'vestiario', nome: 'Vista uma roupinha',
+  { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista uma roupinha',
     dica: 'Em Roupas, dois toques numa peça da mochila vestem o personagem.',
     premio: { xp: 20, fichas: 1 } },
-  { evento: 'resgates', ir: 'vitrine', nome: 'Garimpe 1 peça na loja',
+  { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Garimpe 1 peça na loja',
     dica: 'Toque numa peça do mural e resgate. São 3 por dia, e as raras ficam por baixo da pilha.',
     premio: { pecas: ['uncommon'] } },
-  { evento: 'looks', ir: 'stylist', nome: 'Monte e salve um look',
+  { evento: 'looks', ir: 'stylist', lugar: 'cima', nome: 'Monte e salve um look',
     dica: 'No Stylist, toque nas suas peças para vestir o avatar (ou sorteie um look) e salve.',
     premio: { xp: 40 } },
-  { evento: 'board', ir: 'board', nome: 'Salve uma colagem',
+  { evento: 'board', ir: 'board', lugar: 'cima', nome: 'Salve uma colagem',
     dica: 'Na Colagem, espalhe as peças no fundo branco do jeito que quiser e salve.',
     premio: { pecas: ['uncommon'], xp: 20 } },
-  { evento: 'publicar', ir: 'stylist', nome: 'Publique no feed',
+  { evento: 'publicar', ir: 'stylist', lugar: 'cima', nome: 'Publique no feed',
     dica: 'Publique um look do Stylist ou uma colagem: é o que os outros veem de você.',
     premio: { pecas: ['rare'], xp: 30 } },
-  { evento: 'seguir', ir: 'social', nome: 'Siga alguém',
+  { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
     dica: 'No Feed, toque em Seguir em quem você curtir. Dá pra achar amigos pelo nome ou @.',
     premio: { fichas: 2 } },
-  { evento: 'favoritar', ir: 'closet', nome: 'Escolha uma peça favorita',
+  { evento: 'favoritar', ir: 'closet', lugar: 'cima', nome: 'Escolha uma peça favorita',
     dica: 'No Closet, abra uma peça e toque na estrela: ela vai para a vitrine do seu perfil.',
     premio: { pecas: ['epic'], xp: 50 } },
 ];

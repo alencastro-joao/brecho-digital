@@ -46,8 +46,8 @@ body.com-modal .intro { display: none; }
 .intro-texto small { font-size: 12px; color: var(--tinta-suave); }
 .intro[data-modo="barra"] .btn-dark { flex: none; width: auto; margin: 0; padding: 10px 18px; font-size: 14px; }
 
-/* Celular: logo acima da barra de telas, e os avisos sobem para não ficarem
-   embaixo do cartão. */
+/* Celular: logo acima da barra de telas (ou em cima, conforme a missão), e os
+   avisos sobem quando o cartão está embaixo para não ficarem atrás dele. */
 @media (max-width: 900px) {
   .intro {
     left: 12px; right: 12px; width: auto;
@@ -55,5 +55,31 @@ body.com-modal .intro { display: none; }
     padding: 14px 16px 12px; border-radius: 20px;
   }
   .intro h2 { font-size: 18px; }
-  body.com-intro .toast-stack { bottom: auto; top: calc(56px + env(safe-area-inset-top)); }
+  body.intro-embaixo .toast-stack { bottom: auto; top: calc(56px + env(safe-area-inset-top)); }
+
+  /* Missão que mexe na parte de baixo da tela: a faixa vai para cima, por
+     cima do cabeçalho, que nenhuma missão usa. */
+  .intro[data-lugar="cima"] { top: calc(6px + env(safe-area-inset-top)); bottom: auto; }
+  .intro[data-lugar="cima"][data-modo="aberta"] { top: calc(6px + env(safe-area-inset-top)); }
+}
+
+/* Arrastar: a faixa e a bolinha se movem com o dedo, sem rolar a página. */
+.intro[data-modo="barra"], .intro[data-modo="bolha"] { touch-action: none; cursor: grab; user-select: none; }
+
+/* Recolhido: uma bolinha no canto com a missão da vez. Toque abre de novo. */
+.intro[data-modo="bolha"] {
+  /* No celular, sobre o título do cabeçalho: o único canto que nenhuma tela
+     usa para tocar. */
+  left: 12px; right: auto; top: calc(4px + env(safe-area-inset-top)); bottom: auto;
+  width: auto; padding: 0; border-radius: 50%;
+  background: var(--tinta); border-color: var(--tinta);
+  animation: none;
+}
+.intro-bolha {
+  display: grid; place-items: center;
+  width: 50px; height: 50px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: #fff; font-size: 13px; font-weight: 800;
+}
+@media (min-width: 901px) {
+  .intro[data-modo="bolha"] { left: auto; right: 120px; top: auto; bottom: 28px; }
 }
