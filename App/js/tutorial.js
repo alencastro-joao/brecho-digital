@@ -20,14 +20,14 @@
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
 import { INTRO, RARIDADE, RARIDADES, faixasDeTroca, idDaCor } from './config.js';
-import { catalogo, nomeDaPeca } from './catalog.js';
+import { catalogo, nomeDaPeca, imagemDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { irPara } from './router.js';
 import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { darTrioDaCor } from './presente.js';
-import { el, $, toast } from './util.js';
+import { el, $ } from './util.js';
 
 let caixa = null;
 let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'bolha'
@@ -162,19 +162,60 @@ function concluirProntas() {
   return alguma;
 }
 
-// Um aviso só por missão, com tudo o que ela pagou.
+// Um aviso só por missão, com tudo o que ela pagou: um cartão de prêmio no meio
+// da tela, com a foto de cada peça na moldura da raridade e os bônus em
+// destaque. Não pede clique: some sozinho (ou num toque) e, se várias missões
+// fecharem juntas, os prêmios entram um depois do outro.
+const filaDePremios = [];
+let premioNaTela = null;
+
 function anunciar(m, r, ultima) {
-  const coisas = [
-    ...r.pecas.map(({ item, peca }) => `${nomeDaPeca(item)} (${RARIDADE[peca.raridade]?.nome ?? ''})`),
-    r.fichas && (r.fichas === 1 ? '1 ficha' : `${r.fichas} fichas`),
-    r.xp && `${r.xp} XP`,
-  ].filter(Boolean);
+  filaDePremios.push({ m, r, ultima });
+  if (!premioNaTela) proximoPremio();
+}
+
+function proximoPremio() {
+  const vez = filaDePremios.shift();
+  if (!vez) { premioNaTela = null; return; }
+  const { m, r, ultima } = vez;
   const melhor = r.pecas.map(p => p.peca.raridade)
     .sort((a, b) => ordem(b) - ordem(a))[0] || 'uncommon';
-  const ganhou = coisas.length ? ` Ganhou ${coisas.join(' e ')}.` : '';
-  toast(ultima
-    ? `Tutorial completo!${ganhou} Agora as missões do dia, em Tarefas, continuam dando prêmio.`
-    : `✓ ${m.nome}.${ganhou}`, melhor);
+
+  const pecas = r.pecas.map(({ item, peca }, i) => {
+    const rar = RARIDADE[peca.raridade] || RARIDADE.common;
+    return el('div', { class: `premio-peca r-${peca.raridade}`,
+        style: { '--cor': rar.cor, '--bg': rar.bg, animationDelay: `${.25 + i * .15}s` } },
+      el('div', { class: 'premio-foto' },
+        el('img', { ...imagemDaPeca(item, 120), alt: nomeDaPeca(item), decoding: 'async' })),
+      el('span', { class: 'premio-rar' }, rar.nome),
+      el('span', { class: 'premio-nome' }, nomeDaPeca(item)));
+  });
+  const bonus = [
+    r.fichas && el('span', { class: 'premio-bonus ficha' }, `+${r.fichas} ${r.fichas === 1 ? 'ficha' : 'fichas'}`),
+    r.xp && el('span', { class: 'premio-bonus xp' }, `+${r.xp} XP`),
+  ].filter(Boolean);
+
+  const cartao = el('div', { class: `premio r-${melhor}`, role: 'status' },
+    el('div', { class: 'premio-brilho' }),
+    el('p', { class: 'premio-sobre' }, ultima ? 'Tutorial completo!' : 'Missão completa'),
+    el('h2', {}, m.nome),
+    pecas.length ? el('div', { class: 'premio-pecas' }, pecas) : null,
+    bonus.length ? el('div', { class: 'premio-bonus-linha' }, bonus) : null,
+    ultima ? el('p', { class: 'premio-fim' }, 'Agora as missões do dia, em Tarefas, continuam dando prêmio.') : null,
+    el('p', { class: 'premio-toque' }, 'toque para fechar'));
+
+  let fechado = false;
+  const fechar = () => {
+    if (fechado) return;
+    fechado = true;
+    clearTimeout(timer);
+    cartao.classList.add('saindo');
+    setTimeout(() => { cartao.remove(); proximoPremio(); }, 250);
+  };
+  cartao.addEventListener('click', fechar);
+  const timer = setTimeout(fechar, (ultima ? 5200 : 2600) + pecas.length * 700);
+  premioNaTela = cartao;
+  document.body.append(cartao);
 }
 const ordem = (f) => RARIDADES.findIndex(r => r.id === f);
 
