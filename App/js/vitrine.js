@@ -361,14 +361,24 @@ export function montarVitrine() {
   const topoMural = mural.getBoundingClientRect().top;
   const acoes = caixaAcoes?.width;
   const fundoAcoes = caixaAcoes?.height ? caixaAcoes.bottom - topoMural + 10 : 0;
-  const zonasProibidas = [
-    { x0: largura - (acoes ? acoes + 48 : 210), y0: 0, x1: largura, y1: Math.max(104, fundoAcoes) },
-  ];
+  // No celular não há faixa de cabeçalho: o contador fica num canto e o sino
+  // e o perfil no outro, flutuando sobre o mural. Só os três viram zona
+  // proibida (medidos, com folga) e o resto do topo é das peças.
+  const celular = matchMedia('(max-width: 900px)').matches;
+  const zonaDe = (no, folga = 8) => {
+    const r = no?.getBoundingClientRect();
+    if (!r?.width) return null;
+    const esq = mural.getBoundingClientRect().left;
+    return { x0: r.left - esq - folga, y0: 0, x1: r.right - esq + folga, y1: r.bottom - topoMural + folga };
+  };
+  const zonasProibidas = celular
+    ? [$('.vitrine-acoes'), $('.avisos-btn'), $('#perfil-atalho')].map(no => zonaDe(no)).filter(Boolean)
+    : [{ x0: largura - (acoes ? acoes + 48 : 210), y0: 0, x1: largura, y1: Math.max(104, fundoAcoes) }];
   if (CONFIG.NPC_VISIVEL) {
     zonasProibidas.push({ x0: 0, y0: altura - 290, x1: 320, y1: altura });
   }
 
-  const areaLivre = { w: largura, h: altura, topo: 88, zonas: zonasProibidas };
+  const areaLivre = { w: largura, h: altura, topo: celular ? FOLGA_BORDA : 88, zonas: zonasProibidas };
   const pontos = espalharPeloMural(
     medidas.map(m => ({ w: m.caixa.w, h: fundoDaPeca(m.caixa) })), areaLivre, rnd);
 
