@@ -1,15 +1,16 @@
-// Missões de introdução: o tutorial de conta nova, em forma de missão.
+// Missões de introdução: o tutorial de conta nova, guiado e em forma de missão.
 //
-// Uma missão por vez (INTRO em config.js), cada uma ensinando uma parte do app
-// — personagem, roupas, loja, Stylist, colagem, feed, seguir, favoritos — e
-// pagando um prêmio que cresce com a cadeia: XP, fichas e peças, até a épica
-// da última. O progresso vem dos mesmos eventos das missões do dia
-// (db.progredirMissao), então fazer a coisa já conta, esteja onde estiver.
+// Abre numa tela em branco que avisa que o tutorial vai começar e, dali, leva a
+// pessoa por um passo de cada vez (INTRO em config.js): personagem, a loja e
+// as regras dela, pegar a primeira roupa, o closet e as raridades, coleções e
+// o resgate do item, vestir o avatar, combos, e o resto do app. Cada passo
+// abre sozinho a tela de que fala. Passo que só explica segue no "Entendi";
+// passo com ação é missão e paga um prêmio que cresce com a cadeia — XP,
+// fichas e peças, até a épica da última. O progresso vem dos mesmos eventos das
+// missões do dia (db.progredirMissao), então fazer a coisa antes já conta.
 //
-// Na tela é um cartão fixo acima da barra (no celular) ou ao lado dela (no
-// computador): aberto mostra a missão inteira; minimizado vira uma faixa com a
-// missão da vez e o botão de ir até ela. Cumprir a missão entrega o prêmio na
-// hora (num aviso) e já passa para a próxima, sem tela de prêmio no meio.
+// Cumprir a missão entrega o prêmio na hora (num aviso) e já passa para o
+// próximo passo, sem tela de prêmio no meio.
 //
 // O cartão não pode ficar na frente do que a missão pede: a faixa fica em cima
 // ou embaixo conforme a missão (`lugar`, em INTRO), qualquer toque fora dela a
@@ -45,19 +46,39 @@ export function montarTutorial() {
   // Fora da pilha de quem fez a ação: o prêmio remonta a vitrine, e fazer isso
   // no meio do resgate dela atropelaria o próprio resgate.
   db.onIntro(() => setTimeout(() => {
-    // Missão nova na vez: a faixa volta a aparecer para dizer qual é.
-    if (concluirProntas() && modo === 'bolha') modo = 'barra';
+    if (concluirProntas()) passoNovo();
     desenhar();
   }));
-  // Tocar em qualquer coisa fora do cartão é ir fazer a missão: ele se recolhe.
-  // Em captura e sem impedir nada, então o toque segue para onde foi dado.
+  // Tocar em qualquer coisa fora do cartão, numa missão, é ir fazer a missão:
+  // ele se recolhe. Em captura e sem impedir nada, então o toque segue para
+  // onde foi dado. Passo que só explica não se recolhe: ele espera o Entendi.
   document.addEventListener('pointerdown', (e) => {
-    if (caixa && !caixa.contains(e.target) && (modo === 'barra' || modo === 'aberta')) {
+    if (caixa && !caixa.contains(e.target) && (modo === 'barra' || modo === 'aberta') && passoAtual()?.evento) {
       modo = 'bolha';
       desenhar();
     }
   }, true);
   concluirProntas();
+  desenhar();
+}
+
+const passoAtual = () => (db.introAtiva() ? INTRO[db.state.intro.passo] : null);
+
+// O passo da vez acabou de mudar: o cartão abre inteiro e o app vai para a
+// tela de que ele fala.
+function passoNovo() {
+  const m = passoAtual();
+  if (!m) return;
+  modo = 'aberta';
+  irParaMissao(m);
+}
+
+// "Entendi" num passo que só explica: segue, e paga em cadeia o que já estiver
+// feito adiante.
+function entendi() {
+  db.avancarIntro();
+  concluirProntas();
+  passoNovo();
   desenhar();
 }
 
@@ -152,7 +173,7 @@ function anunciar(m, r, ultima) {
     .sort((a, b) => ordem(b) - ordem(a))[0] || 'uncommon';
   const ganhou = coisas.length ? ` Ganhou ${coisas.join(' e ')}.` : '';
   toast(ultima
-    ? `Introdução completa!${ganhou} Agora as missões do dia, em Tarefas, continuam dando prêmio.`
+    ? `Tutorial completo!${ganhou} Agora as missões do dia, em Tarefas, continuam dando prêmio.`
     : `✓ ${m.nome}.${ganhou}`, melhor);
 }
 const ordem = (f) => RARIDADES.findIndex(r => r.id === f);
@@ -183,39 +204,45 @@ function irParaMissao(m) {
   else irPara(m.ir);
 }
 
+// A abertura: uma tela em branco, antes de qualquer outra coisa.
 function htmlBoasVindas() {
   return `
-    <p class="intro-sobre">Missões de introdução</p>
-    <h2>Bem-vindo ao Brechó Digital!</h2>
-    <p class="intro-dica">São ${INTRO.length} missões rápidas que mostram tudo o que dá pra fazer aqui.
-      Cada uma dá um prêmio, e a última é uma <b>peça épica</b>.</p>
-    <div class="intro-acoes">
-      <button class="btn-ghost" data-acao="pular" type="button">Agora não</button>
-      <button class="btn-dark" data-acao="abrir" type="button">Começar</button>
+    <div class="intro-abertura">
+      <span class="intro-logo">BD</span>
+      <h2>Bem-vindo ao Brechó Digital!</h2>
+      <p class="intro-dica">Vamos começar um tutorial rápido. Você vai criar o seu personagem,
+        pegar a sua primeira roupa e conhecer tudo o que dá pra fazer aqui.</p>
+      <p class="intro-dica">Cada missão dá um prêmio, e a última é uma <b>peça épica</b>.</p>
+      <button class="btn-dark" data-acao="comecar" type="button">Começar o tutorial</button>
+      <button class="link-btn" data-acao="pular" type="button">Pular tutorial</button>
     </div>`;
 }
 
 function htmlAberta(m, passo) {
+  const missao = Boolean(m.evento);
   return `
     <div class="intro-topo">
-      <span class="intro-sobre">Missão ${passo + 1} de ${INTRO.length}</span>
-      <button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>
+      <span class="intro-sobre">${missao ? 'Missão' : 'Tutorial'} · ${passo + 1} de ${INTRO.length}</span>
+      ${missao ? '<button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>' : ''}
     </div>
     <h2>${m.nome}</h2>
     <p class="intro-dica">${comCor(m.dica)}</p>
-    <p class="intro-premio">🎁 ${rotuloDoPremio(m.premio)}</p>
+    ${missao ? `<p class="intro-premio">🎁 ${rotuloDoPremio(m.premio)}</p>` : ''}
     ${pontos(passo)}
     <div class="intro-acoes">
-      <button class="btn-ghost" data-acao="pular" type="button">Pular introdução</button>
-      <button class="btn-dark" data-acao="ir" type="button">Ir para lá</button>
+      <button class="btn-ghost" data-acao="pular" type="button">Pular tutorial</button>
+      ${missao
+        ? '<button class="btn-dark" data-acao="minimizar" type="button">Bora!</button>'
+        : '<button class="btn-dark" data-acao="entendi" type="button">Entendi</button>'}
     </div>`;
 }
 
 function htmlBarra(m, passo) {
+  const sub = m.evento ? `🎁 ${rotuloDoPremio(m.premio)}` : 'toque para ler';
   return `
     <button class="intro-faixa" data-acao="abrir" type="button">
       <span class="intro-num">${passo + 1}/${INTRO.length}</span>
-      <span class="intro-texto"><b>${m.nome}</b><small>🎁 ${rotuloDoPremio(m.premio)}</small></span>
+      <span class="intro-texto"><b>${m.nome}</b><small>${sub}</small></span>
     </button>
     <button class="btn-dark" data-acao="ir" type="button">Ir</button>`;
 }
@@ -302,9 +329,11 @@ function clique(e) {
   if (acabouDeArrastar) { acabouDeArrastar = false; return; }
   const acao = e.target.closest('[data-acao]')?.dataset.acao;
   if (!acao) return;
-  if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
+  if (acao === 'comecar') { passoNovo(); desenhar(); }
+  else if (acao === 'entendi') entendi();
+  else if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
   else if (acao === 'barra') { modo = 'barra'; desenhar(); }
   else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
-  else if (acao === 'ir') { modo = 'barra'; irParaMissao(INTRO[db.state.intro.passo]); desenhar(); }
+  else if (acao === 'ir') { modo = passoAtual()?.evento ? 'barra' : 'aberta'; irParaMissao(passoAtual()); desenhar(); }
   else if (acao === 'pular') { modo = 'barra'; db.pularIntro(); }
 }
