@@ -133,3 +133,5 @@
   text-transform: uppercase; letter-spacing: .06em;
   border: 1.5px solid var(--linha); border-radius: 20px; padding: 3px 11px;
 }
+.item-slot.achada { animation: slot-achada 1.2s ease-in-out 2; }
+@keyframes slot-achada { 50% { box-shadow: 0 0 0 4px #d9b453; transform: scale(1.06); } }

@@ -330,12 +330,35 @@ function limparPreview() {
   const editar = $('#btn-editar-peca'); if (editar) editar.hidden = true;
 }
 
+let pecaPedida = null;            // peça que outra tela pediu para mostrar
+
+// Abre o guarda-roupa já com a peça escolhida (o álbum das coleções usa).
+export function abrirPecaNoCloset(id) {
+  pecaPedida = id;
+  irPara('closet');
+}
+
 export function aoEntrarNoCloset() {
   // O agrupamento e a ordem podem ter mudado no Stylist ou na Colagem.
   montarSeletorDeAgrupamento();
   montarSeletorDeOrdem();
   montarRail();
-  carregarCategoria(categoriaAtual, { manterPagina: true });
+  const id = pecaPedida;
+  pecaPedida = null;
+  if (!id) { carregarCategoria(categoriaAtual, { manterPagina: true }); return; }
+  carregarCategoria('todas');
+  const i = pecasDaVista.findIndex(p => p.id === id);
+  if (i < 0) return;
+  pagina = Math.floor(i / pecasPorPagina());
+  desenharPagina();
+  selecionar(pecasDaVista[i]);
+  const slot = $(`#inventory-grid .item-slot[data-id="${CSS.escape(id)}"]`);
+  if (slot) {
+    slot.classList.add('achada');
+    slot.scrollIntoView({ block: 'nearest' });
+    setTimeout(() => slot.classList.remove('achada'), 2400);
+  }
+  $('#preview-moldura')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 export function darPecasAleatorias(qtd, itens) {

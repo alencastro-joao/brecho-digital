@@ -362,3 +362,5 @@
   .col-album-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .col-trilha { padding: 16px 16px 12px; }
 }
+.col-album-casa.tem { cursor: pointer; transition: transform .15s; }
+.col-album-casa.tem:active { transform: scale(.95); }

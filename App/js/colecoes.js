@@ -16,6 +16,7 @@ import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { irPara, viewAtual } from './router.js';
+import { abrirPecaNoCloset } from './closet.js';
 
 let grupo = 'marcas';
 let expandida = null;        // emblema da lista aberto mostrando as peças
@@ -309,8 +310,9 @@ function casaDoAlbum(id) {
   const tem = db.temPeca(id);
   const rar = RARIDADE[peca.raridade];
   return el('div', {
-    class: 'col-album-casa' + (tem ? '' : ' falta'),
-    title: tem ? nomeDaPeca(peca) : `Falta: ${nomeDaPeca(peca)}${rar ? ` (${rar.nome.toLowerCase()})` : ''}`,
+    class: 'col-album-casa' + (tem ? ' tem' : ' falta'),
+    title: tem ? `${nomeDaPeca(peca)} · ver no guarda-roupa` : `Falta: ${nomeDaPeca(peca)}${rar ? ` (${rar.nome.toLowerCase()})` : ''}`,
+    onclick: tem ? () => abrirPecaNoCloset(id) : null,
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
       el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })),
