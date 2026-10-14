@@ -1184,6 +1184,15 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   });
 }
 
+// Os itens feitos para uma marca: o item de base com a tinta e o nome dela.
+// A coleção adota cada um logo abaixo, como os outros itens de marca.
+for (const c of COLECOES) {
+  for (const [id, [base, nome, cor]] of Object.entries(c.variantes || {})) {
+    const r = ROUPINHAS.find(x => x.id === base);
+    if (r) ROUPINHAS.push({ ...r, id, nome, cor, desbloqueio: null });   // sem regra de antes: não é herdado
+  }
+}
+
 export const ROUPINHA = Object.fromEntries(ROUPINHAS.map(r => [r.id, r]));
 
 // ------------------------------ Coleções ----------------------------------

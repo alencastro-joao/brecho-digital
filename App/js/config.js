@@ -976,6 +976,25 @@ export const COLECOES = [
   { id: 'ecko', marca: 'Ecko',
     itens: ['bucket', 'pochete'],
     efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
+  // Marcas cujos itens são feitos para elas: um item que já existe, com outra
+  // tinta e o nome da marca (como os das coleções de cor). Ver `variantes`
+  // em roupinhas.js: id do item novo -> [item de base, nome, cor].
+  { id: 'tapout', marca: 'Tapout',
+    itens: ['regata-tapout', 'bermuda-tapout', 'bone-tapout'],
+    variantes: {
+      'regata-tapout': ['regata', 'Regata Tapout', '#1f1f1f'],
+      'bermuda-tapout': ['bermuda', 'Bermuda de luta Tapout', '#8e1b1b'],
+      'bone-tapout': ['bone', 'Boné Tapout', '#2a2a2a'],
+    },
+    efeito: { tipo: 'mais-da-marca', texto: 'Mais peças Tapout na sua arara' } },
+  { id: 'true-religion', marca: 'True Religion',
+    itens: ['jeans-true-religion', 'bone-true-religion', 'cinto-true-religion'],
+    variantes: {
+      'jeans-true-religion': ['jeans', 'Jeans True Religion', '#34506e'],
+      'bone-true-religion': ['bone', 'Boné True Religion', '#e3d6bd'],
+      'cinto-true-religion': ['cinto', 'Cinto True Religion', '#6b4423'],
+    },
+    efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
