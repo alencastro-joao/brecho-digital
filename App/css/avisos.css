@@ -104,14 +104,14 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
 
 /* Celular: a barra de telas foi para o rodapé, e o canto de cima de cada tela
    já tem dono (as categorias do closet, o ↻ do feed, o "Tirar tudo"). Então o
-   app ganha uma faixa no topo, como a do Instagram: o nome à esquerda e o sino
-   à direita. A faixa é um pseudo-elemento da própria coluna do app — nenhuma
+   app ganha uma faixa no topo só para o sino e o perfil, à direita (sem nome
+   do app). A faixa é um pseudo-elemento da própria coluna do app — nenhuma
    tela precisou saber dela. */
 @media (max-width: 900px) {
   :root { --topo-h: 52px; }
 
   .app::before {
-    content: 'Brechó Digital';
+    content: '';
     order: -1; flex: none;
     height: calc(var(--topo-h) + env(safe-area-inset-top));
     padding: env(safe-area-inset-top) 16px 0;
@@ -119,6 +119,23 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
     font-size: 16px; font-weight: 800; letter-spacing: -.3px;
     background: var(--branco); border-bottom: 1px solid var(--linha);
   }
+
+  /* Na vitrine o "Vitrine do dia" e a data ocupam a própria faixa, à esquerda
+     do sino: o cabeçalho da tela vira a faixa e a do app sai. */
+  .app:has(> .view-vitrine:not([hidden]))::before { display: none; }
+  .view-vitrine .vitrine-head {
+    position: relative; flex: none; align-items: center;
+    min-height: calc(var(--topo-h) + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 100px 0 16px;
+    background: var(--branco); border-bottom: 1px solid var(--linha);
+  }
+  .view-vitrine .vitrine-head > div:first-child { background: none; padding: 0; border-radius: 0; flex: none; white-space: nowrap; }
+  .view-vitrine .vitrine-title { font-size: 16px; line-height: 1.15; }
+  .view-vitrine .vitrine-sub { font-size: 11px; margin-top: 1px; }
+  .view-vitrine .vitrine-acoes { align-items: center; flex: 1; min-width: 0; padding: 6px 0; }
+  .view-vitrine .picks-badge { padding: 3px 9px; box-shadow: none; }
+  .view-vitrine .picks-badge #picks-left { font-size: 16px; }
+  .view-vitrine .picks-badge small { margin-top: 0; }
 
   .avisos-btn {
     top: calc(6px + env(safe-area-inset-top)); right: 10px;
