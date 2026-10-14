@@ -175,7 +175,6 @@
             <span>Organizar</span>
             <span id="closet-ordem"></span>
           </label>
-          <button class="btn-dark btn-adicionar" id="btn-add-peca">+ Adicionar peça</button>
         </div>
       </header>
       <div class="grid-container" id="inventory-grid"></div>
@@ -901,6 +900,8 @@
           <!-- Só o administrador: todas as contas do app, e apagar as outras -->
           <div class="limpeza-contas" id="limpeza-contas" hidden>
             <div class="tool-row">
+              <!-- Peça nova entra pela esteira (esteira.html); o botão saiu do closet -->
+              <button class="btn-ghost" id="btn-add-peca">+ Adicionar peça</button>
               <button class="btn-ghost" id="btn-ver-contas">Ver todas as contas</button>
               <button class="btn-ghost danger" id="btn-limpar-contas" hidden>Apagar as outras contas</button>
             </div>

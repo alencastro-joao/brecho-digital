@@ -178,13 +178,14 @@
     padding: 0 0 10px;
   }
   .view-closet .closet-head.abertas .closet-acoes { display: flex; }
-  .view-closet .closet-ordem { font-size: 12px; font-weight: 600; }
+  /* Só as opções, sem os rótulos "Categorias" e "Organizar": numa linha. */
+  .view-closet .closet-acoes { flex-wrap: nowrap; gap: 8px; }
+  .view-closet .closet-ordem > span:first-child { display: none; }
   .view-closet .closet-ordem select {
-    font: inherit; font-size: 13px; font-weight: 600; color: var(--tinta);
-    padding: 6px 10px; border-radius: 11px;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--tinta);
+    width: auto; max-width: 46vw; height: 36px; padding: 0 10px; border-radius: 11px;
     border: 2px solid var(--bloco-borda); background: var(--bloco);
   }
-  .view-closet .btn-adicionar { padding: 7px 12px; font-size: 12px; }
   /* 4 colunas × 6 fileiras, preenchendo a altura do painel. */
   .view-closet .grid-container {
     gap: 7px; overflow: hidden;
