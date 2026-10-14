@@ -71,6 +71,7 @@ function estadoInicial() {
     dia: { data: hojeISO(), resgates: 0, extras: 0, guardados: 0, posicoes: {} },   // posicoes: peça arrastada no mural
                                                                     // extras: resgates comprados com fichas hoje
                                                                     // guardados: extras de dias anteriores ainda não usados
+                                                                    // arrumacao/estoque: sementes da vitrine do dia (ver vitrine.js)
     looks: [],                 // { id, nome, criadoEm, camadas[], thumb, publicado }
     boards: [],                // colagens: { id, nome, formato, margem, assinatura, itens[], guias }
     feed: [],                  // posts (meus + dos perfis fictícios)
@@ -397,6 +398,15 @@ function despedir() {
   enviar({ despedida: true });
 }
 
+// Sobe agora o que estava esperando e espera a resposta. É o que o botão de
+// sair chama antes de encerrar a sessão no servidor: depois dela o PUT volta
+// 401, e a última mexida (um resgate segundos antes de sair) não chegava.
+export async function descarregar() {
+  clearTimeout(timerEnvio);
+  if (enviando) await enviando;
+  await enviar();
+}
+
 // Põe o save da nuvem no lugar do daqui. Passa pelo localStorage de propósito:
 // `carregar()` é quem sabe migrar save antigo (missões, vestiário, slots
 // renomeados). Trazer da nuvem sem ele seria reimplementar essas migrações.
@@ -601,9 +611,8 @@ export function guardarPosicao(id, x, y) {
 }
 export const posicaoGuardada = (id) => state.dia.posicoes?.[id] ?? null;
 
-// A vitrine chama uma vez por carregamento: a arrumação é sorteada de novo a
-// cada recarga, então posição guardada na sessão anterior só atrapalharia —
-// a peça arrastada ontem voltaria sozinha para o canto de ontem.
+// A vitrine chama uma vez por carregamento: a posição arrastada é em pixels da
+// tela daquela sessão, e em outra tela (o celular) ela cairia fora do lugar.
 export function limparPosicoes() {
   if (!state.dia.posicoes || !Object.keys(state.dia.posicoes).length) return;
   state.dia.posicoes = {};

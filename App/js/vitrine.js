@@ -46,16 +46,21 @@ let tamanhoMontado = { w: 0, h: 0 };
 let zTopo = 100;
 const trazerParaFrente = (no) => { no.style.zIndex = String(++zTopo); };
 
-// A arrumação do mural é sorteada uma vez por carregamento da página: recarregar
-// remexe a arara. Dentro da mesma sessão a semente é fixa, senão redimensionar a
-// janela (que remonta o mural) jogaria tudo para outro lugar no meio do garimpo.
+// A arrumação do mural é sorteada uma vez por dia e fica no save (`dia.arrumacao`):
+// recarregar a página ou sair e entrar na conta mostra a loja como estava.
+// Antes ela era sorteada a cada carregamento, e a loja parecia outra.
+//
+// O estoque fora do sorteio do dia (`dia.estoque`) é o que o botão de repor
+// (admin) usa para trocar a arara sem esperar a meia-noite. Também fica no save,
+// senão a loja reposta voltava a ser a do dia no próximo login. `null` = loja do dia.
+// Os dois somem sozinhos na virada do dia, junto com o resto de `state.dia`.
 const novaSemente = () => (Math.random() * 0x100000000) >>> 0;
-let sementeArrumacao = novaSemente();
+function sementeArrumacao() {
+  if (db.state.dia.arrumacao == null) { db.state.dia.arrumacao = novaSemente(); db.salvar(); }
+  return db.state.dia.arrumacao;
+}
+const sementeEstoque = () => db.state.dia.estoque ?? null;
 let posicoesLimpas = false;
-
-// Estoque fora do sorteio do dia: é o que o botão de repor (admin) usa para
-// trocar a arara sem esperar a virada da meia-noite. `null` = loja do dia.
-let sementeEstoque = null;
 
 // Quanto mais raro, mais embaixo da pilha. RARIDADES já vem da mais comum para
 // a mais rara, então o índice serve de nível direto.
@@ -83,7 +88,7 @@ function levadaHoje(id, iso) {
 }
 
 export function poolDoDia(iso = hojeISO()) {
-  const rnd = mulberry32(sementeEstoque ?? db.sementeDaLoja(iso));
+  const rnd = mulberry32(sementeEstoque() ?? db.sementeDaLoja(iso));
   const { naLoja } = db.modificadoresDaLoja();
   const raridade = (i) => {
     const r = db.raridadeDoDia(i.id, iso);
@@ -115,15 +120,14 @@ export function poolDoDia(iso = hojeISO()) {
   // sempre. O bônus vestido (+5% a +20%) vale 3× aqui — uma rara a mais ou uma
   // peça da marca a mais é coisa rara de acontecer com 5%.
   const { marcas, maisRaras } = db.modificadoresDaLoja();
-  const sorte = mulberry32(((sementeEstoque ?? db.sementeDaLoja(iso)) ^ 0x5EED) >>> 0);
+  const sorte = mulberry32(((sementeEstoque() ?? db.sementeDaLoja(iso)) ^ 0x5EED) >>> 0);
   if (maisRaras && grupos.rare.length && sorte() < maisRaras * 3 / 100) arara.push(grupos.rare.shift());
 
   // Comum completa o resto; faltando comum, a incomum que sobrou. Rara para cima
   // nunca entra de recheio — ela só vem pela própria tabela.
-  // A peça levada hoje continua contando vaga até aqui: só sai da lista no fim.
-  // Tirá-la antes fazia o recheio puxar uma peça nova para cada resgate, e quem
-  // recarregava a página achava a arara cheia de novo.
-  const aVenda = (i) => !db.temPeca(i.id);
+  // A peça levada hoje continua na lista do dia: é a montagem do mural que deixa
+  // de pendurá-la. Tirá-la aqui fazia o recheio puxar uma peça nova para cada
+  // resgate, e a arrumação mudava porque o mural tinha menos peças para espalhar.
   let recheio = [...grupos.common, ...grupos.uncommon];
   if (marcas.length) {
     const daMarca = (i) => marcas.find(m =>
@@ -131,8 +135,7 @@ export function poolDoDia(iso = hojeISO()) {
     const frente = recheio.filter(i => { const m = daMarca(i); return m && sorte() < m.pct * 3 / 100; });
     recheio = [...frente, ...recheio.filter(i => !frente.includes(i))];
   }
-  const doDia = [...arara, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - arara.length))];
-  return doDia.filter(aVenda);
+  return [...arara, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - arara.length))];
 }
 
 
@@ -317,17 +320,16 @@ export function montarVitrine() {
   if (!mural) return;
 
   // Dia novo desfaz a reposição do admin: a loja volta a ser a do dia.
-  if (db.virarODiaSeNecessario()) sementeEstoque = null;
+  db.virarODiaSeNecessario();
   $('#vitrine-data').textContent = dataExtenso(db.state.dia.data);
   ligarAdmin();
 
   const iso = db.state.dia.data;
-  // A arrumação vem da semente da sessão, não da data: quem recarrega a página
-  // encontra as mesmas roupas do dia espalhadas de outro jeito.
-  const rnd = mulberry32(sementeArrumacao);
+  const rnd = mulberry32(sementeArrumacao());
 
-  // Peça arrastada volta ao sorteio quando a página recarrega — é justamente o
-  // gesto que pede arara nova.
+  // Peça arrastada volta para o lugar sorteado quando a página recarrega: a
+  // posição é em pixels da tela em que foi arrastada, e no celular ela cairia
+  // fora do lugar.
   if (!posicoesLimpas) { db.limparPosicoes(); posicoesLimpas = true; }
 
   mural.innerHTML = '';
@@ -375,6 +377,8 @@ export function montarVitrine() {
 
   const nos = [];
   estoque.forEach(({ peca, raridade }, i) => {
+    // Já é sua: a vaga e o lugar dela no mural ficam, a peça não.
+    if (db.temPeca(peca.id)) return;
     // O tamanho é só a medida da peça — sem variação aleatória. O mural ganha
     // vida no giro e na flutuação, não no tamanho: sorteá-lo fazia duas
     // camisas de mesma medida aparecerem com tamanhos diferentes na loja.
@@ -442,7 +446,7 @@ export function montarVitrine() {
   // um instante sozinha na mesa — o garimpo entregue antes de começar.
   mural.append(...nos.sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex)));
 
-  if (!pecas.length) {
+  if (!nos.length) {
     mural.append(el('div', { class: 'mural-vazio' },
       el('strong', {}, 'A loja está sem estoque.'),
       el('p', {}, catalogo.itens.length
@@ -734,8 +738,9 @@ export function reporLoja() {
   db.state.dia.resgates = 0;
   db.salvar();
   db.limparPosicoes();
-  sementeEstoque = novaSemente();
-  sementeArrumacao = novaSemente();
+  db.state.dia.estoque = novaSemente();
+  db.state.dia.arrumacao = novaSemente();
+  db.salvar();
   montarVitrine();
   falarDe('boasVindas');
   toast('Loja reposta: estoque novo e resgates liberados.');
@@ -750,7 +755,8 @@ export function devolverRoupas() {
   estoque.devolver(db.state.inventario.map(p => ({ id: p.id, raridade: p.raridade })));
   const qtd = db.devolverTudoParaALoja();
   db.limparPosicoes();
-  sementeArrumacao = novaSemente();
+  db.state.dia.arrumacao = novaSemente();
+  db.salvar();
   montarVitrine();
   toast(qtd
     ? `${qtd} ${qtd === 1 ? 'peça devolvida' : 'peças devolvidas'} para a loja — resgates liberados.`

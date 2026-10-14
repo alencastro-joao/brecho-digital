@@ -463,6 +463,7 @@ function montarConta() {
   // seguram peças, looks e feed da conta que saiu. Zerar isso à mão seria uma
   // função de desmontar por tela — e um bug novo a cada tela nova.
   $('#btn-sair').addEventListener('click', async () => {
+    await db.descarregar();   // antes de sair: sem sessão a nuvem recusa o save
     await auth.sair();
     db.encerrarEstado();
     location.reload();
