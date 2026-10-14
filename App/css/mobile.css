@@ -111,16 +111,17 @@
   .view-closet { flex-direction: column; }
   .view-closet .cat-rail {
     width: auto !important; flex: none;
-    flex-wrap: nowrap; justify-content: flex-start;
+    flex-wrap: nowrap;
     overflow-x: auto; overflow-y: hidden;
-    padding: 8px 12px; gap: 4px;
-    border-right: 0; border-bottom: 1px solid var(--linha);
+    padding: 10px 16px 4px; gap: 6px; justify-content: space-between;
+    border-right: 0; border-bottom: 0;
     scrollbar-width: none;
   }
   .view-closet .cat-rail::-webkit-scrollbar { display: none; }
   .cat-btn { width: 44px; height: 44px; font-size: 19px; border-radius: 13px; }
 
   .grid-wrapper { padding: 14px 16px 12px; }
+  .view-closet .grid-wrapper { padding-top: 10px; }
   /* Cabeçalho numa linha só: título e contagem à esquerda, "Organizar" à
      direita. Categorias, ordem e "+ Adicionar" aparecem só ao tocar nele. */
   .closet-head {
@@ -150,7 +151,9 @@
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
-  .view-closet .grid-container { gap: 7px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .view-closet .grid-container { gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* Sem quadrados vazios completando a página: só as peças, alinhadas. */
+  .view-closet .item-slot.vazio { display: none; }
   .view-closet .item-slot { padding: 6px; border-radius: 11px; border-width: 1.5px; }
   .view-closet .item-slot .peca-caixa { inset: 6px; }
 
