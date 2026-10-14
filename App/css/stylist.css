@@ -13,6 +13,7 @@
   text-transform: uppercase; color: var(--tinta-suave);
 }
 .palette-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.palette-ajustes { display: none; }
 .pal-cat {
   border: 1px solid var(--linha); background: #fff;
   border-radius: 12px; padding: 5px 8px; font-size: 15px; line-height: 1;

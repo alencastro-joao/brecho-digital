@@ -6,7 +6,7 @@
 // ancoragem da sua categoria (engine de lookbook) e dentro da sua camada de
 // z-index; dali a pessoa move, gira e redimensiona à vontade.
 
-import { CONFIG, escalaGrade, ancoraDaPeca } from './config.js';
+import { CONFIG, RARIDADE, escalaGrade, ancoraDaPeca } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande } from './catalog.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
@@ -43,6 +43,12 @@ export function montarStylist() {
   renderCamadas();
   renderSalvos();
   montarMeusStylists();
+
+  // ⇅ (só no celular): mostra e esconde o agrupar e a ordem da paleta.
+  $('#palette-ajustes').addEventListener('click', (e) => {
+    const aberto = $('.stylist-palette').classList.toggle('abertas');
+    e.currentTarget.setAttribute('aria-expanded', String(aberto));
+  });
 
   stage().addEventListener('pointerdown', (e) => {
     if (e.target.closest('.camada')) return;
@@ -138,8 +144,11 @@ function montarPaleta() {
     const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' });
     aplicarContorno(img, peca);
     const vestida = camadas.some(c => c.itemId === p.id);
+    // A raridade pinta o bloco no celular, como na grade do closet.
+    const r = RARIDADE[p.raridade] || RARIDADE.common;
     return el('button', {
-      class: 'pal-item' + (vestida ? ' vestida' : ''),
+      class: `pal-item r-${p.raridade || 'common'}` + (vestida ? ' vestida' : ''),
+      style: { '--rar-borda': r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor },
       title: vestida ? nomeDaPeca(peca) + ' — no palco (clique para tirar)' : nomeDaPeca(peca),
       onclick: () => vestirPeca(p.id),
     }, el('div', {

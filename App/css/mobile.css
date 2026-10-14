@@ -447,6 +447,135 @@
   .stylist-tools .tool-block > .saved-list { grid-column: 1 / -1; }
   .stylist-tools .tool-block > button { margin: 0; padding: 10px 8px; }
 
+  /* No padrão do closet: painéis de borda clara, botões em bloco com um
+     degrau embaixo, só ícones, e o ativo na cor do Stylist. */
+  .view-stylist {
+    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --painel: #f3eee6;
+    background: var(--papel);
+  }
+  .view-stylist :is(.btn-meus, .st-hist-btn, .lb-btn, .pal-cat, .palette-ajustes,
+                    .tool-btn, .ordem-sentido) {
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+    backdrop-filter: none; transform: none;
+  }
+  .view-stylist :is(.btn-meus, .st-hist-btn, .lb-btn, .pal-cat, .palette-ajustes,
+                    .tool-btn):active:not(:disabled) { transform: translateY(1px); }
+  .view-stylist :is(.lb-btn[aria-expanded="true"], .pal-cat.active,
+                    .stylist-palette.abertas .palette-ajustes, .ordem-sentido.on) {
+    background: var(--stylist); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+
+  /* Palco: um cartão branco dentro do painel, sem o pontilhado. */
+  .view-stylist .stylist-stage-area { padding: 12px 16px 0; gap: 10px; }
+  .view-stylist .stage-frame {
+    height: min(58dvh, 560px); padding: 8px; border-radius: 20px;
+    background: var(--bloco); background-image: none;
+    border: 2px solid var(--bloco-borda);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-stylist .btn-meus {
+    top: 10px; left: 10px; height: 38px; padding: 0 10px; gap: 5px;
+    font-size: 0;
+  }
+  .view-stylist .btn-meus::before { content: '▦'; font-size: 17px; }
+  .view-stylist .btn-meus small { font-size: 11px; }
+  .view-stylist .st-historico { top: 10px; right: 10px; }
+  .view-stylist .st-hist-btn { width: 40px; height: 38px; }
+
+  /* Nome do look em bloco; a "ASSINATURA" sai. */
+  .view-stylist .stage-caption { width: 100%; }
+  .view-stylist .stage-sig { display: none; }
+  .view-stylist #outfit-nome {
+    max-width: none; height: 42px; padding: 0 12px;
+    border: 2px solid var(--bloco-borda); border-radius: 11px; background: var(--bloco);
+    font-size: 15px; font-weight: 600; color: var(--tinta);
+  }
+  .view-stylist #outfit-nome:focus { border-color: var(--tinta); }
+
+  /* Ações do look: cinco blocos iguais, só ícone; Salvar na cor do Stylist. */
+  .view-stylist .look-barra { gap: 7px; }
+  .view-stylist .look-barra > .lb-btn,
+  .view-stylist .look-barra .lb-grupo { flex: 1 1 0; }
+  .view-stylist .look-barra .lb-btn { width: 100%; height: 46px; padding: 0; }
+  .view-stylist .look-barra .lb-txt { display: none; }
+  .view-stylist .look-barra .lb-ico { font-size: 19px; }
+  .view-stylist .lb-btn#btn-salvar {
+    background: var(--stylist); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+  .view-stylist .lb-btn:disabled { opacity: .45; }
+
+  /* Paleta: um painel com a fileira de categorias e o ⇅ em cima, as opções
+     (agrupar e ordem) quando o ⇅ abre, e as peças em blocos, 4 por fileira. */
+  .view-stylist .stylist-palette {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center; gap: 8px;
+    margin: 12px 16px 0; padding: 8px; border: 2px solid var(--bloco-borda);
+    border-radius: 20px; background: var(--painel);
+  }
+  .view-stylist .palette-head { display: contents; }
+  .view-stylist .palette-head h2, .view-stylist .palette-hint { display: none; }
+  .view-stylist #palette-cats { grid-column: 1 / 3; grid-row: 1; gap: 6px; padding: 0; }
+  .view-stylist .palette-ajustes {
+    display: grid; place-items: center; grid-column: 3; grid-row: 1;
+    width: 44px; height: 46px; padding: 0; font: inherit; cursor: pointer;
+  }
+  .view-stylist .palette-ajustes::before { content: '⇅'; font-size: 17px; font-weight: 700; }
+  .view-stylist #palette-agrupar, .view-stylist #palette-ordem { grid-row: 2; display: none; }
+  .view-stylist #palette-agrupar { grid-column: 1; }
+  .view-stylist #palette-ordem { grid-column: 2 / 4; }
+  .view-stylist .stylist-palette.abertas #palette-agrupar,
+  .view-stylist .stylist-palette.abertas #palette-ordem { display: flex; }
+  .view-stylist #palette-ordem .ordem-sel {
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--tinta);
+    height: 38px; padding: 0 10px; border-radius: 11px;
+    border: 2px solid var(--bloco-borda); background: var(--bloco);
+  }
+  .view-stylist .ordem-sentido { width: 38px; height: 38px; font-size: 17px; }
+  .view-stylist .pal-cat {
+    flex: 1 0 44px; height: 46px; justify-content: center; font-size: 19px;
+  }
+  .view-stylist .pal-cat small { display: none; }
+  .view-stylist .pal-cat.todas { font-size: 17px; color: var(--tinta); }
+
+  .view-stylist .palette-grid {
+    grid-column: 1 / -1; grid-row: 3;
+    max-height: min(46dvh, 420px); gap: 7px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .view-stylist .pal-item {
+    padding: 6px; border-radius: 11px;
+    border: 2px solid var(--bloco-borda);
+    background: color-mix(in srgb, var(--rar-borda) 24%, #fff);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07);
+  }
+  .view-stylist .pal-item.r-common { background: var(--bloco); }
+  .view-stylist .pal-item.r-legendary { background: color-mix(in srgb, var(--rar-borda) 42%, #fff); }
+  .view-stylist .pal-item .peca-caixa { inset: 6px; }
+  .view-stylist .pal-item:hover { transform: none; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07); }
+  .view-stylist .pal-item.vestida { border-color: var(--tinta); }
+  .view-stylist .pal-item.vestida::after {
+    top: 3px; right: 4px; width: 16px; height: 16px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 9px;
+    background: var(--stylist); border: 1.5px solid var(--tinta);
+  }
+  .view-stylist .grupo-rotulo { grid-column: 1 / -1; }
+
+  /* Ferramentas da peça selecionada: o mesmo painel, sem títulos. */
+  .view-stylist .stylist-tools {
+    margin: 12px 16px 24px; padding: 10px 12px 12px;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel);
+  }
+  .view-stylist .stylist-tools > h2,
+  .view-stylist #layer-tools > .tool-label { display: none; }
+  .view-stylist .tool-btn { height: 42px; font-size: 17px; }
+  .view-stylist .tool-btn:disabled { opacity: .45; }
+
   /* ------------------------------ Colagem -------------------------------- */
   .board-main { order: 1; }
   .board-bar {
