@@ -11,7 +11,7 @@
 
 import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
-import { ROUPINHAS, roupinha, svgRoupinha } from './roupinhas.js';
+import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
@@ -229,31 +229,92 @@ function miniItem(id) {
   return arte;
 }
 
-// A tela da coleção: todas as peças (as que faltam em cinza, com raridade),
-// os itens do avatar com o que falta para cada um e o efeito ao vestir.
+// A tela da coleção, como um álbum: no topo o emblema com o anel e a conta;
+// embaixo a trilha de recompensas (cada marco é um item do avatar); a
+// escolha, só quando há uma esperando; depois o álbum de peças, com as que
+// faltam em silhueta; e o efeito numa linha no fim.
 function renderDetalhe(c) {
   const ids = temPrimeiro(c.ids);
   const faltam = c.total - c.tem;
   $('#col-detalhe').replaceChildren(...[
-    el('header', { class: 'col-det-topo' + (c.completa ? ' completa' : '') },
-      tituloDaColecao(c, 'h1'),
-      el('p', { class: 'col-det-conta' }, !c.total ? 'As peças deste tema chegam em breve.' : c.completa
-        ? `✓ Coleção completa · ${c.total} peças`
-        : `${c.tem} de ${c.total} peças · ${faltam === 1 ? 'falta 1' : `faltam ${faltam}`}`),
-      el('div', { class: 'barra' + (c.completa ? ' cheia' : '') },
-        el('span', { style: { width: (c.pct * 100) + '%' } }))),
-    !c.itens.length ? null : el('section', { class: 'col-det-secao' },
-      el('h3', {}, 'Itens do avatar'),
-      c.livres > 0 ? el('p', { class: 'col-escolha-aviso' },
-        `🎁 Você pode escolher ${c.livres === 1 ? '1 item' : `${c.livres} itens`}. Toque no que quiser.`) : null,
-      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id, c)).filter(Boolean))),
-    el('section', { class: 'col-det-secao' },
-      el('h3', {}, 'Efeito ao vestir'),
-      el('p', { class: 'col-efeito' }, c.efeito.texto,
-        el('span', { class: 'col-breve' }, textoDoBonus(c)))),
-    el('section', { class: 'col-det-secao' },
-      el('h3', {}, 'Peças'),
-      el('div', { class: 'col-det-pecas' }, ...ids.map(id => casaDaPeca(id, true))))].filter(Boolean)); // replaceChildren escreveria "null"
+    el('header', { class: 'col-hero' + (c.completa ? ' completa' : '') },
+      el('span', { class: 'col-disco grande' + (c.completa ? ' completa' : ''),
+        style: { '--pct': (c.pct * 100) + '%' } }, discoDaColecao(c)),
+      el('h1', {}, c.marca),
+      !c.total ? el('p', { class: 'col-hero-sub' }, 'As peças deste tema chegam em breve.')
+        : el('p', { class: 'col-hero-conta' }, el('strong', {}, String(c.tem)), ` / ${c.total}`),
+      c.total ? el('p', { class: 'col-hero-sub' }, c.completa ? '✨ Coleção completa!'
+        : faltam === 1 ? 'Falta só 1 peça para completar' : `Faltam ${faltam} peças para completar`) : null),
+    c.total && c.itens.length ? trilha(c) : null,
+    c.livres > 0 ? blocoDeEscolha(c) : null,
+    c.total ? el('section', { class: 'col-album' },
+      el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
+      el('div', { class: 'col-album-grade' }, ...ids.map(casaDoAlbum))) : null,
+    el('p', { class: 'col-det-efeito' }, '✦ Vestindo: ', c.efeito.texto,
+      el('small', {}, ` (${textoDoBonus(c)})`)),
+  ].filter(Boolean));
+}
+
+// A trilha: uma barra de peças com um marco por item. Item que você já tem
+// aparece no marco; marco alcançado e sem item ainda é um presente.
+// A trilha de recompensas: passos iguais, mostrando até 5 marcos em volta de onde você está.
+function trilha(c) {
+  const meus = c.itens.filter(id => roupinha(id) && db.estadoDaRoupinha(roupinha(id)).liberada);
+  const marcos = c.itens.map((_, k) => ({ n: pecasParaEscolha(k, c.total), item: meus[k] }));
+  const proximo = marcos.find(m => !m.item && m.n > c.tem);
+  const atual = Math.max(0, marcos.findIndex(m => !m.item));
+  const inicio = Math.max(0, Math.min(atual - 1, marcos.length - 5));
+  const janela = marcos.slice(inicio, inicio + 5);
+  const passos = [];
+  janela.forEach((m, i) => {
+    if (i > 0) passos.push(el('span', { class: 'col-trilha-liga' + (m.n <= c.tem ? ' cheia' : '') }));
+    const r = m.item && roupinha(m.item);
+    const presente = !r && m.n <= c.tem;
+    const marco = el('span', {
+      class: 'col-marco' + (r ? ' meu' : presente ? ' presente' : ''),
+      title: r ? r.nome : presente ? 'Escolha disponível' : `${m.n} peças`,
+    });
+    if (r) marco.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+    else marco.textContent = presente ? '🎁' : '🔒';
+    passos.push(el('span', { class: 'col-marco-casa' }, marco,
+      el('small', {}, r ? '✓' : `${m.n} peças`)));
+  });
+  return el('section', { class: 'col-trilha' },
+    el('div', { class: 'col-trilha-passos' }, ...passos),
+    el('p', { class: 'col-trilha-texto' }, c.livres > 0
+      ? '🎁 Você ganhou um item! Escolha abaixo.'
+      : proximo ? `Mais ${proximo.n - c.tem} ${proximo.n - c.tem === 1 ? 'peça' : 'peças'} e você escolhe um item do avatar`
+      : 'Todos os itens desta coleção são seus.'));
+}
+
+function blocoDeEscolha(c) {
+  const trancados = c.itens.filter(id => roupinha(id) && !db.estadoDaRoupinha(roupinha(id)).liberada);
+  return el('section', { class: 'col-escolha' },
+    el('h3', {}, c.livres === 1 ? 'Escolha 1 item' : `Escolha ${c.livres} itens`),
+    el('div', { class: 'col-escolha-grade' }, ...trancados.map(id => {
+      const r = roupinha(id);
+      const arte = el('span', { class: 'col-escolha-arte' });
+      arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+      return el('button', {
+        type: 'button', class: 'col-escolha-item',
+        onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} foi para o seu inventário`, 'rare'); },
+      }, arte, el('strong', {}, r.nome));
+    })));
+}
+
+// Uma casa do álbum: a peça, ou a silhueta dela quando ainda falta.
+function casaDoAlbum(id) {
+  const peca = pecaDoCatalogo(id);
+  if (!peca) return null;
+  const tem = db.temPeca(id);
+  const rar = RARIDADE[peca.raridade];
+  return el('div', {
+    class: 'col-album-casa' + (tem ? '' : ' falta'),
+    title: tem ? nomeDaPeca(peca) : `Falta: ${nomeDaPeca(peca)}${rar ? ` (${rar.nome.toLowerCase()})` : ''}`,
+  },
+    el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
+      el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })),
+    !tem && rar ? el('span', { class: 'col-album-rar', style: { background: rar.cor || '' } }) : null);
 }
 
 function casaDaPeca(id, comNome = false) {

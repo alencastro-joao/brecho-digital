@@ -305,3 +305,60 @@
   align-self: flex-end; border: 0; background: var(--tinta); color: #fff;
   border-radius: 99px; padding: 8px 16px; font-size: 12.5px; font-weight: 700;
 }
+
+/* ------------------------ Tela da coleção (álbum) ------------------------ */
+.col-detalhe { gap: 26px; }
+.col-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding-top: 4px; }
+.col-disco.grande { width: 112px; height: 112px; border-width: 5px; margin-bottom: 8px; }
+.col-hero h1 { font-size: 24px; letter-spacing: -.5px; }
+.col-hero-conta { font-size: 15px; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
+.col-hero-conta strong { font-size: 30px; color: var(--tinta); letter-spacing: -1px; }
+.col-hero-sub { font-size: 13px; color: var(--tinta-suave); }
+.col-hero.completa .col-hero-sub { color: #8a6d24; font-weight: 700; }
+
+.col-trilha { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px 14px; background: #fff; border: 1px solid #e6dccd; border-radius: 18px; }
+.col-trilha-passos { display: flex; align-items: flex-start; justify-content: center; }
+.col-trilha-liga { flex: 1; max-width: 56px; height: 5px; margin-top: 18px; background: #efe8de; border-radius: 99px; }
+.col-trilha-liga.cheia { background: #d9b453; }
+.col-marco-casa { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 0 0 auto; }
+.col-marco {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: #fff; border: 2px solid #e6dccd; font-size: 16px; overflow: hidden; filter: grayscale(1); opacity: .8;
+}
+.col-marco svg { width: 80%; height: 80%; }
+.col-marco.meu { border-color: #cfe3c0; background: #f4faef; filter: none; opacity: 1; }
+.col-marco.presente { border-color: #c9a443; background: #fbf0cc; filter: none; opacity: 1; animation: col-pulsa 1.4s ease-in-out infinite; }
+@keyframes col-pulsa { 50% { transform: scale(1.12); } }
+.col-marco-casa small { font-size: 10.5px; white-space: nowrap; font-weight: 700; color: var(--tinta-suave); }
+.col-trilha-texto { font-size: 13px; font-weight: 600; text-align: center; color: var(--tinta); }
+
+.col-escolha { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #fbf6e8; border: 1.5px solid #e3d3a5; border-radius: 18px; }
+.col-escolha h3 { font-size: 15px; text-align: center; }
+.col-escolha-grade { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.col-escolha-grade > * { width: 104px; }
+.col-escolha-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px;
+  background: #fff; border: 1.5px solid #e3d3a5; border-radius: 14px; color: var(--tinta); font: inherit;
+}
+.col-escolha-item:hover { border-color: #8a6d24; transform: translateY(-2px); }
+.col-escolha-arte { width: 56px; height: 56px; display: grid; place-items: center; }
+.col-escolha-arte svg { width: 100%; height: 100%; }
+.col-escolha-item strong { font-size: 12px; }
+
+.col-album { display: flex; flex-direction: column; gap: 10px; }
+.col-album h3 {
+  display: flex; align-items: baseline; gap: 8px; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-suave);
+}
+.col-album h3 small { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.col-album-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.col-album-casa { position: relative; aspect-ratio: 1; background: #fff; border: 1px solid var(--linha); border-radius: 14px; }
+.col-album-casa .peca-caixa { inset: 8px; }
+.col-album-casa.falta { background: #f4efe7; border-style: dashed; }
+.col-album-casa.falta img { filter: brightness(0) opacity(.12); }
+.col-album-rar { position: absolute; right: 7px; top: 7px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff; }
+.col-det-efeito { font-size: 12px; color: var(--tinta-suave); text-align: center; }
+@media (max-width: 900px) {
+  .col-album-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .col-trilha { padding: 16px 16px 12px; }
+}
