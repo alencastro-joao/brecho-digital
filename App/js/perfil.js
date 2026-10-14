@@ -194,7 +194,8 @@ function renderEmblemas() {
       : el('p', { class: 'pf-col-vazio' }, 'Nenhuma coleção começada ainda.'));
 }
 
-// Sem logo (ou se ele não carregar), o emblema mostra uma peça da coleção.
+// Cor mostra a própria cor; marca, o logo. Sem logo (ou se ele não carregar),
+// o emblema mostra uma peça da coleção.
 const fotoDaCapa = (capa) => capa ? [el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
   el('img', { src: capa.src, alt: '', loading: 'lazy' }))] : [];
 
@@ -207,11 +208,12 @@ function emblema(c) {
     onclick: () => abrirColecao(c.id),
   },
     el('span', { class: 'pf-emblema-disco', style: c.completa ? {} : { '--pct': (c.pct * 100) + '%' } },
-      logo ? el('img', { class: 'pf-emblema-logo', src: logo, alt: '', loading: 'lazy',
-        onerror: (e) => e.target.replaceWith(...fotoDaCapa(capa)) })
-        : fotoDaCapa(capa)),
+      c.tipo === 'cor' ? el('span', { class: 'pf-emblema-amostra', style: { background: c.hex } })
+        : logo ? el('img', { class: 'pf-emblema-logo', src: logo, alt: '', loading: 'lazy',
+          onerror: (e) => e.target.replaceWith(...fotoDaCapa(capa)) })
+          : fotoDaCapa(capa)),
     el('small', {},
-      c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
+      c.hex && c.tipo !== 'cor' ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
       c.marca));
 }
 

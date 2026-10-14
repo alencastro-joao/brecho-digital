@@ -178,7 +178,8 @@ function tituloDaColecao(c, tag = 'h2') {
   return el('div', { class: 'col-titulo' },
     logo ? el('img', { class: 'col-logo', src: logo, alt: '', loading: 'lazy',
       onerror: (e) => e.target.remove() }) : null,
-    c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
+    c.tipo === 'cor' ? el('span', { class: 'col-logo col-amostra', style: { background: c.hex } })
+      : c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
     el(tag, {}, c.marca),
     estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null);
 }

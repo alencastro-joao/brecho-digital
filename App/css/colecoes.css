@@ -94,6 +94,9 @@
   border: 1px solid var(--linha); background: #fff;
 }
 .col-det-topo .col-logo { width: 44px; height: 44px; }
+/* A cor dentro do mesmo círculo branco do logo. */
+.col-amostra { box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 6px rgba(0,0,0,.14); }
+.col-det-topo .col-amostra { box-shadow: inset 0 0 0 8px #fff, inset 0 0 0 9px rgba(0,0,0,.14); }
 .col-estilo {
   font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
   background: var(--tarefas); color: #7a4f12;
@@ -190,6 +193,12 @@
 .pf-emblema-disco .peca-caixa { inset: 7px; }
 /* O logo já vem no molde (disco branco, margem igual): só ocupa o disco. */
 .pf-emblema-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Coleção de cor: a cor num disco branco, como o logo (a cor ocupa ~62%). O
+   segundo anel é a linha fina que deixa o Branco visível. */
+.pf-emblema-amostra {
+  position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: inset 0 0 0 9px #fff, inset 0 0 0 10px rgba(0,0,0,.14);
+}
 .pf-emblema.completa .pf-emblema-disco { border-color: #e8c46a; background: #fff; box-shadow: 0 0 0 3px #fbf0cc; }
 .pf-emblema:hover .pf-emblema-disco { transform: translateY(-2px); }
 .pf-emblema small {
