@@ -216,6 +216,23 @@ Resources:
             Effect: Allow
             Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
             Resource: !Sub arn:aws:s3:::${BucketDados}/esteira/*
+          # Limpeza de contas (lambda/limpeza.py): backup antes, depois apaga.
+          - Sid: LimpezaBackup
+            Effect: Allow
+            Action: [s3:PutObject, s3:GetObject]
+            Resource: !Sub arn:aws:s3:::${BucketDados}/backups/*
+          - Sid: LimpezaSaves
+            Effect: Allow
+            Action: [s3:GetObject, s3:DeleteObject]
+            Resource: !Sub arn:aws:s3:::${BucketDados}/estado/*
+          - Sid: LimpezaMiniaturas
+            Effect: Allow
+            Action: [s3:DeleteObject]
+            Resource: !Sub arn:aws:s3:::${BucketSite}/assets/posts/*
+          - Sid: LimpezaTabela
+            Effect: Allow
+            Action: [dynamodb:Scan, dynamodb:DeleteItem, dynamodb:UpdateItem]
+            Resource: !Sub arn:aws:dynamodb:us-east-1:${AWS::AccountId}:table/brecho
 
 Outputs:
   Fila:

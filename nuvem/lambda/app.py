@@ -30,6 +30,8 @@ esta função só responde `/api/*`.
     POST /api/estoque/devolver admin: a cópia volta para a loja
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
+    GET  /api/admin/contas     admin: todas as contas e o que cada uma tem
+    POST /api/admin/contas/limpar  admin: apaga as outras contas (ver limpeza.py)
 
 **Por que a Function URL não é pública de verdade.** Ela nasce com
 `AuthType NONE` — precisa ser, porque quem chama é o CloudFront, e a assinatura
@@ -377,8 +379,24 @@ def rotas_de_estoque(pedido):
     return None
 
 
+def rotas_de_limpeza(pedido):
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    if usuario['papel'] != 'admin':
+        return responder(403, {'erro': 'só o administrador mexe nas contas'})
+    import limpeza
+    if pedido.rota == '/api/admin/contas' and pedido.metodo == 'GET':
+        return responder(200, limpeza.inventario(usuario))
+    if pedido.rota == '/api/admin/contas/limpar' and pedido.metodo == 'POST':
+        return responder(200, limpeza.limpar(usuario, pedido.corpo(LIMITE_PERFIL)))
+    return None
+
+
 def despachar(pedido):
     rota = pedido.rota
+    if rota.startswith('/api/admin/contas'):
+        return rotas_de_limpeza(pedido)
 
     if rota.startswith('/api/auth/'):
         return rotas_de_conta(pedido)
