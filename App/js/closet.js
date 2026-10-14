@@ -199,7 +199,7 @@ function irParaPagina(n) {
   $('#inventory-grid').scrollTop = 0;
 }
 
-// Celular: 3 colunas × 8 fileiras. Computador: as colunas que a largura
+// Celular: 4 colunas × 6 fileiras. Computador: as colunas que a largura
 // comporta × as fileiras que cabem sem rolar (mínimo de 3).
 function pecasPorPagina() {
   if (matchMedia('(max-width: 900px)').matches) return 24;

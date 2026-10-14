@@ -128,35 +128,17 @@
   .btn-adicionar { padding: 8px 14px; }
   .grid-title { font-size: 18px; }
   /* Colunas cravadas, não "quantas couberem": a barra de rolagem (que alguns
-     navegadores desenham por fora do conteúdo) roubava a última. */
+     navegadores desenham por fora do conteúdo) roubava a última. O
+     guarda-roupa usa quatro, com quadrados menores (24 por página). */
   .grid-container {
     gap: 10px; scrollbar-gutter: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
-
-  /* Guarda-roupa mais calmo: três colunas, quadrados sem moldura colorida.
-     A raridade fica no fundo clarinho e num pontinho no canto. */
-  .view-closet .grid-container { gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .view-closet .item-slot,
-  .view-closet .item-slot.r-legendary {
-    padding: 10px; border-radius: 16px; border: 0;
-    background: var(--rar-bg, #faf8f5); background-image: none;
-  }
-  .view-closet .item-slot .peca-caixa { inset: 10px; }
-  .view-closet .item-slot:not(.vazio)::before {
-    content: ''; position: absolute; right: 8px; bottom: 8px; z-index: 2;
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--rar-borda, transparent);
-  }
-  .view-closet .item-slot.r-common { background: #f6f4f0; }
-  .view-closet .item-slot.r-common::before { display: none; }
-  .view-closet .item-slot.r-legendary::before {
-    background: conic-gradient(#ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
-  }
-  .view-closet .item-slot.vazio { border: 0; background: #fbfaf8; }
-  .view-closet .item-slot.alvo { outline: 2px dashed var(--linha); }
+  .view-closet .grid-container { gap: 7px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .view-closet .item-slot { padding: 6px; border-radius: 11px; border-width: 1.5px; }
+  .view-closet .item-slot .peca-caixa { inset: 6px; }
 
   /* No trilho, só a categoria aberta mostra a contagem. */
   .view-closet .cat-btn:not(.active) .cat-qtd { display: none; }
