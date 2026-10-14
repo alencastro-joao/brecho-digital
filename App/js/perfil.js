@@ -86,18 +86,19 @@ export function montarPerfil() {
 function montarAtalho() {
   const botao = $('#perfil-atalho');
   botao.addEventListener('click', () => irPara('perfil'));
-  // No computador o botão é do tamanho do sino; no celular, menor.
+  // No computador o botão é do tamanho do sino; no celular, maior e em busto.
   const pc = matchMedia('(min-width: 901px)');
   let ultimo = null;
   const pintar = () => {
     const u = db.state.usuario;
     const roupas = db.roupasEquipadas();
-    const tamanho = pc.matches ? 42 : 34;
+    const tamanho = pc.matches ? 42 : 54;
+    const quadro = pc.matches ? 1 : 1.75;
     const chave = JSON.stringify([u.avatar, roupas, u.nome, tamanho]);
     if (chave === ultimo) return;
     ultimo = chave;
     try {
-      botao.replaceChildren(retrato(aparenciaAtual(), tamanho, COR_PROPRIA, roupas));
+      botao.replaceChildren(retrato(aparenciaAtual(), tamanho, COR_PROPRIA, roupas, quadro));
     } catch {
       // Sem desenho possível, fica a inicial do nome.
       botao.replaceChildren(el('span', { class: 'perfil-atalho-inicial' },

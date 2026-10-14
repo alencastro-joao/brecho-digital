@@ -73,8 +73,12 @@ export const aparenciaDoPerfil = (perfil) =>
 // cabeça para onde a proporção a levou.
 const [, RETRATO_Y, , RETRATO_H] = recorteNaRegiao('cabeca', [225, 43, 150, 150]);
 
-export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null) {
-  const k = tamanho / RETRATO_H;
+// `quadro` abre o enquadramento: 1 é cabeça e ombros; mais que isso desce o
+// centro e pega mais do corpo, como um busto, com uma folga acima da cabeça.
+export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1) {
+  const janela = RETRATO_H * quadro;
+  const centro = RETRATO_Y + RETRATO_H / 2 + (janela - RETRATO_H) * 0.38;
+  const k = tamanho / janela;
   const caixa = el('span', {
     class: 'retrato',
     style: { width: tamanho + 'px', height: tamanho + 'px', background: cor },
@@ -85,7 +89,7 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null) {
     width: (CONFIG.STAGE_W * k) + 'px',
     height: 'auto',
     left: (tamanho / 2 - 300 * k) + 'px',
-    top: (tamanho / 2 - (RETRATO_Y + RETRATO_H / 2) * k) + 'px',
+    top: (tamanho / 2 - centro * k) + 'px',
   });
   return caixa;
 }
