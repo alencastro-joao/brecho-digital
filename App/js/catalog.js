@@ -53,6 +53,7 @@ async function carregarAcervo() {
       if (it.raridade) db.raridadesFixas.set(it.id, it.raridade);
       if (it.marca?.trim()) db.marcasFixas.set(it.id, it.marca.trim());
       db.coresFixas.set(it.id, (it.cor || '').trim());
+      if (it.tema) db.temasFixos.set(it.id, it.tema);
     }
     if (itens.some(i => i.path)) catalogo.temContorno = true;
     return itens;
@@ -70,6 +71,8 @@ export function registrarPeca(peca, { permanente = false } = {}) {
     if (peca.marca?.trim()) db.marcasFixas.set(peca.id, peca.marca.trim());
     else db.marcasFixas.delete(peca.id);
     db.coresFixas.set(peca.id, (peca.cor || '').trim());
+    if (peca.tema) db.temasFixos.set(peca.id, peca.tema);
+    else db.temasFixos.delete(peca.id);
   }
   const i = catalogo.itens.findIndex(x => x.id === item.id);
   if (i >= 0) catalogo.itens[i] = item;

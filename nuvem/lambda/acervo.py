@@ -208,9 +208,17 @@ def ficha_da_peca(item_id, corpo, src, path):
         'marca': str(corpo.get('marca') or '').strip()[:40],
         'cor': str(corpo.get('cor') or '').strip()[:24],
         'raridade': corpo.get('raridade', 'common'),
+        **({'tema': tema(corpo.get('tema'))} if tema(corpo.get('tema')) else {}),
         'ancora': {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')},
         'criadoEm': _agora(),
     }
+
+
+def tema(valor):
+    """O tema da peça (coleção de Temas): o id de config.ESTILOS, como
+    'futebol'. Quem conhece a lista é a tela; aqui só se garante o formato."""
+    valor = str(valor or '').strip().lower()
+    return valor if re.match(r'^[a-z0-9-]{1,30}$', valor) else ''
 
 
 def validar(corpo):
@@ -277,6 +285,12 @@ def editar_peca(item_id, corpo):
         for campo, limite in (('nome', 60), ('marca', 40), ('cor', 24)):
             if campo in corpo:
                 item[campo] = str(corpo.get(campo) or '').strip()[:limite]
+
+        if 'tema' in corpo:
+            if tema(corpo['tema']):
+                item['tema'] = tema(corpo['tema'])
+            else:
+                item.pop('tema', None)
 
         if corpo.get('ancora'):
             ancora = corpo['ancora']

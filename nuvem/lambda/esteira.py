@@ -345,6 +345,7 @@ def guardar(item_id, corpo):
             'nome': str(f.get('nome') or '').strip()[:60],
             'marca': str(f.get('marca') or '').strip()[:40],
             'raridade': f.get('raridade') if f.get('raridade') in acervo.RARIDADES else 'common',
+            'tema': acervo.tema(f.get('tema')),
         }
     if isinstance(corpo.get('medida'), dict):
         m = corpo['medida']

@@ -1104,6 +1104,8 @@ export const marcasFixas = new Map();
 // A cor de cada peça do acervo, por id ('' quando não tem). Toda peça do
 // acervo entra aqui, então as chaves também são a lista do acervo.
 export const coresFixas = new Map();
+// O tema de cada peça do acervo que ganhou um na esteira (id de config.ESTILOS).
+export const temasFixos = new Map();
 
 const pecasDaMarca = (marca) => {
   const alvo = normalizarMarca(marca);
@@ -1122,7 +1124,8 @@ export function progressoDasColecoes() {
   };
   for (const c of COLECOES) guardar(c.id, pecasDaMarca(c.marca));
 
-  // Cor: as peças daquela cor. Estilo: as escolhidas para ele (config.ESTILOS).
+  // Cor: as peças daquela cor. Tema: as escolhidas para ele (config.ESTILOS)
+  // mais as que receberam o tema na esteira (campo `tema` do acervo).
   const acervo = [...coresFixas.keys()];
   for (const cor of Object.keys(COLECOES_DE_COR)) {
     const alvo = normalizarMarca(cor);
@@ -1130,7 +1133,7 @@ export function progressoDasColecoes() {
   }
   for (const [id, e] of Object.entries(ESTILOS)) {
     const pecas = new Set(e.pecas || []);
-    guardar(idDoEstilo(id), acervo.filter(p => pecas.has(p)));
+    guardar(idDoEstilo(id), acervo.filter(p => pecas.has(p) || temasFixos.get(p) === id));
   }
   return out;
 }

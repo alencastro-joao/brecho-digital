@@ -21,6 +21,7 @@
 import {
   CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
   migrarCategoria, rotuloDeCadastro, ancoraPadrao,
+  COLECOES, COLECOES_DE_COR, ESTILOS, normalizarMarca,
 } from './config.js';
 import { ancoraNoCorpo, ancoraNoMolde } from './proporcao.js';
 import { carregarSessao } from './auth.js';
@@ -260,12 +261,102 @@ async function atualizar() {
   if (andando) vigia = setTimeout(atualizar, VIGIA_MS);
 }
 
+function alternar(id) {
+  selecionadas.has(id) ? selecionadas.delete(id) : selecionadas.add(id);
+  desenhar();
+}
+
+// A fileira é a linha da grade em que o cartão está (quantos cabem depende da
+// largura da tela). Se ela já está toda marcada, o toque desmarca.
+function alternarFileira(id) {
+  const grade = $('#es-grade');
+  const topo = $(`.es-cartao[data-id="${id}"]`, grade)?.offsetTop;
+  const ids = $$('.es-cartao', grade)
+    .filter(c => c.offsetTop === topo)
+    .map(c => c.dataset.id)
+    .filter(i => itens.some(x => x.id === i && selecionavel(x)));
+  const todas = ids.every(i => selecionadas.has(i));
+  for (const i of ids) todas ? selecionadas.delete(i) : selecionadas.add(i);
+  desenhar();
+}
+
+// ============================= Coleção ====================================
+// O campo de coleção começa vazio: escolhe-se o tipo e depois qual. Marca e
+// cor são os próprios campos da ficha (a coleção da marca e a da cor são lidas
+// deles); tema é o campo `tema`, que a peça leva para o acervo.
+const TIPOS_DE_COLECAO = [['marca', 'Marca'], ['cor', 'Cor'], ['tema', 'Tema']];
+const tipoEscolhido = new Map();       // id -> tipo, para o redesenho não esvaziar o campo
+
+function opcoesDaColecao(tipo) {
+  if (tipo === 'marca') return COLECOES.map(c => [c.marca, c.marca]);
+  if (tipo === 'cor') return Object.keys(COLECOES_DE_COR).map(n => [n, n]);
+  if (tipo === 'tema') return Object.entries(ESTILOS).map(([id, e]) => [id, e.nome]);
+  return [];
+}
+
+// Qual coleção do tipo a ficha já tem ('' quando nenhuma).
+function colecaoDaFicha(f, tipo) {
+  const igual = (a, b) => normalizarMarca(a) === normalizarMarca(b);
+  if (tipo === 'marca') return COLECOES.find(c => igual(c.marca, f.marca))?.marca || '';
+  if (tipo === 'cor') return Object.keys(COLECOES_DE_COR).find(n => igual(n, f.cor)) || '';
+  if (tipo === 'tema') return ESTILOS[f.tema] ? f.tema : '';
+  return '';
+}
+
+// Os dois selects (tipo e qual). `aoEscolher(tipo, valor)` recebe a escolha.
+function camposDeColecao({ tipo, valor, desligado, aoTrocarTipo, aoEscolher }) {
+  const qual = el('select', { 'aria-label': 'Qual coleção' });
+  const preencher = (t, v = '') => {
+    qual.replaceChildren(
+      el('option', { value: '' }, t ? 'Qual…' : '—'),
+      ...opcoesDaColecao(t).map(([val, rot]) => el('option', { value: val }, rot)));
+    qual.value = v;
+    qual.disabled = desligado || !t;
+  };
+  const tipoSel = el('select', { 'aria-label': 'Tipo de coleção' },
+    el('option', { value: '' }, 'Coleção…'),
+    ...TIPOS_DE_COLECAO.map(([v, r]) => el('option', { value: v }, r)));
+  tipoSel.value = tipo;
+  tipoSel.disabled = desligado;
+  preencher(tipo, valor);
+  tipoSel.addEventListener('change', () => {
+    const t = tipoSel.value;
+    preencher(t, aoTrocarTipo ? aoTrocarTipo(t) : '');
+  });
+  qual.addEventListener('change', () => aoEscolher(tipoSel.value, qual.value));
+  return { tipoSel, qual, preencher };
+}
+
+function colecaoNoCartao(item, f, pronta) {
+  const tipo = tipoEscolhido.get(item.id) ?? (ESTILOS[f.tema] ? 'tema' : '');
+  const campos = camposDeColecao({
+    tipo, valor: colecaoDaFicha(f, tipo), desligado: !pronta,
+    aoTrocarTipo: (t) => {
+      tipoEscolhido.set(item.id, t);
+      return colecaoDaFicha(fichaDe(item), t);
+    },
+    aoEscolher: (t, v) => escolherColecao(item, t, v),
+  });
+  campos.tipoSel.dataset.campo = 'colTipo';
+  campos.qual.dataset.campo = 'colQual';
+  return el('div', { class: 'es-dupla' }, campos.tipoSel, campos.qual);
+}
+
+// Marca e cor também mexem no campo visível do cartão.
+function escolherColecao(item, tipo, valor) {
+  if (!tipo) return;
+  mudarFicha(item, tipo, valor);
+  if (tipo === 'tema') return;
+  const campo = $(`.es-cartao[data-id="${item.id}"] [data-campo="${tipo}"]`);
+  if (campo) campo.value = valor;
+}
+
 // Pronta vai para publicar; com erro, só para descartar. As duas se marcam.
 const selecionavel = (item) => item.estado === 'pronta' || item.estado === 'erro';
 const marcadas = () => itens.filter(i => selecionadas.has(i.id));
 
 const fichaDe = (item) => {
-  const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', ...(item.ficha || {}) };
+  const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', tema: '', ...(item.ficha || {}) };
   // Peça que entrou na esteira antes das categorias atuais ('tops', 'acc').
   f.cat = migrarCategoria(f.cat);
   return f;
@@ -277,6 +368,7 @@ function desenhar() {
   const campoFoco = document.activeElement?.dataset?.campo;
 
   grade.replaceChildren(...itens.map(cartao));
+  grade.classList.toggle('selecionando', selecionadas.size > 0);
   $('#es-vazio').hidden = itens.length > 0;
   atualizarLote();
 
@@ -329,6 +421,10 @@ function cartao(item) {
           type: 'checkbox', checked: selecionadas.has(item.id),
           onchange: (e) => { e.target.checked ? selecionadas.add(item.id) : selecionadas.delete(item.id); desenhar(); },
         })) : null,
+      selecionavel(item) ? el('button', {
+        class: 'es-cartao-fileira', type: 'button', title: 'Selecionar a fileira inteira',
+        'aria-label': 'Selecionar a fileira inteira', onclick: () => alternarFileira(item.id),
+      }, '⇔ fileira') : null,
       el('span', { class: `es-selo ${item.estado}` }, ROTULO[item.estado] || item.estado),
       item.medida ? el('span', { class: 'es-medido', title: 'já tem medida no molde' }, 'medida ✓') : null),
 
@@ -347,6 +443,7 @@ function cartao(item) {
           }),
           cor),
         campo('marca', el('input', { value: f.marca, placeholder: 'Marca', list: 'es-marcas', 'aria-label': 'Marca' }))),
+      colecaoNoCartao(item, f, pronta),
     ),
 
     pronta && ia.cat
@@ -361,6 +458,14 @@ function cartao(item) {
         ? el('button', { class: 'es-btn mini', onclick: () => refazer(item) }, 'Tentar de novo')
         : el('button', { class: 'es-btn mini', disabled: !pronta, onclick: () => abrirMolde(item) }, 'Medir')),
   );
+
+  // Com alguma peça marcada, tocar em qualquer parte de outro cartão (fora dos
+  // campos e botões) marca ou desmarca ele: não precisa acertar o quadradinho.
+  no.addEventListener('click', (e) => {
+    if (!selecionadas.size || !selecionavel(item)) return;
+    if (e.target.closest('input, select, button, label, a, textarea')) return;
+    alternar(item.id);
+  });
 
   no.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey)) return;
@@ -402,27 +507,28 @@ function guardarDepois(item) {
 }
 
 // ============================== Ações =====================================
-// Peças esperando a medida para serem publicadas. Publicar sem ter medido
-// abre o molde; cada "Próxima" passa para a seguinte sem medida e, quando não
-// sobra nenhuma, publica todas. "← Anterior" volta uma peça (para corrigir a
-// categoria ou a medida); Cancelar ou Esc desiste da publicação, e as medidas
-// já confirmadas ficam guardadas.
-let filaPublicar = null;
+// Peças passando pelo molde uma atrás da outra. Publicar sem ter medido abre
+// o molde (`publicar: true`); cada "Próxima" passa para a seguinte sem medida
+// e, quando não sobra nenhuma, publica todas. "Medir peças" abre a mesma fila
+// só para medir (`publicar: false`), e no fim só guarda. "← Anterior" volta uma
+// peça (para corrigir a categoria ou a medida); Cancelar ou Esc desiste, e as
+// medidas já confirmadas ficam guardadas.
+let fila = null;                       // { itens, publicar }
 
 async function publicar(lista) {
   // Peça sem categoria fica para trás, mas não segura o lote inteiro.
   const semCat = lista.filter(i => i.estado === 'pronta' && !fichaDe(i).cat);
   const prontas = lista.filter(i => i.estado === 'pronta' && fichaDe(i).cat);
-  if (semCat.length && !filaPublicar) {
+  if (semCat.length && !fila) {
     toast(`${semCat.length === 1 ? 'Uma peça ficou' : `${semCat.length} peças ficaram`} de fora: falta a categoria.`, 'aviso');
   }
   const semMedida = prontas.filter(i => !i.medida);
   if (semMedida.length) {
-    filaPublicar = prontas;
+    fila = { itens: prontas, publicar: true };
     abrirMolde(semMedida[0]);
     return;
   }
-  filaPublicar = null;
+  fila = null;
   let feitas = 0;
   for (const item of prontas) {
     clearTimeout(guardando.get(item.id));
@@ -445,6 +551,39 @@ async function publicar(lista) {
   }
   if (prontas.length > 1 && feitas) toast(`${feitas} peças entraram no jogo.`, 'legendary');
   desenhar();
+}
+
+// Os dois atalhos de cima, que não dependem de seleção.
+const prontaComCat = (i) => i.estado === 'pronta' && fichaDe(i).cat;
+
+function publicarMedidas() {
+  const lista = itens.filter(i => prontaComCat(i) && i.medida);
+  if (!lista.length) return toast('Nenhuma peça medida esperando.', 'aviso');
+  if (!confirm(`Publicar ${lista.length === 1 ? 'a peça já medida' : `as ${lista.length} peças já medidas`}?`)) return;
+  publicar(lista);
+}
+
+function medirTodas() {
+  const semCat = itens.filter(i => i.estado === 'pronta' && !fichaDe(i).cat && !i.medida).length;
+  const lista = itens.filter(i => prontaComCat(i) && !i.medida);
+  if (semCat) {
+    toast(`${semCat === 1 ? 'Uma peça ficou' : `${semCat} peças ficaram`} de fora: falta a categoria.`, 'aviso');
+  }
+  if (!lista.length) return semCat ? null : toast('Todas as peças já estão medidas.');
+  fila = { itens: lista, publicar: false };
+  abrirMolde(lista[0]);
+}
+
+function atualizarAtalhos() {
+  const medidas = itens.filter(i => prontaComCat(i) && i.medida).length;
+  const semMedida = itens.filter(i => i.estado === 'pronta' && !i.medida).length;
+  $('#es-atalhos-lote').hidden = !medidas && !semMedida;
+  const pub = $('#es-pub-medidas');
+  pub.disabled = !medidas;
+  pub.textContent = medidas ? `Publicar ${medidas} já medida${medidas > 1 ? 's' : ''}` : 'Publicar já medidas';
+  const med = $('#es-medir-todas');
+  med.disabled = !semMedida;
+  med.textContent = semMedida ? `Medir ${semMedida} sem medida` : 'Medir peças';
 }
 
 async function descartar(lista) {
@@ -477,6 +616,7 @@ async function refazer(item) {
 
 // ============================== Lote ======================================
 function atualizarLote() {
+  atualizarAtalhos();
   const marcaveis = itens.filter(selecionavel);
   $('#es-lote').hidden = !marcaveis.length;
   const sel = marcadas();
@@ -491,15 +631,21 @@ function atualizarLote() {
   $('#es-lote-publicar').textContent = publicaveis > 1 ? `Publicar ${publicaveis}` : 'Publicar';
 }
 
+let colecaoDoLote = null;              // os selects de coleção da barra
+
 function aplicarLote() {
   const cat = $('#es-lote-cat').value;
   const raridade = $('#es-lote-rar').value;
   const marca = $('#es-lote-marca').value.trim();
+  const colTipo = colecaoDoLote.tipoSel.value;
+  const colValor = colecaoDoLote.qual.value;
+  const colecao = colTipo && colValor ? { [colTipo]: colValor } : {};
   for (const item of marcadas().filter(i => i.estado === 'pronta')) {
     const f = fichaDe(item);
     // Medida é de categoria: trocar a categoria invalida o que foi medido.
     if (cat && cat !== f.cat) item.medida = false;   // false: apaga também a guardada
-    item.ficha = { ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }) };
+    item.ficha = { ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }), ...colecao };
+    if (colTipo && colValor) tipoEscolhido.set(item.id, colTipo);
     guardarDepois(item);
   }
   desenhar();
@@ -538,26 +684,27 @@ function abrirMolde(item) {
 // Medindo para publicar: em que peça da fila se está, o que o botão faz
 // depois, e se dá para voltar à anterior.
 function atualizarNavegacao() {
-  const fila = filaPublicar;
-  const pos = fila ? fila.indexOf(medindo) : -1;
-  $('#es-molde-passo').textContent = fila && fila.length > 1 ? `Peça ${pos + 1} de ${fila.length}` : '';
+  const lista = fila?.itens;
+  const pos = lista ? lista.indexOf(medindo) : -1;
+  $('#es-molde-passo').textContent = lista && lista.length > 1 ? `Peça ${pos + 1} de ${lista.length}` : '';
   $('#es-molde-voltar').hidden = !(pos > 0);
   $('#es-molde-ok').textContent = rotuloDoPronto(medindo);
 }
 
 function rotuloDoPronto(item) {
-  if (!filaPublicar) return 'Pronto';
-  const faltam = filaPublicar.filter(i => i !== item && !i.medida).length;
+  if (!fila) return 'Pronto';
+  const faltam = fila.itens.filter(i => i !== item && !i.medida).length;
   if (faltam) return `Próxima (falta${faltam > 1 ? 'm' : ''} ${faltam})`;
-  return filaPublicar.length > 1 ? `Publicar ${filaPublicar.length}` : 'Publicar';
+  if (!fila.publicar) return 'Concluir';
+  return fila.itens.length > 1 ? `Publicar ${fila.itens.length}` : 'Publicar';
 }
 
 // Volta à peça anterior da fila para refazer a medida ou trocar a categoria.
 // O que se mexeu na de agora sem confirmar fica para trás; ela continua sem
 // medida, então o "Próxima" de lá traz de volta para ela.
 function voltarNaFila() {
-  const pos = filaPublicar?.indexOf(medindo) ?? -1;
-  if (pos > 0) abrirMolde(filaPublicar[pos - 1]);
+  const pos = fila?.itens.indexOf(medindo) ?? -1;
+  if (pos > 0) abrirMolde(fila.itens[pos - 1]);
 }
 
 // Categoria errada descoberta no molde. A medida é da categoria, então a que
@@ -587,10 +734,54 @@ function fecharMolde(guardar) {
   }
   medindo = null;
   $('#es-molde-modal').hidden = true;
-  const fila = filaPublicar;
-  filaPublicar = null;
-  if (fila && guardar) publicar(fila);      // a próxima sem medida, ou publica
-  else if (fila) toast('Publicação cancelada.');
+  const f = fila;
+  fila = null;
+  if (f && guardar) seguirNaFila(f);
+  else if (f) toast(f.publicar ? 'Publicação cancelada.' : 'Medição interrompida. As medidas feitas ficaram guardadas.');
+}
+
+// Depois de uma peça: a próxima sem medida, ou o fim da fila.
+function seguirNaFila(f) {
+  if (f.publicar) return publicar(f.itens);  // ela mesma abre a próxima sem medida
+  const proxima = f.itens.find(i => !i.medida);
+  if (proxima) {
+    fila = f;
+    abrirMolde(proxima);
+  } else {
+    toast(f.itens.length > 1 ? `${f.itens.length} peças medidas.` : 'Peça medida.');
+  }
+}
+
+// Peça que não presta, descoberta na hora de medir: sai da esteira ali mesmo
+// e a fila segue para a próxima sem medida. Numa fila de publicar, se só
+// sobraram medidas, não publica sozinha: fecha e deixa o botão fazer isso.
+async function excluirNoMolde() {
+  const item = medindo;
+  if (!item) return;
+  if (!confirm(`Excluir "${fichaDe(item).nome || item.arquivo || 'esta peça'}" da esteira?`)) return;
+  try {
+    await api(`/${item.id}`, { metodo: 'DELETE' });
+  } catch (e) {
+    return toast(`Não consegui excluir: ${e.message}`, 'aviso');
+  }
+  clearTimeout(guardando.get(item.id));
+  guardando.delete(item.id);
+  itens = itens.filter(i => i.id !== item.id);
+  selecionadas.delete(item.id);
+  desenhar();
+
+  const f = fila;
+  fila = null;
+  medindo = null;
+  $('#es-molde-modal').hidden = true;
+  toast('Peça excluída.');
+  if (!f) return;
+  f.itens = f.itens.filter(i => i.id !== item.id);
+  const proxima = f.itens.find(i => !i.medida);
+  if (proxima) {
+    fila = f;
+    abrirMolde(proxima);
+  }
 }
 
 function posicionar() {
@@ -662,6 +853,7 @@ function ligarMolde() {
   $('#es-molde-ok').addEventListener('click', () => fecharMolde(true));
   $('#es-molde-cancelar').addEventListener('click', () => fecharMolde(false));
   $('#es-molde-voltar').addEventListener('click', voltarNaFila);
+  $('#es-molde-excluir').addEventListener('click', excluirNoMolde);
   const cat = $('#es-molde-cat');
   cat.append(...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, rotuloDeCadastro(c))));
   cat.addEventListener('change', () => trocarCategoriaNoMolde(cat.value));
@@ -703,6 +895,8 @@ function ligarLote() {
   for (const c of ORDEM_CATEGORIAS) $('#es-lote-cat').append(el('option', { value: c }, rotuloDeCadastro(c)));
   for (const r of RARIDADES) $('#es-lote-rar').append(el('option', { value: r.id }, r.nome));
   for (const c of CORES) $('#es-cores').append(el('option', { value: c.nome }));
+  colecaoDoLote = camposDeColecao({ tipo: '', valor: '', desligado: false, aoEscolher: () => {} });
+  $('#es-lote-aplicar').before(colecaoDoLote.tipoSel, colecaoDoLote.qual);
 
   $('#es-todas').addEventListener('change', (e) => {
     selecionadas.clear();
@@ -712,6 +906,8 @@ function ligarLote() {
   $('#es-lote-aplicar').addEventListener('click', aplicarLote);
   $('#es-lote-publicar').addEventListener('click', () => publicar(marcadas()));
   $('#es-lote-descartar').addEventListener('click', () => descartar(marcadas()));
+  $('#es-pub-medidas').addEventListener('click', publicarMedidas);
+  $('#es-medir-todas').addEventListener('click', medirTodas);
 }
 
 // As marcas do acervo viram autocomplete: escrever "Nike" sempre do mesmo jeito.

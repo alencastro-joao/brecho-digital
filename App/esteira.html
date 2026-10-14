@@ -41,6 +41,12 @@
   </section>
 
 
+  <!-- Atalhos sem seleção: publicar o que já foi medido, medir o que falta. -->
+  <section class="es-atalhos-lote" id="es-atalhos-lote" hidden>
+    <button class="es-btn" id="es-medir-todas">Medir peças</button>
+    <button class="es-btn escuro" id="es-pub-medidas">Publicar já medidas</button>
+  </section>
+
   <!-- Ações sobre as selecionadas: publicar e descartar moram só aqui. -->
   <section class="es-lote" id="es-lote" hidden>
     <label class="es-marcar"><input type="checkbox" id="es-todas"> <span id="es-sel-conta">0 selecionadas</span></label>
@@ -86,6 +92,7 @@
     <p class="es-medida" id="es-medida"></p>
     <footer class="es-modal-rodape">
       <button class="es-btn" id="es-molde-voltar" hidden>← Anterior</button>
+      <button class="es-btn perigo" id="es-molde-excluir">Excluir peça</button>
       <button class="es-btn" id="es-molde-cancelar">Cancelar</button>
       <button class="es-btn" id="es-molde-padrao">Tamanho padrão</button>
       <button class="es-btn" id="es-molde-irmas">Usar nas da mesma categoria</button>

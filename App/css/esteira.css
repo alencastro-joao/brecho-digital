@@ -62,6 +62,8 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .es-btn.escuro { background: var(--tinta); color: #fff; border-color: var(--tinta); }
 .es-btn.escuro:hover:not(:disabled) { background: #000; transform: translateY(-1px); }
 .es-btn.mini { padding: 7px 12px; font-size: 12px; }
+.es-btn.perigo { color: var(--erro); border-color: #efc4bd; }
+.es-btn.perigo:hover:not(:disabled) { background: var(--erro); color: #fff; border-color: var(--erro); }
 
 /* ------------------------------ Entrada -------------------------------- */
 .es-entrada {
@@ -116,6 +118,9 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .es-envio-barra { display: block; height: 100%; width: 0; background: var(--tinta); transition: width .2s; }
 .es-envio.ok .es-envio-barra { background: var(--ok); width: 100% !important; }
 .es-envio.erro .es-envio-barra { background: var(--erro); width: 100% !important; }
+
+/* ----------------------------- Atalhos --------------------------------- */
+.es-atalhos-lote { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 
 /* ------------------------------- Lote ---------------------------------- */
 .es-lote {
@@ -173,6 +178,15 @@ button:disabled { cursor: not-allowed; opacity: .4; }
   background: rgba(255, 255, 255, .9); display: grid; place-items: center; cursor: pointer;
 }
 .es-cartao-marca input { width: 16px; height: 16px; cursor: pointer; }
+.es-cartao-fileira {
+  position: absolute; top: 10px; left: 44px; height: 28px; padding: 0 9px;
+  border: 0; border-radius: 9px; background: rgba(255, 255, 255, .9);
+  font-size: 11px; font-weight: 700; color: var(--tinta-suave); cursor: pointer;
+}
+.es-cartao-fileira:hover { color: var(--tinta); }
+/* Com alguma marcada, o cartão inteiro vira alvo do toque. */
+.es-grade.selecionando .es-cartao.pronta,
+.es-grade.selecionando .es-cartao.erro { cursor: pointer; }
 .es-selo {
   position: absolute; top: 12px; right: 12px;
   font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
@@ -305,6 +319,7 @@ kbd {
   .es-dupla { grid-template-columns: 1fr; }
   .es-acoes { flex-wrap: wrap; padding: 10px; }
   .es-acoes .es-btn { flex: 1; }
+  .es-atalhos-lote .es-btn { flex: 1; }
   .es-atalhos { display: none; }
 }
 @media (max-width: 380px) {
