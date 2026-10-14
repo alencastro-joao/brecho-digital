@@ -576,9 +576,6 @@ function extrasQueSobraram() {
 export const resgatesRestantes = (limite) =>
   Math.max(0, limite + extrasDoDia() - state.dia.resgates);
 
-// O limite do dia já com os resgates comprados com fichas (os de hoje e os guardados).
-export const resgatesDoDia = (base) => base + extrasDoDia();
-
 // --- Fichas ---------------------------------------------------------------
 export const fichas = () => state.fichas ?? 0;
 

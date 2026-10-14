@@ -757,7 +757,8 @@ export function atualizarBadge() {
   if (campo) campo.textContent = restantes;
   const badge = $('#picks-badge');
   if (!badge) return;
-  badge.querySelector('.picks-total').textContent = '/' + db.resgatesDoDia(CONFIG.RESGATES_POR_DIA);
+  // O total é sempre o fixo do dia; o resgate extra aparece só em cima (4/3).
+  badge.querySelector('.picks-total').textContent = '/' + CONFIG.RESGATES_POR_DIA;
   badge.classList.toggle('esgotado', restantes === 0);
   badge.querySelector('small').textContent = restantes === 0
     ? `volta em ${formatarContagem(msAteMeiaNoite())}`
