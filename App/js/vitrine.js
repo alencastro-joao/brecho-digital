@@ -33,7 +33,7 @@ import {
   dataExtenso, msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
 
-const SELOS_NA_LOJA = 3;        // peças com o selo 🎁 de coleção por loja
+const SELOS_NA_LOJA = 3;        // peças por loja que avisam a coleção que rende escolha
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -377,8 +377,8 @@ export function montarVitrine() {
 
   const nos = [];
   const colecoes = todasAsColecoes();
-  // O selo 🎁 vai só nas 3 peças que dão escolha de item na coleção mais
-  // adiantada: em todas, ele viraria enfeite.
+  // As 3 peças que dão escolha de item na coleção mais adiantada ganham o
+  // aviso "falta em" da coleção que rende a escolha.
   const premios = new Map(estoque
     .filter(({ peca }) => !db.temPeca(peca.id))
     .map(({ peca }) => [peca.id, colecoesDaPeca(peca.id, colecoes).filter(rendeEscolha)
@@ -403,8 +403,7 @@ export function montarVitrine() {
     // A raridade do dia já vale na vitrine: a peça brilha antes de ser resgatada,
     // e é exatamente essa que entra no guarda-roupa.
     const r = RARIDADE[raridade];
-    // Peça que falta numa coleção começada diz isso na etiqueta; a que dá uma
-    // escolha de item do avatar ao ser pega ganha também um selo à vista.
+    // Peça que falta numa coleção começada diz isso na etiqueta.
     const daPeca = db.temPeca(peca.id) ? [] : colecoesDaPeca(peca.id, colecoes);
     const premio = premios.get(peca.id);
     const falta = premio || daPeca.filter(c => c.tem > 0 && !c.completa).sort((a, b) => b.pct - a.pct)[0];
@@ -445,7 +444,6 @@ export function montarVitrine() {
         r.aura ? el('span', { class: 'raridade', style: { color: r.aura === 'arco-iris' ? '#b8860b' : r.aura } },
           ' · ' + r.nome) : null,
         falta ? el('span', { class: 'falta-colecao' }, ` · falta em ${falta.marca} ${falta.tem}/${falta.total}`) : null),
-      premio ? el('span', { class: 'selo-colecao', title: `Pegue e escolha um item da coleção ${premio.marca}` }, '🎁') : null,
       el('button', {
         class: 'btn-pegar',
         onclick: (ev) => { ev.stopPropagation(); pegar(peca.id, no); },
