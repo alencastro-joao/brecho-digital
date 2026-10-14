@@ -50,6 +50,7 @@ export function montarCloset() {
     if (naPeca()) history.back(); else limparPreview();
   });
   // Na ficha (celular), as setas e o arrasto passam para a peça vizinha.
+  $('#preview-nome').addEventListener('click', editarNome);
   $('#ficha-ant').addEventListener('click', () => vizinha(-1));
   $('#ficha-prox').addEventListener('click', () => vizinha(1));
   let toqueX = null, toqueY = null;
@@ -354,7 +355,10 @@ function selecionar(peca) {
   tag.style.background = r.bg;
   tag.style.borderColor = r.cor;
   tag.style.setProperty('--rar-borda', r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor);
-  $('#preview-nome').textContent = nomeDaPeca(cat);
+  // No celular a ficha mostra o nome de verdade (o que a pessoa deu, ou o do
+  // acervo) e "Sem nome" quando não há; tocar no nome edita. No computador
+  // segue o nome montado (tipo + marca/cor).
+  pintarNome(peca, cat);
   // Que cópia da tiragem é esta. Só as peças levadas depois que o servidor
   // passou a contar têm número.
   const num = $('#preview-numero');
@@ -382,6 +386,52 @@ function selecionar(peca) {
   $('#preview-info').replaceChildren(...partes.map(([rotulo, t, extra]) =>
     el('span', { class: 'info-item' + (extra ? ' ' + extra : ''), dataset: { rotulo } }, t)));
   $('#preview-colecoes').replaceChildren(...colecoesDaPeca(peca.id).map(chipDaColecao));
+}
+
+const nomeDaFicha = (peca, cat) => peca.apelido?.trim() || cat.nome?.trim() || '';
+
+function pintarNome(peca, cat) {
+  const h3 = $('#preview-nome');
+  const nome = celular() ? nomeDaFicha(peca, cat) : nomeDaPeca(cat);
+  h3.textContent = nome || 'Sem nome';
+  h3.classList.toggle('sem-nome', !nome);
+  h3.title = celular() ? 'Tocar para mudar o nome' : '';
+}
+
+// Tocar no nome (celular) troca o título por um campo; Enter ou sair do
+// campo grava. O nome é seu: fica na sua cópia da peça, não no acervo.
+function editarNome() {
+  if (!celular() || !selecionada) return;
+  const peca = db.pecaDoInventario(selecionada);
+  const cat = pecaDoCatalogo(selecionada);
+  if (!peca || !cat) return;
+  const h3 = $('#preview-nome');
+  const campo = el('input', {
+    class: 'nome-campo', type: 'text', maxlength: 40,
+    value: nomeDaFicha(peca, cat), placeholder: 'Sem nome', 'aria-label': 'Nome da peça',
+  });
+  let feito = false;
+  const gravar = (salvarAgora) => {
+    if (feito) return;
+    feito = true;
+    if (salvarAgora) {
+      const novo = campo.value.replace(/\s+/g, ' ').trim();
+      // Igual ao do acervo (ou vazio) não precisa de apelido.
+      peca.apelido = novo && novo !== (cat.nome?.trim() || '') ? novo : undefined;
+      if (!peca.apelido) delete peca.apelido;
+      db.salvar();
+    }
+    campo.replaceWith(h3);
+    pintarNome(peca, cat);
+  };
+  campo.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); gravar(true); }
+    if (e.key === 'Escape') gravar(false);
+  });
+  campo.addEventListener('blur', () => gravar(true));
+  h3.replaceWith(campo);
+  campo.focus();
+  campo.select();
 }
 
 // O rótulo do botão diz o que o clique vai fazer, não o estado atual.
