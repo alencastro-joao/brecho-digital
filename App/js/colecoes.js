@@ -14,7 +14,7 @@ import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { ROUPINHAS, roupinha, svgRoupinha } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
-import { el, $ } from './util.js';
+import { el, $, toast } from './util.js';
 import { irPara, viewAtual } from './router.js';
 
 let filtro = 'todas';
@@ -33,9 +33,9 @@ const GRUPOS = [
 ];
 
 const EXPLICACAO = {
-  marcas: 'Garimpe peças de uma marca para liberar os itens dela no avatar. Um quarto da coleção abre o primeiro item, 60% abre o segundo e a coleção completa abre o último. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
-  cores: 'Todas as peças da loja de uma mesma cor. Cada cor libera itens do avatar pintados nela: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
-  estilos: 'As peças da loja de cada tema. Cada tema libera itens do avatar: um quarto da coleção abre o primeiro, 60% abre o segundo e a coleção completa abre o último. Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
+  marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
+  cores: 'Todas as peças da loja de uma mesma cor. Cada cor tem itens do avatar pintados nela. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
+  estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
 };
 
 const FILTROS = [
@@ -155,7 +155,8 @@ export function renderColecoes() {
   const lista = todas
     .filter(c => filtro === 'todas' ||
       (filtro === 'completas' ? c.completa : !c.completa && c.tem > 0))
-    .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct);
+    .sort((a, b) => Number(b.livres > 0) - Number(a.livres > 0)
+      || Number(b.completa) - Number(a.completa) || b.pct - a.pct);
 
   $('#col-lista').replaceChildren(...(lista.length ? lista.map(cartaoDaColecao) : [
     el('p', { class: 'col-vazio' }, filtro === 'completas'
@@ -193,8 +194,9 @@ function cartaoDaColecao(c) {
   },
     el('header', { class: 'col-topo' },
       tituloDaColecao(c),
-      el('small', { class: 'col-conta' }, !c.total ? 'Em breve'
-        : c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
+      c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, '🎁 Escolha um item')
+        : el('small', { class: 'col-conta' }, !c.total ? 'Em breve'
+          : c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
     !c.total ? el('p', { class: 'col-vazio' }, 'As peças deste tema chegam em breve.') : null,
     el('div', { class: 'col-pecas' },
       ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
@@ -231,7 +233,9 @@ function renderDetalhe(c) {
         el('span', { style: { width: (c.pct * 100) + '%' } }))),
     !c.itens.length ? null : el('section', { class: 'col-det-secao' },
       el('h3', {}, 'Itens do avatar'),
-      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id)).filter(Boolean))),
+      c.livres > 0 ? el('p', { class: 'col-escolha-aviso' },
+        `🎁 Você pode escolher ${c.livres === 1 ? '1 item' : `${c.livres} itens`}. Toque no que quiser.`) : null,
+      el('div', { class: 'col-itens-lista' }, ...c.itens.map(id => itemDaColecao(id, c)).filter(Boolean))),
     el('section', { class: 'col-det-secao' },
       el('h3', {}, 'Efeito ao vestir'),
       el('p', { class: 'col-efeito' }, c.efeito.texto,
@@ -260,21 +264,25 @@ function casaDaPeca(id, comNome = false) {
       el('small', {}, tem ? '✓ No guarda-roupa' : `Falta${rar ? ` · ${rar.nome.toLowerCase()}` : ''}`)));
 }
 
-function itemDaColecao(id) {
+function itemDaColecao(id, c) {
   const r = roupinha(id);
   if (!r) return null;
   const e = db.estadoDaRoupinha(r);
+  const pode = !e.liberada && c?.livres > 0;
   const arte = el('div', { class: 'col-item-arte' });
   arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
   return el('button', {
-    class: 'col-item' + (e.liberada ? ' aberto' : ''),
-    title: e.liberada ? `${r.nome}: no seu inventário` : e.rotulo,
-    onclick: () => { if (e.liberada) irPara('vestiario'); },
+    class: 'col-item' + (e.liberada ? ' aberto' : '') + (pode ? ' escolher' : ''),
+    title: e.liberada ? `${r.nome}: no seu inventário` : pode ? `Escolher ${r.nome}` : e.rotulo,
+    onclick: () => {
+      if (e.liberada) irPara('vestiario');
+      else if (pode && db.escolherItem(c.id, id)) toast(`${r.nome} foi para o seu inventário`, 'rare');
+    },
   },
     arte,
     el('div', { class: 'col-item-info' },
       el('strong', {}, r.nome),
-      el('small', {}, e.liberada ? '✓ No inventário' : `🔒 ${e.rotulo}`)));
+      el('small', {}, e.liberada ? '✓ No inventário' : pode ? '🎁 Escolher este' : `🔒 ${e.rotulo}`)));
 }
 
 // Entrar pela navegação abre a lista; pelo emblema, a coleção dele.

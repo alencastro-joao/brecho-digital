@@ -19,7 +19,7 @@ import {
 } from './util.js';
 import { barraDeNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
-import { colecaoMaisPerto, todasAsColecoes } from './colecoes.js';
+import { colecaoMaisPerto, todasAsColecoes, abrirColecao } from './colecoes.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -51,19 +51,23 @@ function renderCartaoColecoes() {
   const todas = todasAsColecoes();
   botao.hidden = !todas.length;
   if (!todas.length) return;
-  const perto = colecaoMaisPerto();
+  // Escolha esperando vem antes de tudo: é item de graça parado.
+  const comEscolha = todas.find(c => c.livres > 0);
+  const perto = comEscolha || colecaoMaisPerto();
   const completas = todas.filter(c => c.completa).length;
   const faltam = perto ? perto.total - perto.tem : 0;
   const ids = perto ? perto.ids : todas[0].ids;
   const pilha = [...ids.filter(id => db.temPeca(id)), ...ids.filter(id => !db.temPeca(id))]
     .slice(0, 3).map(id => pecaDoCatalogo(id)).filter(Boolean);
 
-  botao.onclick = () => irPara('colecoes');
+  botao.onclick = () => comEscolha ? abrirColecao(comEscolha.id) : irPara('colecoes');
   botao.replaceChildren(
     el('span', { class: 'tf-col-pilha' }, ...pilha.map(miniPeca)),
     el('span', { class: 'tf-col-info' },
       el('strong', {}, 'Coleções'),
-      el('small', {}, perto
+      el('small', {}, comEscolha
+        ? `🎁 ${comEscolha.marca}: escolha um item do avatar`
+        : perto
         ? (perto.tem
           ? `${perto.marca}: ${faltam === 1 ? 'falta 1 peça' : `faltam ${faltam} peças`} para fechar`
           : `Garimpe peças ${perto.tipo === 'cor' ? 'da cor ' : perto.tipo === 'estilo' ? 'de ' : 'da '}${perto.marca} para abrir o primeiro item`)
@@ -74,7 +78,7 @@ function renderCartaoColecoes() {
 }
 
 function renderPontinho() {
-  const tem = db.temPremioParaResgatar();
+  const tem = db.temPremioParaResgatar() || db.escolhasLivres() > 0;
   for (const botao of document.querySelectorAll('[data-goto="tarefas"]')) {
     botao.classList.toggle('tem-premio', tem);
   }

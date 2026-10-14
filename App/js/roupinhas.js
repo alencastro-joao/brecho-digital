@@ -1178,7 +1178,8 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
     if (!r || !hex) return;
     ROUPINHAS.push({
       ...r, id: `${base}-${idDaCor(nomeDaCor).slice(4)}`, nome, cor: hex, corNome: nomeDaCor,
-      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: itens.length },
+      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: itens.length,
+        item: `${base}-${idDaCor(nomeDaCor).slice(4)}` },
     });
   });
 }
@@ -1193,7 +1194,7 @@ const adotar = (itens, colecao) => itens.forEach((id, ordem) => {
   const r = ROUPINHA[id];
   if (!r) return;
   r.antes = r.desbloqueio;
-  r.desbloqueio = { tipo: 'colecao', colecao, ordem, de: itens.length };
+  r.desbloqueio = { tipo: 'colecao', colecao, ordem, de: itens.length, item: id };
 });
 for (const c of COLECOES) adotar(c.itens, c.id);
 for (const [id, e] of Object.entries(ESTILOS)) adotar(e.libera || [], idDoEstilo(id));
@@ -1291,32 +1292,39 @@ export const METAS = {
     rotulo: (d) => `Feche as missões do dia ${d.meta}×`,
     atual: (p) => p.dias, meta: (d) => d.meta,
   },
-  // Um quarto da coleção abre o primeiro item, 60% abre o do meio e a
-  // coleção completa abre o último. Coleção sem peça no acervo (catálogo que
-  // ainda não carregou) não abre nada.
+  // Os itens de uma coleção não abrem sozinhos: você escolhe. A 3ª peça da
+  // coleção dá a primeira escolha e cada 2 peças depois dão mais uma (ver
+  // escolhasDaColecao); o item abre quando é escolhido (db.escolherItem).
   colecao: {
     rotulo: (d, p) => {
-      const n = metaDaColecao(d, p);
       const c = nomeDaColecao(d.colecao);
-      return n === totalDaColecao(d, p) && n > 1
-        ? `Complete a coleção ${c.nome} (${n} peças)`
-        : `Garimpe ${n} ${n === 1 ? 'peça' : 'peças'} ${c.de}`;
+      const pc = p?.colecoes?.[d.colecao];
+      if (!pc?.total) return `Garimpe peças ${c.de}`;
+      if (pc.livres > 0) return 'Escolha disponível';
+      const n = pecasParaEscolha(pc.escolhidas.length, pc.total);
+      return n >= pc.total && n > 1
+        ? `Complete a coleção ${c.nome} (${n} peças) para escolher`
+        : `Garimpe ${n} ${n === 1 ? 'peça' : 'peças'} ${c.de} para escolher`;
     },
-    atual: (p, d) => p.colecoes?.[d.colecao]?.tem ?? 0,
-    meta: (d, p) => metaDaColecao(d, p),
+    atual: (p, d) => (p.colecoes?.[d.colecao]?.escolhidas ?? []).includes(d.item) ? 1 : 0,
+    meta: () => 1,
   },
 };
 
-const totalDaColecao = (d, p) => p?.colecoes?.[d.colecao]?.total ?? 0;
+// Quantas escolhas a coleção já deu: a primeira na 3ª peça (ou ao completar,
+// se a coleção tem menos de 3), depois uma a cada 2 peças. Completar dá todas
+// as que faltam, para nenhum item ficar fora de alcance.
+export function escolhasDaColecao(tem, total, itens) {
+  if (!total || !itens) return 0;
+  const primeira = Math.min(3, total);
+  if (tem < primeira) return 0;
+  if (tem >= total) return itens;
+  return Math.min(itens, 1 + Math.floor((tem - primeira) / 2));
+}
 
-export function metaDaColecao(d, p) {
-  const total = totalDaColecao(d, p);
-  if (!total) return Infinity;
-  if (d.ordem >= d.de - 1) return total;
-  // Um quarto da coleção abre o primeiro e 60% abre o do meio: uma peça
-  // solta de cada cor não pode encher o inventário de uma vez.
-  const frac = d.ordem === 0 ? 0.25 : 0.6;
-  return Math.min(total, Math.max(d.ordem + 1, Math.ceil(total * frac)));
+// Quantas peças a próxima escolha pede, depois de `feitas` escolhas.
+export function pecasParaEscolha(feitas, total) {
+  return Math.min(total, Math.min(3, total) + 2 * feitas);
 }
 
 export function estadoDoDesbloqueio(r, progresso) {

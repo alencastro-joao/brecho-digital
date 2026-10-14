@@ -22,7 +22,7 @@ import {
   COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
 } from './config.js';
 import {
-  ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio,
+  ROUPINHAS, ROUPINHA, ORDEM_SLOTS, VESTIARIO_PADRAO, estadoDoDesbloqueio, escolhasDaColecao,
 } from './roupinhas.js';
 import { bonusDeEfeito, marcasAtivas, bonusDaCor } from './efeitos.js';
 
@@ -1116,11 +1116,42 @@ const pecasDaMarca = (marca) => {
 
 // { [id da coleção]: { tem, total, ids } }: as peças da marca no acervo e
 // quantas delas estão no seu guarda-roupa.
+// Os itens que cada coleção libera, por id da coleção.
+const ITENS_DA_COLECAO = new Map();
+for (const r of ROUPINHAS) {
+  const d = r.desbloqueio;
+  if (d?.tipo !== 'colecao') continue;
+  if (!ITENS_DA_COLECAO.has(d.colecao)) ITENS_DA_COLECAO.set(d.colecao, []);
+  ITENS_DA_COLECAO.get(d.colecao).push(r.id);
+}
+
+// Abre um item da coleção, se ela tem escolha sobrando.
+export function escolherItem(colecao, id) {
+  const pc = progressoDasColecoes()[colecao];
+  if (!pc || pc.livres < 1 || !(ITENS_DA_COLECAO.get(colecao) || []).includes(id)) return false;
+  if (pc.escolhidas.includes(id)) return false;
+  const v = state.vestiario;
+  v.escolhas = { ...(v.escolhas || {}), [colecao]: [...pc.escolhidas, id] };
+  salvar();
+  return true;
+}
+
+// Quantas escolhas estão esperando, somando todas as coleções.
+export const escolhasLivres = () =>
+  Object.values(progressoDasColecoes()).reduce((n, c) => n + c.livres, 0);
+
 export function progressoDasColecoes() {
   const minhas = new Set(state.inventario.map(p => p.id));
   const out = {};
+  const escolhas = state.vestiario.escolhas || {};
   const guardar = (id, ids) => {
-    out[id] = { ids, total: ids.length, tem: ids.filter(i => minhas.has(i)).length };
+    const tem = ids.filter(i => minhas.has(i)).length;
+    const itens = ITENS_DA_COLECAO.get(id) || [];
+    // Item que saiu da coleção não conta como escolha feita.
+    const escolhidas = (escolhas[id] || []).filter(i => itens.includes(i));
+    const ganhas = escolhasDaColecao(tem, ids.length, itens.length);
+    out[id] = { ids, total: ids.length, tem, escolhidas, ganhas,
+                livres: Math.max(0, ganhas - escolhidas.length) };
   };
   for (const c of COLECOES) guardar(c.id, pecasDaMarca(c.marca));
 
