@@ -30,7 +30,7 @@ import { avisarColecaoDaPeca, colecoesDaPeca, chipDaColecao, rendeEscolha } from
 import { avisarLojaReposta } from './avisos.js';
 import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
-  dataExtenso, msAteMeiaNoite, formatarContagem, toast,
+  msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
@@ -321,7 +321,6 @@ export function montarVitrine() {
 
   // Dia novo desfaz a reposição do admin: a loja volta a ser a do dia.
   db.virarODiaSeNecessario();
-  $('#vitrine-data').textContent = dataExtenso(db.state.dia.data);
   ligarAdmin();
 
   const iso = db.state.dia.data;
@@ -784,9 +783,10 @@ export function atualizarBadge() {
   // O total é sempre o fixo do dia; o resgate extra aparece só em cima (4/3).
   badge.querySelector('.picks-total').textContent = '/' + CONFIG.RESGATES_POR_DIA;
   badge.classList.toggle('esgotado', restantes === 0);
+  // Só fala quando esgota (quando volta); fora isso o número basta.
   badge.querySelector('small').textContent = restantes === 0
     ? `volta em ${formatarContagem(msAteMeiaNoite())}`
-    : 'resgates hoje';
+    : '';
 }
 
 let fichaLigada = false;

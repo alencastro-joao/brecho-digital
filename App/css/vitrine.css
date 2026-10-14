@@ -35,6 +35,7 @@
 }
 .picks-badge #picks-left { font-size: 24px; font-weight: 800; }
 .picks-badge .picks-total { font-size: 14px; color: var(--tinta-suave); font-weight: 700; }
+.picks-badge small:empty { display: none; }
 .picks-badge small { display: block; font-size: 10.5px; color: var(--tinta-suave); margin-top: 1px; }
 .picks-badge.esgotado { background: #fff6e0; border-color: #f0dfb4; }
 .picks-badge.shake { animation: tremer .45s; }
