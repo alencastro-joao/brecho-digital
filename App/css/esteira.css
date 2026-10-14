@@ -270,7 +270,8 @@ kbd {
   position: absolute; transform: translate(-50%, -50%);
   cursor: grab; outline: 1.5px dashed rgba(255, 46, 99, .55); outline-offset: 3px;
 }
-.es-peca img { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; pointer-events: none; }
+.es-peca-janela { position: absolute; inset: 0; overflow: hidden; }
+.es-peca img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; -webkit-user-drag: none; pointer-events: none; }
 .es-alca {
   position: absolute; width: 18px; height: 18px; border-radius: 50%;
   background: #fff; border: 2px solid var(--rosa);
@@ -281,6 +282,23 @@ kbd {
 .es-alca.se { bottom: -10px; right: -10px; cursor: nwse-resize; }
 .es-medida { font-size: 12px; color: var(--tinta-suave); }
 .es-medida.alerta { color: #8a6d1f; font-weight: 600; }
+.es-corte { display: grid; gap: 12px; justify-items: center; }
+.es-corte-palco {
+  position: relative; line-height: 0; touch-action: none; user-select: none; margin: 10px;
+  background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+  border: 1px solid var(--linha); border-radius: 10px;
+}
+.es-corte-palco img {
+  display: block; max-width: min(520px, calc(100vw - 72px)); max-height: min(600px, calc(100vh - 220px));
+  -webkit-user-drag: none; pointer-events: none;
+}
+.es-corte-veu { position: absolute; inset: 0; overflow: hidden; border-radius: 10px; pointer-events: none; }
+#es-corte-furo { position: absolute; box-shadow: 0 0 0 9999px rgba(26, 26, 26, .5); }
+.es-corte-caixa { position: absolute; cursor: move; outline: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .4); }
+.es-corte-caixa .es-alca.no, .es-corte-caixa .es-alca.ne { top: -9px; }
+.es-corte-caixa .es-alca.so, .es-corte-caixa .es-alca.se { bottom: -9px; }
+.es-corte-caixa .es-alca.no, .es-corte-caixa .es-alca.so { left: -9px; }
+.es-corte-caixa .es-alca.ne, .es-corte-caixa .es-alca.se { right: -9px; }
 .es-modal-rodape { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
 /* ------------------------------ Toasts --------------------------------- */

@@ -49,6 +49,14 @@ async function carregarAcervo() {
     const data = await resp.json();
     catalogo.removidas = Array.isArray(data.removidas) ? data.removidas : [];
     const itens = (data.items || []).map(i => ({ ...i, permanente: true }));
+    // A imagem editada é regravada com o mesmo nome, e o navegador guarda as
+    // imagens por um ano: sem a versão no endereço, ele mostraria a de antes.
+    for (const it of itens) {
+      if (!it.editadoEm) continue;
+      const v = '?v=' + Date.parse(it.editadoEm).toString(36);
+      if (it.src && !it.src.includes('?')) it.src += v;
+      if (it.srcG && !it.srcG.includes('?')) it.srcG += v;
+    }
     for (const it of itens) {
       if (it.raridade) db.raridadesFixas.set(it.id, it.raridade);
       if (it.marca?.trim()) db.marcasFixas.set(it.id, it.marca.trim());

@@ -250,7 +250,7 @@ async function atualizar() {
   itens = dados.itens.map(novo => {
     const velho = antes.get(novo.id);
     // Ficha que está sendo digitada não é atropelada pela que veio do servidor.
-    if (velho && guardando.has(novo.id)) return { ...novo, ficha: velho.ficha, medida: velho.medida };
+    if (velho && guardando.has(novo.id)) return { ...novo, ficha: velho.ficha, medida: velho.medida, corte: velho.corte };
     return novo;
   });
   for (const id of [...selecionadas]) if (!itens.some(i => i.id === id && selecionavel(i))) selecionadas.delete(id);
@@ -437,7 +437,7 @@ function guardarDepois(item) {
   clearTimeout(guardando.get(item.id));
   guardando.set(item.id, setTimeout(async () => {
     try {
-      await api(`/${item.id}`, { metodo: 'PUT', corpo: { ficha: item.ficha, medida: item.medida } });
+      await api(`/${item.id}`, { metodo: 'PUT', corpo: { ficha: item.ficha, medida: item.medida, corte: item.corte } });
     } catch (e) {
       toast(`Não consegui guardar a ficha: ${e.message}`, 'aviso');
     } finally {
@@ -660,6 +660,7 @@ function abrirMolde(item) {
   medida = item.medida ? ancoraNoCorpo(regiaoDe(item), { ...item.medida }) : medidaPadrao(f.cat);
   $('#es-avatar').innerHTML = svgAvatar();
   $('#es-peca-img').src = item.previa;
+  fecharCorte();
   $('#es-molde-modal').hidden = false;
   $('#es-molde-cat').value = f.cat;
   atualizarNavegacao();
@@ -771,7 +772,9 @@ async function excluirNoMolde() {
 
 function posicionar() {
   const no = $('#es-peca');
-  const prop = (medindo.w || 1) / (medindo.h || 1);
+  const c = corteDe(medindo);
+  const prop = ((medindo.w || 1) * c.w) / ((medindo.h || 1) * c.h);
+  enquadrar($('#es-peca-img'), c);
   no.style.left = `${medida.x / CONFIG.STAGE_W * 100}%`;
   no.style.top = `${medida.y / CONFIG.STAGE_H * 100}%`;
   no.style.width = `${medida.w / CONFIG.STAGE_W * 100}%`;
@@ -827,6 +830,7 @@ function ligarMolde() {
     posicionar();
   }, { passive: false });
 
+  ligarCorte();
   $('#es-molde-ok').addEventListener('click', () => fecharMolde(true));
   $('#es-molde-cancelar').addEventListener('click', () => fecharMolde(false));
   $('#es-molde-voltar').addEventListener('click', voltarNaFila);
@@ -835,11 +839,112 @@ function ligarMolde() {
   cat.append(...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, rotuloDeCadastro(c))));
   cat.addEventListener('change', () => trocarCategoriaNoMolde(cat.value));
   $('#es-molde-modal').addEventListener('pointerdown', (e) => {
-    if (e.target.id === 'es-molde-modal') fecharMolde(true);
+    if (e.target.id === 'es-molde-modal' && !cortando) fecharMolde(true);
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && medindo) fecharMolde(false);
+    if (e.key === 'Escape' && cortando) fecharCorte();
+    else if (e.key === 'Escape' && medindo) fecharMolde(false);
   });
+}
+
+// ============================== Cortar ====================================
+// Na hora de medir dá para cortar a foto (sobrou braço, cabide, outra peça).
+// O corte é uma caixa em 0–1 sobre a prévia, guardada na ficha da esteira; o
+// molde já mostra a peça cortada e a API corta as imagens ao publicar.
+const INTEIRA = { x: 0, y: 0, w: 1, h: 1 };
+const MIN_CORTE = 0.05;
+let cortando = null;                   // a caixa em edição
+
+const corteDe = (item) => (item?.corte && item.corte.w > 0 && item.corte.h > 0 ? item.corte : INTEIRA);
+
+// A imagem dentro de uma janela de overflow escondido mostra só o corte.
+function enquadrar(img, c) {
+  img.style.width = `${100 / c.w}%`;
+  img.style.height = `${100 / c.h}%`;
+  img.style.left = `${-c.x / c.w * 100}%`;
+  img.style.top = `${-c.y / c.h * 100}%`;
+}
+
+function abrirCorte() {
+  if (!medindo) return;
+  cortando = { ...corteDe(medindo) };
+  $('#es-corte-img').src = medindo.previa;
+  for (const id of ['es-molde', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = true;
+  $('#es-corte').hidden = false;
+  desenharCorte();
+}
+
+function fecharCorte() {
+  cortando = null;
+  $('#es-corte').hidden = true;
+  for (const id of ['es-molde', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = false;
+}
+
+function desenharCorte() {
+  for (const no of [$('#es-corte-caixa'), $('#es-corte-furo')]) {
+    no.style.left = `${cortando.x * 100}%`;
+    no.style.top = `${cortando.y * 100}%`;
+    no.style.width = `${cortando.w * 100}%`;
+    no.style.height = `${cortando.h * 100}%`;
+  }
+}
+
+// O corte novo vale para a peça e para o cartão. A largura medida acompanha:
+// cortar metade da largura deixa a peça com metade do tamanho no corpo, e não
+// esticada de volta ao tamanho antigo.
+function aplicarCorte(novo) {
+  const antes = corteDe(medindo);
+  const inteira = !novo || (novo.w > 0.995 && novo.h > 0.995);
+  const corte = inteira ? false : {
+    x: +novo.x.toFixed(4), y: +novo.y.toFixed(4), w: +novo.w.toFixed(4), h: +novo.h.toFixed(4),
+  };
+  const atual = itens.find(i => i.id === medindo.id);
+  for (const i of new Set([medindo, atual].filter(Boolean))) i.corte = corte;
+  medida.w = clamp(medida.w * corteDe(medindo).w / antes.w, 20, 600);
+  guardarDepois(medindo);
+  fecharCorte();
+  posicionar();
+}
+
+function ligarCorte() {
+  const caixa = $('#es-corte-caixa');
+  caixa.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const palco = $('#es-corte-palco').getBoundingClientRect();
+    const canto = e.target.dataset?.canto || '';
+    const base = { ...cortando };
+    const x0 = e.clientX, y0 = e.clientY;
+    caixa.setPointerCapture(e.pointerId);
+    const mover = (ev) => {
+      const dx = (ev.clientX - x0) / palco.width;
+      const dy = (ev.clientY - y0) / palco.height;
+      if (!canto) {
+        cortando.x = clamp(base.x + dx, 0, 1 - base.w);
+        cortando.y = clamp(base.y + dy, 0, 1 - base.h);
+      } else {
+        let { x, y } = base;
+        let x2 = base.x + base.w, y2 = base.y + base.h;
+        if (canto.includes('o')) x = clamp(base.x + dx, 0, x2 - MIN_CORTE);
+        if (canto.includes('e')) x2 = clamp(x2 + dx, x + MIN_CORTE, 1);
+        if (canto.startsWith('n')) y = clamp(base.y + dy, 0, y2 - MIN_CORTE);
+        if (canto.startsWith('s')) y2 = clamp(y2 + dy, y + MIN_CORTE, 1);
+        Object.assign(cortando, { x, y, w: x2 - x, h: y2 - y });
+      }
+      desenharCorte();
+    };
+    const soltar = () => {
+      caixa.removeEventListener('pointermove', mover);
+      caixa.removeEventListener('pointerup', soltar);
+      caixa.removeEventListener('pointercancel', soltar);
+    };
+    caixa.addEventListener('pointermove', mover);
+    caixa.addEventListener('pointerup', soltar);
+    caixa.addEventListener('pointercancel', soltar);
+  });
+  $('#es-molde-cortar').addEventListener('click', abrirCorte);
+  $('#es-corte-ok').addEventListener('click', () => aplicarCorte(cortando));
+  $('#es-corte-tirar').addEventListener('click', () => aplicarCorte(null));
+  $('#es-corte-cancelar').addEventListener('click', fecharCorte);
 }
 
 // ============================== Montagem ==================================

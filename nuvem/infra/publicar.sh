@@ -47,8 +47,20 @@ aws s3 cp "$APP/esteira.html" "s3://$SITE/esteira.html" \
 # `tools/sincronizar.py`.
 
 # --- O que não muda ------------------------------------------------------
-aws s3 sync "$APP/assets/cloths" "s3://$SITE/assets/cloths" \
-  --cache-control "$ETERNO" --content-type 'image/webp' --exclude '*' --include '*.webp'
+# Só sobe imagem que ainda não existe lá. Peça editada (girar, cortar, trocar
+# a imagem) é regravada pela Lambda com o mesmo nome; um `sync` daqui acharia
+# a do repositório "mais nova" (o checkout do CI é sempre de agora) e desfaria
+# a edição a cada publicação.
+# Se a listagem falhar, não sobe nada: subir tudo é justamente o que desfaz.
+faltando() {   # $1 pasta local, $2 destino s3://…/ — nomes que o destino não tem
+  local remotos
+  remotos=$(aws s3 ls "$2") || { echo "(não consegui listar $2; nada sobe)" >&2; return 0; }
+  comm -23 <(cd "$1" && ls | sort) <(printf '%s\n' "$remotos" | awk '{print $4}' | sort)
+}
+faltando "$APP/assets/cloths" "s3://$SITE/assets/cloths/" | { grep '\.webp$' || true; } | while read -r f; do
+  aws s3 cp "$APP/assets/cloths/$f" "s3://$SITE/assets/cloths/$f" \
+    --cache-control "$ETERNO" --content-type 'image/webp'
+done
 
 # Os logos das marcas têm nome fixo (o id da coleção) e podem ser trocados,
 # então ficam um dia no cache em vez de um ano.
@@ -71,8 +83,9 @@ fi
 # São o arquivo de trabalho do admin: 32 MB de PNG que ninguém precisa baixar.
 # Vão para o bucket privado, que o CloudFront nem conhece.
 if [ -d "$APP/assets/mestres" ]; then
-  aws s3 sync "$APP/assets/mestres" "s3://$DADOS/mestres" \
-    --exclude 'rascunhos/*' --storage-class STANDARD_IA
+  faltando "$APP/assets/mestres" "s3://$DADOS/mestres/" | { grep '\.png$' || true; } | while read -r f; do
+    aws s3 cp "$APP/assets/mestres/$f" "s3://$DADOS/mestres/$f" --storage-class STANDARD_IA
+  done
 fi
 
 echo

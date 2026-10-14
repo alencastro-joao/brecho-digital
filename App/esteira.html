@@ -78,12 +78,12 @@
       <span class="es-molde-passo" id="es-molde-passo"></span>
       <select id="es-molde-cat" aria-label="Categoria da peça"></select>
     </div>
-    <p class="es-modal-dica">Arraste a peça sobre o corpo e use as quinas (ou a roda do mouse)
+    <p class="es-modal-dica" id="es-molde-dica">Arraste a peça sobre o corpo e use as quinas (ou a roda do mouse)
       para o tamanho. É o tamanho real dela no jogo.</p>
     <div class="es-molde" id="es-molde">
       <div class="es-avatar" id="es-avatar"></div>
       <div class="es-peca" id="es-peca">
-        <img id="es-peca-img" alt="" draggable="false">
+        <div class="es-peca-janela"><img id="es-peca-img" alt="" draggable="false"></div>
         <span class="es-alca no" data-alca="1"></span>
         <span class="es-alca ne" data-alca="1"></span>
         <span class="es-alca so" data-alca="1"></span>
@@ -91,8 +91,27 @@
       </div>
     </div>
     <p class="es-medida" id="es-medida"></p>
-    <footer class="es-modal-rodape">
+    <!-- Cortar: a foto inteira com a caixa do que fica. Vale na publicação. -->
+    <div class="es-corte" id="es-corte" hidden>
+      <div class="es-corte-palco" id="es-corte-palco">
+        <img id="es-corte-img" alt="" draggable="false">
+        <div class="es-corte-veu"><div id="es-corte-furo"></div></div>
+        <div class="es-corte-caixa" id="es-corte-caixa">
+          <span class="es-alca no" data-canto="no"></span>
+          <span class="es-alca ne" data-canto="ne"></span>
+          <span class="es-alca so" data-canto="so"></span>
+          <span class="es-alca se" data-canto="se"></span>
+        </div>
+      </div>
+      <footer class="es-modal-rodape">
+        <button class="es-btn" id="es-corte-tirar">Sem corte</button>
+        <button class="es-btn" id="es-corte-cancelar">Cancelar</button>
+        <button class="es-btn escuro" id="es-corte-ok">Aplicar corte</button>
+      </footer>
+    </div>
+    <footer class="es-modal-rodape" id="es-molde-rodape">
       <button class="es-btn" id="es-molde-voltar" hidden>← Anterior</button>
+      <button class="es-btn" id="es-molde-cortar">✂ Cortar</button>
       <button class="es-btn perigo" id="es-molde-excluir">Excluir peça</button>
       <button class="es-btn" id="es-molde-cancelar">Cancelar</button>
       <button class="es-btn escuro" id="es-molde-ok">Pronto</button>

@@ -111,7 +111,7 @@ def _para_tela(dados):
     """O que a tela recebe: sem caminhos internos, com a prévia assinada."""
     saida = {k: dados.get(k) for k in (
         'id', 'estado', 'arquivo', 'erro', 'criadoEm', 'processadoEm', 'w', 'h',
-        'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'origem')}
+        'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'corte', 'origem')}
     if dados.get('estado') == 'enviando' and _idade(dados.get('criadoEm')) > ENVIO_ABANDONADO:
         saida['estado'] = 'erro'
         saida['erro'] = 'a foto não chegou ao servidor (envio interrompido)'
@@ -355,8 +355,48 @@ def guardar(item_id, corpo):
         # e não None de propósito: None é só "ainda não medi", e não pode
         # apagar o que foi medido em outro aparelho.
         dados.pop('medida', None)
+    if isinstance(corpo.get('corte'), dict):
+        dados['corte'] = _corte(corpo['corte'])
+        if not dados['corte']:
+            dados.pop('corte')
+    elif corpo.get('corte') is False:
+        dados.pop('corte', None)
     _gravar(dados)
     return {'item': _para_tela(dados)}
+
+
+def _corte(c):
+    """A caixa do corte em 0–1 sobre a prévia; None se for a imagem inteira
+    ou não fizer sentido."""
+    try:
+        x, y, w, h = (min(1.0, max(0.0, float(c.get(k, 0)))) for k in ('x', 'y', 'w', 'h'))
+    except (TypeError, ValueError):
+        return None
+    w, h = min(w, 1 - x), min(h, 1 - y)
+    if w < 0.02 or h < 0.02 or (w > 0.995 and h > 0.995):
+        return None
+    return {'x': round(x, 4), 'y': round(y, 4), 'w': round(w, 4), 'h': round(h, 4)}
+
+
+def _cortar(chave, corte, formato):
+    """Os bytes da imagem `chave` (bucket de dados) cortada pela caixa, e o
+    tamanho que ficou."""
+    import io
+    from PIL import Image
+    r = _s3.get_object(Bucket=DADOS, Key=chave)
+    with Image.open(io.BytesIO(r['Body'].read())) as img:
+        img.load()
+        W, H = img.size
+        x0, y0 = round(corte['x'] * W), round(corte['y'] * H)
+        x1 = max(x0 + 1, min(W, round((corte['x'] + corte['w']) * W)))
+        y1 = max(y0 + 1, min(H, round((corte['y'] + corte['h']) * H)))
+        parte = img.crop((x0, y0, x1, y1))
+        saida = io.BytesIO()
+        if formato == 'WEBP':
+            parte.save(saida, 'WEBP', quality=88, method=6)
+        else:
+            parte.save(saida, formato)
+        return saida.getvalue(), parte.size
 
 
 def publicar(item_id, corpo):
@@ -375,11 +415,27 @@ def publicar(item_id, corpo):
 
     peca_id = acervo.gerar_id(ficha)
     src = 'assets/cloths/%s.webp' % peca_id
-    _s3.copy_object(Bucket=SITE, Key=src,
-                    CopySource={'Bucket': DADOS, 'Key': dados['previa']},
-                    ContentType='image/webp', MetadataDirective='REPLACE',
-                    CacheControl='public, max-age=31536000, immutable')
-    item = acervo.ficha_da_peca(peca_id, pedido, src, dados.get('path') or '')
+    eterno = 'public, max-age=31536000, immutable'
+    corte = _corte(dados.get('corte') or {})
+
+    def copiar(origem, destino, bucket=SITE, tipo='image/webp', formato='WEBP'):
+        """Leva a imagem da esteira ao destino, cortada se houver corte."""
+        if not corte:
+            extra = {'ContentType': tipo, 'MetadataDirective': 'REPLACE', 'CacheControl': eterno} \
+                if bucket == SITE else {}
+            _s3.copy_object(Bucket=bucket, Key=destino,
+                            CopySource={'Bucket': DADOS, 'Key': origem}, **extra)
+            return None
+        corpo_img, tamanho = _cortar(origem, corte, formato)
+        extra = {'CacheControl': eterno} if bucket == SITE else {}
+        _s3.put_object(Bucket=bucket, Key=destino, Body=corpo_img, ContentType=tipo, **extra)
+        return tamanho
+
+    tamanho = copiar(dados['previa'], src)
+    if tamanho:
+        pedido['w'], pedido['h'] = tamanho
+    caminho = acervo.contorno(src) if corte else (dados.get('path') or '')
+    item = acervo.ficha_da_peca(peca_id, pedido, src, caminho)
 
     # A assinatura da prévia original e o pin de onde veio: é por eles que a
     # mesma roupa não entra de novo, mesmo depois de a peça ser editada.
@@ -389,16 +445,12 @@ def publicar(item_id, corpo):
 
     if dados.get('previaG'):
         src_g = 'assets/cloths/%s-g.webp' % peca_id
-        _s3.copy_object(Bucket=SITE, Key=src_g,
-                        CopySource={'Bucket': DADOS, 'Key': dados['previaG']},
-                        ContentType='image/webp', MetadataDirective='REPLACE',
-                        CacheControl='public, max-age=31536000, immutable')
-        item.update(srcG=src_g, wG=int(dados.get('wG') or 0))
+        tamanho_g = copiar(dados['previaG'], src_g)
+        item.update(srcG=src_g, wG=int(tamanho_g[0] if tamanho_g else dados.get('wG') or 0))
 
     if dados.get('mestre'):
         destino = 'mestres/%s.png' % peca_id
-        _s3.copy_object(Bucket=DADOS, Key=destino,
-                        CopySource={'Bucket': DADOS, 'Key': dados['mestre']})
+        copiar(dados['mestre'], destino, bucket=DADOS, tipo='image/png', formato='PNG')
         item['mestre'] = destino
 
     try:
