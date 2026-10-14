@@ -274,7 +274,7 @@
   /* A foto: metade de cima do cartão, sempre em fundo branco. */
   .view-closet .preview-wrapper {
     position: relative; overflow: hidden;
-    flex: 1 1 auto; min-height: 180px; padding: 6px 46px;
+    flex: 1 1 auto; min-height: 180px; padding: 6px 14px;
     border: 2px solid var(--bloco-borda); border-bottom: 0;
     border-radius: 16px 16px 0 0; background: var(--bloco);
     touch-action: pan-y;
@@ -288,21 +288,34 @@
     width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain;
   }
   .view-closet .placeholder-text { display: none; }
-  .view-closet .ficha-seta {
-    position: absolute; top: 50%; z-index: 2; transform: translateY(-50%);
-    width: 34px; height: 44px;
+  /* O cartão (foto + dados) é a folha que desliza; dos lados aparece só a
+     ponta das fichas vizinhas, como papéis empilhados — tocar nelas também
+     passa. Sem vizinha daquele lado, a ponta some. */
+  .view-closet.detalhe .display-section { position: relative; }
+  .view-closet .ficha-cartao {
+    display: flex; flex-direction: column; flex: 1; min-height: 0;
+    position: relative; z-index: 1; margin: 0 9px;
+    will-change: transform;
   }
-  .view-closet .ficha-seta.ant { left: 8px; }
-  .view-closet .ficha-seta.prox { right: 8px; }
-  .view-closet .ficha-seta::before { font-size: 22px; font-weight: 700; line-height: 1; }
+  .view-closet .ficha-seta {
+    position: absolute; z-index: 0; top: 64px; bottom: 26px;
+    width: 18px; height: auto; padding: 0;
+    border-radius: 10px; box-shadow: none;
+    background: var(--bloco); border: 2px solid var(--bloco-borda);
+    display: flex; align-items: center;
+  }
+  .view-closet .ficha-seta.ant { left: 4px; justify-content: flex-start; padding-left: 1px; }
+  .view-closet .ficha-seta.prox { right: 4px; justify-content: flex-end; padding-right: 1px; }
+  .view-closet .ficha-seta::before { font-size: 13px; font-weight: 800; line-height: 1; color: var(--tinta-suave); }
   .view-closet .ficha-seta.ant::before { content: '‹'; }
   .view-closet .ficha-seta.prox::before { content: '›'; }
-  .view-closet .ficha-seta:disabled { opacity: .3; cursor: default; }
-  /* Trocar de peça entra deslizando do lado de onde ela veio. */
-  .view-closet .preview-moldura.entra-dir { animation: entraDir .26s ease-out, flutuar 4s ease-in-out .26s infinite; }
-  .view-closet .preview-moldura.entra-esq { animation: entraEsq .26s ease-out, flutuar 4s ease-in-out .26s infinite; }
-  @keyframes entraDir { from { transform: translateX(40px); opacity: 0; } }
-  @keyframes entraEsq { from { transform: translateX(-40px); opacity: 0; } }
+  .view-closet .ficha-seta:disabled { visibility: hidden; }
+  /* Cor e marca levam à coleção. */
+  .view-closet .preview-meta .info-item.link { cursor: pointer; }
+  .view-closet .preview-meta .info-item.link::after {
+    content: ''; display: block; width: 26px; height: 2px; margin-top: 2px;
+    border-radius: 2px; background: currentColor; opacity: .35;
+  }
 
   /* A metade de baixo: os dados, como numa ficha. */
   .view-closet .preview-meta {

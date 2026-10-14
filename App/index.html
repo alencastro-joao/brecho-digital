@@ -191,9 +191,11 @@
         <button type="button" class="closet-voltar" id="closet-voltar" aria-label="Voltar para as peças">‹ Voltar</button>
         <span class="ficha-pos" id="ficha-pos"></span>
       </div>
+      <!-- Celular: as pontas das fichas vizinhas, dos lados (tocar também passa) -->
+      <button type="button" class="ficha-seta ant" id="ficha-ant" aria-label="Peça anterior">‹</button>
+      <button type="button" class="ficha-seta prox" id="ficha-prox" aria-label="Próxima peça">›</button>
+      <div class="ficha-cartao" id="ficha-cartao">
       <div class="preview-wrapper">
-        <button type="button" class="ficha-seta ant" id="ficha-ant" aria-label="Peça anterior">‹</button>
-        <button type="button" class="ficha-seta prox" id="ficha-prox" aria-label="Próxima peça">›</button>
         <div class="preview-moldura" id="preview-moldura" hidden>
           <img id="big-preview-img" alt="Peça em destaque">
         </div>
@@ -209,6 +211,7 @@
         <button class="btn-dark" id="btn-para-stylist"><span class="so-pc">Levar para o </span>Stylist</button>
         <button class="btn-ghost" id="btn-para-board"><span class="so-pc">Levar para a </span>Colagem</button>
         <button class="btn-ghost btn-editar" id="btn-editar-peca" title="Editar peça" aria-label="Editar peça" hidden><span class="so-cel">✎</span><span class="so-pc">Editar peça</span></button>
+      </div>
       </div>
     </aside>
   </section>

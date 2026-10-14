@@ -17,7 +17,7 @@ import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
 import { vestirPeca } from './stylist.js';
 import { adicionar as soltarNaColagem } from './board.js';
-import { colecoesDaPeca, chipDaColecao } from './colecoes.js';
+import { colecoesDaPeca, chipDaColecao, abrirColecao } from './colecoes.js';
 
 let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
@@ -51,26 +51,27 @@ export function montarCloset() {
   });
   // Na ficha (celular), as setas e o arrasto passam para a peça vizinha.
   $('#preview-nome').addEventListener('click', editarNome);
-  $('#ficha-ant').addEventListener('click', () => vizinha(-1));
-  $('#ficha-prox').addEventListener('click', () => vizinha(1));
-  let toqueX = null, toqueY = null;
-  const quadro = document.querySelector('.view-closet .preview-wrapper');
-  quadro.addEventListener('touchstart', (e) => {
-    toqueX = e.touches[0].clientX; toqueY = e.touches[0].clientY;
-  }, { passive: true });
-  quadro.addEventListener('touchend', (e) => {
-    if (toqueX === null) return;
-    const dx = e.changedTouches[0].clientX - toqueX;
-    const dy = e.changedTouches[0].clientY - toqueY;
-    toqueX = null;
-    // Só o arrasto de lado: rolar a ficha para baixo não troca de peça.
-    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) vizinha(dx < 0 ? 1 : -1);
-  });
+  const cartao = $('#ficha-cartao');
+  const temVizinha = (passo) => {
+    const i = pecasDaVista.findIndex(p => p.id === selecionada);
+    return i >= 0 && Boolean(pecasDaVista[i + passo]);
+  };
+  $('#ficha-ant').addEventListener('click', () => trocarComSlide(cartao, -1, vizinha));
+  $('#ficha-prox').addEventListener('click', () => trocarComSlide(cartao, 1, vizinha));
+  deslizavel(cartao, { pode: temVizinha, ir: vizinha });
+  // A grade também: arrastar para o lado passa a página.
+  const grade = $('#inventory-grid');
+  const totalPaginas = () => Math.max(1, Math.ceil(pecasDaVista.length / pecasPorPagina()));
+  const podePagina = (passo) => pagina + passo >= 0 && pagina + passo < totalPaginas();
+  deslizavel(grade, { pode: podePagina, ir: (passo) => irParaPagina(pagina + passo) });
   window.addEventListener('popstate', () => {
     if (!naPeca() && tela()?.classList.contains('detalhe')) limparPreview();
   });
-  $('#closet-pag-ant').addEventListener('click', () => irParaPagina(pagina - 1));
-  $('#closet-pag-prox').addEventListener('click', () => irParaPagina(pagina + 1));
+  const trocarPagina = (passo) => (celular()
+    ? trocarComSlide($('#inventory-grid'), passo, (p) => irParaPagina(pagina + p))
+    : irParaPagina(pagina + passo));
+  $('#closet-pag-ant').addEventListener('click', () => trocarPagina(-1));
+  $('#closet-pag-prox').addEventListener('click', () => trocarPagina(1));
   $('#btn-para-stylist').addEventListener('click', () => {
     if (!selecionada) return;
     vestirPeca(selecionada);
@@ -321,10 +322,73 @@ function vizinha(passo) {
     desenharPagina();
   }
   selecionar(nova);
-  const moldura = $('#preview-moldura');
-  moldura.classList.remove('entra-esq', 'entra-dir');
-  void moldura.offsetWidth;
-  moldura.classList.add(passo > 0 ? 'entra-dir' : 'entra-esq');
+}
+
+// ------------------------- Deslizar como ficha ----------------------------
+// No celular, a grade e a ficha da peça seguem o dedo como uma folha de papel
+// (um leve giro junto), e soltar depois de um tanto passa para a vizinha: a
+// folha sai para o lado e a nova entra do outro. Sem vizinha, a folha resiste
+// e volta. Só arrasto de lado; rolar para baixo continua rolando.
+const SAIDA = 180, ENTRADA = 220;
+
+function trocarComSlide(alvo, passo, ir) {
+  const w = alvo.offsetWidth || 300;
+  alvo.style.transition = `transform ${SAIDA}ms ease-in, opacity ${SAIDA}ms ease-in`;
+  alvo.style.transform = `translateX(${-passo * w * 0.55}px) rotate(${-passo * 2.5}deg)`;
+  alvo.style.opacity = '0';
+  setTimeout(() => {
+    ir(passo);
+    alvo.style.transition = 'none';
+    alvo.style.transform = `translateX(${passo * w * 0.35}px) rotate(${passo * 1.5}deg)`;
+    void alvo.offsetWidth;
+    alvo.style.transition = `transform ${ENTRADA}ms ease-out, opacity ${ENTRADA}ms ease-out`;
+    alvo.style.transform = '';
+    alvo.style.opacity = '';
+  }, SAIDA);
+}
+
+function deslizavel(alvo, { pode, ir }) {
+  let x0 = null, y0 = 0, dx = 0, puxando = false, arrastou = false;
+  alvo.style.touchAction = 'pan-y';
+  alvo.addEventListener('pointerdown', (e) => {
+    if (!celular() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    x0 = e.clientX; y0 = e.clientY; dx = 0; puxando = false; arrastou = false;
+  });
+  alvo.addEventListener('pointermove', (e) => {
+    if (x0 === null) return;
+    dx = e.clientX - x0;
+    const dy = e.clientY - y0;
+    if (!puxando) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { x0 = null; return; }
+      if (Math.abs(dx) < 8) return;
+      puxando = true;
+      alvo.setPointerCapture?.(e.pointerId);
+      alvo.style.transition = 'none';
+    }
+    // Sem vizinha daquele lado, a folha quase não sai do lugar.
+    const d = pode(dx < 0 ? 1 : -1) ? dx : dx * 0.22;
+    alvo.style.transform = `translateX(${d}px) rotate(${d * 0.012}deg)`;
+  });
+  const soltar = () => {
+    if (x0 === null) return;
+    x0 = null;
+    if (!puxando) return;
+    puxando = false;
+    arrastou = true;
+    const passo = dx < 0 ? 1 : -1;
+    if (Math.abs(dx) > 60 && pode(passo)) {
+      trocarComSlide(alvo, passo, ir);
+    } else {
+      alvo.style.transition = 'transform .22s ease-out';
+      alvo.style.transform = '';
+    }
+  };
+  alvo.addEventListener('pointerup', soltar);
+  alvo.addEventListener('pointercancel', soltar);
+  // Arrastar não é tocar: o clique que vem no fim do arrasto não abre peça.
+  alvo.addEventListener('click', (e) => {
+    if (arrastou) { e.stopPropagation(); e.preventDefault(); arrastou = false; }
+  }, true);
 }
 
 function selecionar(peca) {
@@ -389,8 +453,17 @@ function selecionar(peca) {
     ['Desde', new Date(peca.obtidoEm).toLocaleDateString('pt-BR')]);
   // Cada informação num pedaço: no computador viram uma linha com " · "
   // entre eles; no celular, as linhas da ficha (rótulo e valor, sem a origem).
-  $('#preview-info').replaceChildren(...partes.map(([rotulo, t, extra]) =>
-    el('span', { class: 'info-item' + (extra ? ' ' + extra : ''), dataset: { rotulo } }, t)));
+  // Cor e marca levam à coleção delas, quando ela existe.
+  const cols = colecoesDaPeca(peca.id);
+  const colecaoDe = { Cor: cols.find(c => c.tipo === 'cor'), Marca: cols.find(c => !c.tipo) };
+  $('#preview-info').replaceChildren(...partes.map(([rotulo, t, extra]) => {
+    const col = colecaoDe[rotulo];
+    return el('span', {
+      class: 'info-item' + (extra ? ' ' + extra : '') + (col ? ' link' : ''),
+      dataset: { rotulo },
+      ...(col ? { role: 'link', title: 'Abrir a coleção', onclick: () => abrirColecao(col.id) } : {}),
+    }, t);
+  }));
   $('#preview-colecoes').replaceChildren(...colecoesDaPeca(peca.id).map(chipDaColecao));
 }
 

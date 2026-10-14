@@ -39,6 +39,8 @@
 .closet-ajustes { display: none; }
 /* O voltar da peça aberta também: no computador a peça fica no painel ao lado. */
 .closet-voltar, .ficha-topo, .ficha-seta { display: none; }
+/* O cartão da ficha só existe como caixa no celular. */
+.ficha-cartao { display: contents; }
 .closet-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .closet-ordem { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tinta-suave); }
 .btn-adicionar { width: auto; flex: none; padding: 9px 18px; }
