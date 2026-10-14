@@ -107,23 +107,64 @@
   .cat-btn { width: 44px; height: 44px; font-size: 19px; border-radius: 13px; }
 
   .grid-wrapper { padding: 14px 16px 12px; }
-  .closet-head { flex-direction: column; gap: 10px; margin-bottom: 12px; }
-  .closet-acoes { justify-content: flex-start; gap: 8px; width: 100%; }
+  /* Cabeçalho numa linha só: título e contagem à esquerda, "Organizar" à
+     direita. Categorias, ordem e "+ Adicionar" aparecem só ao tocar nele. */
+  .closet-head {
+    flex-direction: row; flex-wrap: wrap; align-items: center;
+    gap: 10px; margin-bottom: 12px;
+  }
+  .closet-titulo { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .closet-titulo .closet-sub { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .closet-ajustes {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    border: 1px solid #ddd6cc; border-radius: 20px; background: #fff;
+    padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 600;
+    color: var(--tinta); cursor: pointer;
+  }
+  .closet-ajustes::before { content: '⇅'; font-size: 13px; }
+  .closet-head.abertas .closet-ajustes { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+  .closet-acoes { display: none; justify-content: flex-start; gap: 8px 12px; width: 100%; }
+  .closet-head.abertas .closet-acoes { display: flex; }
   .btn-adicionar { padding: 8px 14px; }
   .grid-title { font-size: 18px; }
   /* Colunas cravadas, não "quantas couberem": a barra de rolagem (que alguns
-     navegadores desenham por fora do conteúdo) roubava a última. O
-     guarda-roupa usa quatro, com quadrados menores (24 por página). */
+     navegadores desenham por fora do conteúdo) roubava a última. */
   .grid-container {
     gap: 10px; scrollbar-gutter: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
-  .view-closet .grid-container { gap: 7px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .view-closet .item-slot { padding: 6px; border-radius: 11px; border-width: 1.5px; }
-  .view-closet .item-slot .peca-caixa { inset: 6px; }
-  .view-closet .closet-paginas { padding-top: 10px; }
+
+  /* Guarda-roupa mais calmo: três colunas, quadrados sem moldura colorida.
+     A raridade fica no fundo clarinho e num pontinho no canto. */
+  .view-closet .grid-container { gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .view-closet .item-slot,
+  .view-closet .item-slot.r-legendary {
+    padding: 10px; border-radius: 16px; border: 0;
+    background: var(--rar-bg, #faf8f5); background-image: none;
+  }
+  .view-closet .item-slot .peca-caixa { inset: 10px; }
+  .view-closet .item-slot:not(.vazio)::before {
+    content: ''; position: absolute; right: 8px; bottom: 8px; z-index: 2;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--rar-borda, transparent);
+  }
+  .view-closet .item-slot.r-common { background: #f6f4f0; }
+  .view-closet .item-slot.r-common::before { display: none; }
+  .view-closet .item-slot.r-legendary::before {
+    background: conic-gradient(#ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
+  }
+  .view-closet .item-slot.vazio { border: 0; background: #fbfaf8; }
+  .view-closet .item-slot.alvo { outline: 2px dashed var(--linha); }
+
+  /* No trilho, só a categoria aberta mostra a contagem. */
+  .view-closet .cat-btn:not(.active) .cat-qtd { display: none; }
+
+  /* Paginação enxuta: só as setas e o número. */
+  .view-closet .closet-paginas { padding-top: 10px; gap: 18px; }
+  .view-closet .closet-paginas button { padding: 6px 14px; border-radius: 20px; font-size: 16px; line-height: 1; }
+  .view-closet .pag-txt { display: none; }
 
   /* O destaque vira uma faixa no pé da tela, e só quando há peça escolhida:
      sem ela, a faixa seria só o "Selecione uma peça" comendo a grade. */

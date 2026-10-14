@@ -32,6 +32,12 @@ export function montarCloset() {
   montarSeletorDeAgrupamento();
   montarSeletorDeOrdem();
   carregarCategoria(categoriaAtual);
+  // Celular: Categorias e Organizar ficam guardados atrás de um botão só,
+  // para a grade não começar no meio da tela.
+  $('#closet-ajustes').addEventListener('click', (e) => {
+    const aberto = $('.closet-head').classList.toggle('abertas');
+    e.currentTarget.setAttribute('aria-expanded', String(aberto));
+  });
   $('#closet-pag-ant').addEventListener('click', () => irParaPagina(pagina - 1));
   $('#closet-pag-prox').addEventListener('click', () => irParaPagina(pagina + 1));
   $('#btn-para-stylist').addEventListener('click', () => {
@@ -145,12 +151,9 @@ export function carregarCategoria(cat, { manterPagina = false } = {}) {
     .filter(p => (tudo || grupoDe(p) === cat) && pecaDoCatalogo(p.id));
   ordenar(pecasDaVista);
 
-  const rotulo = tudo ? 'Todas as peças' : grupos[cat].nome;
   const n = pecasDaVista.length;
-  $('#closet-sub').textContent = tudo
-    ? `${rotulo} · ${n} ${n === 1 ? 'peça' : 'peças'}`
-    : `${rotulo} · ${n} ${n === 1 ? 'peça' : 'peças'} · ` +
-      `${db.state.inventario.length} no total`;
+  const qtd = `${n} ${n === 1 ? 'peça' : 'peças'}`;
+  $('#closet-sub').textContent = tudo ? qtd : `${grupos[cat].nome} · ${qtd}`;
 
   desenharPagina();
 }
@@ -196,7 +199,7 @@ function irParaPagina(n) {
   $('#inventory-grid').scrollTop = 0;
 }
 
-// Celular: 4 colunas × 6 fileiras. Computador: as colunas que a largura
+// Celular: 3 colunas × 8 fileiras. Computador: as colunas que a largura
 // comporta × as fileiras que cabem sem rolar (mínimo de 3).
 function pecasPorPagina() {
   if (matchMedia('(max-width: 900px)').matches) return 24;

@@ -35,6 +35,8 @@
   margin-bottom: 18px;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
 }
+/* O botão que abre Categorias/Organizar só existe no celular. */
+.closet-ajustes { display: none; }
 .closet-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .closet-ordem { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tinta-suave); }
 .btn-adicionar { width: auto; flex: none; padding: 9px 18px; }

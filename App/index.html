@@ -159,11 +159,13 @@
 
     <div class="grid-wrapper">
       <header class="closet-head">
-        <div>
+        <div class="closet-titulo">
           <h1 class="grid-title">Guarda-roupa</h1>
           <p class="closet-sub" id="closet-sub"></p>
         </div>
-        <div class="closet-acoes">
+        <button type="button" class="closet-ajustes" id="closet-ajustes"
+                aria-expanded="false" aria-controls="closet-acoes" title="Organizar as peças">Organizar</button>
+        <div class="closet-acoes" id="closet-acoes">
           <div class="closet-ordem">
             <span>Categorias</span>
             <div id="closet-agrupar"></div>
@@ -177,9 +179,9 @@
       </header>
       <div class="grid-container" id="inventory-grid"></div>
       <nav class="closet-paginas" id="closet-paginas" hidden>
-        <button type="button" class="btn-ghost" id="closet-pag-ant" aria-label="Página anterior">‹ Anterior</button>
+        <button type="button" class="btn-ghost" id="closet-pag-ant" aria-label="Página anterior">‹<span class="pag-txt"> Anterior</span></button>
         <span id="closet-pag-num"></span>
-        <button type="button" class="btn-dark" id="closet-pag-prox" aria-label="Próxima página">Próxima ›</button>
+        <button type="button" class="btn-dark" id="closet-pag-prox" aria-label="Próxima página"><span class="pag-txt">Próxima </span>›</button>
       </nav>
     </div>
 
