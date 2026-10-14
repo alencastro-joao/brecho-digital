@@ -88,8 +88,8 @@ function renderFaixa() {
   const usadas = db.state.dia.extras ?? 0;
   const pode = db.podeTrocarFichas();
   const nota = usadas >= FICHAS.extrasPorDia
-    ? 'Resgate extra de hoje já usado.'
-    : pode ? 'Dá para trocar por mais um resgate hoje.'
+    ? 'Você já trocou fichas hoje. Amanhã dá de novo.'
+    : pode ? 'Dá para trocar por mais um resgate.'
       : `Faltam ${troca - n} ${troca - n === 1 ? 'ficha' : 'fichas'} para um resgate.`;
 
   $('#tarefas-faixa').replaceChildren(
@@ -106,7 +106,7 @@ function renderFaixa() {
         class: 'btn-dark btn-trocar', disabled: !pode,
         onclick: () => {
           if (!db.trocarFichasPorResgate()) return;
-          toast(`+1 resgate hoje. Corre para a vitrine!`, 'rare');
+          toast('+1 resgate. Ele fica guardado até você usar.', 'rare');
         },
       }, 'Trocar por resgate')),
   );

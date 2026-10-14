@@ -17,7 +17,7 @@
 
 import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
-  RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
+  CONFIG, RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
   MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
   COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
 } from './config.js';
@@ -68,8 +68,9 @@ function estadoInicial() {
     pecasProprias: [],         // peças que você mesmo subiu: { id, cat, marca, nome, src, w, h, ancora }
     marcas: [],                // marcas já usadas: { nome, usos, em }
     cores: [],                 // cores já usadas: { nome, usos, em }
-    dia: { data: hojeISO(), resgates: 0, extras: 0, posicoes: {} },   // posicoes: peça arrastada no mural
-                                                                    // extras: resgates comprados com fichas
+    dia: { data: hojeISO(), resgates: 0, extras: 0, guardados: 0, posicoes: {} },   // posicoes: peça arrastada no mural
+                                                                    // extras: resgates comprados com fichas hoje
+                                                                    // guardados: extras de dias anteriores ainda não usados
     looks: [],                 // { id, nome, criadoEm, camadas[], thumb, publicado }
     boards: [],                // colagens: { id, nome, formato, margem, assinatura, itens[], guias }
     feed: [],                  // posts (meus + dos perfis fictícios)
@@ -539,7 +540,7 @@ export async function sincronizarDaNuvem() {
 export function virarODiaSeNecessario() {
   const hoje = hojeISO();
   if (state.dia.data !== hoje) {
-    state.dia = { data: hoje, resgates: 0, extras: 0, posicoes: {} };
+    state.dia = { data: hoje, resgates: 0, extras: 0, guardados: extrasQueSobraram(), posicoes: {} };
     state.missoes = missoesDoDia(hoje);   // vitrine nova, missões novas
     salvar();
     return true;
@@ -563,11 +564,20 @@ function virarASemanaSeNecessario() {
   return true;
 }
 
-export const resgatesRestantes = (limite) =>
-  Math.max(0, limite + (state.dia.extras ?? 0) - state.dia.resgates);
+// Resgate comprado com fichas não vence: o que não foi usado passa para o dia
+// seguinte. Os resgates normais do dia são gastos primeiro.
+const extrasDoDia = () => (state.dia.extras ?? 0) + (state.dia.guardados ?? 0);
 
-// O limite do dia já com os resgates comprados com fichas.
-export const resgatesDoDia = (base) => base + (state.dia.extras ?? 0);
+function extrasQueSobraram() {
+  const usados = Math.max(0, state.dia.resgates - CONFIG.RESGATES_POR_DIA);
+  return Math.max(0, extrasDoDia() - usados);
+}
+
+export const resgatesRestantes = (limite) =>
+  Math.max(0, limite + extrasDoDia() - state.dia.resgates);
+
+// O limite do dia já com os resgates comprados com fichas (os de hoje e os guardados).
+export const resgatesDoDia = (base) => base + extrasDoDia();
 
 // --- Fichas ---------------------------------------------------------------
 export const fichas = () => state.fichas ?? 0;
@@ -575,7 +585,7 @@ export const fichas = () => state.fichas ?? 0;
 export const podeTrocarFichas = () =>
   fichas() >= FICHAS.porResgate && (state.dia.extras ?? 0) < FICHAS.extrasPorDia;
 
-// Troca fichas por um resgate a mais hoje. Devolve se deu certo.
+// Troca fichas por um resgate a mais, que fica guardado até ser usado. Devolve se deu certo.
 export function trocarFichasPorResgate() {
   virarODiaSeNecessario();
   if (!podeTrocarFichas()) return false;
