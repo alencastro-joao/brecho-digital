@@ -1033,6 +1033,12 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
+  jamaica: {
+    nome: 'Jamaica', brilho: '#009b3a', icone: 'assets/temas/jamaica.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
 };
 
 // Coleções de cor: todas as peças da loja de uma cor. Cada uma libera 3 itens
