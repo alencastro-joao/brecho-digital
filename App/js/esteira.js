@@ -737,14 +737,6 @@ function posicionar() {
   texto.classList.toggle('alerta', fora);
 }
 
-function usarNasIrmas() {
-  const cat = fichaDe(medindo).cat;
-  const irmas = itens.filter(i => i !== medindo && i.estado === 'pronta' && fichaDe(i).cat === cat);
-  for (const i of irmas) { i.medida = paraGravar(); guardarDepois(i); }
-  atualizarNavegacao();                 // as irmãs saíram da fila
-  toast(`Medida aplicada a ${irmas.length} ${irmas.length === 1 ? 'peça' : 'peças'} de ${CATEGORIAS[cat].nome}.`);
-}
-
 function ligarMolde() {
   const no = $('#es-peca');
   no.addEventListener('pointerdown', (e) => {
@@ -792,8 +784,6 @@ function ligarMolde() {
   const cat = $('#es-molde-cat');
   cat.append(...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, rotuloDeCadastro(c))));
   cat.addEventListener('change', () => trocarCategoriaNoMolde(cat.value));
-  $('#es-molde-padrao').addEventListener('click', () => { medida = medidaPadrao(fichaDe(medindo).cat); posicionar(); });
-  $('#es-molde-irmas').addEventListener('click', usarNasIrmas);
   $('#es-molde-modal').addEventListener('pointerdown', (e) => {
     if (e.target.id === 'es-molde-modal') fecharMolde(true);
   });
