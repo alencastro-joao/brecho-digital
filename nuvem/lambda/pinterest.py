@@ -6,9 +6,10 @@ O admin cola o link de uma pasta (`pinterest.com/<usuario>/<pasta>/`, ou o
 curto `pin.it/...` do botão de compartilhar) e as fotos dela entram na esteira
 como se tivessem sido soltas na tela.
 
-A pasta é lida inteira pelo mesmo caminho que o site do Pinterest usa ao
-rolar a página (`BoardFeedResource`, de 25 em 25): público, sem app de
-desenvolvedor nem login, só para pasta pública. Não é API documentada — se o
+A pasta é lida pelo mesmo caminho que o site do Pinterest usa ao rolar a
+página (`BoardFeedResource`, de 25 em 25), aos pedaços entre chamadas (ver
+`ler_pasta`): público, sem app de desenvolvedor nem login, só para pasta
+pública. Não é API documentada — se o
 Pinterest mudar e ela falhar, a leitura cai para o feed RSS da pasta, que é
 estável mas só mostra os 25 pins mais recentes.
 
@@ -22,6 +23,7 @@ import json
 import re
 import time
 import unicodedata
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -32,7 +34,6 @@ AGENTE = 'Mozilla/5.0 (compatible; brecho-esteira/1.0)'
 # com os cookies e a versão que a página entrega.
 NAVEGADOR = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
              '(KHTML, like Gecko) Chrome/130.0 Safari/537.36')
-MAX_PAGINAS = 80               # 2000 pins, se o relógio deixar (ver `prazo`)
 TEMPO = 8                      # segundos por pedido ao Pinterest
 PARALELO = 8                   # fotos baixadas ao mesmo tempo
 MAX_FOTO = 15 * 1024 * 1024
@@ -103,22 +104,49 @@ def categoria_do_nome(nome):
     return ''
 
 
-def ler_pasta(usuario, pasta, prazo=None):
-    """{titulo, pins: [{pin, titulo, imagem}], completa} — a pasta inteira,
-    os mais recentes primeiro. Sem a listagem completa, os 25 do RSS
-    (`completa: False`). Com `prazo` (time.time()), para de folhear quando
-    ele chega e devolve o que leu até ali, também `completa: False`."""
+def ler_pasta(usuario, pasta, prazo=None, marcador=None, conhecidos=(), basta=None,
+              ate_conhecida=False):
+    """Um trecho da pasta, os mais recentes primeiro:
+
+        {titulo, pins: [{pin, titulo, imagem, reserva}], quantos,
+         completa, marcador, fim}
+
+    Pasta grande não cabe numa chamada da API, então a leitura anda aos
+    pedaços: começa sempre pela primeira página (os pins novos) e segue do
+    `marcador` salvo na chamada anterior. Para quando o `prazo` (time.time())
+    chega, quando já achou `basta` pins fora de `conhecidos`, ou — com
+    `ate_conhecida`, para pasta já lida inteira uma vez — na primeira página
+    sem nada novo. Devolve o `marcador` para a próxima chamada (None quando
+    não sobra nada: `fim`). `quantos` é o total que o Pinterest diz ter.
+
+    `completa: False` quer dizer que o Pinterest não deixou folhear agora e
+    só vieram os 25 mais recentes; o marcador volta intacto."""
     try:
-        lida = _ler_inteira(usuario, pasta, prazo)
-        if lida['pins']:
+        lida = _ler_inteira(usuario, pasta, prazo, marcador, set(conhecidos), basta, ate_conhecida)
+        if lida['pins'] or lida['fim']:
             return lida
     except Exception as e:                       # noqa: BLE001 - o RSS ainda serve
         print('pinterest: listagem completa falhou (%s); usando o RSS' % e)
-    return _ler_rss(usuario, pasta)
+    return {**_ler_rss(usuario, pasta), 'marcador': marcador, 'fim': False, 'quantos': None}
 
 
-def _ler_inteira(usuario, pasta, prazo=None):
-    caminho = '/%s/%s/' % (urllib.parse.quote(usuario), urllib.parse.quote(pasta))
+# Por que repetir a sessão: sem login, o Pinterest decide na hora de abrir a
+# página se aquela visita pode rolar a pasta. Em mais ou menos metade das
+# visitas a página já vem com a lista "no fim" (`-end-`) depois dos 25
+# primeiros, e nenhum pedido daquela sessão traz mais nada — era isso que
+# deixava a esteira vendo só 25 pins por pasta. Abrir de novo, com cookies
+# novos, costuma vir liberada; e o marcador de uma sessão liberada vale em
+# outra liberada (medido em out/2026), o que deixa continuar de onde parou.
+TENTATIVAS = 6
+
+
+class _Recusada(Exception):
+    pass
+
+
+def _sessao(caminho):
+    """Abre a página da pasta como um navegador novo. Devolve (board, pagina)
+    — `pagina(marcador)` pede um trecho de 25 com os cookies desta visita."""
     biscoitos = http.cookiejar.CookieJar()
     abrir = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(biscoitos))
 
@@ -129,8 +157,8 @@ def _ler_inteira(usuario, pasta, prazo=None):
             return r.read().decode('utf-8', 'replace')
 
     # A página da pasta dá o id dela, o nome, os cookies e a versão do site.
-    pagina = pedir('https://www.pinterest.com' + caminho)
-    estado = re.search(r'<script[^>]+id="__PWS_INITIAL_PROPS__"[^>]*>(.*?)</script>', pagina, re.S)
+    html_pagina = pedir('https://www.pinterest.com' + caminho)
+    estado = re.search(r'<script[^>]+id="__PWS_INITIAL_PROPS__"[^>]*>(.*?)</script>', html_pagina, re.S)
     if not estado:
         raise ValueError('a página da pasta mudou')
     boards = (json.loads(estado.group(1)).get('initialReduxState') or {}).get('boards') or {}
@@ -138,14 +166,10 @@ def _ler_inteira(usuario, pasta, prazo=None):
                   if (b.get('url') or '').lower() == caminho.lower()), None)
     if not board:
         raise ValueError('pasta não encontrada na página — ela é pública?')
-    versao = (re.findall(r'"appVersion"\s*:\s*"([0-9a-f]+)"', pagina) or [''])[0]
+    versao = (re.findall(r'"appVersion"\s*:\s*"([0-9a-f]+)"', html_pagina) or [''])[0]
     csrf = next((c.value for c in biscoitos if c.name == 'csrftoken'), '')
 
-    pins, marcador, completa = [], None, True
-    for _ in range(MAX_PAGINAS):
-        if prazo and time.time() > prazo:
-            completa = False
-            break
+    def pagina(marcador=None):
         opcoes = {'board_id': board['id'], 'board_url': caminho, 'page_size': 25,
                   'field_set_key': 'react_grid_pin', 'filter_section_pins': False,
                   'sort': 'default', 'layout': 'default', 'redux_normalize_feed': True}
@@ -161,8 +185,8 @@ def _ler_inteira(usuario, pasta, prazo=None):
             'X-Pinterest-PWS-Handler': 'www/[username]/[slug].js',
             'Referer': 'https://www.pinterest.com/', 'Origin': 'https://www.pinterest.com',
         }))['resource_response']
-        dados = resposta.get('data') or []
-        for p in dados:
+        pins = []
+        for p in resposta.get('data') or []:
             if not isinstance(p, dict) or p.get('type') != 'pin':
                 continue
             imagens = p.get('images') or {}
@@ -174,14 +198,77 @@ def _ler_inteira(usuario, pasta, prazo=None):
                 pins.append({'pin': str(p['id']), 'imagem': img['url'],
                              'reserva': reserva if reserva != img['url'] else None,
                              'titulo': (p.get('grid_title') or p.get('title') or '').strip()[:120]})
-        marcador = resposta.get('bookmark')
-        if not dados or not marcador or marcador == '-end-':
+        seguinte = resposta.get('bookmark')
+        return pins, (seguinte if seguinte and seguinte != '-end-' else None)
+
+    return board, pagina
+
+
+def _ler_inteira(usuario, pasta, prazo=None, marcador=None, conhecidos=frozenset(),
+                 basta=None, ate_conhecida=False):
+    caminho = '/%s/%s/' % (urllib.parse.quote(usuario), urllib.parse.quote(pasta))
+
+    def sobra(s):
+        return not prazo or time.time() + s < prazo
+
+    # Uma visita liberada: a primeira página com marcador para a segunda, ou
+    # a pasta pequena que cabe inteira nela.
+    primeira, liberada = None, False
+    for tentativa in range(TENTATIVAS):
+        if tentativa:
+            if not sobra(TEMPO / 2):
+                break
+            time.sleep(1)
+        try:
+            board, pagina = _sessao(caminho)
+            pins, seguinte = pagina()
+        except urllib.error.HTTPError as e:
+            if e.code != 429 or not sobra(4):
+                raise
+            time.sleep(3)                        # devagar: muitas visitas seguidas
+            continue
+        quantos = board.get('pin_count')
+        primeira = (board, pagina, pins, seguinte, quantos)
+        liberada = bool(seguinte) or (isinstance(quantos, int) and quantos <= len(pins) + 2)
+        if liberada:
             break
-    else:
-        completa = False                         # parou no MAX_PAGINAS
+        print('pinterest: %s veio sem paginação (tentativa %d)' % (caminho, tentativa + 1))
+    if primeira is None:
+        raise ValueError('o Pinterest não respondeu')
+    board, pagina, pins, seguinte, quantos = primeira
+    titulo = (board.get('name') or pasta).strip()
+    if not liberada:
+        # Nenhuma visita liberada: só a primeira página, e o marcador fica
+        # como estava para a próxima tentativa.
+        return {'titulo': titulo, 'pins': pins, 'quantos': quantos, 'completa': False,
+                'marcador': marcador, 'fim': False}
+
+    def novos():
+        return sum(1 for p in pins if p['pin'] not in conhecidos)
+
+    if ate_conhecida and not marcador and pins and not novos():
+        seguinte = None                          # nada novo no topo: em dia
+    elif marcador:
+        seguinte = marcador                      # o topo já veio; segue de onde parou
+    while seguinte:
+        if not sobra(TEMPO) or (basta and novos() >= basta):
+            break
+        try:
+            trecho, proximo = pagina(seguinte)
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 500, 502, 503) or not sobra(TEMPO + 3):
+                print('pinterest: página falhou (%s); continua na próxima chamada' % e)
+                break
+            time.sleep(2)
+            continue
+        if ate_conhecida and trecho and all(p['pin'] in conhecidos for p in trecho):
+            proximo = None                       # chegou ao que já tinha lido
+        pins += trecho
+        seguinte = proximo
     vistos = set()
     pins = [p for p in pins if not (p['pin'] in vistos or vistos.add(p['pin']))]
-    return {'titulo': (board.get('name') or pasta).strip(), 'pins': pins, 'completa': completa}
+    return {'titulo': titulo, 'pins': pins, 'quantos': quantos, 'completa': True,
+            'marcador': seguinte, 'fim': not seguinte}
 
 
 def _ler_rss(usuario, pasta):

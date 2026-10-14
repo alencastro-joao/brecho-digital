@@ -175,10 +175,11 @@ def reservar(corpo):
 # repetidas.py), e sai da esteira sozinha — ver `listar`.
 #
 # A foto passa pela Lambda (vem do Pinterest, não do navegador, então não
-# esbarra nos 6 MB da Function URL). A pasta é lida inteira; se o Pinterest
-# recusar, só os 25 pins mais recentes (ver pinterest.py), e a tela diz qual
-# das duas foi (`completa`). Cada chamada importa o que cabe no tempo dela;
-# o resto volta como `faltam`/`adiada` e a tela chama de novo na hora.
+# esbarra nos 6 MB da Function URL). Pasta grande é lida aos pedaços, de uma
+# chamada para a outra (ver `_trazer`); se o Pinterest recusar a visita, só os
+# 25 mais recentes daquela vez (ver pinterest.py). Cada chamada importa o que
+# cabe no tempo dela; o resto volta como `continua`/`faltam`/`adiada` e a
+# tela chama de novo na hora.
 PINS = 'esteira/pins/'
 PASTAS = 'esteira/config/pinterest.json'
 TEMPO_RELEITURA = 22         # s; a Lambda da API tem 30
@@ -219,8 +220,8 @@ def _importar(pins, pasta, prazo):
     """Baixa os pins e põe na esteira, com a categoria da pasta já sugerida.
 
     De bloco em bloco, de olho no relógio (`prazo`, em time.time()): a Lambda
-    morta no meio deixava pin sem foto. O que não coube fica para a próxima
-    chamada — `faltam` avisa a tela, que chama de novo sozinha.
+    morta no meio deixava pin sem foto. O que não coube volta em `resto` e
+    fica guardado na pasta para a próxima chamada.
 
     A marca do pin vem por último, depois da foto: pin que não baixou, ou que
     a Lambda não terminou, volta na próxima leitura."""
@@ -246,12 +247,79 @@ def _importar(pins, pasta, prazo):
             _s3.put_object(Bucket=DADOS, Key=chave, Body=foto, ContentType=tipo)
             _marcar_pin(p['pin'], item_id)
             entraram += 1
-    return {'entraram': entraram, 'falharam': falharam, 'faltam': len(pins) - feitos}
+    return {'entraram': entraram, 'falharam': falharam, 'resto': pins[feitos:]}
+
+
+# Pins achados por leitura que ainda não couberam no tempo de importar. A
+# leitura anda à frente (o marcador já passou deles), então eles ficam
+# guardados na pasta, e a chamada seguinte importa antes de ler mais.
+BASTA = 40
+
+
+def _trazer(pasta, vistos, prazo):
+    """Lê o próximo trecho da pasta e importa o que for novo. Muda `pasta`
+    (marcador, pendentes, inteira) e `vistos`; devolve o resumo para a tela.
+
+    A pasta grande anda aos pedaços entre chamadas: o `marcador` diz onde a
+    leitura parou e `inteira` que ela já chegou ao fim uma vez — dali em
+    diante só o topo, até a primeira página sem nada novo."""
+    import pinterest
+    pendentes = [p for p in pasta.get('pendentes') or [] if p['pin'] not in vistos]
+    lida = {}
+    if not pendentes:
+        lida = pinterest.ler_pasta(pasta['usuario'], pasta['pasta'], prazo - FOLGA_FOTOS,
+                                   marcador=pasta.get('marcador'), conhecidos=vistos,
+                                   basta=BASTA, ate_conhecida=bool(pasta.get('inteira')))
+        pendentes = [p for p in lida['pins'] if p['pin'] not in vistos]
+        if lida.get('completa'):
+            pasta['marcador'] = lida.get('marcador')
+            if lida.get('fim'):
+                pasta['inteira'] = True
+        if lida.get('quantos') is not None:
+            pasta['quantos'] = lida['quantos']
+        if lida.get('titulo'):
+            pasta['titulo'] = lida['titulo']
+    if 'cat' not in pasta:
+        pasta['cat'] = (pinterest.categoria_do_nome(pasta['titulo'])
+                        or pinterest.categoria_do_nome(pasta['pasta']))
+    vistos |= {p['pin'] for p in pendentes}         # o mesmo pin em duas pastas entra uma vez
+    feito = _importar(pendentes, pasta, prazo)
+    pasta['pendentes'] = feito.pop('resto')
+    pasta['lidaEm'] = _agora()
+    recusada = bool(lida) and not lida.get('completa')
+    return {**feito, 'faltam': len(pasta['pendentes']),
+            # A recusada ainda não lida até o fim vale tentar de novo já.
+            'continua': bool(pasta.get('marcador')) or (recusada and not pasta.get('inteira')),
+            'recusada': recusada,
+            'quantos': pasta.get('quantos'), 'inteira': bool(pasta.get('inteira'))}
+
+
+ESTADO_DA_LEITURA = ('marcador', 'pendentes', 'inteira', 'quantos', 'lidaEm', 'titulo', 'cat')
+
+
+def _guardar_leitura(mudadas):
+    """Grava o andamento das pastas lidas. Relê a lista antes: ela pode ter
+    mudado enquanto lia (desvincular)."""
+    if not mudadas:
+        return _pastas()
+    atuais = _pastas()
+    for p in atuais:
+        if p['id'] in mudadas:
+            for k in ESTADO_DA_LEITURA:
+                if k in mudadas[p['id']]:
+                    p[k] = mudadas[p['id']][k]
+    _gravar_pastas(atuais)
+    return atuais
+
+
+def _publica(pasta):
+    """A pasta como a tela vê: sem a fila interna de pins."""
+    return {k: v for k, v in pasta.items() if k not in ('pendentes', 'marcador')}
 
 
 def pastas_pinterest():
     """GET /api/esteira/pinterest."""
-    return {'pastas': _pastas()}
+    return {'pastas': [_publica(p) for p in _pastas()]}
 
 
 def pinterest(corpo):
@@ -268,39 +336,37 @@ def pinterest(corpo):
         alvo = str(corpo['desvincular'])
         pastas = [p for p in _pastas() if p['id'] != alvo]
         _gravar_pastas(pastas)
-        return {'pastas': pastas}
+        return {'pastas': [_publica(p) for p in pastas]}
 
     import pinterest
     prazo = time.time() + TEMPO_RELEITURA
     usuario, nome = pinterest.pasta_do_link(corpo.get('link'))
-    lida = pinterest.ler_pasta(usuario, nome, prazo - FOLGA_FOTOS)
-    pasta = {'id': ('%s/%s' % (usuario, nome)).lower(), 'usuario': usuario, 'pasta': nome,
-             'titulo': lida['titulo'],
-             'cat': pinterest.categoria_do_nome(lida['titulo']) or pinterest.categoria_do_nome(nome)}
+    pasta_id = ('%s/%s' % (usuario, nome)).lower()
+    # Vincular de novo a mesma pasta continua de onde a leitura estava.
+    antiga = next((p for p in _pastas() if p['id'] == pasta_id), {})
+    pasta = {**antiga, 'id': pasta_id, 'usuario': usuario, 'pasta': nome,
+             'titulo': antiga.get('titulo') or nome}
     vistos = _pins_vistos()
-    novos = [p for p in lida['pins'] if p['pin'] not in vistos]
+    r = _trazer(pasta, vistos, prazo)
     pastas = [p for p in _pastas() if p['id'] != pasta['id']]
-    pastas.append({**pasta, 'vinculadaEm': _agora()})
+    pastas.append({'vinculadaEm': _agora(), **pasta})
     _gravar_pastas(pastas)
-    return {'pasta': pasta, 'pastas': pastas, 'jaVistos': len(lida['pins']) - len(novos),
-            'total': len(lida['pins']), 'completa': lida.get('completa', False),
-            **_importar(novos, pasta, prazo)}
+    return {'pasta': _publica(pasta), 'pastas': [_publica(p) for p in pastas], **r}
 
 
 def _reler(feitas=()):
-    """Uma pasta por vez, de olho no relógio. A que não coube volta `adiada`
-    e a que não terminou de importar volta com `faltam`: a tela chama de novo
-    com `feitas` (as que já terminaram nesta rodada), até não sobrar nada.
+    """Uma pasta por vez, de olho no relógio. A que não coube volta `adiada`;
+    a que ainda tem o que ler volta com `continua` ou `faltam`: a tela chama
+    de novo com `feitas` (as que já terminaram nesta rodada), até não sobrar
+    nada.
 
     A que foi lida há mais tempo vai primeiro: antes era sempre a mesma ordem,
     e com pastas grandes as últimas ficavam adiadas para sempre."""
-    import pinterest
     prazo = time.time() + TEMPO_RELEITURA
     vistos = _pins_vistos()
-    todas = _pastas()
     feitas = set(feitas or ())
-    resultado, lidas = [], {}
-    for pasta in sorted(todas, key=lambda p: p.get('lidaEm') or ''):
+    resultado, mudadas = [], {}
+    for pasta in sorted(_pastas(), key=lambda p: p.get('lidaEm') or ''):
         r = {'id': pasta['id'], 'titulo': pasta['titulo']}
         if pasta['id'] in feitas:
             continue
@@ -308,24 +374,13 @@ def _reler(feitas=()):
             resultado.append({**r, 'adiada': True})
             continue
         try:
-            lida = pinterest.ler_pasta(pasta['usuario'], pasta['pasta'], prazo - FOLGA_FOTOS)
+            feito = _trazer(pasta, vistos, prazo)
         except ValueError as e:
             resultado.append({**r, 'erro': str(e)})
             continue
-        novos = [p for p in lida['pins'] if p['pin'] not in vistos]
-        vistos |= {p['pin'] for p in novos}         # o mesmo pin em duas pastas entra uma vez
-        feito = _importar(novos, pasta, prazo)
-        if not feito['faltam']:
-            lidas[pasta['id']] = _agora()
-        resultado.append({**r, 'total': len(lida['pins']), 'completa': lida.get('completa', False),
-                          **feito})
-    if lidas:
-        # Relida agora: a lista pode ter mudado enquanto lia (desvincular).
-        atuais = _pastas()
-        for p in atuais:
-            if p['id'] in lidas:
-                p['lidaEm'] = lidas[p['id']]
-        _gravar_pastas(atuais)
+        mudadas[pasta['id']] = pasta
+        resultado.append({**r, 'titulo': pasta['titulo'], **feito})
+    _guardar_leitura(mudadas)
     return {'pastas': resultado}
 
 

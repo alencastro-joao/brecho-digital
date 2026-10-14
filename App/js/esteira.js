@@ -141,10 +141,12 @@ function resumo(r) {
   if (r.entraram) partes.push(`${r.entraram} ${r.entraram === 1 ? 'novo entrou' : 'novos entraram'}`);
   if (r.falharam) partes.push(`${r.falharam} não ${r.falharam === 1 ? 'baixou' : 'baixaram'}`);
   if (r.faltam) partes.push(`${r.faltam} ainda chegando`);
-  // Se o Pinterest não deixou ler a pasta inteira, a leitura viu só os 25 mais recentes.
-  const lidos = r.total == null ? ''
-    : r.completa ? `${r.total} pins na pasta · ` : `só os ${r.total} mais recentes · `;
-  return lidos + (partes.join(', ') || 'nada novo');
+  if (r.continua) partes.push('lendo o resto da pasta…');
+  // Sem login, o Pinterest às vezes não deixa rolar a pasta: aquela leitura
+  // viu só os 25 mais recentes, e a seguinte tenta de novo de onde parou.
+  if (r.recusada) partes.push('o Pinterest segurou o resto agora; tento de novo na próxima');
+  const lidos = r.quantos ? `${r.quantos} pins na pasta · ` : '';
+  return lidos + (partes.join(', ') || (r.inteira ? 'tudo aqui' : 'nada novo'));
 }
 
 function desenharPastas() {
@@ -176,7 +178,7 @@ async function montarPinterest() {
 // aqui se chama de novo até acabar — antes ficava para a próxima abertura da
 // esteira, e pasta grande parecia nunca chegar inteira. `feitas` são as
 // pastas que já terminaram nesta rodada, para a API não reler.
-const MAX_RODADAS = 60;
+const MAX_RODADAS = 400;              // pasta de milhares de pins vai de 40 em 40
 
 async function reler() {
   if (relendo || !pastasPinterest.length) return;
@@ -186,6 +188,7 @@ async function reler() {
   desenharPastas();
   const feitas = [];
   const soma = new Map();               // id -> { entraram, falharam } desta rodada
+  const recusas = new Map();            // id -> vezes seguidas que o Pinterest não deixou rolar
   let total = 0;
   try {
     for (let rodada = 0; rodada < MAX_RODADAS; rodada++) {
@@ -199,7 +202,9 @@ async function reler() {
         soma.set(r.id, s);
         andou += (r.entraram || 0) + (r.falharam || 0) + (r.adiada ? 0 : 1);
         total += r.entraram || 0;
-        if (r.adiada || (r.faltam && !r.erro)) continuar = true;
+        // O Pinterest recusando a visita seguidas vezes: deixa para a próxima abertura.
+        recusas.set(r.id, r.recusada ? (recusas.get(r.id) || 0) + 1 : 0);
+        if (r.adiada || ((r.faltam || r.continua) && !r.erro && recusas.get(r.id) < 3)) continuar = true;
         else feitas.push(r.id);
         estadoDaPasta.set(r.id, r.adiada ? resumo(r) : resumo({ ...r, ...s }));
       }
@@ -232,7 +237,7 @@ async function vincularPasta(link) {
     toast(`"${r.pasta.titulo}" vinculada${r.entraram ? `: ${nFotos(r.entraram)} na esteira` : ''}. ` +
       'Pin novo nela entra sozinho quando a esteira abre.', 'rare');
     if (r.entraram) await atualizar();
-    if (r.faltam) reler();                // o resto chega sozinho, sem travar a tela
+    if (r.faltam || r.continua) reler();  // o resto chega sozinho, sem travar a tela
   } catch (e) {
     toast(`Pinterest: ${e.message}`, 'aviso');
   } finally {
