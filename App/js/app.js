@@ -33,7 +33,7 @@ import { montarPersonagem, aoEntrarNoPersonagem } from './personagem.js';
 import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
 import { montarAvisos } from './avisos.js';
-import { montarTutorial, abrirTutorial, pediuTutorialNaUrl } from './tutorial.js';
+import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
 import { toast } from './util.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
@@ -173,8 +173,8 @@ async function iniciar() {
   // presente é a que tem de ficar na tela na primeira abertura.
   anunciarPresente(presente);
 
-  // O passo a passo: sozinho na conta nova, ou com ?tutorial no endereço.
-  if (nova || pediuTutorialNaUrl()) abrirTutorial();
+  // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
+  if (nova || pediuTutorialNaUrl()) comecarIntro();
 
   // O dia pode virar com a aba aberta.
   setInterval(() => {

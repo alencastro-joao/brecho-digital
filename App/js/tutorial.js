@@ -1,91 +1,46 @@
-// Tutorial de boas-vindas: o passo a passo que abre na primeira vez.
+// Missões de introdução: o tutorial de conta nova, em forma de missão.
 //
-// Versão provisória e de propósito simples: um cartão por funcionalidade, na
-// ordem em que a pessoa vai precisar delas (primeiro o personagem, que é quem
-// veste tudo; depois a loja, o closet e o que se faz com as peças). Cada passo
-// leva o app para a tela de que fala e acende o botão dela na barra, então o
-// cartão nunca descreve uma tela que a pessoa não está vendo.
+// Uma missão por vez (INTRO em config.js), cada uma ensinando uma parte do app
+// — personagem, roupas, loja, Stylist, colagem, feed, seguir, favoritos — e
+// pagando um prêmio que cresce com a cadeia: XP, fichas e peças, até a épica
+// da última. O progresso vem dos mesmos eventos das missões do dia
+// (db.progredirMissao), então fazer a coisa já conta, esteja onde estiver.
 //
-// Abre sozinho quando a conta nasce (app.js). Para ver de novo sem criar conta:
-// Perfil › Testes › "Ver tutorial", ou abrir o site com ?tutorial no endereço.
+// Na tela é um cartão fixo acima da barra (no celular) ou ao lado dela (no
+// computador): aberto mostra a missão inteira; minimizado vira uma faixa com a
+// missão da vez e o botão de ir até ela. Fechar a missão abre o cartão sozinho,
+// com o prêmio esperando o toque.
+//
+// Começa sozinho na conta nova. Para testar de novo: Perfil › Testes ›
+// "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
+import { INTRO, RARIDADE, faixasDeTroca } from './config.js';
+import { catalogo, nomeDaPeca } from './catalog.js';
+import * as db from './db.js';
+import * as estoque from './estoque.js';
 import { irPara } from './router.js';
+import { montarVitrine } from './vitrine.js';
 import { el, $ } from './util.js';
 
-// alvo: a tela cujo botão acende. O Perfil e o Personagem não têm botão na
-// barra do celular — lá quem acende é o rosto do avatar no canto de cima.
-const PASSOS = [
-  {
-    tela: 'vitrine', alvo: null,
-    titulo: 'Bem-vindo ao Brechó Digital!',
-    texto: 'Em um minuto eu te mostro tudo o que dá pra fazer aqui. ' +
-      'Você já ganhou 6 peças de presente: elas estão no seu closet.',
-  },
-  {
-    tela: 'personagem', alvo: 'perfil',
-    titulo: 'Crie o seu personagem',
-    texto: 'Escolha o corpo, o tom de pele, o cabelo e o nariz. ' +
-      'É ele que veste os seus looks e aparece no seu perfil. ' +
-      'Para voltar aqui depois: Perfil › Personagem.',
-  },
-  {
-    tela: 'vestiario', alvo: 'vestiario',
-    titulo: 'Vista o personagem',
-    texto: 'Em Roupas ficam as roupinhas desenhadas do avatar. ' +
-      'Dois toques (ou arrastar) vestem a peça; completar coleções libera roupinhas novas.',
-  },
-  {
-    tela: 'vitrine', alvo: 'vitrine',
-    titulo: 'A loja muda todo dia',
-    texto: 'Toda manhã o dono repõe o mural. Você pode resgatar 3 peças por dia. ' +
-      'As raras ficam escondidas por baixo da pilha: arraste as de cima pra garimpar.',
-  },
-  {
-    tela: 'closet', alvo: 'closet',
-    titulo: 'O seu closet',
-    texto: 'Tudo o que você resgata vem pra cá, separado por categoria e com a cor da raridade. ' +
-      'Toque numa peça para ver a ficha; a estrela leva ela para o seu perfil.',
-  },
-  {
-    tela: 'stylist', alvo: 'stylist',
-    titulo: 'Stylist: monte looks',
-    texto: 'Escolha as suas peças e elas encaixam no avatar. Mova, gire e mude o tamanho; ' +
-      'ou toque em sortear look. Depois é salvar, publicar no feed ou baixar para o Story.',
-  },
-  {
-    tela: 'board', alvo: 'board',
-    titulo: 'Colagem livre',
-    texto: 'Um board de moda em fundo branco: espalhe as peças, escreva etiquetas, ' +
-      'assine e exporte. Também dá pra sortear uma colagem pronta.',
-  },
-  {
-    tela: 'social', alvo: 'social',
-    titulo: 'Feed',
-    texto: 'Os looks e colagens de todo mundo. Curta, comente e siga. ' +
-      'Na busca de pessoas você acha os seus amigos pelo nome ou pelo @.',
-  },
-  {
-    tela: 'tarefas', alvo: 'tarefas',
-    titulo: 'Missões e níveis',
-    texto: 'Cumprir as missões do dia dá XP, e cada nível abre coisa nova. ' +
-      'Aqui também ficam as coleções por marca, com o que já é seu e o que falta.',
-  },
-  {
-    tela: 'perfil', alvo: 'perfil',
-    titulo: 'A sua página',
-    texto: 'O que você marca com a estrela aparece aqui, junto dos amigos. ' +
-      'Quer rever este tutorial? Perfil › Testes › Ver tutorial.',
-  },
-];
-
-let passo = 0;
-let cartao = null;
+let caixa = null;
+let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'premio'
+let ganhos = null;        // o que saiu no último prêmio (para o cartão 'premio')
+let estavaPronta = false;
 
 export function montarTutorial() {
   $('#btn-tutorial')?.addEventListener('click', () => {
     $('#aj-fechar')?.click();   // fecha o modal de Testes antes
-    abrirTutorial();
+    comecar();
   });
+  db.onIntro(() => {
+    // A missão da vez acabou de ser cumprida: o cartão abre com o prêmio.
+    const pronta = db.introPronta();
+    if (pronta && !estavaPronta && modo !== 'premio' && modo !== 'boasvindas') modo = 'aberta';
+    estavaPronta = pronta;
+    desenhar();
+  });
+  estavaPronta = db.introPronta();
+  desenhar();
 }
 
 // ?tutorial no endereço: o jeito de testar de qualquer aparelho.
@@ -93,77 +48,174 @@ export function pediuTutorialNaUrl() {
   return new URLSearchParams(location.search).has('tutorial');
 }
 
-export function abrirTutorial() {
-  if (cartao) return;
-  passo = 0;
-  cartao = el('div', { class: 'tutorial', role: 'dialog', 'aria-live': 'polite' });
-  document.body.append(cartao);
-  document.body.classList.add('com-tutorial');
-  document.addEventListener('keydown', teclas);
-  mostrar();
+export function comecar() {
+  // Tira o ?tutorial do endereço: recarregar não recomeça de novo.
+  if (pediuTutorialNaUrl()) history.replaceState(null, '', location.pathname + location.hash);
+  modo = 'boasvindas';
+  ganhos = null;
+  db.comecarIntro();
+}
+
+// ------------------------------- Prêmios ----------------------------------
+// Uma peça por faixa pedida: que você não tem, que não esgotou e que não saiu
+// neste mesmo prêmio. Sem nenhuma na faixa, tenta a vizinha (faixasDeTroca).
+function sortearPecas(faixas) {
+  const escolhidas = new Set();
+  const out = [];
+  for (const pedida of faixas) {
+    for (const faixa of faixasDeTroca(pedida)) {
+      const lista = catalogo.itens.filter(it => !escolhidas.has(it.id) &&
+        !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
+      if (!lista.length) continue;
+      const item = lista[Math.floor(Math.random() * lista.length)];
+      escolhidas.add(item.id);
+      out.push({ item, raridade: faixa });
+      break;
+    }
+  }
+  return out;
+}
+
+function entregar(premio) {
+  const r = { xp: premio.xp || 0, fichas: premio.fichas || 0, pecas: [] };
+  for (const { item, raridade } of sortearPecas(premio.pecas || [])) {
+    const peca = db.adicionarPeca(item, { origem: 'missao', raridade });
+    if (peca) r.pecas.push({ item, peca });
+  }
+  if (r.fichas) db.ganharFicha(r.fichas);
+  if (r.xp) db.ganharXP(r.xp, 'missão de introdução');
+  db.salvar();
+  if (r.pecas.length) {
+    const pecas = r.pecas.map(({ peca }) => peca);
+    estoque.levar(pecas.map(p => ({ id: p.id, raridade: p.raridade })))
+      .then(() => { estoque.numerar(pecas); db.salvar(); });
+    montarVitrine();   // a peça ganha sai do mural, se estava nele
+  }
+  return r;
+}
+
+function pegarPremio() {
+  const m = INTRO[db.state.intro.passo];
+  ganhos = { ...entregar(m.premio), ultima: db.state.intro.passo === INTRO.length - 1 };
+  modo = 'premio';
+  db.avancarIntro();
+}
+
+// ------------------------------- Desenho ----------------------------------
+const nomeFaixa = (f) => RARIDADE[f]?.nome?.toLowerCase() ?? f;
+
+function rotuloDoPremio(p) {
+  const partes = [];
+  for (const f of p.pecas || []) partes.push(`peça ${nomeFaixa(f)}`);
+  if (p.fichas) partes.push(p.fichas === 1 ? '1 ficha' : `${p.fichas} fichas`);
+  if (p.xp) partes.push(`${p.xp} XP`);
+  return partes.join(' + ');
+}
+
+function pontos(passo) {
+  return `<div class="intro-pontos">${INTRO.map((_, i) =>
+    `<i class="${i < passo ? 'feito' : i === passo ? 'ativo' : ''}"></i>`).join('')}</div>`;
+}
+
+function htmlBoasVindas() {
+  return `
+    <p class="intro-sobre">Missões de introdução</p>
+    <h2>Bem-vindo ao Brechó Digital!</h2>
+    <p class="intro-dica">São ${INTRO.length} missões rápidas que mostram tudo o que dá pra fazer aqui.
+      Cada uma dá um prêmio, e a última é uma <b>peça épica</b>.</p>
+    <div class="intro-acoes">
+      <button class="btn-ghost" data-acao="pular" type="button">Agora não</button>
+      <button class="btn-dark" data-acao="abrir" type="button">Começar</button>
+    </div>`;
+}
+
+function htmlAberta(m, passo, pronta) {
+  return `
+    <div class="intro-topo">
+      <span class="intro-sobre">Missão ${passo + 1} de ${INTRO.length}</span>
+      <button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>
+    </div>
+    <h2>${pronta ? '✓ ' : ''}${m.nome}</h2>
+    <p class="intro-dica">${pronta ? 'Missão cumprida! O prêmio é seu.' : m.dica}</p>
+    <p class="intro-premio">🎁 ${rotuloDoPremio(m.premio)}</p>
+    ${pontos(passo)}
+    <div class="intro-acoes">
+      ${pronta
+        ? '<button class="btn-dark intro-pegar" data-acao="pegar" type="button">Pegar prêmio</button>'
+        : `<button class="btn-ghost" data-acao="pular" type="button">Pular introdução</button>
+           <button class="btn-dark" data-acao="ir" type="button">Ir para lá</button>`}
+    </div>`;
+}
+
+function htmlBarra(m, passo, pronta) {
+  return `
+    <button class="intro-faixa" data-acao="abrir" type="button">
+      <span class="intro-num">${passo + 1}/${INTRO.length}</span>
+      <span class="intro-texto"><b>${m.nome}</b><small>🎁 ${rotuloDoPremio(m.premio)}</small></span>
+    </button>
+    ${pronta
+      ? '<button class="btn-dark intro-pegar" data-acao="pegar" type="button">Pegar</button>'
+      : '<button class="btn-dark" data-acao="ir" type="button">Ir</button>'}`;
+}
+
+function htmlPremio() {
+  const g = ganhos;
+  const pecas = g.pecas.map(({ item, peca }) => `
+    <figure class="intro-peca" style="--fundo:${RARIDADE[peca.raridade]?.bg};--borda:${RARIDADE[peca.raridade]?.cor}">
+      <img src="${item.src}" alt="">
+      <figcaption>${nomeDaPeca(item)}<small>${RARIDADE[peca.raridade]?.nome ?? ''}</small></figcaption>
+    </figure>`).join('');
+  const extras = [g.fichas && `+${g.fichas} ${g.fichas === 1 ? 'ficha' : 'fichas'}`, g.xp && `+${g.xp} XP`]
+    .filter(Boolean).join(' · ');
+  return `
+    <p class="intro-sobre">${g.ultima ? 'Introdução completa' : 'Missão cumprida'}</p>
+    <h2>${g.ultima ? 'Você já sabe tudo! 🎉' : 'Você ganhou'}</h2>
+    ${pecas ? `<div class="intro-pecas">${pecas}</div>` : ''}
+    ${extras ? `<p class="intro-extras">${extras}</p>` : ''}
+    ${g.pecas.length ? '<p class="intro-dica">A peça já está no seu closet.</p>' : ''}
+    ${g.ultima ? '<p class="intro-dica">Agora as missões do dia, em Tarefas, continuam dando prêmio.</p>' : ''}
+    <div class="intro-acoes">
+      <button class="btn-dark" data-acao="${g.ultima ? 'fechar' : 'abrir'}" type="button">
+        ${g.ultima ? 'Começar a garimpar' : 'Próxima missão'}</button>
+    </div>`;
+}
+
+function desenhar() {
+  const ativa = db.introAtiva();
+  if (!ativa && modo !== 'premio') { fechar(); return; }
+
+  if (!caixa) {
+    caixa = el('div', { class: 'intro', role: 'region', 'aria-label': 'Missões de introdução' });
+    caixa.addEventListener('click', clique);
+    document.body.append(caixa);
+    document.body.classList.add('com-intro');
+  }
+
+  const passo = db.state.intro.passo;
+  const m = INTRO[passo];
+  const pronta = db.introPronta();
+  caixa.dataset.modo = modo;
+  caixa.classList.toggle('pronta', pronta);
+  caixa.innerHTML =
+    modo === 'boasvindas' ? htmlBoasVindas() :
+    modo === 'premio' ? htmlPremio() :
+    modo === 'aberta' ? htmlAberta(m, passo, pronta) :
+    htmlBarra(m, passo, pronta);
 }
 
 function fechar() {
-  apagarAlvo();
-  cartao?.remove();
-  cartao = null;
-  document.body.classList.remove('com-tutorial');
-  document.removeEventListener('keydown', teclas);
-  // Tira o ?tutorial do endereço: recarregar a página não abre de novo.
-  if (pediuTutorialNaUrl()) history.replaceState(null, '', location.pathname + location.hash);
-  irPara('vitrine');
+  caixa?.remove();
+  caixa = null;
+  document.body.classList.remove('com-intro');
 }
 
-function teclas(e) {
-  if (e.key === 'Escape') fechar();
-  else if (e.key === 'ArrowRight') ir(1);
-  else if (e.key === 'ArrowLeft') ir(-1);
-}
-
-function ir(d) {
-  const n = passo + d;
-  if (n < 0) return;
-  if (n >= PASSOS.length) { fechar(); return; }
-  passo = n;
-  mostrar();
-}
-
-function apagarAlvo() {
-  document.querySelectorAll('.tut-alvo').forEach(b => b.classList.remove('tut-alvo'));
-}
-
-// O botão da tela na barra; se ele estiver escondido (Perfil no celular), o
-// atalho redondo do perfil.
-function botaoDa(tela) {
-  const b = document.querySelector(`.sidebar-btn[data-goto="${tela}"]`);
-  if (b && b.offsetParent) return b;
-  if (tela === 'perfil') return $('#perfil-atalho');
-  return null;
-}
-
-function mostrar() {
-  const p = PASSOS[passo];
-  irPara(p.tela);
-  apagarAlvo();
-  if (p.alvo) botaoDa(p.alvo)?.classList.add('tut-alvo');
-
-  const ultimo = passo === PASSOS.length - 1;
-  const pontos = PASSOS.map((_, i) =>
-    `<i class="${i === passo ? 'ativo' : i < passo ? 'feito' : ''}"></i>`).join('');
-
-  cartao.innerHTML = `
-    <div class="tut-topo">
-      <span class="tut-conta">${passo + 1} de ${PASSOS.length}</span>
-      <button class="tut-pular" type="button">Pular</button>
-    </div>
-    <h2>${p.titulo}</h2>
-    <p>${p.texto}</p>
-    <div class="tut-pontos">${pontos}</div>
-    <div class="tut-acoes">
-      ${passo > 0 ? '<button class="btn-ghost tut-voltar" type="button">Voltar</button>' : ''}
-      <button class="btn-dark tut-proximo" type="button">${ultimo ? 'Começar a garimpar' : passo === 0 ? 'Bora!' : 'Próximo'}</button>
-    </div>`;
-  cartao.querySelector('.tut-pular').addEventListener('click', fechar);
-  cartao.querySelector('.tut-voltar')?.addEventListener('click', () => ir(-1));
-  cartao.querySelector('.tut-proximo').addEventListener('click', () => ir(1));
+function clique(e) {
+  const acao = e.target.closest('[data-acao]')?.dataset.acao;
+  if (!acao) return;
+  if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
+  else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
+  else if (acao === 'ir') { modo = 'barra'; irPara(INTRO[db.state.intro.passo].ir); desenhar(); }
+  else if (acao === 'pegar') pegarPremio();
+  else if (acao === 'pular') { modo = 'barra'; db.pularIntro(); }
+  else if (acao === 'fechar') { modo = 'barra'; ganhos = null; fechar(); irPara('vitrine'); }
 }
