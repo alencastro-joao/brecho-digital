@@ -7,9 +7,9 @@ navegador de cada um: o feed "nascia povoado" com doze posts sorteados no save,
 cada conta via os seus, e uma curtida num deles não chegava a ninguém. Agora
 quem posta por eles é a nuvem, no mesmo feed das contas de verdade:
 
-* **De tempos em tempos.** O EventBridge Scheduler chama esta Lambda com
-  `{"agendado": "gerar-posts"}` (nuvem/infra/gerador.yaml, a cada 3 horas por
-  padrão). Cada rodada publica um post — às vezes dois —, e de madrugada
+* **De tempos em tempos.** A cada INTERVALO_HORAS (3) sai uma rodada: quem
+  dá a hora é a leitura do feed (em_dia, no fim deste arquivo), e o EventBridge
+  Scheduler, se ligado (nuvem/infra/gerador.yaml), só adianta. Cada rodada publica um post — às vezes dois —, e de madrugada
   (horário de Brasília) quase sempre nenhum: o feed respira como gente.
 
 * **O post guarda o que ele é, não a imagem.** Quem posta escolhe as peças
@@ -34,7 +34,7 @@ O administrador também pode pedir posts na hora (o botão de teste do perfil):
 import json
 import os
 import random
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import boto3
 from botocore.exceptions import ClientError
@@ -45,6 +45,8 @@ from contas import TABELA, _dynamo, agora, iso
 BUCKET_SITE = os.environ.get('BD_BUCKET_SITE') or ''
 _s3 = boto3.client('s3')
 
+INTERVALO_HORAS = 3             # de quanto em quanto tempo sai uma rodada (em_dia)
+ATRASO_MAX = 8                  # rodadas perdidas que ainda são repostas
 MAX_GERADOS = 80                # posts dos perfis de exemplo que ficam no feed
 ANIMAR_HORAS = 72               # até que idade um post ainda ganha curtida e conversa
 QUANTOS_MAX = 12                # o que o admin pode pedir de uma vez
@@ -295,14 +297,15 @@ def _madrugada(agora_):
     return 1 <= hora < 7
 
 
-def rodar(quantos=None, espalhar_horas=0, rnd=None):
+def rodar(quantos=None, espalhar_horas=0, rnd=None, em=None):
     """Uma rodada: publica (quantos=None decide sozinho) e anima o que já existe.
 
     `espalhar_horas` data os posts novos entre agora e tantas horas atrás — é
     o que o semeio inicial usa para o feed não nascer com tudo do mesmo minuto.
+    `em` é o horário da rodada, quando ela é uma que ficou para trás (em_dia).
     """
     rnd = rnd or random.Random()
-    agora_ = agora()
+    agora_ = em or agora()
     acervo = ler_acervo()
     if len(acervo) < 4:
         return {'publicados': [], 'animados': 0, 'apagados': 0, 'aviso': 'acervo vazio'}
@@ -343,3 +346,84 @@ def rodar(quantos=None, espalhar_horas=0, rnd=None):
         _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': item['pk']}})
 
     return {'publicados': publicados, 'animados': animados, 'apagados': len(sobrando)}
+
+
+# --- O relógio -------------------------------------------------------------
+# Quem faz a rodada acontecer de INTERVALO_HORAS em INTERVALO_HORAS é a
+# própria leitura do feed: `GET /api/feed` chama em_dia(), que confere a hora
+# da última rodada e faz as que faltam, cada uma datada no horário dela. Assim
+# o gerador funciona sem nenhuma peça a mais na AWS; a agenda do EventBridge
+# (gerador.yaml), quando ligada, só adianta o que a leitura faria.
+#
+#     GERADOR#relogio   ultima   ISO da última rodada
+#
+# A troca do `ultima` é condicional: com duas leituras ao mesmo tempo, só uma
+# ganha a vez, e a outra segue sem gerar nada.
+CHAVE_RELOGIO = 'GERADOR#relogio'
+
+
+def _marcar(ultima, antes):
+    """Grava `ultima` se o relógio ainda estiver em `antes` (None: nunca rodou)."""
+    args = {
+        'TableName': TABELA,
+        'Key': {'pk': {'S': CHAVE_RELOGIO}},
+        'UpdateExpression': 'SET ultima = :nova',
+        'ExpressionAttributeValues': {':nova': {'S': ultima}},
+    }
+    if antes is None:
+        args['ConditionExpression'] = 'attribute_not_exists(ultima)'
+    else:
+        args['ConditionExpression'] = 'ultima = :antes'
+        args['ExpressionAttributeValues'][':antes'] = {'S': antes}
+    try:
+        _dynamo.update_item(**args)
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            return False
+        raise
+
+
+def em_dia():
+    """Faz as rodadas que faltam desde a última. A primeira vez semeia o feed."""
+    agora_ = agora()
+    item = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': CHAVE_RELOGIO}},
+                            ConsistentRead=True).get('Item') or {}
+    antes = (item.get('ultima') or {}).get('S')
+    passo = timedelta(hours=INTERVALO_HORAS)
+
+    if antes is None:
+        if not _marcar(iso(agora_), None):
+            return None
+        return rodar(12, espalhar_horas=72)
+
+    try:
+        ultima = datetime.fromisoformat(antes.replace('Z', '+00:00'))
+    except ValueError:
+        ultima = agora_ - passo
+    if agora_ - ultima < passo:
+        return None
+
+    faltam = int((agora_ - ultima) / passo)
+    if faltam > ATRASO_MAX:                 # muito tempo parado: só as últimas
+        ultima = agora_ - passo * ATRASO_MAX
+        faltam = ATRASO_MAX
+    rodadas = [ultima + passo * (k + 1) for k in range(faltam)]
+    if not _marcar(iso(rodadas[-1]), antes):
+        return None                         # outra leitura chegou primeiro
+    feito = {'publicados': [], 'animados': 0, 'apagados': 0}
+    for quando in rodadas:
+        r = rodar(em=quando)
+        feito['publicados'] += r['publicados']
+        feito['animados'] += r['animados']
+        feito['apagados'] += r['apagados']
+    return feito
+
+
+def rodar_agendado(quantos=None, espalhar_horas=0):
+    """A chamada do EventBridge: roda agora e acerta o relógio."""
+    feito = rodar(quantos, espalhar_horas)
+    _dynamo.update_item(TableName=TABELA, Key={'pk': {'S': CHAVE_RELOGIO}},
+                        UpdateExpression='SET ultima = :nova',
+                        ExpressionAttributeValues={':nova': {'S': iso(agora())}})
+    return feito

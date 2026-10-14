@@ -236,9 +236,17 @@ compartilhado sozinhos, de tempos em tempos. Antes cada navegador sorteava os
 seus doze posts no save, e ninguém via o mesmo feed.
 
 ```
-EventBridge Scheduler  brecho-gerador-posts  rate(3 hours), fuso de São Paulo
-   └─ invoca brecho-api com {"agendado": "gerar-posts"}   (papel brecho-gerador-agendador)
+GET /api/feed  →  gerador.em_dia()   faltou rodada desde GERADOR#relogio? faz agora
+EventBridge Scheduler (opcional, gerador.yaml)  →  {"agendado": "gerar-posts"}
 ```
+
+- **Quem dá a hora é a leitura do feed.** A cada `GET /api/feed`, a API
+  confere o item `GERADOR#relogio`; se já passaram `INTERVALO_HORAS` (3) desde a
+  última rodada, faz as que faltam (até 8), cada uma datada no horário dela. A
+  primeira leitura semeia 12 posts espalhados pelos últimos 3 dias. Não precisa
+  de nada novo na AWS nem de permissão nova para o deploy do GitHub. A agenda
+  do EventBridge continua no repositório (`publicar-gerador.sh`) para quando
+  quiser que o feed ande mesmo sem ninguém abrir.
 
 - **Cada rodada** publica 1 post (30% de chance de 2; de madrugada, 25% de
   chance de 1) de alguém que não postou nas últimas rodadas, e anima os posts
@@ -249,7 +257,8 @@ EventBridge Scheduler  brecho-gerador-posts  rate(3 hours), fuso de São Paulo
   A tela veste o look no personagem de quem postou ou monta a colagem com a
   semente (`social.js`, `prepararGerado`). Sem Pillow e sem nada no bucket.
 - **Teto de 80** posts gerados; os mais velhos saem.
-- **Mudar a frequência**: `FREQUENCIA="rate(1 hour)" bash nuvem/infra/publicar-gerador.sh`.
+- **Mudar a frequência**: `INTERVALO_HORAS` em `lambda/gerador.py` (e, se a
+  agenda estiver ligada, `FREQUENCIA="rate(1 hour)" bash nuvem/infra/publicar-gerador.sh`).
   Pausar: `LIGADO=DISABLED bash nuvem/infra/publicar-gerador.sh`.
 - **Semear na hora**: `SEMEAR=12 bash nuvem/infra/publicar-gerador.sh` (12 posts
   espalhados pelos últimos 3 dias). O admin também tem o botão de teste do

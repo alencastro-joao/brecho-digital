@@ -279,6 +279,13 @@ def rotas_de_feed(pedido):
         return responder(200, {**gerador.rodar(quantos), **feed.listar(eu)})
     if not post_id:
         if metodo == 'GET':
+            # A leitura do feed é o relógio do gerador (ver gerador.em_dia):
+            # se já passou a hora, os perfis de exemplo postam antes da lista.
+            try:
+                import gerador
+                gerador.em_dia()
+            except Exception as e:              # noqa: BLE001 — o feed abre mesmo assim
+                print('gerador falhou: %r' % (e,))
             return responder(200, feed.listar(eu, pedido.consulta.get('autor')))
         if metodo == 'POST':
             return responder(201, feed.publicar(eu, pedido.corpo(LIMITE_POST)))
@@ -403,7 +410,7 @@ def handler(evento, _contexto):
     # evento — o corpo vem em `body` —, então ninguém de fora cai aqui.
     if 'requestContext' not in evento and evento.get('agendado') == 'gerar-posts':
         import gerador
-        feito = gerador.rodar(evento.get('quantos'), evento.get('espalhar_horas') or 0)
+        feito = gerador.rodar_agendado(evento.get('quantos'), evento.get('espalhar_horas') or 0)
         print('gerador: %r' % (feito,))
         return feito
 
