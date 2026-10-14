@@ -108,96 +108,89 @@
   .npc-bubble p { font-size: 12.5px; }
 
   /* ---------------------------- Guarda-roupa ----------------------------- */
+  /* Como um inventário: as categorias numa barra em cima, a grade de 3 × 5
+     embaixo com as setas de página, e a peça tocada abre no lugar da grade
+     (com voltar; o do aparelho também serve, ver js/closet.js). */
   .view-closet { flex-direction: column; }
   .view-closet .cat-rail {
     width: auto !important; flex: none;
-    flex-wrap: nowrap;
+    flex-wrap: nowrap; justify-content: flex-start;
     overflow-x: auto; overflow-y: hidden;
-    padding: 10px 16px 4px; gap: 6px; justify-content: space-between;
-    border-right: 0; border-bottom: 0;
+    margin: 12px 16px 0; padding: 0; gap: 0;
+    border: 1.5px solid var(--linha); border-radius: 14px;
     scrollbar-width: none;
   }
   .view-closet .cat-rail::-webkit-scrollbar { display: none; }
-  .cat-btn { width: 44px; height: 44px; font-size: 19px; border-radius: 13px; }
+  .view-closet .cat-btn {
+    flex: 1 0 46px; width: auto; height: 46px; font-size: 19px;
+    border: 0; border-left: 1px solid var(--linha); border-radius: 0;
+  }
+  .view-closet .cat-btn:first-child { border-left: 0; }
+  .view-closet .cat-btn:hover { transform: none; }
+  .view-closet .cat-btn.active { background: #f4efe7; }
+  .view-closet .cat-btn .cat-qtd { display: none; }
 
   .grid-wrapper { padding: 14px 16px 12px; }
-  .view-closet .grid-wrapper { padding-top: 10px; }
-  /* Cabeçalho numa linha só: título e contagem à esquerda, "Organizar" à
-     direita. Categorias, ordem e "+ Adicionar" aparecem só ao tocar nele. */
-  .closet-head {
-    flex-direction: row; flex-wrap: wrap; align-items: center;
-    gap: 10px; margin-bottom: 12px;
-  }
-  .closet-titulo { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-  .closet-titulo .closet-sub { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .closet-ajustes {
-    display: inline-flex; align-items: center; gap: 6px; flex: none;
-    border: 1px solid #ddd6cc; border-radius: 20px; background: #fff;
-    padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 600;
-    color: var(--tinta); cursor: pointer;
-  }
-  .closet-ajustes::before { content: '⇅'; font-size: 13px; }
-  .closet-head.abertas .closet-ajustes { background: var(--tinta); color: #fff; border-color: var(--tinta); }
-  .closet-acoes { display: none; justify-content: flex-start; gap: 8px 12px; width: 100%; }
-  .closet-head.abertas .closet-acoes { display: flex; }
-  .btn-adicionar { padding: 8px 14px; }
-  .grid-title { display: none; }   /* o contador de peças já diz onde você está */
-  /* Colunas cravadas, não "quantas couberem": a barra de rolagem (que alguns
-     navegadores desenham por fora do conteúdo) roubava a última. O
-     guarda-roupa usa quatro, com quadrados menores (24 por página). */
+  .view-closet .grid-wrapper { flex: 1; min-height: 0; padding: 12px 16px 10px; }
+  /* Fica só a grade: contagem, ordem e grupos saem da tela no celular. */
+  .view-closet .closet-head { display: none; }
   .grid-container {
     gap: 10px; scrollbar-gutter: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .item-slot { width: auto; height: auto; aspect-ratio: 1; padding: 9px; border-radius: 14px; }
   .item-slot .peca-caixa { inset: 9px; }
-  .view-closet .grid-container { gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  /* Sem quadrados vazios completando a página: só as peças, alinhadas. */
-  .view-closet .item-slot.vazio { display: none; }
-  .view-closet .item-slot { padding: 6px; border-radius: 11px; border-width: 1.5px; }
-  .view-closet .item-slot .peca-caixa { inset: 6px; }
+  /* A grade preenche a altura: 3 colunas × 5 fileiras, sempre cheia. */
+  .view-closet .grid-container {
+    gap: 8px; overflow: hidden;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    align-content: stretch;
+  }
+  .view-closet .item-slot { aspect-ratio: auto; padding: 8px; border-radius: 12px; border-width: 1.5px; }
+  .view-closet .item-slot .peca-caixa { inset: 8px; }
+  .view-closet .item-slot:hover { transform: none; box-shadow: none; }
 
-  /* No trilho, só a categoria aberta mostra a contagem. */
-  .view-closet .cat-btn:not(.active) .cat-qtd { display: none; }
-
-  /* Paginação enxuta: só as setas e o número. */
-  .view-closet .closet-paginas { padding-top: 10px; gap: 18px; }
-  .view-closet .closet-paginas button { padding: 6px 14px; border-radius: 20px; font-size: 16px; line-height: 1; }
+  /* Só as duas setas, grandes, nas pontas. */
+  .view-closet .closet-paginas { padding-top: 10px; justify-content: space-between; }
+  .view-closet .closet-paginas button {
+    width: 56px; height: 44px; padding: 0; border-radius: 14px;
+    font-size: 24px; line-height: 1;
+  }
+  .view-closet #closet-pag-num { font-size: 12px; font-weight: 600; }
   .view-closet .pag-txt { display: none; }
 
-  /* O destaque vira uma faixa no pé da tela, e só quando há peça escolhida:
-     sem ela, a faixa seria só o "Selecione uma peça" comendo a grade. */
-  .view-closet .display-section {
-    width: auto !important; flex: none;
-    flex-direction: row; align-items: center;
-    gap: 12px; padding: 10px 16px 12px;
-    border-left: 0; border-top: 1px solid var(--linha);
-    box-shadow: 0 -8px 20px rgba(0, 0, 0, .04);
+  /* A peça aberta: voltar, a foto grande e as informações embaixo. */
+  .view-closet .display-section { display: none; }
+  .view-closet.detalhe .grid-wrapper { display: none; }
+  .view-closet.detalhe .display-section {
+    display: flex; flex: 1; min-height: 0; width: auto !important;
+    flex-direction: column; gap: 14px;
+    padding: 12px 16px 16px; border: 0; background: none;
+    overflow-y: auto;
   }
-  .view-closet .display-section:has(#preview-meta[hidden]) { display: none; }
-  /* A foto é a protagonista: grande, à esquerda, num fundo neutro. Ao lado,
-     só raridade e número, nome, detalhes e os ícones das coleções. Stylist e
-     Colagem ficam fora do celular: a peça se veste e se cola nessas telas. */
-  .view-closet .display-section { align-items: stretch; gap: 14px; }
+  .view-closet .closet-voltar {
+    display: inline-flex; align-self: flex-start; align-items: center;
+    padding: 8px 14px; border: 1px solid var(--linha); border-radius: 20px;
+    background: var(--branco); font: inherit; font-size: 14px; font-weight: 600;
+    color: var(--tinta); cursor: pointer;
+  }
   .view-closet .preview-wrapper {
-    flex: none; width: min(46vw, 200px); height: auto; aspect-ratio: 1; min-height: 0;
-    padding: 8px; border-radius: 18px;
+    flex: 1 1 auto; min-height: 200px; padding: 16px; border-radius: 18px;
     background: var(--papel); border: 0;
   }
-  .view-closet .preview-wrapper img { max-height: min(42vw, 184px); }
+  .view-closet .preview-wrapper img { max-height: min(48vh, 420px); }
+  .view-closet .placeholder-text { display: none; }
   .view-closet .preview-meta {
-    flex: 1; min-width: 0;
-    display: flex; flex-wrap: wrap; align-items: center; align-content: center;
-    column-gap: 0; row-gap: 6px;
+    flex: none; display: flex; flex-wrap: wrap; align-items: center;
+    column-gap: 8px; row-gap: 6px;
   }
   .view-closet .preview-meta > :not(button):not(.rarity-tag):not(.preview-numero) { flex: 0 0 100%; min-width: 0; }
-  .view-closet .preview-meta .rarity-tag {
-    flex: none; font-size: 9px; padding: 1px 7px; border-width: 1px;
-  }
-  .view-closet .preview-meta h3 { margin: 0; font-size: 17px; line-height: 1.2; }
-  .view-closet .preview-meta p { margin: 0; font-size: 11.5px; line-height: 1.35; }
+  .view-closet .preview-meta .rarity-tag { flex: none; font-size: 10px; padding: 2px 8px; border-width: 1px; }
+  .view-closet .preview-meta h3 { margin: 0; font-size: 20px; line-height: 1.2; }
+  .view-closet .preview-meta p { margin: 0; font-size: 13px; line-height: 1.4; }
   /* Coleções só pelo ícone (o nome aparece ao tocar, na própria coleção). */
-  .view-closet .preview-meta .col-chips { gap: 6px; flex: 0 1 auto !important; margin-right: 8px; }
+  .view-closet .preview-meta .col-chips { gap: 6px; flex: 0 1 auto !important; }
   .view-closet .preview-meta .col-chips:empty { display: none; }
   .view-closet .preview-meta .col-chip {
     padding: 0; border: 0; background: none; gap: 0; position: relative;
@@ -210,8 +203,8 @@
   .view-closet #btn-para-stylist, .view-closet #btn-para-board { display: none; }
   .view-closet .preview-meta button.fav-estrela,
   .view-closet .preview-meta button.btn-editar {
-    margin: 2px 6px 0 0; width: 34px; height: 34px; padding: 0; flex: none;
-    font-size: 15px; border-radius: 50%;
+    width: 38px; height: 38px; padding: 0; margin: 0; flex: none;
+    font-size: 16px; border-radius: 50%;
   }
   .view-closet .preview-meta button.btn-editar[hidden] { display: none; }
   .view-closet .so-pc { display: none; }

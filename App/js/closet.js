@@ -28,6 +28,13 @@ let pagina = 0;                 // a página aberta da grade (começa em 0)
 // (ordenacao.js, compartilhado com o Stylist e a Colagem) só ordenam a vista.
 const manual = () => ordemAtual() === 'manual';
 
+// Celular: a peça aberta toma o lugar da grade (classe .detalhe na tela). Abrir
+// empilha uma entrada no histórico, então o voltar do aparelho fecha a peça
+// em vez de sair do guarda-roupa.
+const celular = () => matchMedia('(max-width: 900px)').matches;
+const tela = () => document.querySelector('.view-closet');
+const naPeca = () => history.state?.closetPeca === true;
+
 export function montarCloset() {
   montarRail();
   montarSeletorDeAgrupamento();
@@ -38,6 +45,12 @@ export function montarCloset() {
   $('#closet-ajustes').addEventListener('click', (e) => {
     const aberto = $('.closet-head').classList.toggle('abertas');
     e.currentTarget.setAttribute('aria-expanded', String(aberto));
+  });
+  $('#closet-voltar').addEventListener('click', () => {
+    if (naPeca()) history.back(); else limparPreview();
+  });
+  window.addEventListener('popstate', () => {
+    if (!naPeca() && tela()?.classList.contains('detalhe')) limparPreview();
   });
   $('#closet-pag-ant').addEventListener('click', () => irParaPagina(pagina - 1));
   $('#closet-pag-prox').addEventListener('click', () => irParaPagina(pagina + 1));
@@ -187,7 +200,7 @@ function desenharPagina() {
     grid.append(el('div', { class: 'item-slot vazio' }));
   }
 
-  $('#closet-paginas').hidden = total < 2;
+  $('#closet-paginas').hidden = total < 2 && !celular();
   $('#closet-pag-num').textContent = `${pagina + 1} / ${total}`;
   $('#closet-pag-ant').disabled = pagina === 0;
   $('#closet-pag-prox').disabled = pagina >= total - 1;
@@ -200,10 +213,10 @@ function irParaPagina(n) {
   $('#inventory-grid').scrollTop = 0;
 }
 
-// Celular: 4 colunas × 6 fileiras. Computador: as colunas que a largura
+// Celular: 3 colunas × 5 fileiras, como um inventário. Computador: as colunas que a largura
 // comporta × as fileiras que cabem sem rolar (mínimo de 3).
 function pecasPorPagina() {
-  if (matchMedia('(max-width: 900px)').matches) return 24;
+  if (celular()) return 15;
   const grid = $('#inventory-grid');
   const wrapper = document.querySelector('.grid-wrapper');
   const head = document.querySelector('.closet-head');
@@ -280,11 +293,17 @@ function selecionar(peca) {
   const r = RARIDADE[peca.raridade] || RARIDADE.common;
   const img = $('#big-preview-img');
 
+  if (celular()) {
+    tela()?.classList.add('detalhe');
+    if (!naPeca()) history.pushState({ closetPeca: true }, '');
+  }
+
   const moldura = $('#preview-moldura');
   $('#placeholder').hidden = true;
   moldura.hidden = false;
-  // 300 px de altura é o teto da prévia (closet.css).
-  trocarImagem(img, cat, 300 * proporcao(cat));
+  // 300 px de altura é o teto da prévia (closet.css); a peça aberta no
+  // celular é maior.
+  trocarImagem(img, cat, (celular() ? 420 : 300) * proporcao(cat));
 
   moldura.classList.remove('flutua');
   void moldura.offsetWidth;
@@ -333,6 +352,12 @@ function rotularFavorito() {
 
 function limparPreview() {
   selecionada = null;
+  // Fechou por outro caminho (categoria, página): a entrada da peça sai do
+  // histórico também, para o voltar seguinte não "fechar" uma peça já fechada.
+  if (tela()?.classList.contains('detalhe')) {
+    tela().classList.remove('detalhe');
+    if (naPeca()) history.back();
+  }
   const moldura = $('#preview-moldura');
   if (moldura) {
     moldura.hidden = true;
