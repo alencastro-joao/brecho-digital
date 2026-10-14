@@ -952,7 +952,7 @@ export function progressoDoNivel(total) {
 //
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
-export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion']);
+export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike']);
 // Tema usa o `icone` dele em ESTILOS: bandeira redonda do circle-flags (MIT,
 // github.com/HatScripts/circle-flags; licença em assets/temas).
 export const logoDaColecao = (c) => c.icone
