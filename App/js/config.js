@@ -952,7 +952,7 @@ export function progressoDoNivel(total) {
 //
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
-export const MARCAS_COM_LOGO = new Set([]);
+export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco']);
 export const logoDaColecao = (c) => MARCAS_COM_LOGO.has(c.id) ? `assets/marcas/${c.id}.webp` : null;
 export const COLECOES = [
   { id: 'puma', marca: 'Puma',

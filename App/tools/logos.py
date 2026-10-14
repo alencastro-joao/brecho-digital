@@ -2,44 +2,41 @@
 
     python tools/logos.py puma=caminho/puma.png adidas=caminho/adidas.svg.png ...
 
-O molde: quadrado de 256 px com o fundo do próprio logo (branco se for
-transparente), o logo recortado das bordas vazias e centralizado ocupando no máximo 62% do lado — assim ele cabe inteiro no
+O molde: quadrado de 256 px, logo em preto sobre branco (qualquer que seja a
+cor original), recortado das bordas vazias e centralizado ocupando no máximo 62% do lado — assim ele cabe inteiro no
 disco redondo do emblema e todas as marcas ficam do mesmo tamanho. Depois de
 gravar, ponha o id em MARCAS_COM_LOGO (js/config.js).
 """
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageChops
+from PIL import Image, ImageOps
 
 LADO = 256
 OCUPA = 0.62
+COR = (26, 26, 26)
+FUNDO = (255, 255, 255)
 SAIDA = Path(__file__).resolve().parent.parent / 'assets' / 'marcas'
 
 
-def no_branco(img):
-    img = img.convert('RGBA')
-    fundo = Image.new('RGBA', img.size, (255, 255, 255, 255))
-    return Image.alpha_composite(fundo, img).convert('RGB')
-
-
-def recortar(img):
-    # Corta o que for (quase) igual ao canto: fundo branco, preto ou de cor.
-    canto = Image.new('RGB', img.size, img.getpixel((0, 0)))
-    dif = ImageChops.difference(img, canto).convert('L').point(lambda v: 255 if v > 24 else 0)
-    caixa = dif.getbbox()
-    return img.crop(caixa) if caixa else img
+def mascara(origem):
+    """Onde tem logo: a transparência do PNG, ou o escuro de uma imagem sem ela."""
+    img = Image.open(origem).convert('RGBA')
+    alfa = img.getchannel('A')
+    if alfa.getextrema()[0] < 250:
+        return alfa
+    return ImageOps.invert(img.convert('L'))
 
 
 def molde(origem):
-    img = no_branco(Image.open(origem))
-    fundo = img.getpixel((0, 0))
-    img = recortar(img)
-    escala = LADO * OCUPA / max(img.size)
-    img = img.resize((max(1, round(img.width * escala)), max(1, round(img.height * escala))), Image.LANCZOS)
-    tela = Image.new('RGB', (LADO, LADO), fundo)
-    tela.paste(img, ((LADO - img.width) // 2, (LADO - img.height) // 2))
-    return tela
+    m = mascara(origem)
+    m = m.crop(m.point(lambda v: 255 if v > 24 else 0).getbbox() or (0, 0, *m.size))
+    escala = LADO * OCUPA / max(m.size)
+    m = m.resize((max(1, round(m.width * escala)), max(1, round(m.height * escala))), Image.LANCZOS)
+    tela = Image.new('L', (LADO, LADO), 0)
+    tela.paste(m, ((LADO - m.width) // 2, (LADO - m.height) // 2))
+    # Logo preto no branco, seja qual for a cor original.
+    return Image.composite(Image.new('RGB', tela.size, COR), Image.new('RGB', tela.size, FUNDO), tela)
 
 
 def main(pares):
