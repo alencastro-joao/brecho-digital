@@ -155,12 +155,13 @@
     padding: 10px; border-radius: 20px;
     background: var(--painel); border: 2px solid var(--bloco-borda);
   }
-  /* Do cabeçalho fica só o "Organizar": um bloco ⇅ no canto do painel, na
-     linha das setas. Tocar abre as opções (agrupar e ordenar) logo abaixo. */
+  /* Do cabeçalho fica só o "Organizar": um bloco ⇅ no canto de baixo do
+     painel, na linha das setas. Tocar abre as opções (agrupar e ordenar)
+     logo acima dela. */
   .view-closet .closet-head { display: contents; }
   .view-closet .closet-titulo { display: none; }
   .view-closet .closet-ajustes {
-    position: absolute; top: 10px; right: 10px;
+    position: absolute; bottom: 10px; right: 10px;
     display: grid; place-items: center;
     width: 40px; height: 34px; padding: 0; border-radius: 11px;
     border: 2px solid var(--bloco-borda); background: var(--bloco);
@@ -173,9 +174,9 @@
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
   }
   .view-closet .closet-acoes {
-    order: -1; display: none; flex: none;
+    order: 1; display: none; flex: none;
     flex-wrap: wrap; justify-content: center; gap: 8px 14px;
-    padding: 0 0 10px;
+    padding: 10px 0 0;
   }
   .view-closet .closet-head.abertas .closet-acoes { display: flex; }
   /* Só as opções, sem os rótulos "Categorias" e "Organizar": numa linha. */
@@ -183,8 +184,17 @@
   .view-closet .closet-ordem > span:first-child { display: none; }
   .view-closet .closet-ordem select {
     font: inherit; font-size: 14px; font-weight: 600; color: var(--tinta);
-    width: auto; max-width: 46vw; height: 36px; padding: 0 10px; border-radius: 11px;
+    width: auto; max-width: 40vw; height: 36px; padding: 0 10px; border-radius: 11px;
     border: 2px solid var(--bloco-borda); background: var(--bloco);
+  }
+  .view-closet .ordem-sentido {
+    width: 36px; height: 36px; border-radius: 11px; font-size: 17px;
+    border: 2px solid var(--bloco-borda); background: var(--bloco);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-closet .ordem-sentido.on {
+    background: var(--inventario); color: var(--tinta); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
   }
   /* 4 colunas × 6 fileiras, preenchendo a altura do painel. */
   .view-closet .grid-container {
@@ -213,9 +223,9 @@
   .view-closet .item-slot:hover { transform: none; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07); }
   .view-closet .item-slot:active { transform: translateY(1px); }
 
-  /* As setas em cima do painel, com a página entre elas. */
+  /* As setas embaixo da grade, com a página entre elas. */
   .view-closet .closet-paginas {
-    order: -2; min-height: 34px; padding: 0 0 10px; justify-content: center; gap: 22px;
+    order: 2; min-height: 34px; padding: 10px 0 0; justify-content: center; gap: 22px;
   }
   .view-closet .closet-paginas[hidden] { display: flex; visibility: hidden; }
   .view-closet .closet-paginas button {

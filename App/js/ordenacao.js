@@ -35,29 +35,28 @@ const marcaDe = p => texto(pecaDoCatalogo(p.id)?.marca, 'Sem marca');
 const origemDe = p => ORIGENS[p.origem] || 'Garimpo';
 
 // Cada modo: o nome no seletor, como comparar e (opcional) em que grupo a
-// peça cai.
+// peça cai. O sentido não entra no nome: a seta ao lado do seletor inverte
+// qualquer um (ver `invertida`).
 const ORDENS = {
   manual:    { nome: 'Minha ordem',
                cmp: (a, b) => a.ordem - b.ordem },
-  raridade:  { nome: 'Raridade (maior primeiro)',
+  raridade:  { nome: 'Raridade',
                cmp: (a, b) => (NIVEL[b.raridade] ?? 0) - (NIVEL[a.raridade] ?? 0) || quando(b) - quando(a),
                grupo: p => (RARIDADE[p.raridade] || RARIDADE.common).nome },
-  recentes:  { nome: 'Mais recentes',
+  recentes:  { nome: 'Data',
                cmp: (a, b) => quando(b) - quando(a), grupo: mesAno },
-  antigas:   { nome: 'Mais antigas',
-               cmp: (a, b) => quando(a) - quando(b), grupo: mesAno },
-  favoritas: { nome: 'Favoritas primeiro',
+  favoritas: { nome: 'Favoritas',
                cmp: (a, b) => (b.favorito ? 1 : 0) - (a.favorito ? 1 : 0) || a.ordem - b.ordem,
                grupo: p => p.favorito ? 'Favoritas' : 'Outras' },
-  cor:       { nome: 'Por cor',
+  cor:       { nome: 'Cor',
                cmp: (a, b) => porTexto(corDe(a), corDe(b)) || a.ordem - b.ordem, grupo: corDe },
-  marca:     { nome: 'Por marca',
+  marca:     { nome: 'Marca',
                cmp: (a, b) => porTexto(marcaDe(a), marcaDe(b)) || a.ordem - b.ordem, grupo: marcaDe },
   // Segue a organização escolhida: por tipo de peça ou por parte do corpo.
-  categoria: { nome: 'Por categoria',
+  categoria: { nome: 'Categoria',
                cmp: (a, b) => compararPorGrupo(a, b) || a.ordem - b.ordem,
                grupo: p => agrupamento().grupos[grupoDe(p)]?.nome || 'Outras' },
-  origem:    { nome: 'Por origem',
+  origem:    { nome: 'Origem',
                cmp: (a, b) => porTexto(origemDe(a), origemDe(b)) || quando(b) - quando(a), grupo: origemDe },
 };
 
@@ -66,6 +65,7 @@ const ORDENS = {
 const CHAVE_ANTIGA = 'closet.ordem';
 export function ordemAtual() {
   const salva = db.state.usuario.preferencias?.ordem;
+  if (salva === 'antigas') return 'recentes';   // virou "Data" com a seta invertida
   if (salva in ORDENS) return salva;
   try {
     const antiga = localStorage.getItem(CHAVE_ANTIGA);
@@ -74,7 +74,19 @@ export function ordemAtual() {
   return 'manual';
 }
 
-export const ordenar = (pecas) => pecas.sort(ORDENS[ordemAtual()].cmp);
+// O sentido: cada modo tem o natural (raridade maior primeiro, data mais
+// recente primeiro, A→Z); a seta inverte. "Mais antigas" de antes já nasce
+// invertida.
+export function invertida() {
+  const pref = db.state.usuario.preferencias || {};
+  if (typeof pref.ordemInvertida === 'boolean') return pref.ordemInvertida;
+  return pref.ordem === 'antigas';
+}
+
+export function ordenar(pecas) {
+  const cmp = ORDENS[ordemAtual()].cmp;
+  return pecas.sort(invertida() ? (a, b) => cmp(b, a) : cmp);
+}
 
 // Monta a grade com os rótulos de grupo entre as peças. `criar` devolve o nó
 // da peça (ou nada, para pular). Dentro de uma aba de categoria, ordenar "por
@@ -98,16 +110,36 @@ export function preencherComGrupos(grid, pecas, criar, { categoriaAberta = false
   }
 }
 
-// O <select> "Organizar" que as três telas mostram.
+// O "Organizar" que as três telas mostram: o <select> do modo e, ao lado, a
+// seta que inverte o sentido.
 export function seletorDeOrdem(aoTrocar) {
   const atual = ordemAtual();
-  return el('select', {
+  const pref = () => db.state.usuario.preferencias;
+  const seta = el('button', { type: 'button', class: 'ordem-sentido' });
+  const rotular = () => {
+    const inv = invertida();
+    seta.textContent = inv ? '↑' : '↓';
+    seta.title = inv ? 'Ordem invertida — tocar volta ao normal' : 'Inverter a ordem';
+    seta.setAttribute('aria-label', seta.title);
+    seta.classList.toggle('on', inv);
+  };
+  seta.addEventListener('click', () => {
+    pref().ordemInvertida = !invertida();
+    db.salvar();
+    rotular();
+    aoTrocar(ordemAtual());
+  });
+  rotular();
+  const select = el('select', {
     class: 'ordem-sel', title: 'Como organizar as peças', 'aria-label': 'Organizar as peças',
     onchange: (e) => {
-      db.state.usuario.preferencias.ordem = e.target.value;
+      // Quem tinha "Mais antigas" guardado passa a ter a seta explícita.
+      if (typeof pref().ordemInvertida !== 'boolean') pref().ordemInvertida = invertida();
+      pref().ordem = e.target.value;
       db.salvar();
       aoTrocar(e.target.value);
     },
   }, ...Object.entries(ORDENS).map(([id, o]) =>
     el('option', { value: id, selected: id === atual }, o.nome)));
+  return el('span', { class: 'ordem-ctrl' }, select, seta);
 }
