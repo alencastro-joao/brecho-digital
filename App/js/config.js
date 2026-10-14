@@ -995,6 +995,14 @@ export const COLECOES = [
       'cinto-true-religion': ['cinto', 'Cinto True Religion', '#6b4423'],
     },
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
+  { id: 'nike', marca: 'Nike',
+    itens: ['tenis-nike', 'moletom-nike', 'viseira-nike'],
+    variantes: {
+      'tenis-nike': ['tenis', 'Tênis Nike', '#f2f0ec'],
+      'moletom-nike': ['moletom', 'Moletom Nike', '#8f8f8f'],
+      'viseira-nike': ['viseira', 'Viseira Nike', '#1f1f1f'],
+    },
+    efeito: { tipo: 'resgate-gratis', texto: 'Chance de o resgate não gastar o limite do dia' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
