@@ -117,13 +117,13 @@
     flex-wrap: nowrap; justify-content: flex-start;
     overflow-x: auto; overflow-y: hidden;
     margin: 12px 16px 0; padding: 0; gap: 0;
-    border: 1.5px solid var(--linha-inv); border-radius: 14px;
+    border: 2px solid var(--linha-inv); border-radius: 17px;
     scrollbar-width: none;
   }
   .view-closet .cat-rail::-webkit-scrollbar { display: none; }
   .view-closet .cat-btn {
     flex: 1 0 46px; width: auto; height: 46px; font-size: 19px;
-    border: 0; border-left: 1px solid var(--linha-inv); border-radius: 0;
+    border: 0; border-left: 1.5px solid var(--linha-inv); border-radius: 0;
   }
   .view-closet .cat-btn:first-child { border-left: 0; }
   .view-closet .cat-btn:hover { transform: none; }
@@ -148,15 +148,18 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: repeat(5, minmax(0, 1fr));
     align-content: stretch;
-    border: 1.5px solid var(--linha-inv); border-radius: 14px;
+    border: 2px solid var(--linha-inv); border-radius: 17px;
   }
   .view-closet .item-slot,
   .view-closet .item-slot.vazio,
   .view-closet .item-slot.r-legendary {
     aspect-ratio: auto; padding: 10px; border-radius: 0;
-    border: 0; border-right: 1px solid var(--linha-inv); border-bottom: 1px solid var(--linha-inv);
-    background: var(--rar-bg, transparent); background-image: none;
+    border: 0; border-right: 1.5px solid var(--linha-inv); border-bottom: 1.5px solid var(--linha-inv);
+    /* Cor viva da raridade, clareada só o bastante para a peça aparecer. */
+    background: color-mix(in srgb, var(--rar-borda) 22%, #fff); background-image: none;
   }
+  .view-closet .item-slot.r-legendary { background: color-mix(in srgb, var(--rar-borda) 40%, #fff); }
+  .view-closet .item-slot.r-common,
   .view-closet .item-slot.vazio { background: transparent; }
   .view-closet .item-slot:nth-child(3n) { border-right: 0; }
   .view-closet .item-slot:nth-last-child(-n + 3) { border-bottom: 0; }
