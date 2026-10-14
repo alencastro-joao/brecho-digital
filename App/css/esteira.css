@@ -320,6 +320,7 @@ kbd {
   .es-acoes { flex-wrap: wrap; padding: 10px; }
   .es-acoes .es-btn { flex: 1; }
   .es-atalhos-lote .es-btn { flex: 1; }
+  .es-cartao-fileira { display: none; }   /* fileira é só no computador */
   .es-atalhos { display: none; }
 }
 @media (max-width: 380px) {
@@ -329,3 +330,8 @@ kbd {
 /* Segurar o dedo numa peça não abre o menu do navegador (iPhone). O Android
    é tratado em js/sem-menu.js. */
 img, canvas { -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-user-select: none; user-select: none; }
+
+/* Celular deitado passa de 640px: no toque a fileira também some. */
+@media (hover: none) and (pointer: coarse) {
+  .es-cartao-fileira { display: none; }
+}

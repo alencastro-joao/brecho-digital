@@ -21,7 +21,7 @@
 import {
   CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
   migrarCategoria, rotuloDeCadastro, ancoraPadrao,
-  COLECOES, COLECOES_DE_COR, ESTILOS, normalizarMarca,
+  ESTILOS,
 } from './config.js';
 import { ancoraNoCorpo, ancoraNoMolde } from './proporcao.js';
 import { carregarSessao } from './auth.js';
@@ -280,76 +280,12 @@ function alternarFileira(id) {
   desenhar();
 }
 
-// ============================= Coleção ====================================
-// O campo de coleção começa vazio: escolhe-se o tipo e depois qual. Marca e
-// cor são os próprios campos da ficha (a coleção da marca e a da cor são lidas
-// deles); tema é o campo `tema`, que a peça leva para o acervo.
-const TIPOS_DE_COLECAO = [['marca', 'Marca'], ['cor', 'Cor'], ['tema', 'Tema']];
-const tipoEscolhido = new Map();       // id -> tipo, para o redesenho não esvaziar o campo
-
-function opcoesDaColecao(tipo) {
-  if (tipo === 'marca') return COLECOES.map(c => [c.marca, c.marca]);
-  if (tipo === 'cor') return Object.keys(COLECOES_DE_COR).map(n => [n, n]);
-  if (tipo === 'tema') return Object.entries(ESTILOS).map(([id, e]) => [id, e.nome]);
-  return [];
-}
-
-// Qual coleção do tipo a ficha já tem ('' quando nenhuma).
-function colecaoDaFicha(f, tipo) {
-  const igual = (a, b) => normalizarMarca(a) === normalizarMarca(b);
-  if (tipo === 'marca') return COLECOES.find(c => igual(c.marca, f.marca))?.marca || '';
-  if (tipo === 'cor') return Object.keys(COLECOES_DE_COR).find(n => igual(n, f.cor)) || '';
-  if (tipo === 'tema') return ESTILOS[f.tema] ? f.tema : '';
-  return '';
-}
-
-// Os dois selects (tipo e qual). `aoEscolher(tipo, valor)` recebe a escolha.
-function camposDeColecao({ tipo, valor, desligado, aoTrocarTipo, aoEscolher }) {
-  const qual = el('select', { 'aria-label': 'Qual coleção' });
-  const preencher = (t, v = '') => {
-    qual.replaceChildren(
-      el('option', { value: '' }, t ? 'Qual…' : '—'),
-      ...opcoesDaColecao(t).map(([val, rot]) => el('option', { value: val }, rot)));
-    qual.value = v;
-    qual.disabled = desligado || !t;
-  };
-  const tipoSel = el('select', { 'aria-label': 'Tipo de coleção' },
-    el('option', { value: '' }, 'Coleção…'),
-    ...TIPOS_DE_COLECAO.map(([v, r]) => el('option', { value: v }, r)));
-  tipoSel.value = tipo;
-  tipoSel.disabled = desligado;
-  preencher(tipo, valor);
-  tipoSel.addEventListener('change', () => {
-    const t = tipoSel.value;
-    preencher(t, aoTrocarTipo ? aoTrocarTipo(t) : '');
-  });
-  qual.addEventListener('change', () => aoEscolher(tipoSel.value, qual.value));
-  return { tipoSel, qual, preencher };
-}
-
-function colecaoNoCartao(item, f, pronta) {
-  const tipo = tipoEscolhido.get(item.id) ?? (ESTILOS[f.tema] ? 'tema' : '');
-  const campos = camposDeColecao({
-    tipo, valor: colecaoDaFicha(f, tipo), desligado: !pronta,
-    aoTrocarTipo: (t) => {
-      tipoEscolhido.set(item.id, t);
-      return colecaoDaFicha(fichaDe(item), t);
-    },
-    aoEscolher: (t, v) => escolherColecao(item, t, v),
-  });
-  campos.tipoSel.dataset.campo = 'colTipo';
-  campos.qual.dataset.campo = 'colQual';
-  return el('div', { class: 'es-dupla' }, campos.tipoSel, campos.qual);
-}
-
-// Marca e cor também mexem no campo visível do cartão.
-function escolherColecao(item, tipo, valor) {
-  if (!tipo) return;
-  mudarFicha(item, tipo, valor);
-  if (tipo === 'tema') return;
-  const campo = $(`.es-cartao[data-id="${item.id}"] [data-campo="${tipo}"]`);
-  if (campo) campo.value = valor;
-}
+// O tema da peça (coleção de Temas, config.ESTILOS). Marca e cor já são
+// campos da ficha; o tema vai para o acervo no campo `tema`.
+const opcoesDeTema = (vazio) => [
+  el('option', { value: '' }, vazio),
+  ...Object.entries(ESTILOS).map(([id, e]) => el('option', { value: id }, e.nome)),
+];
 
 // Pronta vai para publicar; com erro, só para descartar. As duas se marcam.
 const selecionavel = (item) => item.estado === 'pronta' || item.estado === 'erro';
@@ -443,7 +379,11 @@ function cartao(item) {
           }),
           cor),
         campo('marca', el('input', { value: f.marca, placeholder: 'Marca', list: 'es-marcas', 'aria-label': 'Marca' }))),
-      colecaoNoCartao(item, f, pronta),
+      (() => {
+        const tema = campo('tema', el('select', { 'aria-label': 'Tema' }, ...opcoesDeTema('Tema…')));
+        tema.value = ESTILOS[f.tema] ? f.tema : '';
+        return tema;
+      })(),
     ),
 
     pronta && ia.cat
@@ -631,21 +571,16 @@ function atualizarLote() {
   $('#es-lote-publicar').textContent = publicaveis > 1 ? `Publicar ${publicaveis}` : 'Publicar';
 }
 
-let colecaoDoLote = null;              // os selects de coleção da barra
-
 function aplicarLote() {
   const cat = $('#es-lote-cat').value;
   const raridade = $('#es-lote-rar').value;
   const marca = $('#es-lote-marca').value.trim();
-  const colTipo = colecaoDoLote.tipoSel.value;
-  const colValor = colecaoDoLote.qual.value;
-  const colecao = colTipo && colValor ? { [colTipo]: colValor } : {};
+  const tema = $('#es-lote-tema').value;
   for (const item of marcadas().filter(i => i.estado === 'pronta')) {
     const f = fichaDe(item);
     // Medida é de categoria: trocar a categoria invalida o que foi medido.
     if (cat && cat !== f.cat) item.medida = false;   // false: apaga também a guardada
-    item.ficha = { ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }), ...colecao };
-    if (colTipo && colValor) tipoEscolhido.set(item.id, colTipo);
+    item.ficha = { ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }), ...(tema && { tema }) };
     guardarDepois(item);
   }
   desenhar();
@@ -895,8 +830,7 @@ function ligarLote() {
   for (const c of ORDEM_CATEGORIAS) $('#es-lote-cat').append(el('option', { value: c }, rotuloDeCadastro(c)));
   for (const r of RARIDADES) $('#es-lote-rar').append(el('option', { value: r.id }, r.nome));
   for (const c of CORES) $('#es-cores').append(el('option', { value: c.nome }));
-  colecaoDoLote = camposDeColecao({ tipo: '', valor: '', desligado: false, aoEscolher: () => {} });
-  $('#es-lote-aplicar').before(colecaoDoLote.tipoSel, colecaoDoLote.qual);
+  $('#es-lote-tema').append(...opcoesDeTema('Tema…'));
 
   $('#es-todas').addEventListener('change', (e) => {
     selecionadas.clear();
