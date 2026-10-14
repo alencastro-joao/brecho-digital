@@ -310,3 +310,7 @@ kbd {
 @media (max-width: 380px) {
   .es-grade { grid-template-columns: 1fr; }
 }
+
+/* Segurar o dedo numa peça não abre o menu do navegador (iPhone). O Android
+   é tratado em js/sem-menu.js. */
+img, canvas { -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-user-select: none; user-select: none; }

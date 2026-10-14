@@ -366,3 +366,7 @@ body.redimensionando .divisor::after { background: var(--tinta); }
   grid-column: 1 / -1; font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
   text-transform: uppercase; color: var(--tinta-suave); margin-top: 4px;
 }
+
+/* Segurar o dedo numa peça não abre o menu do navegador (iPhone). O Android
+   é tratado em js/sem-menu.js. */
+img, canvas { -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-user-select: none; user-select: none; }
