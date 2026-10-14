@@ -20,6 +20,7 @@ import html
 import http.cookiejar
 import json
 import re
+import time
 import unicodedata
 import urllib.parse
 import urllib.request
@@ -31,8 +32,9 @@ AGENTE = 'Mozilla/5.0 (compatible; brecho-esteira/1.0)'
 # com os cookies e a versão que a página entrega.
 NAVEGADOR = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
              '(KHTML, like Gecko) Chrome/130.0 Safari/537.36')
-MAX_PAGINAS = 20               # 500 pins: além disso, a pasta é outra coisa
-TEMPO = 10                     # segundos por pedido ao Pinterest
+MAX_PAGINAS = 80               # 2000 pins, se o relógio deixar (ver `prazo`)
+TEMPO = 8                      # segundos por pedido ao Pinterest
+PARALELO = 8                   # fotos baixadas ao mesmo tempo
 MAX_FOTO = 15 * 1024 * 1024
 HOSTS = re.compile(r'(^|\.)pinterest\.[a-z.]+$|^pin\.it$')
 # Caminhos de pinterest.com que não são pasta de ninguém.
@@ -101,12 +103,13 @@ def categoria_do_nome(nome):
     return ''
 
 
-def ler_pasta(usuario, pasta):
+def ler_pasta(usuario, pasta, prazo=None):
     """{titulo, pins: [{pin, titulo, imagem}], completa} — a pasta inteira,
     os mais recentes primeiro. Sem a listagem completa, os 25 do RSS
-    (`completa: False`)."""
+    (`completa: False`). Com `prazo` (time.time()), para de folhear quando
+    ele chega e devolve o que leu até ali, também `completa: False`."""
     try:
-        lida = _ler_inteira(usuario, pasta)
+        lida = _ler_inteira(usuario, pasta, prazo)
         if lida['pins']:
             return lida
     except Exception as e:                       # noqa: BLE001 - o RSS ainda serve
@@ -114,7 +117,7 @@ def ler_pasta(usuario, pasta):
     return _ler_rss(usuario, pasta)
 
 
-def _ler_inteira(usuario, pasta):
+def _ler_inteira(usuario, pasta, prazo=None):
     caminho = '/%s/%s/' % (urllib.parse.quote(usuario), urllib.parse.quote(pasta))
     biscoitos = http.cookiejar.CookieJar()
     abrir = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(biscoitos))
@@ -138,8 +141,11 @@ def _ler_inteira(usuario, pasta):
     versao = (re.findall(r'"appVersion"\s*:\s*"([0-9a-f]+)"', pagina) or [''])[0]
     csrf = next((c.value for c in biscoitos if c.name == 'csrftoken'), '')
 
-    pins, marcador = [], None
+    pins, marcador, completa = [], None, True
     for _ in range(MAX_PAGINAS):
+        if prazo and time.time() > prazo:
+            completa = False
+            break
         opcoes = {'board_id': board['id'], 'board_url': caminho, 'page_size': 25,
                   'field_set_key': 'react_grid_pin', 'filter_section_pins': False,
                   'sort': 'default', 'layout': 'default', 'redux_normalize_feed': True}
@@ -171,9 +177,11 @@ def _ler_inteira(usuario, pasta):
         marcador = resposta.get('bookmark')
         if not dados or not marcador or marcador == '-end-':
             break
+    else:
+        completa = False                         # parou no MAX_PAGINAS
     vistos = set()
     pins = [p for p in pins if not (p['pin'] in vistos or vistos.add(p['pin']))]
-    return {'titulo': (board.get('name') or pasta).strip(), 'pins': pins, 'completa': True}
+    return {'titulo': (board.get('name') or pasta).strip(), 'pins': pins, 'completa': completa}
 
 
 def _ler_rss(usuario, pasta):
@@ -227,5 +235,5 @@ def baixar_fotos(pins):
             return (p, *baixar(p['reserva']))
         except Exception as e:                   # noqa: BLE001
             return p, None, str(e)
-    with ThreadPoolExecutor(max_workers=8) as grupo:
+    with ThreadPoolExecutor(max_workers=PARALELO) as grupo:
         return list(grupo.map(uma, pins))

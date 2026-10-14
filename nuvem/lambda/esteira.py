@@ -177,20 +177,22 @@ def reservar(corpo):
 # A foto passa pela Lambda (vem do Pinterest, não do navegador, então não
 # esbarra nos 6 MB da Function URL). A pasta é lida inteira; se o Pinterest
 # recusar, só os 25 pins mais recentes (ver pinterest.py), e a tela diz qual
-# das duas foi (`completa`). Cada leitura traz no máximo MAX_LOTE: pasta com
-# mais pins novos que isso termina de entrar nas aberturas seguintes.
+# das duas foi (`completa`). Cada chamada importa o que cabe no tempo dela;
+# o resto volta como `faltam`/`adiada` e a tela chama de novo na hora.
 PINS = 'esteira/pins/'
 PASTAS = 'esteira/config/pinterest.json'
-TEMPO_RELEITURA = 20         # s; a Lambda da API tem 30
+TEMPO_RELEITURA = 22         # s; a Lambda da API tem 30
+FOLGA_FOTOS = 11             # s que um bloco de fotos pode levar (pinterest.TEMPO + upload)
 
 
 def _pins_vistos():
-    """As marcas e, para os pins de antes delas, os que ainda estão na esteira."""
+    """As marcas. Ler também as fichas da esteira (para os pins de antes das
+    marcas) custava um GET por cartão e comia o tempo da leitura; pin antigo
+    que entre de novo é pego pelo trabalhador como repetido."""
     pag = _s3.get_paginator('list_objects_v2')
-    vistos = {obj['Key'][len(PINS):]
-              for pagina in pag.paginate(Bucket=DADOS, Prefix=PINS)
-              for obj in pagina.get('Contents', [])}
-    return vistos | {str(f['pin']) for f in _fichas() if f.get('pin')}
+    return {obj['Key'][len(PINS):]
+            for pagina in pag.paginate(Bucket=DADOS, Prefix=PINS)
+            for obj in pagina.get('Contents', [])}
 
 
 def _marcar_pin(pin, item_id=''):
@@ -213,28 +215,38 @@ def _gravar_pastas(pastas):
                    ContentType='application/json; charset=utf-8')
 
 
-def _importar(pins, pasta):
+def _importar(pins, pasta, prazo):
     """Baixa os pins e põe na esteira, com a categoria da pasta já sugerida.
-    Pin que não baixou fica sem marca: a próxima leitura tenta de novo."""
+
+    De bloco em bloco, de olho no relógio (`prazo`, em time.time()): a Lambda
+    morta no meio deixava pin sem foto. O que não coube fica para a próxima
+    chamada — `faltam` avisa a tela, que chama de novo sozinha.
+
+    A marca do pin vem por último, depois da foto: pin que não baixou, ou que
+    a Lambda não terminou, volta na próxima leitura."""
     import pinterest
-    entraram, falharam = 0, 0
-    for p, foto, tipo in pinterest.baixar_fotos(pins[:MAX_LOTE]):
-        if foto is None:
-            falharam += 1
-            print('pinterest: pin %s não baixou (%s)' % (p['pin'], tipo))
-            continue
-        item_id = _novo_id()
-        chave = 'entrada/%s.%s' % (item_id, TIPOS[tipo])
-        # A ficha antes da foto: o trabalhador é chamado pelo "Object Created"
-        # e precisa achar a categoria da pasta já gravada.
-        _gravar({'id': item_id, 'estado': 'enviando', 'criadoEm': _agora(),
-                 'arquivo': p['titulo'] or 'pin %s' % p['pin'], 'origem': 'pinterest',
-                 'pin': p['pin'], 'entrada': chave,
-                 'ficha': {'cat': pasta['cat']} if pasta.get('cat') else {}})
-        _marcar_pin(p['pin'], item_id)
-        _s3.put_object(Bucket=DADOS, Key=chave, Body=foto, ContentType=tipo)
-        entraram += 1
-    return {'entraram': entraram, 'falharam': falharam}
+    entraram, falharam, feitos = 0, 0, 0
+    bloco = pinterest.PARALELO
+    while feitos < len(pins) and time.time() + FOLGA_FOTOS < prazo:
+        lote = pins[feitos:feitos + bloco]
+        feitos += len(lote)
+        for p, foto, tipo in pinterest.baixar_fotos(lote):
+            if foto is None:
+                falharam += 1
+                print('pinterest: pin %s não baixou (%s)' % (p['pin'], tipo))
+                continue
+            item_id = _novo_id()
+            chave = 'entrada/%s.%s' % (item_id, TIPOS[tipo])
+            # A ficha antes da foto: o trabalhador é chamado pelo "Object Created"
+            # e precisa achar a categoria da pasta já gravada.
+            _gravar({'id': item_id, 'estado': 'enviando', 'criadoEm': _agora(),
+                     'arquivo': p['titulo'] or 'pin %s' % p['pin'], 'origem': 'pinterest',
+                     'pin': p['pin'], 'entrada': chave,
+                     'ficha': {'cat': pasta['cat']} if pasta.get('cat') else {}})
+            _s3.put_object(Bucket=DADOS, Key=chave, Body=foto, ContentType=tipo)
+            _marcar_pin(p['pin'], item_id)
+            entraram += 1
+    return {'entraram': entraram, 'falharam': falharam, 'faltam': len(pins) - feitos}
 
 
 def pastas_pinterest():
@@ -250,7 +262,8 @@ def pinterest(corpo):
         {reler: true}           traz o novo de todas as vinculadas
     """
     if corpo.get('reler'):
-        return _reler()
+        feitas = corpo.get('feitas') if isinstance(corpo.get('feitas'), list) else []
+        return _reler([str(f) for f in feitas][:200])
     if corpo.get('desvincular'):
         alvo = str(corpo['desvincular'])
         pastas = [p for p in _pastas() if p['id'] != alvo]
@@ -258,8 +271,9 @@ def pinterest(corpo):
         return {'pastas': pastas}
 
     import pinterest
+    prazo = time.time() + TEMPO_RELEITURA
     usuario, nome = pinterest.pasta_do_link(corpo.get('link'))
-    lida = pinterest.ler_pasta(usuario, nome)
+    lida = pinterest.ler_pasta(usuario, nome, prazo - FOLGA_FOTOS)
     pasta = {'id': ('%s/%s' % (usuario, nome)).lower(), 'usuario': usuario, 'pasta': nome,
              'titulo': lida['titulo'],
              'cat': pinterest.categoria_do_nome(lida['titulo']) or pinterest.categoria_do_nome(nome)}
@@ -270,30 +284,48 @@ def pinterest(corpo):
     _gravar_pastas(pastas)
     return {'pasta': pasta, 'pastas': pastas, 'jaVistos': len(lida['pins']) - len(novos),
             'total': len(lida['pins']), 'completa': lida.get('completa', False),
-            'faltam': max(0, len(novos) - MAX_LOTE), **_importar(novos, pasta)}
+            **_importar(novos, pasta, prazo)}
 
 
-def _reler():
-    """Uma pasta por vez, de olho no relógio: a que não coube nos 20 s fica
-    para a próxima abertura da esteira."""
+def _reler(feitas=()):
+    """Uma pasta por vez, de olho no relógio. A que não coube volta `adiada`
+    e a que não terminou de importar volta com `faltam`: a tela chama de novo
+    com `feitas` (as que já terminaram nesta rodada), até não sobrar nada.
+
+    A que foi lida há mais tempo vai primeiro: antes era sempre a mesma ordem,
+    e com pastas grandes as últimas ficavam adiadas para sempre."""
     import pinterest
-    inicio = time.time()
+    prazo = time.time() + TEMPO_RELEITURA
     vistos = _pins_vistos()
-    resultado = []
-    for pasta in _pastas():
+    todas = _pastas()
+    feitas = set(feitas or ())
+    resultado, lidas = [], {}
+    for pasta in sorted(todas, key=lambda p: p.get('lidaEm') or ''):
         r = {'id': pasta['id'], 'titulo': pasta['titulo']}
-        if time.time() - inicio > TEMPO_RELEITURA:
+        if pasta['id'] in feitas:
+            continue
+        if time.time() + FOLGA_FOTOS > prazo:
             resultado.append({**r, 'adiada': True})
             continue
         try:
-            lida = pinterest.ler_pasta(pasta['usuario'], pasta['pasta'])
+            lida = pinterest.ler_pasta(pasta['usuario'], pasta['pasta'], prazo - FOLGA_FOTOS)
         except ValueError as e:
             resultado.append({**r, 'erro': str(e)})
             continue
         novos = [p for p in lida['pins'] if p['pin'] not in vistos]
         vistos |= {p['pin'] for p in novos}         # o mesmo pin em duas pastas entra uma vez
+        feito = _importar(novos, pasta, prazo)
+        if not feito['faltam']:
+            lidas[pasta['id']] = _agora()
         resultado.append({**r, 'total': len(lida['pins']), 'completa': lida.get('completa', False),
-                          'faltam': max(0, len(novos) - MAX_LOTE), **_importar(novos, pasta)})
+                          **feito})
+    if lidas:
+        # Relida agora: a lista pode ter mudado enquanto lia (desvincular).
+        atuais = _pastas()
+        for p in atuais:
+            if p['id'] in lidas:
+                p['lidaEm'] = lidas[p['id']]
+        _gravar_pastas(atuais)
     return {'pastas': resultado}
 
 
@@ -315,6 +347,19 @@ def _fichas():
                 yield dados
 
 
+def _pin_perdido(f):
+    """Ficha de pin parada em "enviando" cuja foto nunca chegou ao S3."""
+    if f.get('origem') != 'pinterest' or not f.get('pin') or f.get('estado') != 'enviando':
+        return False
+    if _idade(f.get('criadoEm')) < 600 or not f.get('entrada'):
+        return False
+    try:
+        _s3.head_object(Bucket=DADOS, Key=f['entrada'])
+        return False
+    except ClientError as e:
+        return e.response['Error']['Code'] in ('404', 'NoSuchKey', 'NotFound')
+
+
 def listar():
     """GET /api/esteira — mais novas primeiro. A foto que o trabalhador achou
     repetida (já é peça do jogo, ou já está na esteira) sai daqui mesmo: a
@@ -327,6 +372,13 @@ def listar():
                     f.get('previaG'), f.get('mestre'))
             repetidas.append({'arquivo': f.get('arquivo') or '', 'de': f.get('repetidaDe') or {}})
             print('esteira %s repetida de %s: descartada' % (f['id'], (f.get('repetidaDe') or {}).get('id')))
+            continue
+        if _pin_perdido(f):
+            # A Lambda que importava morreu entre a ficha e a foto (antes a
+            # marca vinha primeiro). Sem a ficha e sem a marca, o pin entra de
+            # novo na próxima leitura do Pinterest.
+            _apagar('esteira/%s.json' % f['id'], PINS + str(f['pin']))
+            print('esteira %s: pin %s sem foto, volta pelo Pinterest' % (f['id'], f['pin']))
             continue
         itens.append(_para_tela(f))
     itens.sort(key=lambda i: i.get('criadoEm') or '', reverse=True)

@@ -136,11 +136,11 @@ const nFotos = (n) => `${n} ${n === 1 ? 'foto' : 'fotos'}`;
 
 function resumo(r) {
   if (r.erro) return r.erro;
-  if (r.adiada) return 'fica para a próxima abertura';
+  if (r.adiada) return 'na fila…';
   const partes = [];
   if (r.entraram) partes.push(`${r.entraram} ${r.entraram === 1 ? 'novo entrou' : 'novos entraram'}`);
   if (r.falharam) partes.push(`${r.falharam} não ${r.falharam === 1 ? 'baixou' : 'baixaram'}`);
-  if (r.faltam) partes.push(`mais ${r.faltam} na próxima abertura`);
+  if (r.faltam) partes.push(`${r.faltam} ainda chegando`);
   // Se o Pinterest não deixou ler a pasta inteira, a leitura viu só os 25 mais recentes.
   const lidos = r.total == null ? ''
     : r.completa ? `${r.total} pins na pasta · ` : `só os ${r.total} mais recentes · `;
@@ -171,25 +171,47 @@ async function montarPinterest() {
   await reler();
 }
 
+// Cada chamada importa o que cabe no tempo da API (uns 20 s). O que sobra
+// volta como `faltam` (pasta grande) ou `adiada` (não deu tempo de ler), e
+// aqui se chama de novo até acabar — antes ficava para a próxima abertura da
+// esteira, e pasta grande parecia nunca chegar inteira. `feitas` são as
+// pastas que já terminaram nesta rodada, para a API não reler.
+const MAX_RODADAS = 60;
+
 async function reler() {
   if (relendo || !pastasPinterest.length) return;
   relendo = true;
   ultimaLeitura = Date.now();
   for (const p of pastasPinterest) estadoDaPasta.set(p.id, 'lendo…');
   desenharPastas();
+  const feitas = [];
+  const soma = new Map();               // id -> { entraram, falharam } desta rodada
+  let total = 0;
   try {
-    const { pastas } = await api('/pinterest', { metodo: 'POST', corpo: { reler: true } });
-    let total = 0;
-    for (const r of pastas) {
-      total += r.entraram || 0;
-      estadoDaPasta.set(r.id, resumo(r));
+    for (let rodada = 0; rodada < MAX_RODADAS; rodada++) {
+      const { pastas } = await api('/pinterest', { metodo: 'POST', corpo: { reler: true, feitas } });
+      let continuar = false;
+      let andou = 0;
+      for (const r of pastas) {
+        const s = soma.get(r.id) || { entraram: 0, falharam: 0 };
+        s.entraram += r.entraram || 0;
+        s.falharam += r.falharam || 0;
+        soma.set(r.id, s);
+        andou += (r.entraram || 0) + (r.falharam || 0) + (r.adiada ? 0 : 1);
+        total += r.entraram || 0;
+        if (r.adiada || (r.faltam && !r.erro)) continuar = true;
+        else feitas.push(r.id);
+        estadoDaPasta.set(r.id, r.adiada ? resumo(r) : resumo({ ...r, ...s }));
+      }
+      desenharPastas();
+      if (pastas.some(r => r.entraram)) await atualizar();
+      if (!continuar || !andou) break;
     }
-    if (total) {
-      toast(`${nFotos(total)} nova${total === 1 ? '' : 's'} do Pinterest na esteira.`, 'rare');
-      await atualizar();
-    }
+    if (total) toast(`${nFotos(total)} nova${total === 1 ? '' : 's'} do Pinterest na esteira.`, 'rare');
   } catch (e) {
-    for (const p of pastasPinterest) estadoDaPasta.set(p.id, `não consegui ler: ${e.message}`);
+    for (const p of pastasPinterest) {
+      if (!feitas.includes(p.id)) estadoDaPasta.set(p.id, `não consegui ler: ${e.message}`);
+    }
   } finally {
     relendo = false;
     desenharPastas();
@@ -210,6 +232,7 @@ async function vincularPasta(link) {
     toast(`"${r.pasta.titulo}" vinculada${r.entraram ? `: ${nFotos(r.entraram)} na esteira` : ''}. ` +
       'Pin novo nela entra sozinho quando a esteira abre.', 'rare');
     if (r.entraram) await atualizar();
+    if (r.faltam) reler();                // o resto chega sozinho, sem travar a tela
   } catch (e) {
     toast(`Pinterest: ${e.message}`, 'aviso');
   } finally {
@@ -247,11 +270,23 @@ async function atualizar() {
       : `${repetidas.length} fotos já ${noJogo === repetidas.length ? 'estavam no jogo' : 'existiam'} e saíram da esteira sozinhas.`);
   }
   const antes = new Map(itens.map(i => [i.id, i]));
+  const agora = Date.now();
+  const emUso = document.activeElement?.closest?.('.es-cartao')?.dataset.id;
   itens = dados.itens.map(novo => {
     const velho = antes.get(novo.id);
+    if (!velho) return { ...novo, previaEm: agora };
+    // O cartão em que a pessoa está mexendo fica como está até ela sair dele.
+    if (novo.id === emUso) return velho;
+    const junto = { ...novo, previaEm: agora };
     // Ficha que está sendo digitada não é atropelada pela que veio do servidor.
-    if (velho && guardando.has(novo.id)) return { ...novo, ficha: velho.ficha, medida: velho.medida, corte: velho.corte };
-    return novo;
+    if (guardando.has(novo.id)) Object.assign(junto, { ficha: velho.ficha, medida: velho.medida, corte: velho.corte });
+    // A prévia vem com assinatura nova a cada leitura: trocar o src fazia
+    // toda imagem baixar de novo a cada 3 s. A velha vale até perto de vencer.
+    if (velho.previa && junto.previa && agora - velho.previaEm < PREVIA_VALE) {
+      Object.assign(junto, { previa: velho.previa, previaEm: velho.previaEm });
+    }
+    // Nada mudou: fica o mesmo objeto, e o cartão dele não é refeito.
+    return chaveDe(junto) === chaveDe(velho) ? velho : junto;
   });
   for (const id of [...selecionadas]) if (!itens.some(i => i.id === id && selecionavel(i))) selecionadas.delete(id);
   desenhar();
@@ -298,12 +333,42 @@ const fichaDe = (item) => {
   return f;
 };
 
+// Cartão já desenhado, por id. Redesenhar a grade inteira a cada leitura
+// (de 3 em 3 s enquanto chega foto) fechava select, tirava o cursor do campo
+// e engolia o toque: agora só o cartão que mudou é refeito, e os outros nós
+// ficam onde estão.
+const PREVIA_VALE = 45 * 60 * 1000;    // a URL assinada vence em 1 h
+const desenhados = new Map();          // id -> { item, chave, no }
+const ordenado = (v) => (v && typeof v === 'object' && !Array.isArray(v)
+  ? Object.fromEntries(Object.keys(v).sort().map(k => [k, ordenado(v[k])])) : v);
+const chaveDe = (item) => JSON.stringify(ordenado({
+  estado: item.estado, erro: item.erro, ficha: fichaDe(item), medida: item.medida, corte: item.corte,
+  previa: item.previa, sugestao: item.sugestao, arquivo: item.arquivo, sel: selecionadas.has(item.id),
+}));
+
 function desenhar() {
   const grade = $('#es-grade');
   const foco = document.activeElement?.closest?.('.es-cartao')?.dataset.id;
   const campoFoco = document.activeElement?.dataset?.campo;
 
-  grade.replaceChildren(...itens.map(cartao));
+  const nos = itens.map(item => {
+    const chave = chaveDe(item);
+    let d = desenhados.get(item.id);
+    if (!d || d.item !== item || d.chave !== chave) {
+      d = { item, chave, no: cartao(item) };
+      desenhados.set(item.id, d);
+    }
+    return d.no;
+  });
+  const vivos = new Set(itens.map(i => i.id));
+  for (const id of desenhados.keys()) if (!vivos.has(id)) desenhados.delete(id);
+  // Só mexe no DOM onde a ordem mudou (peça nova entra no topo).
+  let ref = grade.firstChild;
+  for (const no of nos) {
+    if (no === ref) ref = ref.nextSibling;
+    else grade.insertBefore(no, ref);
+  }
+  while (ref) { const prox = ref.nextSibling; ref.remove(); ref = prox; }
   grade.classList.toggle('selecionando', selecionadas.size > 0);
   $('#es-vazio').hidden = itens.length > 0;
   atualizarLote();
@@ -419,6 +484,9 @@ function cartao(item) {
 // ============================== Ficha =====================================
 function mudarFicha(item, campo, valor) {
   item.ficha = { ...fichaDe(item), [campo]: valor };
+  // O campo na tela já mostra o valor novo: o cartão não precisa ser refeito.
+  const d = desenhados.get(item.id);
+  if (d?.item === item) d.chave = chaveDe(item);
   // Bolinha de cor e botão de publicar dependem disso. Mexe só neles: recriar o
   // cartão a cada tecla jogava o cursor para o começo do campo e embaralhava o
   // que se digitava (e fechava a lista de sugestões).
