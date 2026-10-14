@@ -1132,10 +1132,12 @@ export const FERRAMENTAS = [
   { id: 'perfil',     nome: 'Perfil',        nivel: 1, desc: 'A sua página no brechó.' },
   { id: 'personagem', nome: 'Personagem',    nivel: 1, desc: 'Corpo, pele e cabelo.' },
 ];
-// Missões de introdução (js/tutorial.js): a primeira sessão de conta nova. Uma
-// por vez, na ordem, cada uma ensinando uma parte do app e pagando um prêmio que
-// sobe com a cadeia — a última é uma peça épica. `evento` é o mesmo de
-// progredirMissao; fazer a coisa antes de chegar na missão já vale.
+// Missões de introdução (js/tutorial.js): a primeira sessão de conta nova. Um
+// passo por vez, na ordem, cada um levando à tela de que fala. Passo com
+// `evento` é missão: pede uma ação e paga um prêmio que sobe com a cadeia (a
+// última é uma peça épica). Passo sem `evento` só explica e segue no "Entendi".
+// `evento` é o mesmo de progredirMissao; fazer a coisa antes de chegar na
+// missão já vale.
 // `pecas` é uma faixa por peça (sem peça na faixa, desce: ver faixasDeTroca).
 // `lugar` é onde o cartão fica no celular enquanto a missão é feita: em cima
 // (sobre o cabeçalho) quando o que se toca na tela está embaixo — a mochila,
@@ -1144,19 +1146,30 @@ export const INTRO = [
   { evento: 'personagem', ir: 'personagem', lugar: 'cima', nome: 'Crie o seu personagem',
     dica: 'Escolha corpo, pele e cabelo e toque em Salvar. É ele que veste os seus looks.',
     premio: { xp: 20 } },
-  // {cor} é a cor do trio do presente (state.presenteCor, ver presente.js).
-  { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Abra a sua primeira coleção',
-    dica: 'Seu presente veio com 3 peças da cor {cor}, e isso já libera um item do avatar dessa coleção. ' +
-      'Juntar peças de uma marca, cor ou estilo libera itens. Escolha o seu.',
-    premio: { xp: 20 } },
-  { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista uma roupinha',
-    dica: 'Em Roupas, dois toques numa peça da mochila vestem o personagem. Que tal o item que você acabou de escolher?',
-    premio: { xp: 20, fichas: 1 } },
-  { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Garimpe 1 peça na loja',
-    dica: 'Toque numa peça do mural e resgate. São 3 por dia, e as raras ficam por baixo da pilha.',
+  { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
+    dica: 'Toda manhã o dono repõe o mural: a loja muda todos os dias. ' +
+      'Você pode pegar 3 peças por dia, e as mais raras ficam escondidas por baixo da pilha.' },
+  { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Pegue uma roupa',
+    dica: 'Toque numa peça do mural e resgate. Se uma estiver por cima da outra, arraste para garimpar.',
     premio: { pecas: ['uncommon'] } },
+  { ir: 'closet', lugar: 'cima', nome: 'O seu closet',
+    dica: 'Tudo o que você pega fica guardado aqui. A cor da borda é a raridade: comum, incomum, ' +
+      'rara, épica ou lendária. Toque numa peça para ver a ficha: cada uma pode ter marca, cor e estilo.' },
+  // {cor} é a cor do trio do presente (state.presenteCor, ver presente.js).
+  { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
+    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Juntar 3 libera um item do avatar, ' +
+      'e juntar mais libera mais. Suas primeiras roupas trouxeram 3 peças da cor {cor}: esta coleção já tem um item esperando.' },
+  { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
+    dica: 'Toque num dos itens da coleção da cor {cor} para levar para o seu inventário.',
+    premio: { xp: 20 } },
+  { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista o seu personagem',
+    dica: 'Aqui você veste o avatar com as roupinhas. Dois toques no item que você resgatou (ou arraste para o corpo) vestem.',
+    premio: { xp: 20, fichas: 1 } },
+  { ir: 'vestiario', lugar: 'cima', nome: 'Combos',
+    dica: 'Itens com a mesma marca, cor ou estilo se combinam no corpo: 2 iguais ativam um efeito, 3 ou mais reforçam. ' +
+      'Cor dá mais XP nas missões, marca ajuda no garimpo e estilo faz o avatar brilhar. Os ativos aparecem em Efeitos.' },
   { evento: 'looks', ir: 'stylist', lugar: 'cima', nome: 'Monte e salve um look',
-    dica: 'No Stylist, toque nas suas peças para vestir o avatar (ou sorteie um look) e salve.',
+    dica: 'No Stylist suas peças de verdade vestem o avatar. Toque nelas (ou sorteie um look) e salve.',
     premio: { xp: 40 } },
   { evento: 'board', ir: 'board', lugar: 'cima', nome: 'Salve uma colagem',
     dica: 'Na Colagem, espalhe as peças no fundo branco do jeito que quiser e salve.',
@@ -1164,15 +1177,15 @@ export const INTRO = [
   { evento: 'publicar', ir: 'stylist', lugar: 'cima', nome: 'Publique no feed',
     dica: 'Publique um look do Stylist ou uma colagem: é o que os outros veem de você.',
     premio: { pecas: ['rare'], xp: 30 } },
-  { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
-    dica: 'Cada 3 missões do dia valem um carimbo no cartão da semana (você já cumpriu algumas). ' +
-      'Em Tarefas, toque no carimbo para pegar fichas. 5 dias carimbados na semana abrem o Baú dos dias.',
-    premio: { fichas: 1, xp: 20 } },
   { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
-    dica: 'No Feed, toque em Seguir em quem você curtir. Dá pra achar amigos pelo nome ou @.',
+    dica: 'No Feed ficam os looks de todo mundo. Toque em Seguir em quem você curtir; dá pra achar amigos pelo nome ou @.',
     premio: { fichas: 2 } },
+  { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
+    dica: 'Cada 3 missões do dia valem um carimbo no cartão da semana, e você já cumpriu algumas. ' +
+      'Toque no carimbo para pegar fichas. 5 dias carimbados na semana abrem o Baú dos dias.',
+    premio: { fichas: 1, xp: 20 } },
   { evento: 'favoritar', ir: 'closet', lugar: 'cima', nome: 'Escolha uma peça favorita',
-    dica: 'No Closet, abra uma peça e toque na estrela: ela vai para a vitrine do seu perfil.',
+    dica: 'Abra uma peça e toque na estrela: ela vai para a vitrine do seu perfil.',
     premio: { pecas: ['epic'], xp: 50 } },
 ];
 
