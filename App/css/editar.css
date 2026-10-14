@@ -257,6 +257,9 @@ body.com-modal { overflow: hidden; }
 .mp-alca.se { bottom: -8px; right: -8px; cursor: nwse-resize; }
 
 @media (max-width: 900px) {
-  .mp-colunas { grid-template-columns: 1fr; }
+  /* Uma coluna dentro de uma caixa de altura fixa: sem isso as linhas do grid
+     encolhem para caber e a foto vaza por cima dos campos de baixo. */
+  .mp-colunas { grid-template-columns: 1fr; grid-auto-rows: max-content; align-content: start; }
+  .mp-imagem { min-height: auto; grid-template-rows: auto; }
 }
 
