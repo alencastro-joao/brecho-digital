@@ -354,8 +354,8 @@
 .col-album-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 .col-album-casa { position: relative; aspect-ratio: 1; background: #fff; border: 1px solid var(--linha); border-radius: 14px; }
 .col-album-casa .peca-caixa { inset: 8px; }
-.col-album-casa.falta { background: #f4efe7; border-style: dashed; }
-.col-album-casa.falta img { filter: brightness(0) opacity(.12); }
+.col-album-casa.falta { background: #fff; border-style: dashed; }
+.col-album-casa.falta img { filter: grayscale(1) brightness(1.8) contrast(.4); opacity: .55; }
 .col-album-rar { position: absolute; right: 7px; top: 7px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff; }
 .col-det-efeito { font-size: 12px; color: var(--tinta-suave); text-align: center; }
 @media (max-width: 900px) {
