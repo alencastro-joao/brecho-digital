@@ -141,10 +141,14 @@ function resumo(r) {
   if (r.entraram) partes.push(`${r.entraram} ${r.entraram === 1 ? 'novo entrou' : 'novos entraram'}`);
   if (r.falharam) partes.push(`${r.falharam} não ${r.falharam === 1 ? 'baixou' : 'baixaram'}`);
   if (r.faltam) partes.push(`${r.faltam} ainda chegando`);
-  if (r.continua) partes.push('lendo o resto da pasta…');
+  if (r.continua && !r.recusada) {
+    partes.push(r.quantos && r.varridos
+      ? `conferidos ${Math.min(r.varridos, r.quantos)} de ${r.quantos}…` : 'lendo o resto da pasta…');
+  }
   // Sem login, o Pinterest às vezes não deixa rolar a pasta: aquela leitura
   // viu só os 25 mais recentes, e a seguinte tenta de novo de onde parou.
-  if (r.recusada) partes.push('o Pinterest segurou o resto agora; tento de novo na próxima');
+  if (r.recusada) partes.push(`${r.falha || 'o Pinterest não deixou rolar a pasta'}; tento de novo`);
+  else if (r.tentativas > 1) partes.push(`liberou na ${r.tentativas}ª visita`);
   const lidos = r.quantos ? `${r.quantos} pins na pasta · ` : '';
   return lidos + (partes.join(', ') || (r.inteira ? 'tudo aqui' : 'nada novo'));
 }
@@ -161,6 +165,7 @@ function desenharPastas() {
       onclick: () => desvincularPasta(p),
     }, '×'))));
   lista.hidden = !pastasPinterest.length;
+  $('#es-pinterest-procurar').hidden = !pastasPinterest.length;
 }
 
 async function montarPinterest() {
@@ -180,9 +185,12 @@ async function montarPinterest() {
 // pastas que já terminaram nesta rodada, para a API não reler.
 const MAX_RODADAS = 400;              // pasta de milhares de pins vai de 40 em 40
 
-async function reler() {
-  if (relendo || !pastasPinterest.length) return;
+async function reler({ varrer = false } = {}) {
+  if (relendo || !pastasPinterest.length) return false;
   relendo = true;
+  const botao = $('#es-pinterest-procurar');
+  botao.disabled = true;
+  botao.textContent = varrer ? 'Procurando…' : 'Lendo…';
   ultimaLeitura = Date.now();
   for (const p of pastasPinterest) estadoDaPasta.set(p.id, 'lendo…');
   desenharPastas();
@@ -192,7 +200,8 @@ async function reler() {
   let total = 0;
   try {
     for (let rodada = 0; rodada < MAX_RODADAS; rodada++) {
-      const { pastas } = await api('/pinterest', { metodo: 'POST', corpo: { reler: true, feitas } });
+      const corpo = { reler: true, feitas, ...(varrer && !rodada ? { varrer: true } : {}) };
+      const { pastas } = await api('/pinterest', { metodo: 'POST', corpo });
       let continuar = false;
       let andou = 0;
       for (const r of pastas) {
@@ -213,14 +222,28 @@ async function reler() {
       if (!continuar || !andou) break;
     }
     if (total) toast(`${nFotos(total)} nova${total === 1 ? '' : 's'} do Pinterest na esteira.`, 'rare');
+    else if (varrer) {
+      const recusou = [...recusas.values()].some(n => n > 0);
+      toast(recusou ? 'O Pinterest não deixou ler a pasta inteira agora. Tente de novo daqui a pouco.'
+        : 'Procurei nas pastas inteiras: nada faltando.', recusou ? 'aviso' : 'rare');
+    }
   } catch (e) {
     for (const p of pastasPinterest) {
       if (!feitas.includes(p.id)) estadoDaPasta.set(p.id, `não consegui ler: ${e.message}`);
     }
   } finally {
     relendo = false;
+    botao.disabled = false;
+    botao.textContent = 'Procurar pins';
     desenharPastas();
   }
+  return true;
+}
+
+// O botão percorre as pastas de novo do começo: pega pin novo e também o
+// antigo que tenha ficado para trás (foto que não baixou, leitura cortada).
+async function procurarPins() {
+  if (!(await reler({ varrer: true }))) toast('Já estou lendo as pastas; espere terminar.', 'aviso');
 }
 
 // Colar o link vincula a pasta e já traz o que a esteira nunca viu.
@@ -1035,6 +1058,7 @@ function ligarEntrada() {
     const fotos = [...(e.clipboardData?.files || [])];
     if (fotos.length) enviar(fotos, 'colado');
   });
+  $('#es-pinterest-procurar').addEventListener('click', procurarPins);
   $('#es-pinterest').addEventListener('submit', (e) => {
     e.preventDefault();
     const link = $('#es-pinterest-link').value.trim();

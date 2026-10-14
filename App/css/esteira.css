@@ -107,6 +107,8 @@ button:disabled { cursor: not-allowed; opacity: .4; }
   background: #f1ece5; color: var(--tinta); font-size: 16px; line-height: 1; cursor: pointer;
 }
 .es-pin-tirar:hover { background: var(--erro); color: #fff; }
+.es-pin-procurar { display: block; margin: 10px auto 0; }
+.es-pin-procurar[hidden] { display: none; }
 
 .es-envios { list-style: none; margin-top: 14px; display: grid; gap: 6px; }
 .es-envio {

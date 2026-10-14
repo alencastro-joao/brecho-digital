@@ -224,9 +224,9 @@ def _importar(pins, pasta, prazo):
     fica guardado na pasta para a próxima chamada.
 
     A marca do pin vem por último, depois da foto: pin que não baixou, ou que
-    a Lambda não terminou, volta na próxima leitura."""
+    a Lambda não terminou, volta para a fila (ver `_trazer`)."""
     import pinterest
-    entraram, falharam, feitos = 0, 0, 0
+    entraram, falharam, feitos, falhos = 0, 0, 0, []
     bloco = pinterest.PARALELO
     while feitos < len(pins) and time.time() + FOLGA_FOTOS < prazo:
         lote = pins[feitos:feitos + bloco]
@@ -234,6 +234,7 @@ def _importar(pins, pasta, prazo):
         for p, foto, tipo in pinterest.baixar_fotos(lote):
             if foto is None:
                 falharam += 1
+                falhos.append(p)
                 print('pinterest: pin %s não baixou (%s)' % (p['pin'], tipo))
                 continue
             item_id = _novo_id()
@@ -247,7 +248,7 @@ def _importar(pins, pasta, prazo):
             _s3.put_object(Bucket=DADOS, Key=chave, Body=foto, ContentType=tipo)
             _marcar_pin(p['pin'], item_id)
             entraram += 1
-    return {'entraram': entraram, 'falharam': falharam, 'resto': pins[feitos:]}
+    return {'entraram': entraram, 'falharam': falharam, 'resto': pins[feitos:], 'falhos': falhos}
 
 
 # Pins achados por leitura que ainda não couberam no tempo de importar. A
@@ -258,11 +259,14 @@ BASTA = 40
 
 def _trazer(pasta, vistos, prazo):
     """Lê o próximo trecho da pasta e importa o que for novo. Muda `pasta`
-    (marcador, pendentes, inteira) e `vistos`; devolve o resumo para a tela.
+    (marcador, pendentes, inteira, varridos, ultima) e `vistos`; devolve o
+    resumo para a tela.
 
     A pasta grande anda aos pedaços entre chamadas: o `marcador` diz onde a
     leitura parou e `inteira` que ela já chegou ao fim uma vez — dali em
-    diante só o topo, até a primeira página sem nada novo."""
+    diante só o topo, até a primeira página sem nada novo. O botão "Procurar
+    pins" zera os dois (ver `_reler`) e a pasta é percorrida de novo do
+    começo, pegando o que tenha ficado para trás."""
     import pinterest
     pendentes = [p for p in pasta.get('pendentes') or [] if p['pin'] not in vistos]
     lida = {}
@@ -272,6 +276,9 @@ def _trazer(pasta, vistos, prazo):
                                    basta=BASTA, ate_conhecida=bool(pasta.get('inteira')))
         pendentes = [p for p in lida['pins'] if p['pin'] not in vistos]
         if lida.get('completa'):
+            if not pasta.get('marcador'):
+                pasta['varridos'] = 0
+            pasta['varridos'] = pasta.get('varridos', 0) + lida.get('andou', 0)
             pasta['marcador'] = lida.get('marcador')
             if lida.get('fim'):
                 pasta['inteira'] = True
@@ -279,22 +286,31 @@ def _trazer(pasta, vistos, prazo):
             pasta['quantos'] = lida['quantos']
         if lida.get('titulo'):
             pasta['titulo'] = lida['titulo']
+        pasta['ultima'] = {'em': _agora(), 'liberada': bool(lida.get('completa')),
+                           'tentativas': lida.get('tentativas'), 'lidos': len(lida['pins']),
+                           'novos': len(pendentes), 'falha': lida.get('falha')}
     if 'cat' not in pasta:
         pasta['cat'] = (pinterest.categoria_do_nome(pasta['titulo'])
                         or pinterest.categoria_do_nome(pasta['pasta']))
     vistos |= {p['pin'] for p in pendentes}         # o mesmo pin em duas pastas entra uma vez
     feito = _importar(pendentes, pasta, prazo)
-    pasta['pendentes'] = feito.pop('resto')
+    # A foto que não baixou volta para a fila, até 3 vezes: antes ela se
+    # perdia, porque o marcador já tinha passado dela.
+    de_novo = [{**p, 'falhou': p.get('falhou', 0) + 1}
+               for p in feito.pop('falhos') if p.get('falhou', 0) < 2]
+    pasta['pendentes'] = feito.pop('resto') + de_novo
     pasta['lidaEm'] = _agora()
     recusada = bool(lida) and not lida.get('completa')
     return {**feito, 'faltam': len(pasta['pendentes']),
             # A recusada ainda não lida até o fim vale tentar de novo já.
             'continua': bool(pasta.get('marcador')) or (recusada and not pasta.get('inteira')),
-            'recusada': recusada,
+            'recusada': recusada, 'falha': lida.get('falha') if recusada else None,
+            'tentativas': lida.get('tentativas'), 'varridos': pasta.get('varridos'),
             'quantos': pasta.get('quantos'), 'inteira': bool(pasta.get('inteira'))}
 
 
-ESTADO_DA_LEITURA = ('marcador', 'pendentes', 'inteira', 'quantos', 'lidaEm', 'titulo', 'cat')
+ESTADO_DA_LEITURA = ('marcador', 'pendentes', 'inteira', 'quantos', 'lidaEm', 'titulo', 'cat',
+                     'varridos', 'ultima')
 
 
 def _guardar_leitura(mudadas):
@@ -328,10 +344,13 @@ def pinterest(corpo):
         {link}                  vincula a pasta e traz o que a esteira nunca viu
         {desvincular: id}       para de ler a pasta
         {reler: true}           traz o novo de todas as vinculadas
+        {reler: true, varrer: true}
+                                percorre as pastas de novo do começo (botão
+                                "Procurar pins"), atrás do que ficou para trás
     """
     if corpo.get('reler'):
         feitas = corpo.get('feitas') if isinstance(corpo.get('feitas'), list) else []
-        return _reler([str(f) for f in feitas][:200])
+        return _reler([str(f) for f in feitas][:200], varrer=bool(corpo.get('varrer')))
     if corpo.get('desvincular'):
         alvo = str(corpo['desvincular'])
         pastas = [p for p in _pastas() if p['id'] != alvo]
@@ -354,7 +373,7 @@ def pinterest(corpo):
     return {'pasta': _publica(pasta), 'pastas': [_publica(p) for p in pastas], **r}
 
 
-def _reler(feitas=()):
+def _reler(feitas=(), varrer=False):
     """Uma pasta por vez, de olho no relógio. A que não coube volta `adiada`;
     a que ainda tem o que ler volta com `continua` ou `faltam`: a tela chama
     de novo com `feitas` (as que já terminaram nesta rodada), até não sobrar
@@ -366,7 +385,14 @@ def _reler(feitas=()):
     vistos = _pins_vistos()
     feitas = set(feitas or ())
     resultado, mudadas = [], {}
-    for pasta in sorted(_pastas(), key=lambda p: p.get('lidaEm') or ''):
+    todas = _pastas()
+    if varrer:
+        # Todas de uma vez, mesmo as que ficarem adiadas nesta chamada: as
+        # seguintes já vêm sem `varrer`.
+        for pasta in todas:
+            pasta.update(marcador=None, inteira=False, varridos=0)
+            mudadas[pasta['id']] = pasta
+    for pasta in sorted(todas, key=lambda p: p.get('lidaEm') or ''):
         r = {'id': pasta['id'], 'titulo': pasta['titulo']}
         if pasta['id'] in feitas:
             continue

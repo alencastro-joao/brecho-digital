@@ -109,7 +109,7 @@ def ler_pasta(usuario, pasta, prazo=None, marcador=None, conhecidos=(), basta=No
     """Um trecho da pasta, os mais recentes primeiro:
 
         {titulo, pins: [{pin, titulo, imagem, reserva}], quantos,
-         completa, marcador, fim}
+         completa, marcador, fim, andou, tentativas, falha}
 
     Pasta grande não cabe numa chamada da API, então a leitura anda aos
     pedaços: começa sempre pela primeira página (os pins novos) e segue do
@@ -120,14 +120,20 @@ def ler_pasta(usuario, pasta, prazo=None, marcador=None, conhecidos=(), basta=No
     não sobra nada: `fim`). `quantos` é o total que o Pinterest diz ter.
 
     `completa: False` quer dizer que o Pinterest não deixou folhear agora e
-    só vieram os 25 mais recentes; o marcador volta intacto."""
+    só vieram os 25 mais recentes; o marcador volta intacto, e `falha` diz
+    por quê. `andou` conta os pins percorridos além do topo já conhecido, e
+    `tentativas` as visitas abertas até uma ser liberada — os dois aparecem
+    na tela, para dar para ver o que o Pinterest está fazendo."""
     try:
         lida = _ler_inteira(usuario, pasta, prazo, marcador, set(conhecidos), basta, ate_conhecida)
         if lida['pins'] or lida['fim']:
             return lida
+        falha = 'o Pinterest não deixou rolar a pasta'
     except Exception as e:                       # noqa: BLE001 - o RSS ainda serve
         print('pinterest: listagem completa falhou (%s); usando o RSS' % e)
-    return {**_ler_rss(usuario, pasta), 'marcador': marcador, 'fim': False, 'quantos': None}
+        falha = str(e)[:200]
+    return {**_ler_rss(usuario, pasta), 'marcador': marcador, 'fim': False, 'quantos': None,
+            'falha': falha, 'andou': 0}
 
 
 # Por que repetir a sessão: sem login, o Pinterest decide na hora de abrir a
@@ -241,11 +247,13 @@ def _ler_inteira(usuario, pasta, prazo=None, marcador=None, conhecidos=frozenset
         # Nenhuma visita liberada: só a primeira página, e o marcador fica
         # como estava para a próxima tentativa.
         return {'titulo': titulo, 'pins': pins, 'quantos': quantos, 'completa': False,
-                'marcador': marcador, 'fim': False}
+                'marcador': marcador, 'fim': False, 'tentativas': tentativa + 1, 'andou': 0,
+                'falha': 'o Pinterest recusou %d visitas seguidas' % (tentativa + 1)}
 
     def novos():
         return sum(1 for p in pins if p['pin'] not in conhecidos)
 
+    andou = 0 if marcador else len(pins)        # pins além do topo já relido
     if ate_conhecida and not marcador and pins and not novos():
         seguinte = None                          # nada novo no topo: em dia
     elif marcador:
@@ -264,11 +272,12 @@ def _ler_inteira(usuario, pasta, prazo=None, marcador=None, conhecidos=frozenset
         if ate_conhecida and trecho and all(p['pin'] in conhecidos for p in trecho):
             proximo = None                       # chegou ao que já tinha lido
         pins += trecho
+        andou += len(trecho)
         seguinte = proximo
     vistos = set()
     pins = [p for p in pins if not (p['pin'] in vistos or vistos.add(p['pin']))]
     return {'titulo': titulo, 'pins': pins, 'quantos': quantos, 'completa': True,
-            'marcador': seguinte, 'fim': not seguinte}
+            'marcador': seguinte, 'fim': not seguinte, 'tentativas': tentativa + 1, 'andou': andou}
 
 
 def _ler_rss(usuario, pasta):
