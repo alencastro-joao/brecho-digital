@@ -140,7 +140,7 @@
   .closet-acoes { display: none; justify-content: flex-start; gap: 8px 12px; width: 100%; }
   .closet-head.abertas .closet-acoes { display: flex; }
   .btn-adicionar { padding: 8px 14px; }
-  .grid-title { font-size: 18px; }
+  .grid-title { display: none; }   /* o contador de peças já diz onde você está */
   /* Colunas cravadas, não "quantas couberem": a barra de rolagem (que alguns
      navegadores desenham por fora do conteúdo) roubava a última. O
      guarda-roupa usa quatro, com quadrados menores (24 por página). */

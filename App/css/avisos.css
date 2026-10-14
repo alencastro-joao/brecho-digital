@@ -124,6 +124,10 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
     padding: calc(11px + env(safe-area-inset-top)) 130px 0 14px;
   }
   .view-vitrine .vitrine-head > div:first-child { display: none; }
+
+  /* No closet, nem espaço nem sino/perfil: a fileira de categorias sobe até o topo. */
+  .app:has(> .view-closet:not([hidden]))::before { display: none; }
+  body:has(.view-closet:not([hidden])) :is(.avisos-btn, .perfil-atalho, .avisos-painel) { display: none; }
   .view-vitrine .vitrine-acoes { background: none; border-radius: 0; padding: 0; }
   .view-vitrine .picks-badge { padding: 6px 15px; border-radius: 16px; }
   .view-vitrine .picks-badge #picks-left { font-size: 26px; }
