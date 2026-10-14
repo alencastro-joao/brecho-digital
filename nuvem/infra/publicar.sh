@@ -50,6 +50,13 @@ aws s3 cp "$APP/esteira.html" "s3://$SITE/esteira.html" \
 aws s3 sync "$APP/assets/cloths" "s3://$SITE/assets/cloths" \
   --cache-control "$ETERNO" --content-type 'image/webp' --exclude '*' --include '*.webp'
 
+# Os logos das marcas têm nome fixo (o id da coleção) e podem ser trocados,
+# então ficam um dia no cache em vez de um ano.
+if [ -d "$APP/assets/marcas" ]; then
+  aws s3 sync "$APP/assets/marcas" "s3://$SITE/assets/marcas" --delete \
+    --cache-control 'public, max-age=86400' --content-type 'image/webp' --exclude '*' --include '*.webp'
+fi
+
 if [ -d "$APP/assets/audio" ] && [ -n "$(ls -A "$APP/assets/audio" 2>/dev/null)" ]; then
   aws s3 sync "$APP/assets/audio" "s3://$SITE/assets/audio" --cache-control "$ETERNO"
 fi

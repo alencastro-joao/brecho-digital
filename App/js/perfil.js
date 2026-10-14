@@ -37,7 +37,7 @@ import { abrirBuscaDePessoas } from './busca.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
 import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
-import { escalaGrade } from './config.js';
+import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
   gradeDePecas, perfilPublico, segueDeVolta, mesAno, cartaoDeObra, botaoDePerfil,
@@ -194,16 +194,22 @@ function renderEmblemas() {
       : el('p', { class: 'pf-col-vazio' }, 'Nenhuma coleção começada ainda.'));
 }
 
+// Sem logo (ou se ele não carregar), o emblema mostra uma peça da coleção.
+const fotoDaCapa = (capa) => capa ? [el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
+  el('img', { src: capa.src, alt: '', loading: 'lazy' }))] : [];
+
 function emblema(c) {
   const capa = capaDaColecao(c);
+  const logo = logoDaColecao(c);
   return el('button', {
     class: 'pf-emblema' + (c.completa ? ' completa' : ''),
     title: c.completa ? `Coleção ${c.marca} completa` : `${c.marca}: ${c.tem} de ${c.total} peças`,
     onclick: () => abrirColecao(c.id),
   },
     el('span', { class: 'pf-emblema-disco', style: c.completa ? {} : { '--pct': (c.pct * 100) + '%' } },
-      capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
-        el('img', { src: capa.src, alt: '', loading: 'lazy' })) : null),
+      logo ? el('img', { class: 'pf-emblema-logo', src: logo, alt: '', loading: 'lazy',
+        onerror: (e) => e.target.replaceWith(...fotoDaCapa(capa)) })
+        : fotoDaCapa(capa)),
     el('small', {},
       c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
       c.marca));

@@ -949,6 +949,11 @@ export function progressoDoNivel(total) {
 // `efeito.tipo` (db.efeitosDoGarimpo, db.modificadoresDaLoja, vitrine.js).
 // O bônus vestido (+5% a +20%, ver efeitos.js) é a chance, em pontos
 // percentuais; nos efeitos de arara ele é multiplicado (ver poolDoDia).
+//
+// O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
+// (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
+export const MARCAS_COM_LOGO = new Set([]);
+export const logoDaColecao = (c) => MARCAS_COM_LOGO.has(c.id) ? `assets/marcas/${c.id}.webp` : null;
 export const COLECOES = [
   { id: 'puma', marca: 'Puma',
     itens: ['cano-alto', 'legging', 'corta-vento'],

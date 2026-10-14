@@ -9,7 +9,7 @@
 // Nada aqui é gravado: o progresso é o guarda-roupa lido na hora
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
-import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE } from './config.js';
+import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { ROUPINHAS, roupinha, svgRoupinha } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
@@ -174,7 +174,10 @@ const textoDoBonus = (c) => c.tipo ? '2 itens +5% · 5 itens +20%'
 
 function tituloDaColecao(c, tag = 'h2') {
   const estilo = ESTILOS[c.estilo];
+  const logo = logoDaColecao(c);
   return el('div', { class: 'col-titulo' },
+    logo ? el('img', { class: 'col-logo', src: logo, alt: '', loading: 'lazy',
+      onerror: (e) => e.target.remove() }) : null,
     c.hex ? el('span', { class: 'col-bolinha', style: { background: c.hex } }) : null,
     el(tag, {}, c.marca),
     estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null);
