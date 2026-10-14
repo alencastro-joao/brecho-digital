@@ -325,20 +325,21 @@ function selecionar(peca) {
   // passou a contar têm número.
   const num = $('#preview-numero');
   num.hidden = !peca.numero;
-  num.textContent = peca.numero ? `nº ${peca.numero} de ${r.tiragem}` : '';
+  num.textContent = peca.numero ? `nº ${peca.numero}/${r.tiragem}` : '';
   $('#btn-editar-peca').hidden = !(ADMIN && cat.permanente);
 
   rotularFavorito();
 
   const origem = { collab: 'cápsula do mês', propria: 'peça sua', teste: 'teste' }[peca.origem] || 'garimpo';
   const tipo = CATEGORIAS[categoriaDe(peca)];
-  const partes = [tipo?.nome ?? 'Peça'];
-  if (cat.cor?.trim()) partes.push(cat.cor.trim());
-  if (cat.marca?.trim()) partes.push(cat.marca.trim());
-  partes.push(origem, new Date(peca.obtidoEm).toLocaleDateString('pt-BR'));
+  const partes = [[tipo?.nome ?? 'Peça']];
+  if (cat.cor?.trim()) partes.push([cat.cor.trim()]);
+  if (cat.marca?.trim()) partes.push([cat.marca.trim()]);
+  partes.push([origem, 'origem'], [new Date(peca.obtidoEm).toLocaleDateString('pt-BR')]);
   // Cada informação num pedaço: no computador viram uma linha com " · "
-  // entre eles; no celular, etiquetas.
-  $('#preview-info').replaceChildren(...partes.map(t => el('span', { class: 'info-item' }, t)));
+  // entre eles; no celular, etiquetas (sem a origem).
+  $('#preview-info').replaceChildren(...partes.map(([t, extra]) =>
+    el('span', { class: 'info-item' + (extra ? ' ' + extra : '') }, t)));
   $('#preview-colecoes').replaceChildren(...colecoesDaPeca(peca.id).map(chipDaColecao));
 }
 

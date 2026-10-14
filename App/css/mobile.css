@@ -262,10 +262,9 @@
   .view-closet .preview-wrapper {
     flex: 1 1 auto; min-height: 220px; padding: 22px; border-radius: 14px;
     border: 2px solid var(--bloco-borda);
-    background: color-mix(in srgb, var(--rar-borda, #fff) 24%, #fff);
+    background: var(--bloco);   /* aqui o fundo é sempre branco: a peça é o destaque */
     box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .07);
   }
-  .view-closet .preview-wrapper.lendaria { background: color-mix(in srgb, var(--rar-borda) 42%, #fff); }
   .view-closet .preview-wrapper img { max-height: min(44vh, 400px); }
   .view-closet .placeholder-text { display: none; }
   .view-closet .preview-meta {
@@ -278,7 +277,12 @@
     background: color-mix(in srgb, var(--rar-borda) 30%, #fff) !important;
     border-color: var(--rar-borda) !important; color: var(--tinta);
   }
-  .view-closet .preview-numero { margin-left: 0; font-size: 12px; }
+  /* O número da cópia na tiragem, colado na raridade. */
+  .view-closet .preview-numero {
+    margin: 0; font-size: 11px; font-weight: 800; color: var(--tinta);
+    padding: 3px 10px; border-radius: 9px;
+    border: 2px solid var(--bloco-borda); background: var(--bloco);
+  }
   .view-closet .preview-meta h3 { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px; }
   /* As informações em etiquetas de bloco, sem os " · ". */
   .view-closet .preview-meta p { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
@@ -288,6 +292,11 @@
     border: 2px solid var(--bloco-borda); background: var(--bloco);
   }
   .view-closet .preview-meta .info-item + .info-item::before { content: none; }
+  .view-closet .preview-meta .info-item.origem { display: none; }
+  /* Ações na última linha: coleções à esquerda, estrela e lápis à direita. */
+  .view-closet .preview-meta .col-chips { order: 5; }
+  .view-closet .preview-meta button.fav-estrela { order: 6; }
+  .view-closet .preview-meta button.btn-editar { order: 7; }
   /* Coleções só pelo ícone (o nome aparece ao tocar, na própria coleção). */
   .view-closet .preview-meta .col-chips { gap: 6px; flex: 0 1 auto !important; }
   .view-closet .preview-meta .col-chips:empty { display: none; }
@@ -307,6 +316,7 @@
     border: 2px solid var(--bloco-borda); background: var(--bloco);
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
   }
+  .view-closet .preview-meta button.fav-estrela { margin-left: auto; }
   .view-closet .preview-meta button.fav-estrela.on {
     background: var(--inventario); border-color: var(--tinta);
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
