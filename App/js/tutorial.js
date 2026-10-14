@@ -18,12 +18,14 @@
 // Começa sozinho na conta nova. Para testar de novo: Perfil › Testes ›
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
-import { INTRO, RARIDADE, RARIDADES, faixasDeTroca } from './config.js';
+import { INTRO, RARIDADE, RARIDADES, faixasDeTroca, idDaCor } from './config.js';
 import { catalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { irPara } from './router.js';
 import { montarVitrine } from './vitrine.js';
+import { abrirColecao } from './colecoes.js';
+import { darTrioDaCor } from './presente.js';
 import { el, $, toast } from './util.js';
 
 let caixa = null;
@@ -68,7 +70,14 @@ export function comecar() {
   // Tira o ?tutorial do endereço: recarregar não recomeça de novo.
   if (pediuTutorialNaUrl()) history.replaceState(null, '', location.pathname + location.hash);
   modo = 'boasvindas';
+  // Recomeçar numa conta de antes do trio da cor: ele entra agora.
+  if (!db.state.presenteCor) darTrioDaCor();
   db.comecarIntro();
+  // O que já está feito de uma vez por todas conta logo (recomeçar em Testes
+  // não pode travar numa escolha que já foi feita, nem no carimbo de hoje).
+  const cor = db.state.presenteCor;
+  if (cor && db.progressoDasColecoes()[idDaCor(cor)]?.escolhidas.length) db.progredirMissao('colecao');
+  if (db.diaCarimbado()) db.progredirMissao('carimbo');
 }
 
 // ------------------------------- Prêmios ----------------------------------
@@ -164,6 +173,16 @@ function pontos(passo) {
     `<i class="${i < passo ? 'feito' : i === passo ? 'ativo' : ''}"></i>`).join('')}</div>`;
 }
 
+// A missão das coleções fala da cor que veio no presente.
+const comCor = (texto) => texto.replaceAll('{cor}', (db.state.presenteCor || '').toLowerCase() || 'da mesma cor');
+
+// "Ir para lá": a missão da coleção abre direto a coleção da cor do presente.
+function irParaMissao(m) {
+  const cor = db.state.presenteCor;
+  if (m.ir === 'colecoes' && cor) abrirColecao(idDaCor(cor));
+  else irPara(m.ir);
+}
+
 function htmlBoasVindas() {
   return `
     <p class="intro-sobre">Missões de introdução</p>
@@ -183,7 +202,7 @@ function htmlAberta(m, passo) {
       <button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>
     </div>
     <h2>${m.nome}</h2>
-    <p class="intro-dica">${m.dica}</p>
+    <p class="intro-dica">${comCor(m.dica)}</p>
     <p class="intro-premio">🎁 ${rotuloDoPremio(m.premio)}</p>
     ${pontos(passo)}
     <div class="intro-acoes">
@@ -286,6 +305,6 @@ function clique(e) {
   if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
   else if (acao === 'barra') { modo = 'barra'; desenhar(); }
   else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
-  else if (acao === 'ir') { modo = 'barra'; irPara(INTRO[db.state.intro.passo].ir); desenhar(); }
+  else if (acao === 'ir') { modo = 'barra'; irParaMissao(INTRO[db.state.intro.passo]); desenhar(); }
   else if (acao === 'pular') { modo = 'barra'; db.pularIntro(); }
 }
