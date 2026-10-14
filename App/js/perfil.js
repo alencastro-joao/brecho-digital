@@ -431,6 +431,7 @@ function fecharAjustes() {
 // — o guarda-roupa continua guardado, esperando o próximo login.
 function montarConta() {
   const form = $('#form-senha');
+  montarLimpeza();
 
   $('#btn-trocar-senha').addEventListener('click', () => {
     form.hidden = !form.hidden;
@@ -473,6 +474,82 @@ function renderConta() {
   if (!conta) return;
   const papel = conta.papel === 'admin' ? ' · administrador' : '';
   $('#conta-resumo').textContent = `${conta.email} · ${conta.handle}${papel}`;
+  $('#limpeza-contas').hidden = conta.papel !== 'admin';
+}
+
+// ------------------------- Limpeza de contas (admin) -----------------------
+// Lista todas as contas do app e apaga as que não são a sua. O servidor faz
+// backup de tudo antes (lambda/limpeza.py) e só apaga os ids desta lista.
+async function pedirAdmin(rota, corpo) {
+  const r = await fetch(rota, {
+    method: corpo ? 'POST' : 'GET',
+    credentials: 'include',
+    headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
+    body: corpo ? JSON.stringify(corpo) : undefined,
+  });
+  const dados = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(dados.erro || 'HTTP ' + r.status);
+  return dados;
+}
+
+function montarLimpeza() {
+  const lista = $('#limpeza-lista');
+  const resumo = $('#limpeza-resumo');
+  const botaoVer = $('#btn-ver-contas');
+  const botaoLimpar = $('#btn-limpar-contas');
+  let saem = [];
+
+  const data = iso => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
+
+  async function ver() {
+    botaoVer.disabled = true;
+    resumo.textContent = 'Lendo as contas…';
+    try {
+      const { contas, postsDeExemplo } = await pedirAdmin('/api/admin/contas');
+      saem = contas.filter(c => !c.fica);
+      lista.replaceChildren(...contas.map(c => el('li', { class: c.fica ? 'fica' : '' },
+        el('b', {}, c.fica ? 'FICA · ' : 'SAI · '),
+        `${c.email} · ${c.handle}${c.papel === 'admin' ? ' · admin' : ''}`,
+        el('br'),
+        el('small', {}, `criada ${data(c.criadoEm)} · último acesso ${data(c.ultimoAcesso)} · ` +
+          `${c.posts} posts · ${c.comentarios} coment. · ${c.curtidas} curtidas · ` +
+          `${c.seguidores} seguidores · save ${c.save ? 'sim' : 'não'}`))));
+      resumo.textContent = `${contas.length} contas; ${saem.length} sairiam. ` +
+        `Os ${postsDeExemplo} posts dos perfis de exemplo não são de conta e ficam.`;
+      botaoLimpar.hidden = !saem.length;
+    } catch (e) {
+      resumo.textContent = 'Não consegui ler as contas: ' + e.message;
+    } finally {
+      botaoVer.disabled = false;
+    }
+  }
+
+  async function limpar() {
+    if (!saem.length) return;
+    const nomes = saem.map(c => c.email).join('\n');
+    const escrito = prompt(
+      `Apagar de vez ${saem.length} conta(s), com posts, comentários, curtidas e saves?\n\n` +
+      `${nomes}\n\nAntes é feito um backup. Escreva APAGAR para confirmar.`);
+    if (escrito !== 'APAGAR') return;
+    botaoLimpar.disabled = true;
+    resumo.textContent = 'Fazendo o backup e apagando…';
+    try {
+      const f = await pedirAdmin('/api/admin/contas/limpar',
+        { ids: saem.map(c => c.id), confirmar: 'APAGAR' });
+      toast(`${f.contas} conta(s) apagada(s).`);
+      await ver();
+      resumo.textContent = `Apagadas ${f.contas} contas, ${f.posts} posts, ${f.sessoes} sessões ` +
+        `e ${f.saves} saves; ${f.postsLimpos} posts perderam curtidas ou comentários. ` +
+        `Backup em ${f.backup}`;
+    } catch (e) {
+      resumo.textContent = 'A limpeza parou: ' + e.message;
+    } finally {
+      botaoLimpar.disabled = false;
+    }
+  }
+
+  botaoVer.addEventListener('click', ver);
+  botaoLimpar.addEventListener('click', limpar);
 }
 
 // -------------------------------- Testes ----------------------------------

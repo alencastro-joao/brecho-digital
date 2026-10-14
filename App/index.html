@@ -897,6 +897,16 @@
           </form>
           <p class="tool-hint">Trocar a senha encerra as outras sessões: quem
             estiver logado como você em outro computador cai fora.</p>
+
+          <!-- Só o administrador: todas as contas do app, e apagar as outras -->
+          <div class="limpeza-contas" id="limpeza-contas" hidden>
+            <div class="tool-row">
+              <button class="btn-ghost" id="btn-ver-contas">Ver todas as contas</button>
+              <button class="btn-ghost danger" id="btn-limpar-contas" hidden>Apagar as outras contas</button>
+            </div>
+            <ul class="limpeza-lista" id="limpeza-lista"></ul>
+            <p class="tool-hint" id="limpeza-resumo"></p>
+          </div>
         </section>
 
         <section class="perfil-dev" data-ajuste="testes">
