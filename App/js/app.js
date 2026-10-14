@@ -33,6 +33,7 @@ import { montarPersonagem, aoEntrarNoPersonagem } from './personagem.js';
 import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
 import { montarAvisos } from './avisos.js';
+import { montarTutorial, abrirTutorial, pediuTutorialNaUrl } from './tutorial.js';
 import { toast } from './util.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
@@ -151,6 +152,7 @@ async function iniciar() {
   montarBusca();
   montarBuscaNoFeed();
   montarPlayer();
+  montarTutorial();
 
   onEnter('vitrine', aoEntrarNaVitrine);
   onEnter('closet', aoEntrarNoCloset);
@@ -170,6 +172,9 @@ async function iniciar() {
   // Depois do router: entrar na vitrine faz o dono da loja falar, e a fala do
   // presente é a que tem de ficar na tela na primeira abertura.
   anunciarPresente(presente);
+
+  // O passo a passo: sozinho na conta nova, ou com ?tutorial no endereço.
+  if (nova || pediuTutorialNaUrl()) abrirTutorial();
 
   // O dia pode virar com a aba aberta.
   setInterval(() => {
