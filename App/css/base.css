@@ -165,6 +165,9 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .btn-ghost.danger, .tool-btn.danger { color: #c0392b; }
 .btn-ghost + .btn-ghost, .btn-dark + .btn-ghost { margin-top: 8px; }
 
+/* Texto que só aparece no computador / só no celular (mobile.css troca). */
+.so-cel { display: none; }
+
 /* ------------------------------ Favoritar ------------------------------- */
 /* A estrela que escolhe o que aparece no perfil (js/favoritos.js). No painel
    do guarda-roupa ela é um .btn-ghost com rótulo; nas listas do Stylist e da

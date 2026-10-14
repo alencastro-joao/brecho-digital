@@ -292,6 +292,8 @@ function selecionar(peca) {
 
   const meta = $('#preview-meta');
   meta.hidden = false;
+  // O fundo da foto em destaque leva a cor da raridade (no celular).
+  document.querySelector('.view-closet .display-section')?.style.setProperty('--rar-bg', r.bg);
   const tag = $('#preview-rarity');
   tag.textContent = r.nome;
   tag.style.background = r.bg;
@@ -317,7 +319,10 @@ function rotularFavorito() {
   if (!botao) return;
   const favorita = selecionada && db.ehFavorito('peca', selecionada);
   botao.classList.toggle('on', Boolean(favorita));
-  botao.textContent = favorita ? '★ Nas favoritas' : '☆ Favoritar';
+  // No celular só a estrela aparece; o rótulo fica para o computador.
+  botao.replaceChildren(favorita ? '★' : '☆',
+    el('span', { class: 'so-pc' }, favorita ? ' Nas favoritas' : ' Favoritar'));
+  botao.setAttribute('aria-label', favorita ? 'Nas favoritas' : 'Favoritar');
   botao.title = favorita
     ? 'Tirar do "Roupas favoritas" do seu perfil'
     : 'Mostrar esta peça no seu perfil';
