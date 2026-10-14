@@ -963,6 +963,7 @@ export function resgatarMarcoDoDia() {
   }
   state.fichas = fichas() + ganhas;
   if (marco === 'carimbo') ganharXP(MARCOS_DIA.carimbo.xp, 'dia carimbado');
+  if (marco === 'carimbo') progredirMissao('carimbo');
   salvar();
   return { marco, fichas: ganhas };
 }
@@ -1176,6 +1177,7 @@ export function escolherItem(colecao, id) {
   if (pc.escolhidas.includes(id)) return false;
   const v = state.vestiario;
   v.escolhas = { ...(v.escolhas || {}), [colecao]: [...pc.escolhidas, id] };
+  progredirMissao('colecao');
   salvar();
   return true;
 }

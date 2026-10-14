@@ -105,6 +105,7 @@ export const PRESENTE = {
     { cat: 'shoes', quantas: 2 },
   ],
   faixas: ['common', 'uncommon'],
+  daCor: 3,   // quantas das peças são de uma cor sorteada (1º marco da coleção dela)
 };
 
 // ------------------------------- Cores -----------------------------------
@@ -1143,8 +1144,13 @@ export const INTRO = [
   { evento: 'personagem', ir: 'personagem', lugar: 'cima', nome: 'Crie o seu personagem',
     dica: 'Escolha corpo, pele e cabelo e toque em Salvar. É ele que veste os seus looks.',
     premio: { xp: 20 } },
+  // {cor} é a cor do trio do presente (state.presenteCor, ver presente.js).
+  { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Abra a sua primeira coleção',
+    dica: 'Seu presente veio com 3 peças da cor {cor}, e isso já libera um item do avatar dessa coleção. ' +
+      'Juntar peças de uma marca, cor ou estilo libera itens. Escolha o seu.',
+    premio: { xp: 20 } },
   { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista uma roupinha',
-    dica: 'Em Roupas, dois toques numa peça da mochila vestem o personagem.',
+    dica: 'Em Roupas, dois toques numa peça da mochila vestem o personagem. Que tal o item que você acabou de escolher?',
     premio: { xp: 20, fichas: 1 } },
   { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Garimpe 1 peça na loja',
     dica: 'Toque numa peça do mural e resgate. São 3 por dia, e as raras ficam por baixo da pilha.',
@@ -1158,6 +1164,10 @@ export const INTRO = [
   { evento: 'publicar', ir: 'stylist', lugar: 'cima', nome: 'Publique no feed',
     dica: 'Publique um look do Stylist ou uma colagem: é o que os outros veem de você.',
     premio: { pecas: ['rare'], xp: 30 } },
+  { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
+    dica: 'Cada 3 missões do dia valem um carimbo no cartão da semana (você já cumpriu algumas). ' +
+      'Em Tarefas, toque no carimbo para pegar fichas. 5 dias carimbados na semana abrem o Baú dos dias.',
+    premio: { fichas: 1, xp: 20 } },
   { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
     dica: 'No Feed, toque em Seguir em quem você curtir. Dá pra achar amigos pelo nome ou @.',
     premio: { fichas: 2 } },

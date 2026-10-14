@@ -20,12 +20,17 @@
 //    do dia exclui o que você já tem, então a loja de hoje abre sem as seis
 //    peças — que é o certo: o que já é seu não está mais à venda.
 //
+// 3) Três das peças são da mesma cor, sorteada a cada conta: é o primeiro marco
+//    da coleção daquela cor, e a pessoa escolhe logo de cara o item do avatar
+//    que ela libera (a missão de introdução das coleções conta com isso). A cor
+//    fica em `state.presenteCor`.
+//
 // Ninguém ganha duas vezes: a data da entrega fica gravada no save
 // (`state.boasVindas`), e é ela — não "o inventário está vazio" — que decide.
 // Quem devolve tudo para a loja no modo administrador não ganha um presente
 // novo, e quem herdou o save de antes das contas também não perde o dele.
 
-import { PRESENTE, RARIDADE } from './config.js';
+import { PRESENTE, RARIDADE, COLECOES_DE_COR, normalizarMarca } from './config.js';
 import { catalogo, nomeDaPeca, rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
@@ -62,14 +67,55 @@ export const modeloDa = (it) => {
 // calças elegíveis, quatro são o mesmo moletom em quatro cores, e sem isto o
 // presente entregava as duas calças praticamente iguais — um presente de duas
 // peças que parece de uma.
-function pecasPorFaixa(cat, modelosFora) {
+function pecasPorFaixa(cat, modelosFora, corFora = null) {
   const por = Object.fromEntries(PRESENTE.faixas.map(f => [f, []]));
   for (const it of catalogo.itens) {
     if (it.cat !== cat || db.temPeca(it.id) || modelosFora.has(modeloDa(it))) continue;
+    if (corFora && normalizarMarca(it.cor) === corFora) continue;
     const faixa = db.raridadeDoDia(it.id);
     if (por[faixa] && !estoque.esgotada(it.id, faixa)) por[faixa].push(it);
   }
   return por;
+}
+
+// As peças do presente de uma cor: comuns ou incomuns, sem esgotar, de
+// qualquer categoria.
+function pecasDaCor(cor, modelosFora) {
+  const alvo = normalizarMarca(cor);
+  return catalogo.itens.filter(it => {
+    if (normalizarMarca(it.cor) !== alvo || db.temPeca(it.id) || modelosFora.has(modeloDa(it))) return false;
+    const faixa = db.raridadeDoDia(it.id);
+    return PRESENTE.faixas.includes(faixa) && !estoque.esgotada(it.id, faixa);
+  });
+}
+
+// As três peças da cor sorteada: uma de cada categoria do presente quando dá
+// (camisa, calça, calçado fecham um look da cor), completando com o que houver
+// da cor. Cor sem três peças elegíveis não entra no sorteio.
+function trioDaCor(modelosUsados, rnd) {
+  const n = PRESENTE.daCor;
+  const cores = Object.keys(COLECOES_DE_COR).filter(c => pecasDaCor(c, modelosUsados).length >= n);
+  if (!cores.length) return { cor: null, itens: [] };
+  const cor = cores[Math.floor(rnd() * cores.length)];
+  const preferidas = PRESENTE.itens.map(i => i.cat);
+  const itens = [];
+  const pegar = (lista) => {
+    const it = lista[Math.floor(rnd() * lista.length)];
+    itens.push(it);
+    modelosUsados.add(modeloDa(it));
+  };
+  for (const cat of preferidas) {
+    const lista = pecasDaCor(cor, modelosUsados).filter(it => it.cat === cat);
+    if (lista.length && itens.length < n) pegar(lista);
+  }
+  while (itens.length < n) {
+    const usadas = new Set(itens.map(it => it.cat));
+    const todas = pecasDaCor(cor, modelosUsados);
+    if (!todas.length) break;
+    const outras = todas.filter(it => !usadas.has(it.cat));
+    pegar(outras.length ? outras : todas);
+  }
+  return { cor, itens };
 }
 
 /**
@@ -87,11 +133,24 @@ export function darPresente({ rnd = Math.random } = {}) {
 
   const ganhas = [];
   const modelosUsados = new Set();
-  for (const { cat, quantas } of PRESENTE.itens) {
-    for (let i = 0; i < quantas; i++) {
+
+  // Primeiro as três da cor; elas contam na cota da categoria delas.
+  const trio = trioDaCor(modelosUsados, rnd);
+  const cota = Object.fromEntries(PRESENTE.itens.map(({ cat, quantas }) => [cat, quantas]));
+  for (const item of trio.itens) {
+    const peca = db.adicionarPeca(item, { origem: 'presente' });
+    if (peca) ganhas.push({ peca, item });
+    if (cota[item.cat]) cota[item.cat] -= 1;
+  }
+  db.state.presenteCor = trio.cor;
+  const corFora = trio.cor && normalizarMarca(trio.cor);
+
+  for (const { cat } of PRESENTE.itens) {
+    for (let i = 0; i < cota[cat]; i++) {
       // Refeito a cada peça: o modelo que acabou de sair tem de sumir do
       // sorteio da próxima, e é mais simples recontar do que remendar a lista.
-      const por = pecasPorFaixa(cat, modelosUsados);
+      // O resto não repete a cor do trio: são três peças dela, não quatro.
+      const por = pecasPorFaixa(cat, modelosUsados, corFora);
 
       // A faixa sorteada é a preferência, não uma exigência: acervo pequeno
       // pode não ter nenhuma incomum de calça, e é melhor dar a comum do que
@@ -118,6 +177,25 @@ export function darPresente({ rnd = Math.random } = {}) {
   // para segurar a primeira tela por ela.
   estoque.levar(ganhas.map(({ peca }) => ({ id: peca.id, raridade: peca.raridade })))
     .then(() => { estoque.numerar(ganhas.map(({ peca }) => peca)); db.salvar(); });
+  return ganhas;
+}
+
+// Só o trio da cor, para quem recomeça as missões de introdução (Perfil ›
+// Testes) numa conta de antes dele: sem as três peças, a missão das coleções
+// não teria como ser cumprida.
+export function darTrioDaCor({ rnd = Math.random } = {}) {
+  const modelos = new Set(db.state.inventario.map(p => {
+    const it = catalogo.itens.find(i => i.id === p.id);
+    return it ? modeloDa(it) : `id|${p.id}`;
+  }));
+  const trio = trioDaCor(modelos, rnd);
+  const ganhas = [];
+  for (const item of trio.itens) {
+    const peca = db.adicionarPeca(item, { origem: 'presente' });
+    if (peca) ganhas.push({ peca, item });
+  }
+  db.state.presenteCor = trio.cor;
+  db.salvar();
   return ganhas;
 }
 
