@@ -49,6 +49,22 @@ export function montarCloset() {
   $('#closet-voltar').addEventListener('click', () => {
     if (naPeca()) history.back(); else limparPreview();
   });
+  // Na ficha (celular), as setas e o arrasto passam para a peça vizinha.
+  $('#ficha-ant').addEventListener('click', () => vizinha(-1));
+  $('#ficha-prox').addEventListener('click', () => vizinha(1));
+  let toqueX = null, toqueY = null;
+  const quadro = document.querySelector('.view-closet .preview-wrapper');
+  quadro.addEventListener('touchstart', (e) => {
+    toqueX = e.touches[0].clientX; toqueY = e.touches[0].clientY;
+  }, { passive: true });
+  quadro.addEventListener('touchend', (e) => {
+    if (toqueX === null) return;
+    const dx = e.changedTouches[0].clientX - toqueX;
+    const dy = e.changedTouches[0].clientY - toqueY;
+    toqueX = null;
+    // Só o arrasto de lado: rolar a ficha para baixo não troca de peça.
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) vizinha(dx < 0 ? 1 : -1);
+  });
   window.addEventListener('popstate', () => {
     if (!naPeca() && tela()?.classList.contains('detalhe')) limparPreview();
   });
@@ -286,6 +302,24 @@ function criarSlot(peca) {
   return slot;
 }
 
+// A peça antes ou depois da aberta, na ordem da grade. A página da grade
+// acompanha, para o voltar cair onde a peça está.
+function vizinha(passo) {
+  const i = pecasDaVista.findIndex(p => p.id === selecionada);
+  const nova = pecasDaVista[i + passo];
+  if (i < 0 || !nova) return;
+  const porPagina = pecasPorPagina();
+  if (Math.floor((i + passo) / porPagina) !== pagina) {
+    pagina = Math.floor((i + passo) / porPagina);
+    desenharPagina();
+  }
+  selecionar(nova);
+  const moldura = $('#preview-moldura');
+  moldura.classList.remove('entra-esq', 'entra-dir');
+  void moldura.offsetWidth;
+  moldura.classList.add(passo > 0 ? 'entra-dir' : 'entra-esq');
+}
+
 function selecionar(peca) {
   const cat = pecaDoCatalogo(peca.id);
   if (!cat) return;
@@ -328,18 +362,25 @@ function selecionar(peca) {
   num.textContent = peca.numero ? `nº ${peca.numero}/${r.tiragem}` : '';
   $('#btn-editar-peca').hidden = !(ADMIN && cat.permanente);
 
+  // A posição na grade aberta: "15/100", e as setas somem nas pontas.
+  const pos = pecasDaVista.findIndex(p => p.id === peca.id);
+  $('#ficha-pos').textContent = pos >= 0 ? `${pos + 1}/${pecasDaVista.length}` : '';
+  $('#ficha-ant').disabled = pos <= 0;
+  $('#ficha-prox').disabled = pos < 0 || pos >= pecasDaVista.length - 1;
+
   rotularFavorito();
 
   const origem = { collab: 'cápsula do mês', propria: 'peça sua', teste: 'teste' }[peca.origem] || 'garimpo';
   const tipo = CATEGORIAS[categoriaDe(peca)];
-  const partes = [[tipo?.nome ?? 'Peça']];
-  if (cat.cor?.trim()) partes.push([cat.cor.trim()]);
-  if (cat.marca?.trim()) partes.push([cat.marca.trim()]);
-  partes.push([origem, 'origem'], [new Date(peca.obtidoEm).toLocaleDateString('pt-BR')]);
+  const partes = [['Tipo', tipo?.nome ?? 'Peça']];
+  if (cat.cor?.trim()) partes.push(['Cor', cat.cor.trim()]);
+  if (cat.marca?.trim()) partes.push(['Marca', cat.marca.trim()]);
+  partes.push(['Origem', origem, 'origem'],
+    ['Desde', new Date(peca.obtidoEm).toLocaleDateString('pt-BR')]);
   // Cada informação num pedaço: no computador viram uma linha com " · "
-  // entre eles; no celular, etiquetas (sem a origem).
-  $('#preview-info').replaceChildren(...partes.map(([t, extra]) =>
-    el('span', { class: 'info-item' + (extra ? ' ' + extra : '') }, t)));
+  // entre eles; no celular, as linhas da ficha (rótulo e valor, sem a origem).
+  $('#preview-info').replaceChildren(...partes.map(([rotulo, t, extra]) =>
+    el('span', { class: 'info-item' + (extra ? ' ' + extra : ''), dataset: { rotulo } }, t)));
   $('#preview-colecoes').replaceChildren(...colecoesDaPeca(peca.id).map(chipDaColecao));
 }
 

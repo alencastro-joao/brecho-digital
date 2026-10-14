@@ -186,8 +186,14 @@
     </div>
 
     <aside class="display-section">
-      <button type="button" class="closet-voltar" id="closet-voltar" aria-label="Voltar para as peças">‹ Voltar</button>
+      <!-- Celular: o topo da ficha — voltar para a grade e a posição da peça (15/100) -->
+      <div class="ficha-topo">
+        <button type="button" class="closet-voltar" id="closet-voltar" aria-label="Voltar para as peças">‹ Voltar</button>
+        <span class="ficha-pos" id="ficha-pos"></span>
+      </div>
       <div class="preview-wrapper">
+        <button type="button" class="ficha-seta ant" id="ficha-ant" aria-label="Peça anterior">‹</button>
+        <button type="button" class="ficha-seta prox" id="ficha-prox" aria-label="Próxima peça">›</button>
         <div class="preview-moldura" id="preview-moldura" hidden>
           <img id="big-preview-img" alt="Peça em destaque">
         </div>

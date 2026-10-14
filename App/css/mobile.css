@@ -237,39 +237,72 @@
   .view-closet #closet-pag-num { font-size: 15px; font-weight: 800; color: var(--tinta); min-width: 38px; text-align: center; }
   .view-closet .pag-txt { display: none; }
 
-  /* A peça aberta, no mesmo painel e nos mesmos blocos da grade: o voltar
-     (só a seta), a foto num bloco grande pintado da raridade e, embaixo, a
-     raridade, o nome e as informações em etiquetas. */
+  /* A peça aberta é uma ficha, no mesmo painel e nos mesmos blocos da grade:
+     em cima o voltar e a posição (15/100); a ficha em si é um cartão branco —
+     a foto com as setas para a peça vizinha (arrastar também passa), um
+     picote, e embaixo raridade, nome, as linhas de informação e as ações. */
   .view-closet .display-section { display: none; }
   .view-closet.detalhe .grid-wrapper { display: none; }
   .view-closet.detalhe .display-section {
-    position: relative;
     display: flex; flex: 1; min-height: 0; width: auto !important;
-    flex-direction: column; gap: 12px;
+    flex-direction: column; gap: 0;
     margin: 10px 16px 12px; padding: 10px;
     border: 2px solid var(--bloco-borda); border-radius: 20px;
     background: var(--painel); overflow-y: auto;
   }
-  .view-closet .closet-voltar {
-    position: absolute; top: 18px; left: 18px; z-index: 2;
+  .view-closet .ficha-topo {
+    display: flex; align-items: center; justify-content: space-between;
+    flex: none; margin-bottom: 10px;
+  }
+  .view-closet .closet-voltar,
+  .view-closet .ficha-seta {
     display: grid; place-items: center;
     width: 40px; height: 34px; padding: 0; border-radius: 11px;
     border: 2px solid var(--bloco-borda); background: var(--bloco);
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
     font-size: 0; color: var(--tinta); cursor: pointer;
   }
-  .view-closet .closet-voltar::before { content: '‹'; font-size: 22px; font-weight: 700; line-height: 1; }
-  .view-closet .preview-wrapper {
-    flex: 1 1 auto; min-height: 220px; padding: 22px; border-radius: 14px;
-    border: 2px solid var(--bloco-borda);
-    background: var(--bloco);   /* aqui o fundo é sempre branco: a peça é o destaque */
-    box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .07);
+  .view-closet .closet-voltar::before { content: '←'; font-size: 18px; font-weight: 700; line-height: 1; }
+  .view-closet .ficha-pos {
+    font-size: 15px; font-weight: 800; color: var(--tinta);
+    padding: 5px 12px; border-radius: 11px;
+    border: 2px solid var(--bloco-borda); background: var(--bloco);
   }
-  .view-closet .preview-wrapper img { max-height: min(44vh, 400px); }
+  .view-closet .ficha-pos:empty { display: none; }
+
+  /* A foto: metade de cima do cartão, sempre em fundo branco. */
+  .view-closet .preview-wrapper {
+    position: relative; overflow: hidden;
+    flex: 1 1 auto; min-height: 180px; padding: 16px 50px;
+    border: 2px solid var(--bloco-borda); border-bottom: 2px dashed var(--bloco-borda);
+    border-radius: 16px 16px 0 0; background: var(--bloco);
+    touch-action: pan-y;
+  }
+  .view-closet .preview-wrapper img { max-height: min(32vh, 340px); }
   .view-closet .placeholder-text { display: none; }
+  .view-closet .ficha-seta {
+    position: absolute; top: 50%; z-index: 2; transform: translateY(-50%);
+    width: 34px; height: 44px;
+  }
+  .view-closet .ficha-seta.ant { left: 8px; }
+  .view-closet .ficha-seta.prox { right: 8px; }
+  .view-closet .ficha-seta::before { font-size: 22px; font-weight: 700; line-height: 1; }
+  .view-closet .ficha-seta.ant::before { content: '‹'; }
+  .view-closet .ficha-seta.prox::before { content: '›'; }
+  .view-closet .ficha-seta:disabled { opacity: .3; cursor: default; }
+  /* Trocar de peça entra deslizando do lado de onde ela veio. */
+  .view-closet .preview-moldura.entra-dir { animation: entraDir .26s ease-out, flutuar 4s ease-in-out .26s infinite; }
+  .view-closet .preview-moldura.entra-esq { animation: entraEsq .26s ease-out, flutuar 4s ease-in-out .26s infinite; }
+  @keyframes entraDir { from { transform: translateX(40px); opacity: 0; } }
+  @keyframes entraEsq { from { transform: translateX(-40px); opacity: 0; } }
+
+  /* A metade de baixo: os dados, como numa ficha. */
   .view-closet .preview-meta {
     flex: none; display: flex; flex-wrap: wrap; align-items: center;
-    column-gap: 6px; row-gap: 8px; padding: 0 4px 2px;
+    column-gap: 6px; row-gap: 0;
+    padding: 14px 16px 12px; background: var(--bloco);
+    border: 2px solid var(--bloco-borda); border-top: 0; border-radius: 0 0 16px 16px;
+    box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .05);
   }
   .view-closet .preview-meta > :not(button):not(.rarity-tag):not(.preview-numero) { flex: 0 0 100%; min-width: 0; }
   .view-closet .preview-meta .rarity-tag {
@@ -277,41 +310,43 @@
     background: color-mix(in srgb, var(--rar-borda) 30%, #fff) !important;
     border-color: var(--rar-borda) !important; color: var(--tinta);
   }
-  /* O número da cópia na tiragem, colado na raridade. */
-  .view-closet .preview-numero {
-    margin: 0; font-size: 11px; font-weight: 800; color: var(--tinta);
-    padding: 3px 10px; border-radius: 9px;
-    border: 2px solid var(--bloco-borda); background: var(--bloco);
+  /* O nº da cópia na tiragem fica no computador; aqui a posição já está no topo. */
+  .view-closet .preview-numero { display: none; }
+  .view-closet .preview-meta h3 { margin: 6px 0 10px; font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px; }
+  /* As linhas: rótulo pequeno em cima, valor embaixo, duas por linha. */
+  .view-closet .preview-meta p {
+    display: grid; grid-template-columns: 1fr 1fr; margin: 0;
+    border-top: 1.5px solid var(--linha);
   }
-  .view-closet .preview-meta h3 { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px; }
-  /* As informações em etiquetas de bloco, sem os " · ". */
-  .view-closet .preview-meta p { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
   .view-closet .preview-meta .info-item {
-    font-size: 12.5px; font-weight: 600; color: var(--tinta);
-    padding: 4px 10px; border-radius: 9px;
-    border: 2px solid var(--bloco-borda); background: var(--bloco);
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 8px 0; border-bottom: 1.5px solid var(--linha);
+    font-size: 14.5px; font-weight: 700; color: var(--tinta);
   }
-  .view-closet .preview-meta .info-item + .info-item::before { content: none; }
+  .view-closet .preview-meta .info-item::before,
+  .view-closet .preview-meta .info-item + .info-item::before {
+    content: attr(data-rotulo);
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    color: var(--tinta-suave);
+  }
   .view-closet .preview-meta .info-item.origem { display: none; }
   /* Ações na última linha: coleções à esquerda, estrela e lápis à direita. */
-  .view-closet .preview-meta .col-chips { order: 5; }
-  .view-closet .preview-meta button.fav-estrela { order: 6; }
-  .view-closet .preview-meta button.btn-editar { order: 7; }
-  /* Coleções só pelo ícone (o nome aparece ao tocar, na própria coleção). */
-  .view-closet .preview-meta .col-chips { gap: 6px; flex: 0 1 auto !important; }
+  .view-closet .preview-meta .col-chips { order: 5; gap: 6px; flex: 0 1 auto !important; margin-top: 12px; }
   .view-closet .preview-meta .col-chips:empty { display: none; }
   .view-closet .preview-meta .col-chip {
     padding: 0; border: 0; background: none; gap: 0; position: relative;
   }
   .view-closet .preview-meta .col-chip > :not(.col-chip-disco) { display: none; }
   .view-closet .preview-meta .col-chip-disco {
-    width: 38px; height: 38px; box-shadow: 0 0 0 2px var(--bloco-borda);
+    width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--bloco-borda);
   }
   .view-closet .preview-meta .col-chip.presente .col-chip-disco { box-shadow: 0 0 0 2px #c9a443; }
+  .view-closet .preview-meta button.fav-estrela { order: 6; }
+  .view-closet .preview-meta button.btn-editar { order: 7; }
   .view-closet #btn-para-stylist, .view-closet #btn-para-board { display: none; }
   .view-closet .preview-meta button.fav-estrela,
   .view-closet .preview-meta button.btn-editar {
-    width: 40px; height: 38px; padding: 0; margin: 0; flex: none;
+    width: 40px; height: 38px; padding: 0; margin: 12px 0 0; flex: none;
     font-size: 17px; border-radius: 11px; color: var(--tinta);
     border: 2px solid var(--bloco-borda); background: var(--bloco);
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
