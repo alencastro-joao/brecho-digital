@@ -17,7 +17,7 @@
 
 import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
-  CONFIG, RARIDADES, MISSOES, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
+  CONFIG, RARIDADES, MISSOES, INTRO, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
   MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
   COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
 } from './config.js';
@@ -840,6 +840,7 @@ export function alternarFavorito(tipo, id) {
   const alvo = colecao(tipo).find(x => x.id === id);
   if (!alvo) return false;
   alvo.favorito = !alvo.favorito;
+  if (alvo.favorito) progredirMissao('favoritar');
   salvar();
   return alvo.favorito;
 }
@@ -870,6 +871,7 @@ export const estaLigado = (servico) => Boolean(state.conexoes?.[servico]?.ligado
 // Evento sem missão (colagem, seguir) não faz nada — a tela pode avisar sempre.
 export function progredirMissao(evento, delta = 1) {
   virarODiaSeNecessario();
+  progredirIntro(evento);
   progredirSemana(evento, delta);   // a semana conta mesmo depois que a diária fechou
   for (const missao of MISSOES.filter(m => m.evento === evento)) {
     const antes = state.missoes.progresso[missao.id] ?? 0;
@@ -879,6 +881,48 @@ export function progredirMissao(evento, delta = 1) {
     state.missoes.pagas.push(missao.id);
     if (missao.xp) ganharXP(xpDeMissao(missao.xp), `missão: ${missao.nome.toLowerCase()}`);
   }
+}
+
+// --- Missões de introdução -----------------------------------------------
+// state.intro só existe em conta nova (ou depois de recomeçar em Testes):
+// { passo, feitos: [eventos já vistos], fim }. Save sem ele não mostra nada.
+const ouvintesIntro = new Set();
+export const onIntro = (fn) => { ouvintesIntro.add(fn); return () => ouvintesIntro.delete(fn); };
+const avisarIntro = () => ouvintesIntro.forEach(fn => fn(state.intro));
+
+export const introAtiva = () => Boolean(state.intro && !state.intro.fim);
+
+export function comecarIntro() {
+  state.intro = { passo: 0, feitos: [], fim: null };
+  salvar();
+  avisarIntro();
+}
+
+function progredirIntro(evento) {
+  const i = state.intro;
+  if (!introAtiva() || i.feitos.includes(evento)) return;
+  i.feitos.push(evento);
+  avisarIntro();
+}
+
+// A missão da vez está feita (esperando o toque para pegar o prêmio)?
+export const introPronta = () =>
+  introAtiva() && state.intro.feitos.includes(INTRO[state.intro.passo]?.evento);
+
+// Avança depois que o prêmio foi entregue; a última fecha a introdução.
+export function avancarIntro() {
+  if (!introAtiva()) return;
+  state.intro.passo += 1;
+  if (state.intro.passo >= INTRO.length) state.intro.fim = new Date().toISOString();
+  salvar();
+  avisarIntro();
+}
+
+export function pularIntro() {
+  if (!state.intro) return;
+  state.intro.fim = new Date().toISOString();
+  salvar();
+  avisarIntro();
 }
 
 export const progressoMissao = (id) => state.missoes.progresso[id] ?? 0;
@@ -1259,6 +1303,7 @@ export function equiparRoupinha(id) {
   const r = ROUPINHA[id];
   if (!r || !roupinhaLiberada(id)) return false;
   state.vestiario.equipado[r.slot] = id;
+  progredirMissao('vestir');
   salvar();
   return true;
 }

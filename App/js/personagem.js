@@ -106,6 +106,7 @@ function renderTudo() {
 
 function salvar() {
   db.state.usuario.avatar = { ...rascunho };
+  db.progredirMissao('personagem');
   db.salvar();
   toast('Personagem salvo.');
   irPara('perfil');
