@@ -17,7 +17,6 @@ import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { irPara, viewAtual } from './router.js';
 
-let filtro = 'todas';
 let grupo = 'marcas';
 let expandida = null;        // emblema da lista aberto mostrando as peças
 let aberta = null;           // id da coleção aberta na tela dela; null = lista
@@ -39,11 +38,6 @@ const EXPLICACAO = {
   estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
 };
 
-const FILTROS = [
-  ['todas', 'Todas'],
-  ['perto', 'Perto de fechar'],
-  ['completas', 'Completas'],
-];
 
 // As coleções com o progresso de cada uma, na ordem de quem está mais perto
 // de fechar. Coleção sem peça no acervo (marca que saiu) não aparece.
@@ -138,7 +132,7 @@ export function renderColecoes() {
   $('#col-grupos').replaceChildren(...GRUPOS.map(([id, rotulo]) =>
     el('button', {
       class: 'col-grupo' + (grupo === id ? ' ativo' : ''),
-      onclick: () => { grupo = id; filtro = 'todas'; renderColecoes(); },
+      onclick: () => { grupo = id; renderColecoes(); },
     }, rotulo)));
   $('#col-sub').textContent = EXPLICACAO[grupo];
   if (!aberta) expandida = expandida && COLECOES_DO_GRUPO[grupo]().some(x => x.id === expandida) ? expandida : null;
@@ -148,24 +142,14 @@ export function renderColecoes() {
   $('#col-resumo').textContent =
     `${completas} de ${todas.length} ${todas.length === 1 ? 'completa' : 'completas'}`;
 
-  $('#col-filtros').replaceChildren(...FILTROS.map(([id, rotulo]) =>
-    el('button', {
-      class: 'col-filtro' + (filtro === id ? ' ativo' : ''),
-      onclick: () => { filtro = id; renderColecoes(); },
-    }, rotulo)));
-
-  const lista = todas
-    .filter(c => filtro === 'todas' ||
-      (filtro === 'completas' ? c.completa : !c.completa && c.tem > 0))
-    .sort((a, b) => Number(b.livres > 0) - Number(a.livres > 0)
-      || Number(b.completa) - Number(a.completa) || b.pct - a.pct);
+  // Sem filtro: a ordem já diz o que importa. Escolha esperando primeiro,
+  // depois as mais perto de fechar, as que nem começaram e, no fim, as
+  // completas e os temas ainda sem peças.
+  const peso = (c) => c.livres > 0 ? 0 : !c.total ? 4 : c.completa ? 3 : c.tem ? 1 : 2;
+  const lista = [...todas].sort((a, b) => peso(a) - peso(b) || b.pct - a.pct);
 
   $('#col-lista').replaceChildren(...(lista.length ? lista.map(cartaoDaColecao) : [
-    el('p', { class: 'col-vazio' }, filtro === 'completas'
-      ? 'Nenhuma coleção completa ainda. Garimpe as peças que faltam na vitrine.'
-      : grupo === 'marcas'
-        ? 'Nenhuma coleção começada. Garimpe peças de uma marca para abrir os itens dela.'
-        : 'Nenhuma coleção começada. Garimpe peças na vitrine para começar.'),
+    el('p', { class: 'col-vazio' }, 'Nenhuma coleção por aqui ainda.'),
   ]));
 }
 
