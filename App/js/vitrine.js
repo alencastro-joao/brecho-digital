@@ -119,16 +119,19 @@ export function poolDoDia(iso = hojeISO()) {
 
   // Comum completa o resto; faltando comum, a incomum que sobrou. Rara para cima
   // nunca entra de recheio — ela só vem pela própria tabela.
+  // A peça levada hoje continua contando vaga até aqui: só sai da lista no fim.
+  // Tirá-la antes fazia o recheio puxar uma peça nova para cada resgate, e quem
+  // recarregava a página achava a arara cheia de novo.
   const aVenda = (i) => !db.temPeca(i.id);
-  let recheio = [...grupos.common, ...grupos.uncommon].filter(aVenda);
+  let recheio = [...grupos.common, ...grupos.uncommon];
   if (marcas.length) {
     const daMarca = (i) => marcas.find(m =>
       m.marcas.some(x => normalizarMarca(x) === normalizarMarca(i.marca)));
     const frente = recheio.filter(i => { const m = daMarca(i); return m && sorte() < m.pct * 3 / 100; });
     recheio = [...frente, ...recheio.filter(i => !frente.includes(i))];
   }
-  const loja = arara.filter(aVenda);
-  return [...loja, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - loja.length))];
+  const doDia = [...arara, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - arara.length))];
+  return doDia.filter(aVenda);
 }
 
 
