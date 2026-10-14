@@ -392,7 +392,3 @@
 .toast.col-toast strong { color: #f0d27a; }
 .toast.col-toast .col-chip-disco { background: #fff; }
 .vs-ficha-colecao { margin-top: 4px; }
-.col-album-tipo { display: flex; flex-direction: column; gap: 6px; }
-.col-album-tipo + .col-album-tipo { margin-top: 6px; }
-.col-album-tipo h4 { display: flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; }
-.col-album-tipo h4 small { font-size: 11px; font-weight: 600; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }

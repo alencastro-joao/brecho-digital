@@ -10,7 +10,7 @@
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
 import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao,
-         CATEGORIAS, migrarCategoria } from './config.js';
+         migrarCategoria } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha, escolhasDaColecao } from './roupinhas.js';
 import { aparenciaAtual } from './avatar.js';
@@ -224,21 +224,18 @@ const posDoTipo = (id) => {
   const i = ORDEM_DO_ALBUM.indexOf(tipoDe(id));
   return i < 0 ? ORDEM_DO_ALBUM.length : i;
 };
-// As que você tem primeiro; dentro disso, por tipo de peça.
+// Dentro do tipo, a cor: na ordem das coleções de cor, e peça sem cor no fim.
+const ORDEM_DAS_CORES = Object.keys(COLECOES_DE_COR).map(c => c.toLowerCase());
+const posDaCor = (id) => {
+  const i = ORDEM_DAS_CORES.indexOf((pecaDoCatalogo(id)?.cor || '').trim().toLowerCase());
+  return i < 0 ? ORDEM_DAS_CORES.length : i;
+};
+const porTipoECor = (a, b) => posDoTipo(a) - posDoTipo(b) || posDaCor(a) - posDaCor(b);
+// O álbum: uma grade só, por tipo e depois por cor, sem título separando.
+const emOrdem = (ids) => [...ids].sort(porTipoECor);
+// A prévia: as que você tem primeiro; dentro disso, tipo e cor.
 const temPrimeiro = (ids) => [...ids].sort((a, b) =>
-  Number(db.temPeca(b)) - Number(db.temPeca(a)) || posDoTipo(a) - posDoTipo(b));
-
-// O álbum separado por tipo de peça: [[cat, ids]], cada grupo com as que você
-// tem na frente.
-function porTipo(ids) {
-  const grupos = new Map();
-  for (const id of [...ids].sort((a, b) => posDoTipo(a) - posDoTipo(b))) {
-    const t = tipoDe(id) || 'outros';
-    if (!grupos.has(t)) grupos.set(t, []);
-    grupos.get(t).push(id);
-  }
-  return [...grupos].map(([t, lista]) => [t, temPrimeiro(lista)]);
-}
+  Number(db.temPeca(b)) - Number(db.temPeca(a)) || porTipoECor(a, b));
 
 const textoDoBonus = (c) => c.tipo ? '2 itens +5% · 5 itens +20%'
   : c.itens.length > 2 ? '2 itens +5% · completa +20%' : 'completa +20%';
@@ -340,10 +337,7 @@ function renderDetalhe(c) {
     c.livres > 0 ? blocoDeEscolha(c) : null,
     c.total ? el('section', { class: 'col-album' },
       el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
-      ...porTipo(c.ids).map(([t, lista]) => el('div', { class: 'col-album-tipo' },
-        el('h4', {}, CATEGORIAS[t] ? `${CATEGORIAS[t].icone} ${CATEGORIAS[t].nome}` : 'Outras',
-          el('small', {}, `${lista.filter(id => db.temPeca(id)).length}/${lista.length}`)),
-        el('div', { class: 'col-album-grade' }, ...lista.map(casaDoAlbum))))) : null,
+      el('div', { class: 'col-album-grade' }, ...emOrdem(c.ids).map(casaDoAlbum))) : null,
     el('p', { class: 'col-det-efeito' }, '✦ Vestindo: ', c.efeito.texto,
       el('small', {}, ` (${textoDoBonus(c)})`)),
   ].filter(Boolean));
