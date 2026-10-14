@@ -19,6 +19,7 @@ import { irPara, viewAtual } from './router.js';
 
 let filtro = 'todas';
 let grupo = 'marcas';
+let expandida = null;        // emblema da lista aberto mostrando as peças
 let aberta = null;           // id da coleção aberta na tela dela; null = lista
 let pedida = null;           // a que abrirColecao pediu para a próxima entrada
 
@@ -140,6 +141,7 @@ export function renderColecoes() {
       onclick: () => { grupo = id; filtro = 'todas'; renderColecoes(); },
     }, rotulo)));
   $('#col-sub').textContent = EXPLICACAO[grupo];
+  if (!aberta) expandida = expandida && COLECOES_DO_GRUPO[grupo]().some(x => x.id === expandida) ? expandida : null;
 
   const todas = COLECOES_DO_GRUPO[grupo]();
   const completas = todas.filter(c => c.completa).length;
@@ -184,33 +186,54 @@ function tituloDaColecao(c, tag = 'h2') {
     estilo ? el('span', { class: 'col-estilo' }, estilo.nome) : null);
 }
 
-// O cartão da lista: sempre o mesmo tamanho — 6 casas de peça, a barra e os
-// itens do avatar em miniatura. Tocar abre a tela da coleção.
+// A lista é uma grade de emblemas: logo (ou a cor, ou uma peça) com um anel
+// de progresso e o nome. Tocar abre o emblema ali mesmo, com as peças; tocar
+// de novo abre a tela da coleção.
 function cartaoDaColecao(c) {
   const ids = temPrimeiro(c.ids);
+  const aberto = expandida === c.id;
+  const abrir = () => {
+    if (aberto) { aberta = c.id; expandida = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; }
+    else { expandida = c.id; renderColecoes(); }
+  };
+  const emblema = el('span', {
+    class: 'col-disco' + (c.completa ? ' completa' : ''),
+    style: { '--pct': (c.pct * 100) + '%' },
+  }, discoDaColecao(c));
+  const status = c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, '🎁')
+    : el('small', {}, !c.total ? 'Em breve' : c.completa ? '✓' : `${c.tem}/${c.total}`);
+
+  if (!aberto) {
+    return el('button', {
+      type: 'button', class: 'col-tile' + (c.completa ? ' completa' : ''), onclick: abrir,
+      title: c.marca,
+    }, emblema, el('strong', {}, c.marca), status);
+  }
+
   const cabem = ids.length > PECAS_NO_CARTAO ? PECAS_NO_CARTAO - 1 : PECAS_NO_CARTAO;
   const resto = ids.length - cabem;
-  const abertos = c.itens.filter(id => roupinha(id) && db.estadoDaRoupinha(roupinha(id)).liberada).length;
-  return el('button', {
-    type: 'button',
-    class: 'col-cartao' + (c.completa ? ' completa' : ''),
-    onclick: () => { aberta = c.id; renderColecoes(); $('.view-colecoes').scrollTop = 0; },
-  },
-    el('header', { class: 'col-topo' },
-      tituloDaColecao(c),
-      c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, '🎁 Escolha um item')
-        : el('small', { class: 'col-conta' }, !c.total ? 'Em breve'
-          : c.completa ? '✓ Completa' : `${c.tem} de ${c.total}`)),
-    !c.total ? el('p', { class: 'col-vazio' }, 'As peças deste tema chegam em breve.') : null,
-    el('div', { class: 'col-pecas' },
+  return el('div', { class: 'col-tile aberto' + (c.completa ? ' completa' : '') },
+    el('button', { type: 'button', class: 'col-tile-topo', onclick: () => { expandida = null; renderColecoes(); } },
+      emblema,
+      el('span', { class: 'col-tile-nome' }, el('strong', {}, c.marca),
+        el('small', {}, !c.total ? 'Em breve' : c.completa ? '✓ Completa' : `${c.tem} de ${c.total} peças`)),
+      c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, '🎁 Escolha um item') : null),
+    c.total ? el('div', { class: 'col-pecas' },
       ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
-      resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null),
-    el('div', { class: 'barra' + (c.completa ? ' cheia' : '') },
-      el('span', { style: { width: (c.pct * 100) + '%' } })),
-    el('div', { class: 'col-rodape' },
-      el('div', { class: 'col-mini-itens' }, ...c.itens.map(id => miniItem(id)).filter(Boolean)),
-      el('small', {}, c.itens.length ? `${abertos} de ${c.itens.length} itens` : ''),
-      el('span', { class: 'col-seta' }, '›')));
+      resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null)
+      : el('p', { class: 'col-vazio' }, 'As peças deste tema chegam em breve.'),
+    el('button', { type: 'button', class: 'col-ver', onclick: abrir }, 'Ver coleção ›'));
+}
+
+// O que vai dentro do disco: o logo da marca, a cor pintada ou uma peça.
+function discoDaColecao(c) {
+  const logo = logoDaColecao(c);
+  if (logo) return el('img', { src: logo, alt: '', loading: 'lazy', onerror: (e) => e.target.remove() });
+  if (c.tipo === 'cor') return el('span', { class: 'col-disco-cor', style: { background: c.hex } });
+  const capa = c.ids.length ? capaDaColecao(c) : null;
+  return capa ? el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(capa)) } },
+    el('img', { src: capa.src, alt: '', loading: 'lazy' }))
+    : el('span', { class: 'col-disco-cor', style: { background: c.hex || '#eee' } });
 }
 
 function miniItem(id) {
