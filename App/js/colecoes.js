@@ -200,7 +200,17 @@ export function renderColecoes() {
   const peso = (c) => c.livres > 0 ? 0 : !c.total ? 4 : c.completa ? 3 : c.tem ? 1 : 2;
   const lista = [...todas].sort((a, b) => peso(a) - peso(b) || b.pct - a.pct);
 
-  $('#col-lista').replaceChildren(...(lista.length ? lista.map(cartaoDaColecao) : [
+  const grade = $('#col-lista');
+  const nos = lista.map(cartaoDaColecao);
+  // A prévia da coleção tocada abre sempre logo abaixo da fileira dela, com a
+  // grade parada no lugar: sem empurrar emblemas para outra linha.
+  const i = lista.findIndex(c => c.id === expandida);
+  if (i >= 0) {
+    grade.replaceChildren(...nos);                     // para medir as colunas
+    const colunas = getComputedStyle(grade).gridTemplateColumns.split(' ').filter(Boolean).length || 3;
+    nos.splice(Math.min(nos.length, (Math.floor(i / colunas) + 1) * colunas), 0, painelDaColecao(lista[i]));
+  }
+  grade.replaceChildren(...(nos.length ? nos : [
     el('p', { class: 'col-vazio' }, 'Nenhuma coleção por aqui ainda.'),
   ]));
 }
@@ -226,7 +236,6 @@ function tituloDaColecao(c, tag = 'h2') {
 // de progresso e o nome. Tocar abre o emblema ali mesmo, com as peças; tocar
 // de novo abre a tela da coleção.
 function cartaoDaColecao(c) {
-  const ids = temPrimeiro(c.ids);
   const aberto = expandida === c.id;
   const abrir = () => {
     if (aberto) { aberta = c.id; expandida = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; }
@@ -239,17 +248,25 @@ function cartaoDaColecao(c) {
   const status = c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, '🎁')
     : el('small', {}, !c.total ? 'Em breve' : c.completa ? '✓' : `${c.tem}/${c.total}`);
 
-  if (!aberto) {
-    return el('button', {
-      type: 'button', class: 'col-tile' + (c.completa ? ' completa' : ''), onclick: abrir,
-      title: c.marca,
-    }, emblema, el('strong', {}, c.marca), status);
-  }
+  return el('button', {
+    type: 'button', class: 'col-tile' + (c.completa ? ' completa' : '') + (aberto ? ' selecionado' : ''),
+    onclick: abrir, title: c.marca,
+  }, emblema, el('strong', {}, c.marca), status);
+}
 
+// A prévia aberta embaixo da fileira: as peças e o botão para a coleção.
+function painelDaColecao(c) {
+  const ids = temPrimeiro(c.ids);
+  const fechar = () => { expandida = null; renderColecoes(); };
+  const abrir = () => { aberta = c.id; expandida = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; };
+  const emblema = el('span', {
+    class: 'col-disco' + (c.completa ? ' completa' : ''),
+    style: { '--pct': (c.pct * 100) + '%' },
+  }, discoDaColecao(c));
   const cabem = ids.length > PECAS_NO_CARTAO ? PECAS_NO_CARTAO - 1 : PECAS_NO_CARTAO;
   const resto = ids.length - cabem;
   return el('div', { class: 'col-tile aberto' + (c.completa ? ' completa' : '') },
-    el('button', { type: 'button', class: 'col-tile-topo', onclick: () => { expandida = null; renderColecoes(); } },
+    el('button', { type: 'button', class: 'col-tile-topo', onclick: fechar },
       emblema,
       el('span', { class: 'col-tile-nome' }, el('strong', {}, c.marca),
         el('small', {}, !c.total ? 'Em breve' : c.completa ? '✓ Completa' : `${c.tem} de ${c.total} peças`)),

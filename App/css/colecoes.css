@@ -112,7 +112,7 @@
 }
 .col-peca .peca-caixa { inset: 8px; }
 .col-peca.falta { border-style: dashed; background: #fff; }
-.col-peca.falta img { filter: grayscale(1) brightness(1.8) contrast(.4); opacity: .55; }
+.col-peca.falta img { filter: grayscale(.8) brightness(1.4) contrast(.55); opacity: .6; }
 
 .col-itens { display: flex; flex-direction: column; gap: 8px; }
 .col-itens h3 {
@@ -283,6 +283,8 @@
 }
 .col-disco.completa { background: linear-gradient(#fff, #fff) padding-box, linear-gradient(#e8c46a, #c9a443) border-box; box-shadow: 0 0 0 3px #fbf0cc; }
 .col-tile:hover .col-disco { transform: translateY(-2px); }
+.col-tile.selecionado .col-disco { transform: scale(1.06); box-shadow: 0 6px 16px rgba(0, 0, 0, .14); }
+.col-tile.selecionado > strong { text-decoration: underline 2px; text-underline-offset: 3px; }
 .col-disco > img { width: 70%; height: 70%; object-fit: contain; }
 .col-disco .peca-caixa { inset: 9px; }
 .col-disco-cor { width: 74%; height: 74%; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
@@ -355,7 +357,7 @@
 .col-album-casa { position: relative; aspect-ratio: 1; background: #fff; border: 1px solid var(--linha); border-radius: 14px; }
 .col-album-casa .peca-caixa { inset: 8px; }
 .col-album-casa.falta { background: #fff; border-style: dashed; }
-.col-album-casa.falta img { filter: grayscale(1) brightness(1.8) contrast(.4); opacity: .55; }
+.col-album-casa.falta img { filter: grayscale(.8) brightness(1.4) contrast(.55); opacity: .6; }
 .col-album-rar { position: absolute; right: 7px; top: 7px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff; }
 .col-det-efeito { font-size: 12px; color: var(--tinta-suave); text-align: center; }
 @media (max-width: 900px) {
