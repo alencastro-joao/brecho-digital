@@ -29,6 +29,7 @@
 .pg-painel h1 { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
 .pg-painel .tool-label { margin-bottom: 2px; }
 .pg-bloco { display: flex; flex-direction: column; gap: 10px; }
+.pg-abas { display: none; }
 
 /* Amostras de cor */
 .pg-swatches { display: flex; flex-wrap: wrap; gap: 8px; }

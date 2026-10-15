@@ -119,6 +119,15 @@ export function aoEntrarNoPersonagem() {
 
 export function montarPersonagem() {
   $('#pg-salvar').addEventListener('click', salvar);
+  // Abas do celular: o painel mostra só a parte escolhida (ver mobile.css).
+  const painel = $('.pg-painel');
+  painel.dataset.aba = 'corpo';
+  $('#pg-abas').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-aba]');
+    if (!b) return;
+    painel.dataset.aba = b.dataset.aba;
+    for (const x of $('#pg-abas').children) x.classList.toggle('ativa', x === b);
+  });
   $('#pg-voltar').addEventListener('click', () => irPara('perfil'));
   $('#pg-padrao').addEventListener('click', () => {
     rascunho = { ...APARENCIA_PADRAO };

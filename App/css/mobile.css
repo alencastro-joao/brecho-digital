@@ -840,19 +840,98 @@
   .vs-pag-seta { width: 38px; height: 38px; }
 
   /* ----------------------------- Personagem ------------------------------ */
-  .pg-palco { padding: 14px 16px; }
-  .pg-moldura { flex: none; padding: 12px; }
-  .pg-previa { height: min(46dvh, 420px); }
-  .pg-painel {
-    padding: 18px 16px 28px; gap: 20px;
-    border-left: 0; border-top: 1px solid var(--linha);
-    overflow: visible;
+  /* Como o editor de Mii, no padrão do closet: o boneco em cima num cartão,
+     com voltar, voltar ao padrão e salvar nos cantos; embaixo um painel com
+     uma aba por parte (corpo, pele, cabelo, cor do cabelo, nariz) e só as
+     opções da aba aberta, em blocos. Tudo numa tela, sem rolar. */
+  .view-personagem {
+    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --painel: #f3eee6;
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 8px; padding: 10px 14px; overflow: hidden;
+    background: var(--papel);
   }
-  .pg-acoes { margin-top: 0; }
-  /* O painel agora tem a largura da tela: com 3 ou 4 por linha cada opção
-     virava um retrato de meio palmo. */
-  .pg-cortes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .pg-corpos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .view-personagem .pg-palco { grid-row: 1; padding: 0; min-height: 0; }
+  .view-personagem .pg-moldura {
+    flex: 1; min-height: 0; padding: 8px 56px;
+    background: var(--bloco); background-image: none;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-personagem .pg-moldura { display: block; }
+  .view-personagem .pg-previa { width: 100%; height: 100%; }
+  .view-personagem .pg-previa svg { width: 100%; height: 100%; }
+  .view-personagem .pg-resumo { display: none; }
+
+  .view-personagem :is(.pg-acoes button, .pg-abas button) {
+    width: 42px; height: 40px; padding: 0; margin: 0;
+    display: grid; place-items: center;
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+    font-size: 0;
+  }
+  .view-personagem :is(.pg-acoes button, .pg-abas button):active { transform: translateY(1px); }
+  .view-personagem .pg-acoes {
+    position: absolute; z-index: 5; top: 20px; left: 24px; right: 24px;
+    flex-direction: row; gap: 6px; margin: 0; pointer-events: none;
+  }
+  .view-personagem .pg-acoes button { pointer-events: auto; }
+  .view-personagem .pg-acoes button::before { font-size: 18px; font-weight: 800; }
+  .view-personagem #pg-voltar { order: 0; margin-right: auto; }
+  .view-personagem #pg-voltar::before { content: '←'; }
+  .view-personagem #pg-padrao { order: 1; }
+  .view-personagem #pg-padrao::before { content: '⟲'; }
+  .view-personagem #pg-salvar { order: 2; }
+  .view-personagem #pg-salvar::before { content: '✓'; }
+  .view-personagem #pg-salvar,
+  .view-personagem .pg-abas button.ativa {
+    background: var(--perfil); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+
+  .view-personagem .pg-painel {
+    grid-row: 2; min-height: 0; margin: 0; padding: 8px;
+    display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel); overflow: hidden;
+  }
+  .view-personagem .pg-painel > div:first-child { display: none; }
+  .view-personagem .pg-abas { display: flex; gap: 6px; }
+  .view-personagem .pg-abas button { flex: 1 1 0; width: auto; height: 46px; font-size: 21px; }
+  .view-personagem .pg-bloco { display: none; min-height: 0; overflow-y: auto; padding: 4px; margin: -4px; }
+  .view-personagem .pg-bloco > .tool-label { display: none; }
+  .view-personagem .pg-painel[data-aba="corpo"] .pg-bloco[data-aba="corpo"],
+  .view-personagem .pg-painel[data-aba="pele"] .pg-bloco[data-aba="pele"],
+  .view-personagem .pg-painel[data-aba="cabelo"] .pg-bloco[data-aba="cabelo"],
+  .view-personagem .pg-painel[data-aba="cor"] .pg-bloco[data-aba="cor"],
+  .view-personagem .pg-painel[data-aba="nariz"] .pg-bloco[data-aba="nariz"] { display: block; }
+
+  .view-personagem .pg-cortes { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .view-personagem .pg-corte {
+    padding: 4px 4px 6px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07);
+  }
+  .view-personagem .pg-corte:hover { transform: none; }
+  .view-personagem .pg-corte small { display: none; }
+  .view-personagem .pg-corte.ativa {
+    border-color: var(--tinta); background: var(--perfil);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+  .view-personagem .pg-corpos .pg-corte-arte { max-height: 100%; }
+  .view-personagem .pg-swatches {
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px;
+  }
+  .view-personagem .pg-swatch,
+  .view-personagem .pg-swatch.redonda {
+    width: auto; height: auto; aspect-ratio: 1; border-radius: 11px;
+    border-width: 2px; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+  .view-personagem .pg-swatch:hover { transform: none; }
+  .view-personagem .pg-swatch.ativa {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12), 0 0 0 2px var(--painel), 0 0 0 4px var(--tinta);
+  }
 
   /* ------------------------------- Modais -------------------------------- */
   .modal { padding: 10px; }

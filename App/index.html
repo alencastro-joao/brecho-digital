@@ -516,27 +516,36 @@
         <p class="closet-sub">É este boneco que veste os seus looks.</p>
       </div>
 
-      <div class="pg-bloco">
+      <!-- Só no celular: uma aba por parte, e o painel mostra só a escolhida. -->
+      <div class="pg-abas" id="pg-abas">
+        <button type="button" data-aba="corpo" title="Corpo" class="ativa">🧍</button>
+        <button type="button" data-aba="pele" title="Tom de pele">✋</button>
+        <button type="button" data-aba="cabelo" title="Cabelo">💇</button>
+        <button type="button" data-aba="cor" title="Cor do cabelo">🎨</button>
+        <button type="button" data-aba="nariz" title="Nariz">👃</button>
+      </div>
+
+      <div class="pg-bloco" data-aba="corpo">
         <p class="tool-label">Corpo</p>
         <div class="pg-cortes pg-corpos" id="pg-corpos"></div>
       </div>
 
-      <div class="pg-bloco">
+      <div class="pg-bloco" data-aba="pele">
         <p class="tool-label">Tom de pele</p>
         <div class="pg-swatches" id="pg-peles"></div>
       </div>
 
-      <div class="pg-bloco">
+      <div class="pg-bloco" data-aba="cabelo">
         <p class="tool-label">Cabelo</p>
         <div class="pg-cortes" id="pg-cortes"></div>
       </div>
 
-      <div class="pg-bloco">
+      <div class="pg-bloco" data-aba="cor">
         <p class="tool-label">Cor do cabelo</p>
         <div class="pg-swatches" id="pg-cores"></div>
       </div>
 
-      <div class="pg-bloco">
+      <div class="pg-bloco" data-aba="nariz">
         <p class="tool-label">Nariz</p>
         <div class="pg-cortes" id="pg-narizes"></div>
       </div>
