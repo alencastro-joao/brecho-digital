@@ -24,7 +24,6 @@ import { el, $, mulberry32, sementeDoTexto, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
-import { chipNivel } from './nivel.js';
 import { chipsDeRedes } from './conexoes.js';
 import { irPara, paramAtual, viewAtual } from './router.js';
 import {
@@ -202,15 +201,16 @@ function renderUsuario() {
   const posts = postsDe(p.id);
   const curtidas = posts.reduce((soma, post) => soma + (post.curtidas || 0), 0);
 
-  // O retrato redondo, na cor da pessoa (a do retrato dela no feed).
-  $('#up-avatar').replaceChildren(
-    retratoDoPerfil(aparenciaDoPerfil(p), p.cor, roupasDoPerfil(p)));
+  // O retrato redondo, na cor da pessoa (a do retrato dela no feed), com o
+  // nível no anel. Conta real não tem nível fora do save dela: anel sem selo.
+  pintarFoto($('#up-avatar'), {
+    foto: retratoDoPerfil(aparenciaDoPerfil(p), p.cor, roupasDoPerfil(p)),
+    nivel: n.nivel,
+  });
 
   // Numa conta real "segue você" é fato, então aparece antes de você seguir —
   // ao contrário dos fictícios, onde mostrar o sorteio cedo estragaria a graça.
-  $('#up-handle').textContent = p.handle;
-  $('#up-nivel').replaceChildren(
-    ...(n.nivel == null ? [] : [chipNivel(n.nivel)]),
+  $('#up-handle').replaceChildren(p.handle,
     ...(p.real && p.segueVoce ? [el('span', { class: 'pf-segue-voce' }, 'segue você')] : []));
   $('#up-nome').textContent = p.nome;
   $('#up-bio').textContent = p.bio;
@@ -397,6 +397,16 @@ export const botoesDeOutrosPerfis = (exceto = null, quantos = 6) =>
 // 150px; no celular o CSS o encolhe (zoom), sem redesenhar.
 export const retratoDoPerfil = (aparencia, cor, roupas) =>
   retrato(aparencia, 150, cor, roupas, 1.75);
+
+// O retrato do topo com o nível em volta dele: o anel enche com o XP do
+// nível (`pct`, de 0 a 1; sem ele, o anel vem cheio) e a moeda embaixo diz o
+// número. Sem nível, só o anel.
+export function pintarFoto(caixa, { foto, nivel = null, pct = 1, dica = '' }) {
+  caixa.style.setProperty('--xp', `${Math.round(pct * 100)}%`);
+  caixa.title = dica || (nivel == null ? '' : `Nível ${nivel}`);
+  caixa.replaceChildren(foto, nivel == null ? '' : el('span', { class: 'pf-nivel' },
+    el('small', {}, 'Nv'), el('strong', {}, String(nivel))));
+}
 
 // Um dos três números do topo: o valor em negrito e o rótulo ao lado.
 export const numeroDoPerfil = (valor, rotulo, dica = '', aoTocar = null) =>

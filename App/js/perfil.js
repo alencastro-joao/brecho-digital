@@ -1,8 +1,8 @@
 // Perfil: a sua página no brechó, no jeito do Instagram.
 //
-// Em cima, o retrato redondo, o @, os três números, o nome, a bio e os botões.
-// Logo abaixo, os emblemas das coleções no lugar dos destaques. Embaixo, abas
-// com a grade de cada uma: roupas, looks, colagens e amigos.
+// Em cima, o retrato redondo com o nível no anel em volta, o nome, o @, a bio,
+// os três números e os botões. Embaixo, abas com a grade de cada uma: roupas,
+// looks, colagens, coleções e amigos.
 //
 // A vitrine é curada: mostra só o que você marcou com a estrela — ver
 // favoritos.js. Ter 60 peças não vira uma parede de 60 peças; o perfil é o que
@@ -10,7 +10,7 @@
 // onde se resolve.
 //
 // O que é da conta e não da página — cores, contas conectadas, senha, sair,
-// testes — mora na engrenagem ao lado do @ e abre por cima, num modal, uma
+// testes — mora na engrenagem ao lado dos botões e abre por cima, num modal, uma
 // seção por vez.
 //
 // O que é progresso — missões do dia, XP, ferramentas por nível e a cápsula —
@@ -22,7 +22,6 @@ import * as auth from './auth.js';
 import { retrato, aparenciaAtual } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
-import { chipNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
@@ -41,7 +40,7 @@ import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
   gradeDePecas, perfilPublico, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar,
-  retratoDoPerfil, numeroDoPerfil, pintarAbas,
+  retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
 import { ico } from './icones.js';
 
@@ -116,12 +115,16 @@ export function renderPerfil() {
   // O busto com as roupinhas do vestiário, no fundo da cor que assina os seus
   // posts no feed. No Stylist o avatar segue pelado, para a roupa fotografada
   // cair no corpo sem duas roupas sobrepostas.
+  // O nível mora em volta do retrato: o anel enche com o XP do nível.
   const foto = retratoDoPerfil(aparenciaAtual(), COR_PROPRIA, db.roupasEquipadas());
   foto.style.filter = brilhoDoEstilo(db.roupasEquipadas());
-  $('#perfil-avatar').replaceChildren(foto);
+  const xp = db.progresso();
+  pintarFoto($('#perfil-avatar'), {
+    foto, nivel: xp.nivel, pct: xp.maximo ? 1 : xp.xpNoNivel / xp.xpDoNivel,
+    dica: xp.maximo ? `Nível máximo (${xp.nivel})` : `Nível ${xp.nivel}: faltam ${xp.xpFaltando} XP para o ${xp.nivel + 1}`,
+  });
 
   $('#perfil-handle').textContent = u.handle;
-  $('#perfil-nivel').replaceChildren(chipNivel());
   $('#perfil-nome').textContent = u.nome;
   $('#perfil-bio').textContent = u.bio;
   $('#perfil-bio').hidden = !u.bio;
@@ -143,31 +146,30 @@ export function renderPerfil() {
     el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') }, 'Personagem'),
     el('button', { class: 'btn-ghost', onclick: () => irPara('vestiario') }, 'Inventário'));
 
-  renderEmblemas();
   pintarAbas($('#perfil-abas'), $('#perfil-conteudo'), [
-    abaDeRoupas(), ...abasDeObras(), abaDeAmigos(amigos),
+    abaDeRoupas(), ...abasDeObras(), abaDeColecoes(), abaDeAmigos(amigos),
   ], abaAtual, (id) => { abaAtual = id; renderPerfil(); });
   renderConexoes(renderPerfil);
 }
 
 // ------------------------------- Coleções ---------------------------------
-// Os destaques do perfil: uma fileira de emblemas redondos — as completas
-// primeiro, depois as mais adiantadas — e, no fim, o atalho para a tela de
-// Coleções, onde mora a lista inteira.
-const EMBLEMAS_NO_PERFIL = 8;
-
-function renderEmblemas() {
+// Uma aba: os emblemas das coleções começadas — as completas primeiro, depois
+// as mais adiantadas — e, no fim, o atalho para a tela de Coleções, onde mora
+// a lista inteira.
+function abaDeColecoes() {
   const todas = GRUPOS_DE_COLECAO.flatMap(([, , lista]) => lista());
-  const destaque = todas.filter(c => c.tem > 0)
-    .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct)
-    .slice(0, EMBLEMAS_NO_PERFIL);
+  const comecadas = todas.filter(c => c.tem > 0)
+    .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct);
   const completas = todas.filter(c => c.completa).length;
-  $('#perfil-colecoes').replaceChildren(
-    ...destaque.map(emblema),
-    el('button', {
+  return {
+    id: 'colecoes', icone: 'trofeu', rotulo: 'Coleções', grade: 'pf-grade-colecoes',
+    itens: comecadas.length ? [...comecadas.map(emblema), el('button', {
       class: 'pf-emblema pf-emblema-todas', title: `${completas} de ${todas.length} coleções completas`,
       onclick: () => irPara('colecoes'),
-    }, el('span', { class: 'pf-emblema-disco' }, ico('trofeu')), el('small', {}, 'Coleções')));
+    }, el('span', { class: 'pf-emblema-disco' }, ico('seta-dir')), el('small', {}, 'Ver todas'))] : [],
+    vazio: 'Nenhuma coleção começada',
+    botao: ['Ver coleções', () => irPara('colecoes')],
+  };
 }
 
 // Cor mostra a própria cor; marca, o logo. Sem logo (ou se ele não carregar),
