@@ -51,28 +51,30 @@ const PESCOCO = { x: 300, y: 208 };   // onde a cabeça encosta no tronco
 const escalaEm = (p, k) => ({ k, dx: p.x * (1 - k), dy: p.y * (1 - k) });
 const aplicar = (t, x, y) => ({ x: t.k * x + t.dx, y: t.k * y + t.dy });
 
-// Pernas e pés crescem a partir do chão; o cós sobe junto, e o tronco vai
-// atrás dele.
-const PERNAS = escalaEm(CHAO, PROPORCAO.pernas);
-const cosNovo = aplicar(PERNAS, COS.x, COS.y);
-const TRONCO = {
-  k: PROPORCAO.tronco,
-  dx: cosNovo.x - PROPORCAO.tronco * COS.x,
-  dy: cosNovo.y - PROPORCAO.tronco * COS.y,
-};
-// A cabeça cresce em volta da base do pescoço e vai junto com ela para onde
-// o tronco a levou.
-const baseDoPescoco = aplicar(TRONCO, PESCOCO.x, PESCOCO.y);
-const CABECA = {
-  k: PROPORCAO.cabeca,
-  dx: baseDoPescoco.x - PROPORCAO.cabeca * PESCOCO.x,
-  dy: baseDoPescoco.y - PROPORCAO.cabeca * PESCOCO.y,
-};
 const NADA = { k: 1, dx: 0, dy: 0 };
 
-// As regiões de CATEGORIAS (config.js) e as de cá. Mão vai no braço, que é
-// do tronco: relógio, pulseira e bolsa acompanham a mão que subiu.
-const REGIAO = { cabeca: CABECA, tronco: TRONCO, maos: TRONCO, perna: PERNAS, pes: PERNAS };
+// As regiões de uma proporção. Pernas e pés crescem a partir do chão; o cós
+// sobe junto, e o tronco vai atrás dele. A cabeça cresce em volta da base do
+// pescoço e vai junto com ela para onde o tronco a levou. Mão vai no braço,
+// que é do tronco: relógio, pulseira e bolsa acompanham a mão que subiu.
+function regioes(P) {
+  const PERNAS = escalaEm(CHAO, P.pernas);
+  const cosNovo = aplicar(PERNAS, COS.x, COS.y);
+  const TRONCO = {
+    k: P.tronco,
+    dx: cosNovo.x - P.tronco * COS.x,
+    dy: cosNovo.y - P.tronco * COS.y,
+  };
+  const baseDoPescoco = aplicar(TRONCO, PESCOCO.x, PESCOCO.y);
+  const CABECA = {
+    k: P.cabeca,
+    dx: baseDoPescoco.x - P.cabeca * PESCOCO.x,
+    dy: baseDoPescoco.y - P.cabeca * PESCOCO.y,
+  };
+  return { cabeca: CABECA, tronco: TRONCO, maos: TRONCO, perna: PERNAS, pes: PERNAS };
+}
+const REGIAO = regioes(PROPORCAO);
+const REGIAO_PADRAO = regioes(PROPORCAO_PADRAO);
 const daRegiao = (regiao) => REGIAO[regiao] || NADA;
 
 const nn = (v) => Math.round(v * 100) / 100;
@@ -111,6 +113,18 @@ export function recorteNaRegiao(regiao, [x, y, w, h]) {
 // Roupinha → região. O slot diz quase tudo; o Acessório mistura rosto (óculos,
 // bandana, z ≥ 60) com mão e pescoço (luva, relógio, corrente), e a camada da
 // peça é o que já separa um do outro.
+// Ponto do palco gravado num look (no boneco de verdade) para o boneco em
+// teste, e de volta. Os looks salvos continuam no boneco de verdade: abrir no
+// teste converte, salvar no teste desconverte. Sem teste, não muda nada.
+export function doPadraoParaAtual(regiao, { x, y }) {
+  const de = REGIAO_PADRAO[regiao] || NADA, para = daRegiao(regiao);
+  return aplicar(para, (x - de.dx) / de.k, (y - de.dy) / de.k);
+}
+export function doAtualParaPadrao(regiao, { x, y }) {
+  const de = daRegiao(regiao), para = REGIAO_PADRAO[regiao] || NADA;
+  return aplicar(para, (x - de.dx) / de.k, (y - de.dy) / de.k);
+}
+
 export function regiaoDaRoupinha(r, z) {
   if (r.slot === 'cabeca') return 'cabeca';
   if (r.slot === 'acessorio') return z >= 60 ? 'cabeca' : 'tronco';
