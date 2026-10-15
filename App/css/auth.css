@@ -1,7 +1,9 @@
 /* Entrar / criar conta.
    A tela que vem antes do app: ocupa a janela inteira, não tem sidebar e não
-   sabe nada do jogo. Usa as variáveis de base.css para nascer com a mesma cara
-   do resto (papel, tinta, raio, sombra). */
+   sabe nada do jogo. No mesmo acabamento das telas do app: a caixa é um painel
+   perolado da paleta (icones.css), e abas, campos e marca são blocos com o
+   degrau embaixo. A paleta vem do navegador (js/paleta.js), então a tela já
+   abre na cor que a pessoa escolheu. */
 
 .auth {
   position: fixed;
@@ -12,18 +14,18 @@
   padding: 24px;
   overflow: auto;
   background:
-    radial-gradient(900px 600px at 15% -10%, var(--loja), transparent 60%),
-    radial-gradient(800px 500px at 110% 110%, var(--perfil), transparent 55%),
+    radial-gradient(900px 600px at 15% -10%, var(--perola-painel), transparent 60%),
+    radial-gradient(800px 500px at 110% 110%, var(--perola-2), transparent 55%),
     var(--papel);
 }
 
 .auth-caixa {
   width: min(420px, 100%);
-  background: var(--branco);
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  box-shadow: var(--sombra);
-  padding: 30px 28px 22px;
+  background: var(--perola-painel);
+  border: 2px solid var(--wii-borda);
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 #fff, var(--sombra);
+  padding: 26px 22px 20px;
 }
 
 /* ------------------------------- Marca ---------------------------------- */
@@ -34,8 +36,10 @@
   width: 46px; height: 46px;
   display: grid; place-items: center;
   border-radius: 14px;
-  background: var(--tinta);
-  color: var(--papel);
+  border: 2px solid var(--wii);
+  background: var(--wii) var(--brilho-topo);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .14);
+  color: #fff;
   font-weight: 700; letter-spacing: .5px;
 }
 
@@ -46,25 +50,25 @@
 .auth-abas {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 20px;
-  background: var(--papel);
-  border: 1px solid var(--linha);
-  border-radius: 12px;
+  gap: 6px;
+  margin-bottom: 18px;
 }
 
 .auth-aba {
-  padding: 9px 0;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
+  padding: 10px 0 12px;
+  border: 2px solid var(--wii-borda);
+  border-radius: 12px;
+  background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-bloco);
   color: var(--tinta-suave);
-  font-size: .88rem; font-weight: 600;
+  font-size: .88rem; font-weight: 700;
   transition: background .15s, color .15s;
 }
 .auth-aba:hover { color: var(--tinta); }
-.auth-aba.ativa { background: var(--branco); color: var(--tinta); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.auth-aba.ativa {
+  background: var(--wii) var(--brilho-topo); border-color: var(--wii); color: #fff;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .14);
+}
 
 /* ------------------------------ Formulário ------------------------------ */
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
@@ -80,16 +84,16 @@
   font-size: .95rem;
   font-weight: 400;
   color: var(--tinta);
-  padding: 11px 13px;
-  border: 1px solid var(--linha);
-  border-radius: 11px;
-  background: var(--papel);
+  padding: 11px 13px 13px;
+  border: 2px solid var(--wii-borda);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 -3px 0 var(--perola-degrau);
   transition: border-color .15s, background .15s;
 }
 .auth-form input:focus {
   outline: none;
-  background: var(--branco);
-  border-color: var(--tinta);
+  border-color: var(--wii);
 }
 .auth-form input::placeholder { color: #b9b2ab; }
 
@@ -110,14 +114,14 @@
   margin-top: 4px;
   padding: 12px;
   font-size: .95rem;
-  border-radius: 12px;
+  border-radius: 14px;
   width: 100%;
 }
 
 .auth-rodape {
   margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid var(--linha);
+  border-top: 2px solid var(--wii-borda);
   font-size: .74rem; line-height: 1.5;
   color: var(--tinta-suave);
 }
