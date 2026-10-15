@@ -2,8 +2,8 @@
 // Segurar parado por um instante pega o quadrinho: ele cresce, segue o dedo, e
 // os outros abrem espaço deslizando. Soltar grava a ordem nova. Mexer o dedo
 // antes disso é rolar a página, e o toque rápido continua abrindo a peça.
-const SEGURAR = 380;
-const FOLGA = 8;
+const SEGURAR = 300;
+const FOLGA = 12;
 const ANDAR = 180;
 
 export function reordenavel(grade, { itens = '[data-id]', aoSoltar }) {
@@ -53,6 +53,7 @@ export function reordenavel(grade, { itens = '[data-id]', aoSoltar }) {
       const r = no.getBoundingClientRect();
       ancora = { x: x0 - r.left, y: y0 - r.top };
       grade.setPointerCapture?.(e.pointerId);
+      window.getSelection?.()?.removeAllRanges();
       grade.classList.add('reordenando');
       no.classList.add('pego');
       navigator.vibrate?.(12);
@@ -94,6 +95,7 @@ export function reordenavel(grade, { itens = '[data-id]', aoSoltar }) {
   grade.addEventListener('touchmove', (e) => { if (pego) e.preventDefault(); }, { passive: false });
   grade.addEventListener('contextmenu', (e) => { if (pego || timer) e.preventDefault(); });
   grade.addEventListener('dragstart', (e) => e.preventDefault());
+  grade.addEventListener('selectstart', (e) => e.preventDefault());
   // Soltar não é tocar: o clique que vem no fim do arrasto não abre nada.
   grade.addEventListener('click', (e) => {
     if (Date.now() - soltouEm < 400) { e.stopPropagation(); e.preventDefault(); }
