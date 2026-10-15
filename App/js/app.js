@@ -5,6 +5,7 @@
 // seria desenhar o guarda-roupa de ninguém — e, pior, gravar por cima do save
 // de quem entrar depois.
 
+import './icones.js';   // troca os <i data-i>/<i data-e> do HTML antes de tudo
 import { ADMIN, aplicarPapel } from './config.js';
 import * as auth from './auth.js';
 import { pedirConta } from './telaauth.js';

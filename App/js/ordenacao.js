@@ -11,6 +11,7 @@ import { item as pecaDoCatalogo } from './catalog.js';
 import { agrupamento, grupoDe, compararPorGrupo } from './agrupamento.js';
 import * as db from './db.js';
 import { el } from './util.js';
+import { ico } from './icones.js';
 
 const NIVEL = Object.fromEntries(RARIDADES.map((r, i) => [r.id, i]));
 const ORIGENS = { collab: 'Cápsula do mês', propria: 'Peças suas', teste: 'Teste', vitrine: 'Garimpo' };
@@ -118,7 +119,7 @@ export function seletorDeOrdem(aoTrocar) {
   const seta = el('button', { type: 'button', class: 'ordem-sentido' });
   const rotular = () => {
     const inv = invertida();
-    seta.textContent = inv ? '↑' : '↓';
+    seta.replaceChildren(ico(inv ? 'seta-cima' : 'seta-baixo'));
     seta.title = inv ? 'Ordem invertida — tocar volta ao normal' : 'Inverter a ordem';
     seta.setAttribute('aria-label', seta.title);
     seta.classList.toggle('on', inv);

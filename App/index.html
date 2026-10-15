@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brechó Digital</title>
 <link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/icones.css">
 <link rel="stylesheet" href="css/vitrine.css">
 <link rel="stylesheet" href="css/closet.css">
 <link rel="stylesheet" href="css/stylist.css">
@@ -122,9 +123,9 @@
       <div class="vitrine-acoes">
         <!-- Administração (?admin=1): mexer no estoque sem esperar a virada do dia -->
         <button class="btn-admin" id="btn-devolver" hidden
-                title="Tira as peças do guarda-roupa e devolve para a arara (não apaga nada do acervo)">↩ Devolver roupas</button>
+                title="Tira as peças do guarda-roupa e devolve para a arara (não apaga nada do acervo)"><i data-i="devolver"></i> Devolver roupas</button>
         <button class="btn-admin" id="btn-repor" hidden
-                title="Repor a loja: estoque novo e resgates liberados">↻ Repor loja</button>
+                title="Repor a loja: estoque novo e resgates liberados"><i data-i="atualizar"></i> Repor loja</button>
         <div class="picks-badge" id="picks-badge" title="Resgates restantes hoje">
           <span id="picks-left">3</span><span class="picks-total">/3</span>
           <small></small>
@@ -136,7 +137,7 @@
 
     <!-- Ficha da peça: abre ao clicar numa roupa do mural -->
     <aside class="ficha" id="ficha-peca" hidden>
-      <button class="ficha-x" id="ficha-x" title="Fechar">✕</button>
+      <button class="ficha-x" id="ficha-x" title="Fechar"><i data-i="x"></i></button>
       <div class="ficha-img"><img id="ficha-img" alt=""></div>
       <span class="ficha-rar" id="ficha-rar"></span>
       <h3 class="ficha-nome" id="ficha-nome"></h3>
@@ -210,7 +211,7 @@
         <button class="btn-ghost fav-estrela" id="btn-favorita-peca"></button>
         <button class="btn-dark" id="btn-para-stylist"><span class="so-pc">Levar para o </span>Stylist</button>
         <button class="btn-ghost" id="btn-para-board"><span class="so-pc">Levar para a </span>Colagem</button>
-        <button class="btn-ghost btn-editar" id="btn-editar-peca" title="Editar peça" aria-label="Editar peça" hidden><span class="so-cel">✎</span><span class="so-pc">Editar peça</span></button>
+        <button class="btn-ghost btn-editar" id="btn-editar-peca" title="Editar peça" aria-label="Editar peça" hidden><span class="so-cel"><i data-i="editar"></i></span><span class="so-pc">Editar peça</span></button>
       </div>
       </div>
     </aside>
@@ -235,13 +236,13 @@
       <div class="stage-frame">
         <button type="button" class="btn-meus" id="btn-meus-stylists"
                 title="Ver, editar, renomear e favoritar os seus looks">
-          ▦ Meus stylists <small id="meus-qtd"></small>
+          <i data-i="grade"></i> Meus stylists <small id="meus-qtd"></small>
         </button>
         <div class="st-historico">
           <button type="button" class="st-hist-btn" id="st-undo" title="Desfazer (Ctrl+Z)"
-                  aria-label="Desfazer" disabled>↶</button>
+                  aria-label="Desfazer" disabled><i data-i="desfazer"></i></button>
           <button type="button" class="st-hist-btn" id="st-redo" title="Refazer (Ctrl+Y)"
-                  aria-label="Refazer" disabled>↷</button>
+                  aria-label="Refazer" disabled><i data-i="refazer"></i></button>
         </div>
         <div class="stage" id="stage">
           <div class="stage-avatar" id="stage-avatar"></div>
@@ -256,15 +257,15 @@
            frequentes à vista, exportar e o resto em menus (js/stylist.js). -->
       <div class="look-barra" id="look-barra">
         <button class="lb-btn destaque" id="btn-sortear" title="Monta um look com as suas peças">
-          <span class="lb-ico">🎲</span><span class="lb-txt">Gerar</span></button>
+          <span class="lb-ico"><i data-e="🎲"></i></span><span class="lb-txt">Gerar</span></button>
         <button class="lb-btn escuro" id="btn-salvar" title="Salvar look">
-          <span class="lb-ico">✓</span><span class="lb-txt">Salvar</span></button>
+          <span class="lb-ico"><i data-i="ok"></i></span><span class="lb-txt">Salvar</span></button>
         <button class="lb-btn" id="btn-publicar" title="Publicar no feed">
-          <span class="lb-ico">↗</span><span class="lb-txt">Publicar</span></button>
+          <span class="lb-ico"><i data-i="publicar"></i></span><span class="lb-txt">Publicar</span></button>
         <div class="lb-grupo">
           <button class="lb-btn" data-menu="lb-exportar" title="Exportar PNG para o Instagram"
                   aria-haspopup="menu" aria-expanded="false">
-            <span class="lb-ico">⬇</span><span class="lb-txt">Exportar</span></button>
+            <span class="lb-ico"><i data-i="baixar"></i></span><span class="lb-txt">Exportar</span></button>
           <div class="lb-menu" id="lb-exportar" role="menu" hidden>
             <p class="lb-menu-titulo">PNG para o Instagram</p>
             <button role="menuitem" data-export="story">Story <small>1080×1920</small></button>
@@ -273,7 +274,7 @@
         </div>
         <div class="lb-grupo">
           <button class="lb-btn so-icone" data-menu="lb-mais" title="Mais opções"
-                  aria-haspopup="menu" aria-expanded="false"><span class="lb-ico">⋯</span></button>
+                  aria-haspopup="menu" aria-expanded="false"><span class="lb-ico"><i data-i="mais"></i></span></button>
           <div class="lb-menu" id="lb-mais" role="menu" hidden>
             <button role="menuitem" id="btn-limpar">Limpar palco</button>
             <button role="menuitem" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
@@ -289,11 +290,11 @@
       <div class="tool-block" id="layer-tools">
         <p class="tool-label">Camada selecionada</p>
         <div class="tool-row">
-          <button class="tool-btn" data-act="up" title="Trazer para frente">↑</button>
-          <button class="tool-btn" data-act="down" title="Enviar para trás">↓</button>
-          <button class="tool-btn" data-act="flip" title="Espelhar">⇄</button>
-          <button class="tool-btn" data-act="reset" title="Voltar ao encaixe padrão">⟲</button>
-          <button class="tool-btn danger" data-act="del" title="Remover">✕</button>
+          <button class="tool-btn" data-act="up" title="Trazer para frente"><i data-i="seta-cima"></i></button>
+          <button class="tool-btn" data-act="down" title="Enviar para trás"><i data-i="seta-baixo"></i></button>
+          <button class="tool-btn" data-act="flip" title="Espelhar"><i data-i="espelhar"></i></button>
+          <button class="tool-btn" data-act="reset" title="Voltar ao encaixe padrão"><i data-i="girar-esq"></i></button>
+          <button class="tool-btn danger" data-act="del" title="Remover"><i data-i="x"></i></button>
         </div>
         <label class="tool-slider">Tamanho
           <input type="range" id="sld-escala" min="20" max="220" value="100">
@@ -315,7 +316,7 @@
           <h2 id="ms-titulo">Meus stylists</h2>
           <p class="ms-sub" id="ms-sub"></p>
         </div>
-        <button class="modal-x" id="ms-fechar" title="Fechar">✕</button>
+        <button class="modal-x" id="ms-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="ms-barra">
         <input type="search" id="ms-busca" placeholder="Buscar pelo nome" maxlength="40">
@@ -328,7 +329,7 @@
       </div>
       <div class="ms-grade" id="ms-grade"></div>
       <footer class="modal-rodape">
-        <span class="mp-aviso">★ escolhe até 3 looks para aparecer no seu perfil.</span>
+        <span class="mp-aviso"><i data-i="estrela-cheia"></i> escolhe até 3 looks para aparecer no seu perfil.</span>
         <button class="btn-dark" id="ms-novo">+ Novo look</button>
       </footer>
     </div>
@@ -355,17 +356,17 @@
     <div class="board-main">
       <div class="board-bar">
         <div class="bar-grupo">
-          <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)">↶</button>
-          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Y)">↷</button>
+          <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)"><i data-i="desfazer"></i></button>
+          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Y)"><i data-i="refazer"></i></button>
         </div>
         <div class="bar-grupo">
           <button class="bar-btn largo" id="bd-add-texto" title="Soltar uma etiqueta de texto">+ texto</button>
         </div>
         <div class="bar-grupo">
-          <button class="bar-btn" data-zoom="-" title="Diminuir">−</button>
+          <button class="bar-btn" data-zoom="-" title="Diminuir"><i data-i="menos"></i></button>
           <span class="bar-zoom" id="bd-zoom">100%</span>
           <button class="bar-btn" data-zoom="+" title="Aumentar">+</button>
-          <button class="bar-btn" data-zoom="fit" title="Encaixar na tela">⤢</button>
+          <button class="bar-btn" data-zoom="fit" title="Encaixar na tela"><i data-i="encaixar"></i></button>
         </div>
         <div class="bar-grupo">
           <label class="bar-check"><input type="checkbox" id="bd-reguas" checked> réguas</label>
@@ -402,7 +403,7 @@
         <div class="rodape-acoes">
           <button class="acao-btn" id="bd-nova" title="Começar do zero">nova</button>
           <button class="acao-btn" id="bd-sortear"
-                  title="Monta uma colagem com as suas peças (Ctrl+Z desfaz)">🎲 gerar</button>
+                  title="Monta uma colagem com as suas peças (Ctrl+Z desfaz)"><i data-e="🎲"></i> gerar</button>
           <button class="acao-btn" id="bd-salvar">salvar</button>
           <button class="acao-btn forte" id="bd-publicar">publicar</button>
           <button class="acao-btn" data-bd-export="formato" title="PNG 1080×1350">PNG</button>
@@ -417,16 +418,16 @@
       <div class="tool-block" id="bd-selecao">
         <p class="tool-label">Seleção <span id="bd-qtd-sel"></span></p>
         <div class="tool-row">
-          <button class="tool-btn" data-bd="frente" title="Trazer para frente">⤒</button>
-          <button class="tool-btn" data-bd="subir"  title="Uma camada acima">↑</button>
-          <button class="tool-btn" data-bd="descer" title="Uma camada abaixo">↓</button>
-          <button class="tool-btn" data-bd="fundo"  title="Enviar para o fundo">⤓</button>
+          <button class="tool-btn" data-bd="frente" title="Trazer para frente"><i data-i="frente"></i></button>
+          <button class="tool-btn" data-bd="subir"  title="Uma camada acima"><i data-i="seta-cima"></i></button>
+          <button class="tool-btn" data-bd="descer" title="Uma camada abaixo"><i data-i="seta-baixo"></i></button>
+          <button class="tool-btn" data-bd="fundo"  title="Enviar para o fundo"><i data-i="fundo"></i></button>
         </div>
         <div class="tool-row">
-          <button class="tool-btn" data-bd="espelhar"  title="Espelhar">⇄</button>
-          <button class="tool-btn" data-bd="duplicar"  title="Duplicar (Ctrl+D)">⧉</button>
-          <button class="tool-btn" data-bd="travar"    title="Travar/destravar">🔒</button>
-          <button class="tool-btn danger" data-bd="remover" title="Remover">✕</button>
+          <button class="tool-btn" data-bd="espelhar"  title="Espelhar"><i data-i="espelhar"></i></button>
+          <button class="tool-btn" data-bd="duplicar"  title="Duplicar (Ctrl+D)"><i data-i="duplicar"></i></button>
+          <button class="tool-btn" data-bd="travar"    title="Travar/destravar"><i data-i="cadeado"></i></button>
+          <button class="tool-btn danger" data-bd="remover" title="Remover"><i data-i="x"></i></button>
         </div>
         <label class="tool-slider">Tamanho <input type="range" id="bd-escala" min="4" max="100" value="26"></label>
         <label class="tool-slider">Rotação <input type="range" id="bd-rot" min="-180" max="180" value="0"></label>
@@ -518,11 +519,11 @@
 
       <!-- Só no celular: uma aba por parte, e o painel mostra só a escolhida. -->
       <div class="pg-abas" id="pg-abas">
-        <button type="button" data-aba="corpo" title="Corpo" class="ativa">🧍</button>
-        <button type="button" data-aba="pele" title="Tom de pele">✋</button>
-        <button type="button" data-aba="cabelo" title="Cabelo">💇</button>
-        <button type="button" data-aba="cor" title="Cor do cabelo">🎨</button>
-        <button type="button" data-aba="nariz" title="Nariz">👃</button>
+        <button type="button" data-aba="corpo" title="Corpo" class="ativa"><i data-e="🧍"></i></button>
+        <button type="button" data-aba="pele" title="Tom de pele"><i data-e="✋"></i></button>
+        <button type="button" data-aba="cabelo" title="Cabelo"><i data-e="💇"></i></button>
+        <button type="button" data-aba="cor" title="Cor do cabelo"><i data-e="🎨"></i></button>
+        <button type="button" data-aba="nariz" title="Nariz"><i data-e="👃"></i></button>
       </div>
 
       <div class="pg-bloco" data-aba="corpo">
@@ -553,7 +554,7 @@
       <div class="pg-acoes">
         <button class="btn-dark" id="pg-salvar">Salvar personagem</button>
         <button class="btn-ghost" id="pg-padrao">Voltar ao padrão</button>
-        <button class="btn-ghost" id="pg-voltar">← Voltar ao perfil</button>
+        <button class="btn-ghost" id="pg-voltar"><i data-i="seta-esq"></i> Voltar ao perfil</button>
       </div>
     </aside>
   </section>
@@ -566,7 +567,7 @@
           <h1>Feed</h1>
           <p><span id="feed-sub"></span> · <span id="feed-estado"></span></p>
           <button type="button" class="feed-atualizar" id="feed-atualizar"
-                  title="Buscar publicações novas" aria-label="Atualizar o feed">↻</button>
+                  title="Buscar publicações novas" aria-label="Atualizar o feed"><i data-i="atualizar"></i></button>
         </div>
         <!-- De quem: as abas. Looks e colagens aparecem sempre juntos. -->
         <div class="feed-barra">
@@ -583,7 +584,7 @@
         <div class="busca-caixa">
           <input type="text" id="busca-pessoas" placeholder="procurar por nome ou @"
                  autocomplete="off" maxlength="40" aria-label="Procurar pessoas">
-          <button type="button" class="busca-limpar" id="busca-limpar" title="Limpar a busca" hidden>✕</button>
+          <button type="button" class="busca-limpar" id="busca-limpar" title="Limpar a busca" hidden><i data-i="x"></i></button>
         </div>
         <p class="busca-resumo" id="busca-resumo"></p>
         <div class="sugestoes" id="sugestoes"></div>
@@ -591,7 +592,7 @@
       <div class="player" id="player">
         <h2>Trilha do mês</h2>
         <div class="player-box">
-          <button class="play-btn" id="play-btn">▶</button>
+          <button class="play-btn" id="play-btn"><i data-i="play"></i></button>
           <div class="player-info">
             <strong id="track-nome">Tema base</strong>
             <small id="track-sub">—</small>
@@ -623,7 +624,7 @@
           <div class="pf-acoes" id="up-acoes"></div>
         </div>
         <nav class="pf-menu">
-          <button type="button" id="up-voltar">← Voltar ao feed <span>›</span></button>
+          <button type="button" id="up-voltar"><i data-i="seta-esq"></i> Voltar ao feed <span>›</span></button>
         </nav>
       </aside>
 
@@ -668,7 +669,7 @@
     <div class="modal-caixa up-post-caixa">
       <header class="modal-topo">
         <h2 id="up-post-titulo"></h2>
-        <button class="modal-x" id="up-post-fechar" title="Fechar">✕</button>
+        <button class="modal-x" id="up-post-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="up-post-corpo" id="up-post-corpo"></div>
     </div>
@@ -851,7 +852,7 @@
         <section class="pf-secao" id="pf-secao-colecoes">
           <header class="pf-secao-topo">
             <h2>Coleções</h2><span id="perfil-colecoes-sub"></span>
-            <button type="button" class="pf-link" data-goto="colecoes">Ver coleções →</button>
+            <button type="button" class="pf-link" data-goto="colecoes">Ver coleções <i data-i="seta-dir"></i></button>
           </header>
           <div class="pf-emblemas-grupos" id="perfil-colecoes"></div>
         </section>
@@ -859,7 +860,7 @@
         <section class="pf-secao" id="pf-secao-pecas">
           <header class="pf-secao-topo">
             <h2>Roupas favoritas</h2><span id="perfil-pecas-sub"></span>
-            <button type="button" class="pf-link" data-goto="closet">Ver guarda-roupa →</button>
+            <button type="button" class="pf-link" data-goto="closet">Ver guarda-roupa <i data-i="seta-dir"></i></button>
           </header>
           <div class="pf-grade" id="perfil-pecas"></div>
         </section>
@@ -867,7 +868,7 @@
         <section class="pf-secao" id="pf-secao-looks">
           <header class="pf-secao-topo">
             <h2>Stylists</h2><span id="perfil-looks-sub"></span>
-            <button type="button" class="pf-link" data-goto="stylist">Abrir o Stylist →</button>
+            <button type="button" class="pf-link" data-goto="stylist">Abrir o Stylist <i data-i="seta-dir"></i></button>
           </header>
           <div class="pf-grade pf-grade-obras" id="perfil-looks"></div>
         </section>
@@ -875,7 +876,7 @@
         <section class="pf-secao" id="pf-secao-colagens">
           <header class="pf-secao-topo">
             <h2>Colagens</h2><span id="perfil-colagens-sub"></span>
-            <button type="button" class="pf-link" data-goto="board">Abrir a Colagem →</button>
+            <button type="button" class="pf-link" data-goto="board">Abrir a Colagem <i data-i="seta-dir"></i></button>
           </header>
           <div class="pf-grade pf-grade-obras" id="perfil-colagens"></div>
         </section>
@@ -890,7 +891,7 @@
     <div class="modal-caixa aj-caixa">
       <header class="modal-topo">
         <h2 id="aj-titulo">Ajustes</h2>
-        <button class="modal-x" id="aj-fechar" title="Fechar">✕</button>
+        <button class="modal-x" id="aj-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="aj-corpo">
         <section class="conexoes" data-ajuste="conexoes">
@@ -956,14 +957,14 @@
   <!-- ====================== SIDEBAR ====================== -->
   <aside class="sidebar">
     <div class="sidebar-icons">
-      <button class="sidebar-btn loja"       data-goto="vitrine" title="Vitrine"><span>Loja</span></button>
-      <button class="sidebar-btn inventario" data-goto="closet"  title="Guarda-roupa"><span>Closet</span></button>
-      <button class="sidebar-btn stylist"     data-goto="stylist"  title="Stylist (avatar)"><span>Stylist</span></button>
-      <button class="sidebar-btn board"      data-goto="board"   title="Colagem"><span>Colagem</span></button>
-      <button class="sidebar-btn social"     data-goto="social"  title="Feed"><span>Feed</span></button>
-      <button class="sidebar-btn tarefas"    data-goto="tarefas" title="Missões do dia"><span>Tarefas</span></button>
-      <button class="sidebar-btn vestiario"  data-goto="vestiario" title="Inventário (roupinhas)"><span>Roupas</span></button>
-      <button class="sidebar-btn perfil"     data-goto="perfil"  title="Perfil"><span>Perfil</span></button>
+      <button class="sidebar-btn loja"       data-goto="vitrine" title="Vitrine"><i data-e="🛍"></i><span>Loja</span></button>
+      <button class="sidebar-btn inventario" data-goto="closet"  title="Guarda-roupa"><i data-e="🧥"></i><span>Closet</span></button>
+      <button class="sidebar-btn stylist"     data-goto="stylist"  title="Stylist (avatar)"><i data-e="🪞"></i><span>Stylist</span></button>
+      <button class="sidebar-btn board"      data-goto="board"   title="Colagem"><i data-e="🖼"></i><span>Colagem</span></button>
+      <button class="sidebar-btn social"     data-goto="social"  title="Feed"><i data-e="📸"></i><span>Feed</span></button>
+      <button class="sidebar-btn tarefas"    data-goto="tarefas" title="Missões do dia"><i data-e="🏆"></i><span>Tarefas</span></button>
+      <button class="sidebar-btn vestiario"  data-goto="vestiario" title="Inventário (roupinhas)"><i data-e="👕"></i><span>Roupas</span></button>
+      <button class="sidebar-btn perfil"     data-goto="perfil"  title="Perfil"><i data-e="👤"></i><span>Perfil</span></button>
     </div>
     <div class="sidebar-rodape">
       <div class="nivel-selo" id="nivel-selo" title="Seu nível"></div>
@@ -999,7 +1000,7 @@
     <div class="modal-caixa estreita bp-caixa">
       <header class="modal-topo">
         <h2>Procurar pessoas</h2>
-        <button class="modal-x" id="bp-fechar" title="Fechar">✕</button>
+        <button class="modal-x" id="bp-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="cx-corpo bp-corpo">
         <input type="text" id="bp-campo" placeholder="nome, sobrenome ou @"
@@ -1015,7 +1016,7 @@
     <div class="modal-caixa estreita">
       <header class="modal-topo">
         <h2 id="cx-titulo">Conectar</h2>
-        <button class="modal-x" id="cx-fechar" title="Fechar">✕</button>
+        <button class="modal-x" id="cx-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="cx-corpo">
         <p class="cx-resumo" id="cx-resumo"></p>
@@ -1041,7 +1042,7 @@
     <div class="modal-caixa" id="mp-caixa">
       <header class="modal-topo">
         <h2 id="mp-titulo">Editar peça</h2>
-        <button class="modal-x" id="mp-fechar" title="Fechar">✕</button>
+        <button class="modal-x" id="mp-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
 
       <section class="mp-passo" id="mp-passo1">
@@ -1062,8 +1063,8 @@
               </div>
             </div>
             <div class="mp-ferramentas" id="mp-ferramentas">
-              <button class="mp-ferr" id="mp-girar-esq" title="Girar 90° para a esquerda">↺</button>
-              <button class="mp-ferr" id="mp-girar-dir" title="Girar 90° para a direita">↻</button>
+              <button class="mp-ferr" id="mp-girar-esq" title="Girar 90° para a esquerda"><i data-i="girar-esq"></i></button>
+              <button class="mp-ferr" id="mp-girar-dir" title="Girar 90° para a direita"><i data-i="atualizar"></i></button>
               <label class="mp-fino" title="Endireitar">
                 <input type="range" id="mp-fino" min="-45" max="45" step="0.5" value="0" aria-label="Endireitar">
                 <span id="mp-fino-valor">0°</span>
@@ -1114,7 +1115,7 @@
           <button class="btn-ghost mp-apagar" id="mp-apagar" title="Apaga a peça do acervo e do guarda-roupa de todo mundo">Apagar peça</button>
           <span class="mp-aviso" id="mp-aviso"></span>
           <button class="btn-ghost" id="mp-cancelar">Cancelar</button>
-          <button class="btn-dark" id="mp-continuar">Conferir o tamanho →</button>
+          <button class="btn-dark" id="mp-continuar">Conferir o tamanho <i data-i="seta-dir"></i></button>
         </footer>
       </section>
 
@@ -1137,7 +1138,7 @@
         </div>
         <footer class="modal-rodape">
           <span class="mp-aviso" id="mp-medida"></span>
-          <button class="btn-ghost" id="mp-voltar">← Voltar</button>
+          <button class="btn-ghost" id="mp-voltar"><i data-i="seta-esq"></i> Voltar</button>
           <button class="btn-ghost" id="mp-padrao">Tamanho padrão</button>
           <button class="btn-dark" id="mp-salvar">Salvar alterações</button>
         </footer>

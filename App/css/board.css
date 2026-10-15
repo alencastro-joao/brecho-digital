@@ -204,7 +204,7 @@
 }
 .dobra > summary::-webkit-details-marker { display: none; }
 .dobra > summary::before {
-  content: '▸'; font-size: 9px; color: #b9b1a5; transition: transform .2s;
+  content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/abrir.svg) center / contain no-repeat; mask: url(../assets/icones/ph/abrir.svg) center / contain no-repeat; font-size: 10px; color: #b9b1a5; transition: transform .2s;
 }
 .dobra[open] > summary::before { transform: rotate(90deg); }
 .dobra > summary:hover { color: var(--tinta); }

@@ -19,6 +19,7 @@ import { publicarOuGuardar, pacoteDaColagem, jaPublicado } from './publicacoes.j
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 
 const W = BOARD.W;
 
@@ -149,7 +150,7 @@ function montarPaleta() {
   abas.append(el('button', {
     class: 'pal-cat' + (catPaleta === 'todas' ? ' active' : ''),
     onclick: () => { catPaleta = 'todas'; montarPaleta(); },
-  }, '✦', el('small', {}, String(total))));
+  }, ico('brilho'), el('small', {}, String(total))));
 
   for (const g of grupos) {
     if (!g.qtd) continue;
@@ -157,7 +158,7 @@ function montarPaleta() {
       class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
       title: g.nome,
       onclick: () => { catPaleta = g.id; montarPaleta(); },
-    }, g.icone, el('small', {}, String(g.qtd))));
+    }, e3d(g.icone), el('small', {}, String(g.qtd))));
   }
 
   const grid = $('#board-grid');

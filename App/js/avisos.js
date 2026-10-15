@@ -19,6 +19,7 @@ import { aoLerSeguidores, sincronizarSocial, perfilDe } from './pessoas.js';
 import { retratoDe } from './social.js';
 import { irPara } from './router.js';
 import { el, $, hojeISO, tempoRelativo } from './util.js';
+import { ico } from './icones.js';
 
 const MAXIMO = 40;              // a lista guarda os mais novos; o resto cai
 const INTERVALO = 3 * 60e3;     // de quanto em quanto o feed e os seguidores são relidos
@@ -171,7 +172,7 @@ function reler() {
 
 // -------------------------------- Tela -------------------------------------
 const ICONE = {
-  curtida: '♥', comentario: '“', seguidor: '+', missao: '✓', nivel: '★', loja: '↻',
+  curtida: 'coracao-cheio', comentario: '“', seguidor: '+', missao: 'ok', nivel: 'estrela-cheia', loja: 'atualizar',
 };
 
 let botao, painel, contador, listaEl;
@@ -180,7 +181,7 @@ function linha(a, visto) {
   const novo = a.em > visto;
   const marca = a.quem
     ? retratoDe(a.quem, 34)
-    : el('span', { class: `aviso-icone ${a.tipo}` }, ICONE[a.tipo] || '•');
+    : el('span', { class: `aviso-icone ${a.tipo}` }, ICONE[a.tipo]?.length > 1 ? ico(ICONE[a.tipo]) : ICONE[a.tipo] || '•');
   return el('li', {},
     el('button', {
       class: 'aviso' + (novo ? ' novo' : ''),

@@ -23,6 +23,7 @@ import * as auth from './auth.js';
 import { svgAvatar, retrato, aparenciaAtual } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 import { chipNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
@@ -315,21 +316,21 @@ function renderDicas({ pecas, looks, colagens, redes }) {
   const s = db.state;
   const dicas = [
     !s.inventario.length
-      ? ['🛍', 'loja', 'Garimpe a sua primeira peça', 'a vitrine do dia troca todo dia',
+      ? [e3d('🛍'), 'loja', 'Garimpe a sua primeira peça', 'a vitrine do dia troca todo dia',
         'Vitrine', () => irPara('vitrine')]
-      : !pecas && ['★', 'inventario', 'Favorite uma roupa',
+      : !pecas && [ico('estrela-cheia'), 'inventario', 'Favorite uma roupa',
         'abra uma peça no guarda-roupa e use ☆ Favoritar', 'Guarda-roupa', () => irPara('closet')],
-    !looks && ['★', 'stylist',
+    !looks && [ico('estrela-cheia'), 'stylist',
       s.looks.length ? 'Favorite um look' : 'Monte o seu primeiro look',
       s.looks.length ? 'marque com ★ em "Meus looks", no Stylist' : 'vista o avatar e salve no Stylist',
       'Stylist', () => irPara('stylist')],
-    !colagens && ['★', 'board',
+    !colagens && [ico('estrela-cheia'), 'board',
       s.boards.length ? 'Favorite uma colagem' : 'Monte uma colagem',
       s.boards.length ? 'marque com ★ na lista da Colagem' : 'junte peças num board de moda',
       'Colagem', () => irPara('board')],
-    !s.usuario.bio && ['✎', 'perfil', 'Escreva uma bio', 'uma linha sobre o seu garimpo',
+    !s.usuario.bio && [ico('editar'), 'perfil', 'Escreva uma bio', 'uma linha sobre o seu garimpo',
       'Editar', abrirEdicao],
-    !redes && ['↗', 'social', 'Conecte o Instagram ou o Pinterest',
+    !redes && [ico('publicar'), 'social', 'Conecte o Instagram ou o Pinterest',
       'para publicar as colagens fora daqui', 'Conectar', () => abrirAjustes('conexoes')],
   ].filter(Boolean);
 

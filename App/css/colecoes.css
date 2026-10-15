@@ -260,7 +260,7 @@
   list-style: none; display: inline-flex; align-items: center; gap: 6px;
 }
 .col-como summary::-webkit-details-marker { display: none; }
-.col-como summary::before { content: 'ⓘ'; }
+.col-como summary::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/info.svg) center / contain no-repeat; mask: url(../assets/icones/ph/info.svg) center / contain no-repeat; font-size: 1.15em; }
 .col-como[open] summary { margin-bottom: 6px; }
 
 .col-lista { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 14px 10px; }

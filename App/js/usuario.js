@@ -23,6 +23,7 @@ import { item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria } from './catalog.j
 import * as db from './db.js';
 import { aparenciaDoPerfil, svgAvatar, retrato } from './avatar.js';
 import { el, $, mulberry32, sementeDoTexto, tempoRelativo, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipNivel } from './nivel.js';
@@ -277,7 +278,7 @@ function renderVazio(p, quantos, segue, frase) {
   caixa.replaceChildren(
     el('h3', {}, `${p.nome.split(' ')[0]} ${frase}`),
     el('div', { class: 'pf-dica' },
-      el('span', { class: 'pf-dica-icone', style: { background: 'var(--social)' } }, '♡'),
+      el('span', { class: 'pf-dica-icone', style: { background: 'var(--social)' } }, ico('coracao')),
       el('div', {},
         el('strong', {}, segue ? 'Você já segue' : 'Siga para não perder a primeira'),
         el('small', {}, 'os looks e as colagens publicados aparecem aqui e no seu feed')),
@@ -308,8 +309,8 @@ function renderPosts(posts) {
       thumb: post.thumb,
       tipo: post.tipo === 'board' ? 'colagem' : 'look',
       pecas: pecasDeUmPost(post),
-      selo: post.curtido ? '♥ curtido' : null,
-      resumo: `♥ ${post.curtidas || 0} · 💬 ${(post.comentarios || []).length}`,
+      selo: post.curtido ? [ico('coracao-cheio'), ' curtido'] : null,
+      resumo: [ico('coracao-cheio'), ` ${post.curtidas || 0} · `, e3d('💬'), ` ${(post.comentarios || []).length}`],
       abrir: () => abrirPost(post.id),
     })));
   };

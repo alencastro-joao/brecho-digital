@@ -1,0 +1,59 @@
+/* Ícones (js/icones.js) e o acabamento "anos 2000 / Wii" dos botões.
+   Phosphor duotone nos botões: SVG em 1em que pinta com a cor do texto.
+   Fluent Emoji 3D nas roupas, nas abas e nos emoji do jogo. */
+
+:root {
+  --wii: #34bEED;            /* o azul do menu do Wii */
+  --wii-borda: #cdd7de;
+  --perola: linear-gradient(180deg, #ffffff 0%, #f6f8fa 48%, #e9eef2 52%, #f5f8fa 100%);
+  --brilho-topo: linear-gradient(180deg, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .2) 46%, rgba(255, 255, 255, 0) 54%);
+}
+
+.ico {
+  display: inline-block; width: 1em; height: 1em; flex: none;
+  vertical-align: -.14em;
+}
+.e3d {
+  display: inline-block; width: 1.25em; height: 1.25em; flex: none;
+  object-fit: contain; vertical-align: -.25em;
+  user-select: none; -webkit-user-drag: none;
+}
+
+/* ------------------------------ Abas ---------------------------------- */
+.sidebar .sidebar-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background-image: var(--brilho-topo);
+  border-color: rgba(255, 255, 255, .9);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .08);
+}
+.sidebar .sidebar-btn .e3d { width: 26px; height: 26px; vertical-align: 0; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .15)); }
+.sidebar .sidebar-btn.ativa {
+  border-color: var(--wii);
+  box-shadow: 0 0 0 3px rgba(52, 190, 237, .28), 0 4px 12px rgba(0, 0, 0, .1);
+}
+
+/* ------------------- Botões de ícone: pérola do Wii -------------------- */
+.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr:not(.escuro),
+.lb-btn:not(.escuro):not(.destaque), .acao-btn:not(.forte), .ordem-sentido {
+  background: var(--perola);
+  border-color: var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0, 0, 0, .07);
+}
+.tool-btn:hover:not(:disabled), .bar-btn:hover:not(:disabled), .modal-x:hover, .ficha-x:hover,
+.mp-ferr:not(.escuro):hover:not(:disabled), .lb-btn:not(.escuro):not(.destaque):hover,
+.acao-btn:not(.forte):hover:not(:disabled), .ordem-sentido:hover {
+  border-color: var(--wii);
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 3px rgba(52, 190, 237, .2);
+}
+.btn-dark, .lb-btn.escuro, .acao-btn.forte, .mp-ferr.escuro {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .06) 48%, rgba(255, 255, 255, 0) 52%);
+}
+.lb-btn.destaque { background-image: var(--brilho-topo); }
+
+/* Abas de categoria (closet, paleta do Stylist e da Colagem, vestiário). */
+.cat-icone .e3d { width: 1.5em; height: 1.5em; vertical-align: middle; }
+.pal-cat .e3d { width: 1.35em; height: 1.35em; }
+.vs-slot-icone .e3d { width: 1.6em; height: 1.6em; opacity: .55; }
+.bau-icone .e3d { width: 1em; height: 1em; }
+.lb-btn .lb-ico .ico { width: 1.2em; height: 1.2em; }
+.lb-btn.so-icone .ico { width: 1.1em; height: 1.1em; }

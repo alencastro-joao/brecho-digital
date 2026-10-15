@@ -17,6 +17,7 @@ import { publicarOuGuardar, pacoteDoLook, jaPublicado, apagarDoFeedPorOrigem } f
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 
 let camadas = [];
 let selecionado = null;
@@ -112,7 +113,7 @@ function montarPaleta() {
     class: 'pal-cat todas' + (catPaleta === 'todas' ? ' active' : ''),
     title: 'Todas as peças',
     onclick: () => { catPaleta = 'todas'; montarPaleta(); },
-  }, '✦', el('small', {}, String(db.state.inventario.length))));
+  }, ico('brilho'), el('small', {}, String(db.state.inventario.length))));
 
   for (const g of grupos) {
     if (!g.qtd) continue;
@@ -120,7 +121,7 @@ function montarPaleta() {
       class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
       title: g.nome,
       onclick: () => { catPaleta = g.id; montarPaleta(); },
-    }, g.icone, el('small', {}, String(g.qtd))));
+    }, e3d(g.icone), el('small', {}, String(g.qtd))));
   }
 
   const grid = $('#palette-grid');
@@ -669,7 +670,7 @@ function renderMeus() {
   const filtros = $('#ms-filtros');
   filtros.replaceChildren(...[
     ['todos', 'Todos', looks.length],
-    ['fav', '★ Favoritos', favs],
+    ['fav', [ico('estrela-cheia'), ' Favoritos'], favs],
     ['feed', 'No feed', noFeed],
   ].map(([id, nome, n]) => el('button', {
     type: 'button',
@@ -741,13 +742,13 @@ function cartaoDoLook(l) {
     }, l.nome);
 
   const menu = msMenuAberto === l.id ? el('div', { class: 'ms-menu', role: 'menu' },
-    el('button', { type: 'button', role: 'menuitem', onclick: () => editarDoPainel(l.id) }, '✎ Abrir e editar'),
+    el('button', { type: 'button', role: 'menuitem', onclick: () => editarDoPainel(l.id) }, ico('editar'), ' Abrir e editar'),
     el('button', {
       type: 'button', role: 'menuitem',
       onclick: () => { msRenomeando = l.id; msMenuAberto = null; renderMeus(); },
     }, 'Aa Renomear'),
-    el('button', { type: 'button', role: 'menuitem', onclick: () => duplicarLook(l.id) }, '⧉ Duplicar'),
-    el('button', { type: 'button', role: 'menuitem', class: 'perigo', onclick: () => apagarLook(l.id) }, '🗑 Excluir'),
+    el('button', { type: 'button', role: 'menuitem', onclick: () => duplicarLook(l.id) }, ico('duplicar'), ' Duplicar'),
+    el('button', { type: 'button', role: 'menuitem', class: 'perigo', onclick: () => apagarLook(l.id) }, ico('lixo'), ' Excluir'),
   ) : null;
 
   return el('article', { class: 'ms-card' + (aberto ? ' aberto' : '') + (menu ? ' com-menu' : '') },
@@ -757,7 +758,7 @@ function cartaoDoLook(l) {
       onclick: () => editarDoPainel(l.id),
     },
       imagemDoCartao(l),
-      el('span', { class: 'ms-editar' }, '✎ Editar'),
+      el('span', { class: 'ms-editar' }, ico('editar'), ' Editar'),
       aberto ? el('span', { class: 'ms-selo' }, 'no palco') : null,
       l.publicado ? el('span', { class: 'ms-selo feed' }, 'no feed') : null,
     ),
@@ -769,12 +770,12 @@ function cartaoDoLook(l) {
           type: 'button', class: 'ms-apagar', title: `Apagar "${l.nome}"`,
           'aria-label': `Apagar "${l.nome}"`,
           onclick: () => apagarLook(l.id),
-        }, '🗑'),
+        }, ico('lixo')),
         el('button', {
           type: 'button', class: 'ms-mais', title: 'Mais opções',
           'aria-haspopup': 'menu', 'aria-expanded': menu ? 'true' : 'false',
           onclick: () => { msMenuAberto = msMenuAberto === l.id ? null : l.id; renderMeus(); },
-        }, '⋯')),
+        }, ico('mais'))),
       el('small', {}, [dataCurta(quandoDoLook(l)),
         nPecas === 1 ? '1 peça' : `${nPecas} peças`].filter(Boolean).join(' · '))),
     menu);

@@ -7,6 +7,7 @@
 
 import { TRILHAS } from './config.js';
 import { el, $ } from './util.js';
+import { ico } from './icones.js';
 
 let audio;
 let atual = TRILHAS[0];
@@ -29,8 +30,8 @@ export async function montarPlayer() {
 
   $('#play-btn').addEventListener('click', () => {
     if (!disponivel.has(atual.id)) return;
-    if (audio.paused) { audio.play(); $('#play-btn').textContent = '❚❚'; }
-    else { audio.pause(); $('#play-btn').textContent = '▶'; }
+    if (audio.paused) { audio.play(); $('#play-btn').replaceChildren(ico('pausa')); }
+    else { audio.pause(); $('#play-btn').replaceChildren(ico('play')); }
   });
 }
 

@@ -7,6 +7,7 @@
 
 import * as db from './db.js';
 import { el, toast } from './util.js';
+import { ico } from './icones.js';
 
 // Nome e concordância de cada coisa favoritável, para o aviso sair em português.
 const ROTULO = {
@@ -46,5 +47,5 @@ export function estrelaFavorito(tipo, id, aoMudar) {
         : `${nome} fora do perfil.`);
       aoMudar?.();
     },
-  }, ligada ? '★' : '☆');
+  }, ico(ligada ? 'estrela-cheia' : 'estrela'));
 }
