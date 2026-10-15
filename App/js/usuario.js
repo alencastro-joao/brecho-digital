@@ -16,8 +16,8 @@
 // mesmos seguidores e a mesma data de entrada, em qualquer navegador, sem
 // ninguém cadastrar nada. Quando existir backend, é essa função que some.
 
-import { PERFIS_MOCK, escalaGrade } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria } from './catalog.js';
+import { PERFIS_MOCK, CATEGORIAS, RARIDADE, escalaGrade } from './config.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
 import { aparenciaDoPerfil, retrato } from './avatar.js';
@@ -26,6 +26,10 @@ import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipsDeRedes } from './conexoes.js';
+import { colecoesDaPeca, chipDaColecao } from './colecoes.js';
+import { deslizavel, trocarComSlide } from './deslizar.js';
+import { reordenavel } from './reordenar.js';
+import { favoritasPrimeiro } from './minhavitrine.js';
 import { irPara, paramAtual, viewAtual } from './router.js';
 import {
   cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed,
@@ -131,6 +135,7 @@ const doCatalogo = (ids = []) => ids.map(pecaDoCatalogo).filter(Boolean);
 // --------------------------------- Tela -----------------------------------
 export function montarUsuario() {
   montarListaDePecas();
+  montarFichaDePeca();
   $('#up-voltar').addEventListener('click', () => irPara('social'));
 
   const modal = $('#modal-post');
@@ -276,9 +281,10 @@ function abasDosPosts(p, posts) {
   ];
 }
 
-// A prévia do guarda-roupa dela: as favoritas primeiro, depois as outras.
+// A prévia do guarda-roupa dela, na ordem em que ela arrumou (a conta real já
+// manda a lista assim: as favoritas primeiro, ou o que ela arrastou).
 function abaDeRoupasDe(p, favoritas) {
-  const todas = previaDeRoupas(favoritas, guardaRoupaDe(p) || []);
+  const todas = guardaRoupaDe(p) || [];
   return {
     id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
     itens: gradeDaPrevia(todas, favoritas,
@@ -294,7 +300,9 @@ function abaDeRoupasDe(p, favoritas) {
 function abasDaVitrine(p) {
   const favoritos = p.favoritos || {};
   const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
-  const obras = (tipo, lista = []) => favoritasPrimeiro(lista).map(obra => cartaoDeObra({
+  // Com `obras` a lista já vem na ordem do perfil dela; só os favoritos da
+  // versão antiga precisam ir com a estrela na frente.
+  const obras = (tipo, lista = []) => (p.obras ? lista : favoritasPrimeiro(lista)).map(obra => cartaoDeObra({
     nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
     thumb: obra.thumb,
     solto: tipo === 'look' && Boolean(p.obras),
@@ -318,21 +326,15 @@ function abasDaVitrine(p) {
 // ordem: as (até três) favoritas na frente, depois o resto.
 export const PREVIA_DE_ROUPAS = 15;
 
-export function previaDeRoupas(favoritas, todas) {
-  const ids = new Set();
-  return [...favoritas, ...todas].filter(p => p && !ids.has(p.id) && ids.add(p.id));
-}
-
-export const favoritasPrimeiro = (lista = []) =>
-  [...lista.filter(o => o.favorito), ...lista.filter(o => !o.favorito)];
-
 // A grade da aba Roupas: a prévia e, se sobrou peça de fora, o "ver todas".
-export function gradeDaPrevia(pecas, favoritas, abrirTudo) {
+// Tocar numa peça abre a ficha dela, e o deslizar segue pela lista inteira.
+export function gradeDaPrevia(pecas, favoritas, abrirTudo, { minha = false } = {}) {
   const marcadas = new Set(favoritas.map(p => p.id));
   // Passou do tamanho da prévia: o último quadrinho vira o "ver todas", para a
   // grade fechar certinho (15 = três ou cinco por fileira).
   const cabem = pecas.length > PREVIA_DE_ROUPAS ? PREVIA_DE_ROUPAS - 1 : PREVIA_DE_ROUPAS;
-  const celulas = gradeDePecas(pecas.slice(0, cabem), { desejo: true, favoritas: marcadas });
+  const celulas = gradeDePecas(pecas.slice(0, cabem), {
+    favoritas: marcadas, abrir: (i) => abrirFichaDePeca(pecas, i, { minha }) });
   const sobra = pecas.length - cabem;
   if (sobra > 0) {
     celulas.push(el('button', { type: 'button', class: 'up-peca pf-ver-todas', onclick: abrirTudo },
@@ -374,34 +376,41 @@ export function wishlistDe(p) {
 export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar = null } = {}) {
   const botao = (icone, rotulo, lista, titulo, vazio) => lista && el('button', {
     type: 'button', class: 'pf-lista-btn',
-    onclick: () => abrirListaDePecas(titulo, lista, { vazio, aoFechar }),
+    onclick: () => abrirListaDePecas(titulo, lista, { vazio, aoFechar, minha }),
   }, ico(icone), el('span', {}, rotulo), el('strong', {}, String(lista.length)));
   return [
     botao('cabide', 'Guarda-roupa', roupas, minha ? 'Seu guarda-roupa' : `Guarda-roupa de ${dono}`,
       'Nenhuma peça ainda'),
     botao('coracao', 'Wishlist', desejos, minha ? 'Sua wishlist' : `Wishlist de ${dono}`,
-      minha ? 'Toque no ♡ de uma peça na Loja ou no perfil de alguém' : 'Nada na wishlist ainda'),
+      minha ? 'Abra uma peça na Loja ou no perfil de alguém e toque no ♡' : 'Nada na wishlist ainda'),
   ].filter(Boolean);
 }
 
-// O modal das listas: a grade das peças, com o ♡ para levar à sua wishlist
-// (a peça que você já tem fica sem). Na sua wishlist o ♡ cheio tira a peça de
-// lá. `aoFechar` repinta quem abriu, para os números dos botões acompanharem.
+// O modal das listas: a grade das peças; tocar numa abre a ficha dela, onde
+// mora o ♡ da wishlist. `aoFechar` repinta quem abriu, para os números dos
+// botões acompanharem.
 let aoFecharLista = null;
 
-export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null } = {}) {
+export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null, minha = false } = {}) {
   aoFecharLista = aoFechar;
   $('#lp-titulo').textContent = titulo;
   $('#lp-corpo').replaceChildren(pecas.length
-    ? el('div', { class: 'pf-grade pf-grade-pecas' }, ...gradeDePecas(pecas, { desejo: true }))
+    ? el('div', { class: 'pf-grade pf-grade-pecas' },
+      ...gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i, { minha }) }))
     : el('p', { class: 'lp-vazio' }, vazio));
   $('#modal-lista').hidden = false;
   document.body.classList.add('com-modal');
 }
 
+// Só destrava a rolagem da página quando não sobrou modal aberto (a ficha da
+// peça abre por cima da lista).
+const destravarSeNada = () => {
+  if (!document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
+};
+
 function fecharLista() {
   $('#modal-lista').hidden = true;
-  document.body.classList.remove('com-modal');
+  destravarSeNada();
   const depois = aoFecharLista;
   aoFecharLista = null;
   depois?.();
@@ -416,18 +425,102 @@ export function montarListaDePecas() {
   });
 }
 
+// ------------------------------ A ficha da peça ----------------------------
+// Tocar numa peça do perfil (o seu ou o de alguém), das listas ou de um look
+// aberto abre a ficha dela, como a do guarda-roupa: a foto grande, a
+// raridade, o nome e as linhas de informação. Arrastar para o lado (ou as
+// setas) passa para a vizinha da mesma lista. É aqui, vendo a peça, que ela
+// entra na sua wishlist: a peça que você ainda não tem leva o ♡ embaixo.
+let fichaPecas = [];
+let fichaPos = 0;
+let fichaMinha = false;
+
+export function abrirFichaDePeca(pecas, i, { minha = false } = {}) {
+  fichaPecas = pecas;
+  fichaMinha = minha;
+  pintarFicha(i);
+  $('#modal-peca').hidden = false;
+  document.body.classList.add('com-modal');
+}
+
+function fecharFicha() {
+  $('#modal-peca').hidden = true;
+  destravarSeNada();
+}
+
+// A raridade de quem não é você não viaja com o perfil: aparece a sua cópia,
+// se você tem a peça, ou a raridade fixa do acervo; sem nenhuma, fica sem.
+const raridadeDaPeca = (id) =>
+  RARIDADE[db.pecaDoInventario(id)?.raridade] || RARIDADE[db.raridadesFixas.get(id)] || null;
+
+function pintarFicha(i) {
+  fichaPos = Math.max(0, Math.min(i, fichaPecas.length - 1));
+  const peca = fichaPecas[fichaPos];
+  if (!peca) return fecharFicha();
+  const img = $('#pp-img');
+  trocarImagem(img, peca, 420 * proporcao(peca));
+  img.alt = nomeDaPeca(peca);
+
+  $('#pp-pos').textContent = fichaPecas.length > 1 ? `${fichaPos + 1}/${fichaPecas.length}` : '';
+  $('#pp-ant').disabled = fichaPos <= 0;
+  $('#pp-prox').disabled = fichaPos >= fichaPecas.length - 1;
+
+  const r = raridadeDaPeca(peca.id);
+  const cor = r && (r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor);
+  const nome = peca.nome?.trim() || nomeDaPeca(peca);
+  const linhas = [['Tipo', CATEGORIAS[peca.cat]?.nome ?? rotuloCategoria(peca.cat)]];
+  if (peca.cor?.trim()) linhas.push(['Cor', peca.cor.trim()]);
+  if (peca.marca?.trim()) linhas.push(['Marca', peca.marca.trim()]);
+  const tem = db.temPeca(peca.id);
+
+  $('#pp-dados').replaceChildren(
+    r ? el('span', { class: 'pp-raridade', style: { '--rar-borda': cor } }, r.nome) : null,
+    el('h3', { class: 'pp-nome' }, nome),
+    el('p', { class: 'pp-linhas' }, ...linhas.map(([rotulo, valor]) =>
+      el('span', { class: 'pp-linha', dataset: { rotulo } }, valor))),
+    el('div', { class: 'pp-rodape' },
+      el('div', { class: 'col-chips pp-colecoes' }, ...colecoesDaPeca(peca.id).map(chipDaColecao)),
+      tem
+        ? (fichaMinha ? null : el('span', { class: 'pp-tenho' }, ico('ok'), ' Está no seu guarda-roupa'))
+        : botaoDesejo(peca, null, { rotulo: true })));
+}
+
+function montarFichaDePeca() {
+  const modal = $('#modal-peca');
+  const cartao = $('#pp-cartao');
+  const ir = (passo) => pintarFicha(fichaPos + passo);
+  const pode = (passo) => Boolean(fichaPecas[fichaPos + passo]);
+  $('#pp-fechar').addEventListener('click', fecharFicha);
+  $('#pp-ant').addEventListener('click', () => pode(-1) && trocarComSlide(cartao, -1, ir));
+  $('#pp-prox').addEventListener('click', () => pode(1) && trocarComSlide(cartao, 1, ir));
+  deslizavel(cartao, { pode, ir });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) fecharFicha();
+    // A coleção abre na tela dela: a ficha e a lista por baixo saem da frente.
+    if (e.target.closest('.col-chip')) { fecharFicha(); if (!$('#modal-lista').hidden) fecharLista(); }
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (modal.hidden) return;
+    if (e.key === 'Escape') { e.stopImmediatePropagation(); fecharFicha(); }
+    if (e.key === 'ArrowLeft' && pode(-1)) trocarComSlide(cartao, -1, ir);
+    if (e.key === 'ArrowRight' && pode(1)) trocarComSlide(cartao, 1, ir);
+  }, true);
+}
+
 // O ♡ de uma peça: põe ou tira da sua wishlist. Peça que você já tem não
-// leva o botão — não faz sentido desejar o que está no seu closet.
-export function botaoDesejo(peca, aoMudar = null) {
+// leva o botão — não faz sentido desejar o que está no seu closet. `rotulo`
+// é o botão largo da ficha, com o texto ao lado do coração.
+export function botaoDesejo(peca, aoMudar = null, { rotulo = false } = {}) {
   const pintar = (b) => {
     const tem = db.naWishlist(peca.id);
     b.classList.toggle('ativo', tem);
     b.title = tem ? 'Tirar da wishlist' : 'Pôr na wishlist';
     b.setAttribute('aria-pressed', String(tem));
-    b.replaceChildren(ico(tem ? 'coracao-cheio' : 'coracao'));
+    b.replaceChildren(ico(tem ? 'coracao-cheio' : 'coracao'),
+      ...(rotulo ? [el('span', {}, tem ? 'Na sua wishlist' : 'Pôr na wishlist')] : []));
   };
   const b = el('button', {
-    type: 'button', class: 'pf-desejo',
+    type: 'button', class: 'pf-desejo' + (rotulo ? ' largo' : ''),
     onclick: (e) => {
       e.stopPropagation();
       const entrou = db.alternarWishlist(peca.id);
@@ -467,7 +560,7 @@ function abrirObra(obra, tipo) {
     pecas.length
       ? el('div', { class: 'up-obra-pecas' },
         el('small', {}, plural(pecas.length, 'peça', 'peças')),
-        el('div', { class: 'pf-grade' }, ...gradeDePecas(pecas, { desejo: true })))
+        el('div', { class: 'pf-grade' }, ...gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i) })))
       : null);
   $('#modal-post').hidden = false;
   document.body.classList.add('com-modal');
@@ -496,7 +589,7 @@ function fecharPost() {
   obraAberta = false;
   $('#modal-post').hidden = true;
   $('#up-post-corpo').replaceChildren();
-  document.body.classList.remove('com-modal');
+  destravarSeNada();
 }
 
 // ------------------------- Pedaços que o perfil usa ------------------------
@@ -504,18 +597,18 @@ function fecharPost() {
 // então estas seções nascem aqui e o perfil próprio as enche com o que é dele:
 // as favoritas no lugar das peças dos posts, e os seus looks no lugar dos dela.
 
-// A célula é a mesma do guarda-roupa, sem aura nem arrastar. Com `desejo`,
-// cada peça que você ainda não tem ganha o ♡ da wishlist no canto.
-// `favoritas` (ids) ganham a estrela no outro canto.
-export const gradeDePecas = (pecas, { desejo = false, favoritas = null } = {}) => pecas.map(peca =>
-  el('div', {
-    class: 'up-peca',
+// A célula é a mesma do guarda-roupa, sem aura. Tocar chama `abrir` com a
+// posição da peça (a ficha, com o ♡ da wishlist lá dentro). `favoritas` (ids)
+// ganham a estrela no canto.
+export const gradeDePecas = (pecas, { favoritas = null, abrir = null } = {}) => pecas.map((peca, i) =>
+  el('button', {
+    type: 'button', class: 'up-peca', dataset: { id: peca.id },
     title: `${nomeDaPeca(peca)} · ${rotuloCategoria(peca.cat)}`,
+    onclick: () => (abrir ? abrir(i) : abrirFichaDePeca(pecas, i)),
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
-      el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })),
-    favoritas?.has(peca.id) ? el('span', { class: 'pf-estrela', title: 'Favorita' }, ico('estrela-cheia')) : null,
-    desejo && !db.temPeca(peca.id) ? botaoDesejo(peca) : null
+      el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy', draggable: 'false' })),
+    favoritas?.has(peca.id) ? el('span', { class: 'pf-estrela', title: 'Favorita' }, ico('estrela-cheia')) : null
   ));
 
 // Um look ou colagem na grade: só a miniatura, no formato dela, como um post
@@ -524,8 +617,8 @@ export const gradeDePecas = (pecas, { desejo = false, favoritas = null } = {}) =
 // `solto` é o look sem moldura: o boneco inteiro, sem fundo nem borda.
 // `thumb` pode ser uma promessa (o look ainda sendo desenhado): a vaga fica
 // vazia e a imagem entra quando ficar pronta.
-export function cartaoDeObra({ nome, thumb, tipo, solto = false, selo = null, resumo = null, abrir }) {
-  const imagem = (src) => el('img', { src, alt: nome, loading: 'lazy' });
+export function cartaoDeObra({ id = null, nome, thumb, tipo, solto = false, selo = null, resumo = null, abrir }) {
+  const imagem = (src) => el('img', { src, alt: nome, loading: 'lazy', draggable: 'false' });
   const espera = thumb && typeof thumb.then === 'function';
   const foto = el('div', { class: 'pf-obra-foto' },
     espera ? el('span', { class: 'sem-thumb' }) : thumb ? imagem(thumb) : el('span', { class: 'sem-thumb' }, nome),
@@ -537,6 +630,7 @@ export function cartaoDeObra({ nome, thumb, tipo, solto = false, selo = null, re
   }
   return el('button', {
     class: `pf-obra ${tipo}${solto ? ' solto' : ''}`, title: nome, 'aria-label': nome, onclick: abrir,
+    ...(id ? { dataset: { id } } : {}),
   }, foto);
 }
 
@@ -594,9 +688,11 @@ export function pintarAbas(nav, conteudo, abas, atual, escolher) {
     onclick: () => { if (a !== ativa) escolher(a.id); },
   }, ico(a.icone), el('span', {}, a.rotulo))));
 
-  conteudo.replaceChildren(ativa.itens.length
-    ? el('div', { class: `pf-grade ${ativa.grade || ''}` }, ...ativa.itens)
-    : el('div', { class: 'pf-vazio' },
+  const grade = ativa.itens.length && el('div', { class: `pf-grade ${ativa.grade || ''}` }, ...ativa.itens);
+  // `reordenar`: no seu perfil, segurar e arrastar muda a ordem da aba.
+  if (grade && ativa.reordenar) reordenavel(grade, { aoSoltar: ativa.reordenar });
+  conteudo.replaceChildren(grade
+    || el('div', { class: 'pf-vazio' },
       el('span', { class: 'pf-vazio-icone' }, ico(ativa.icone)),
       el('p', {}, ativa.vazio),
       ativa.botao ? el('button', { class: 'btn-ghost', onclick: ativa.botao[1] }, ativa.botao[0]) : null));

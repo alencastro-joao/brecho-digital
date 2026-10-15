@@ -214,6 +214,106 @@ button.pf-stat:hover small { text-decoration: underline; }
 }
 .pf-desejo:hover { border-color: var(--wii); color: var(--tinta); }
 .pf-desejo.ativo { color: #e0466e; border-color: #f1b3c4; }
+/* Na ficha da peça, o ♡ é um botão largo, com o texto ao lado. */
+.pf-desejo.largo {
+  position: static; display: inline-flex; align-items: center; gap: 7px;
+  width: auto; height: 40px; padding: 0 16px 2px; border-radius: 12px;
+  font-size: 18px; font-weight: 800; color: var(--tinta);
+}
+.pf-desejo.largo span { font-size: 14px; }
+.pf-desejo.largo.ativo { background: #fde7ee; color: #c9305a; }
+
+/* A peça na grade é um botão: tocar abre a ficha. */
+.pf-grade button.up-peca:not(.pf-ver-todas) { display: block; width: 100%; padding: 0; cursor: pointer; font: inherit; }
+
+/* Segurar e arrastar (o seu perfil): o quadrinho preso cresce e segue o dedo,
+   por cima dos outros; sem seleção de texto nem o menu da imagem. */
+.pf-reordenavel > * { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.pf-reordenavel.reordenando { cursor: grabbing; }
+.pf-reordenavel .pego {
+  position: relative; z-index: 5; pointer-events: none;
+  box-shadow: 0 12px 26px rgba(30, 40, 50, .25), 0 0 0 3px var(--wii-brilho);
+  border-color: var(--wii) !important;
+}
+.pf-reordenavel.reordenando > :not(.pego) { opacity: .85; }
+
+/* ------------------------------ Ficha da peça ------------------------------ */
+/* A mesma do guarda-roupa no celular: em cima o voltar e a posição (3/15); o
+   cartão branco com a foto (na cor da raridade) e os dados embaixo; as pontas
+   das fichas vizinhas aparecem dos lados. */
+.pp-modal {
+  --bloco: #fff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+}
+.pp-ficha {
+  position: relative; display: flex; flex-direction: column;
+  width: min(420px, 100%); height: min(760px, 100%);
+  padding: 10px; border-radius: 20px;
+  border: 2px solid var(--bloco-borda); background: var(--perola-painel, #eef2f5);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .28);
+}
+.modal:not([hidden]) > .pp-ficha { animation: anim-janela .32s cubic-bezier(.2, 1.3, .4, 1); }
+.pp-topo { display: flex; align-items: center; justify-content: space-between; flex: none; margin-bottom: 10px; }
+.pp-fechar {
+  display: grid; place-items: center; width: 40px; height: 34px; padding: 0;
+  border-radius: 11px; font-size: 20px; color: var(--tinta);
+  border: 2px solid var(--bloco-borda); background: var(--bloco);
+  box-shadow: inset 0 -3px 0 var(--bloco-fundo); cursor: pointer;
+}
+.pp-pos {
+  font-size: 15px; font-weight: 800; color: var(--tinta);
+  padding: 5px 12px; border-radius: 11px;
+  border: 2px solid var(--bloco-borda); background: var(--bloco);
+}
+.pp-pos:empty { display: none; }
+.pp-seta {
+  position: absolute; z-index: 0; top: 64px; bottom: 26px; width: 18px; padding: 0;
+  display: flex; align-items: center; border-radius: 10px;
+  background: var(--bloco); border: 2px solid var(--bloco-borda); box-shadow: none;
+  font-size: 13px; font-weight: 800; line-height: 1; color: var(--tinta-suave); cursor: pointer;
+}
+.pp-seta.ant { left: 4px; justify-content: flex-start; padding-left: 1px; }
+.pp-seta.prox { right: 4px; justify-content: flex-end; padding-right: 1px; }
+.pp-seta:disabled { visibility: hidden; }
+.pp-cartao {
+  position: relative; z-index: 1; flex: 1; min-height: 0; margin: 0 9px;
+  display: flex; flex-direction: column; will-change: transform;
+}
+.pp-foto {
+  flex: 1 1 auto; min-height: 160px; padding: 20px 14px;
+  border: 2px solid var(--bloco-borda); border-bottom: 0; border-radius: 16px 16px 0 0;
+  background: var(--bloco); display: grid; place-items: center;
+}
+.pp-foto img { width: 100%; height: 100%; object-fit: contain; animation: flutuar 4s ease-in-out infinite; }
+.pp-dados {
+  flex: none; display: flex; flex-direction: column; align-items: flex-start;
+  padding: 4px 16px 14px; background: var(--bloco);
+  border: 2px solid var(--bloco-borda); border-top: 0; border-radius: 0 0 16px 16px;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .05);
+}
+.pp-raridade {
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  padding: 3px 10px; border-radius: 9px; border: 2px solid var(--rar-borda);
+  background: color-mix(in srgb, var(--rar-borda) 30%, #fff); color: var(--tinta);
+}
+.pp-nome { margin: 6px 0 10px; font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px; color: var(--tinta); }
+.pp-linhas { align-self: stretch; display: grid; grid-template-columns: 1fr 1fr; margin: 0; border-top: 1.5px solid var(--linha); }
+.pp-linha {
+  display: flex; flex-direction: column; gap: 1px; padding: 8px 0;
+  border-bottom: 1.5px solid var(--linha);
+  font-size: 14.5px; font-weight: 700; color: var(--tinta);
+}
+.pp-linha::before {
+  content: attr(data-rotulo);
+  font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--tinta-suave);
+}
+.pp-rodape { align-self: stretch; display: flex; align-items: center; gap: 8px; margin-top: 12px; min-height: 40px; }
+.pp-rodape > :last-child:not(.pp-colecoes) { margin-left: auto; }
+.pp-colecoes { gap: 6px; }
+.pp-colecoes:empty { display: none; }
+.pp-colecoes .col-chip { padding: 0; border: 0; background: none; gap: 0; position: relative; }
+.pp-colecoes .col-chip > :not(.col-chip-disco) { display: none; }
+.pp-colecoes .col-chip-disco { width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--bloco-borda); }
+.pp-tenho { font-size: 13px; font-weight: 700; color: var(--tinta-suave); white-space: nowrap; }
 
 /* O modal das listas. */
 .lp-caixa { width: min(760px, 100%); }
@@ -303,6 +403,8 @@ button.pf-stat:hover small { text-decoration: underline; }
    e nome, bio e botões embaixo, na largura toda. As abas ficam só com o
    ícone. */
 @media (max-width: 900px) {
+  .pp-modal.modal { padding: 12px; }
+  .pp-ficha { width: 100%; height: 100%; }
   .pf-pagina { padding: 14px 16px 28px; }
   .pf-topo {
     grid-template-columns: auto minmax(0, 1fr);

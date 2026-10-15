@@ -29,6 +29,7 @@ import { LIMITE_FAVORITOS } from './favoritos.js';
 import { roupasSorteadas } from './roupinhas.js';
 import { sementeDoTexto } from './util.js';
 import { miniaturaSoltaAtual } from './render.js';
+import { meusLooks, minhasColagens, minhasRoupas } from './minhavitrine.js';
 
 // Id de conta real: 'u-' e 16 hexadecimais (contas.py). Os fictícios são
 // 'u-lia', 'u-tom'... e nunca casam.
@@ -216,13 +217,10 @@ const obrasFavoritas = (tipo) => db.favoritos(tipo)
     pecas: [...new Set((o.camadas || o.itens || []).map(c => c.itemId).filter(Boolean))],
   }));
 
-// Todos os looks e colagens, do mais novo para o mais velho, com a estrela.
-// O look vai como as camadas (`desenho`): a miniatura pública é ele solto,
+// Todos os looks e colagens, na ordem do seu perfil (minhavitrine.js), com a
+// estrela. O look vai como as camadas (`desenho`): a miniatura pública é ele solto,
 // sem fundo, desenhado na hora de enviar (ver enviarPerfil).
 const OBRAS_NO_PERFIL = 40;
-const todasAsObras = (lista) => [...lista]
-  .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
-  .slice(0, OBRAS_NO_PERFIL);
 
 const fotoDoPerfil = () => ({
   bio: db.state.usuario.bio || '',
@@ -234,20 +232,20 @@ const fotoDoPerfil = () => ({
     colagens: obrasFavoritas('colagem'),
   },
   obras: {
-    looks: todasAsObras(db.state.looks).map(o => ({
+    looks: meusLooks().slice(0, OBRAS_NO_PERFIL).map(o => ({
       nome: o.nome || '',
       desenho: o.camadas || [],
       pecas: [...new Set((o.camadas || []).map(c => c.itemId).filter(Boolean))],
       favorito: Boolean(o.favorito),
     })),
-    colagens: todasAsObras(db.state.boards).map(o => ({
+    colagens: minhasColagens().slice(0, OBRAS_NO_PERFIL).map(o => ({
       nome: o.nome || '',
       thumb: o.thumb || '',
       pecas: [...new Set((o.itens || []).map(c => c.itemId).filter(Boolean))],
       favorito: Boolean(o.favorito),
     })),
   },
-  guardaRoupa: db.state.inventario.map(p => p.id),
+  guardaRoupa: minhasRoupas().map(p => p.id),
   wishlist: [...(db.state.wishlist || [])],
 });
 

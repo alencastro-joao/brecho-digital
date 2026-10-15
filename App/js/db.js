@@ -68,6 +68,10 @@ function estadoInicial() {
     // A wishlist: ids de peças que você viu (na loja ou no perfil de alguém) e
     // quer. Só entra por ali — não existe lista de todas as peças para escolher.
     wishlist: [],
+    // A ordem que você arrumou nas abas do seu perfil (segurar e arrastar):
+    // ids por aba — roupas, looks, colagens. O que não está aqui vem depois,
+    // na ordem de sempre.
+    ordemDoPerfil: {},
     pecasProprias: [],         // peças que você mesmo subiu: { id, cat, marca, nome, src, w, h, ancora }
     marcas: [],                // marcas já usadas: { nome, usos, em }
     cores: [],                 // cores já usadas: { nome, usos, em }
@@ -871,6 +875,14 @@ export function alternarWishlist(id) {
   state.wishlist = entra ? [id, ...lista] : lista.filter(x => x !== id);
   salvar();
   return entra;
+}
+
+// --- Ordem do perfil -------------------------------------------------------
+export const ordemDoPerfil = (aba) => state.ordemDoPerfil?.[aba] ?? [];
+
+export function guardarOrdemDoPerfil(aba, ids) {
+  state.ordemDoPerfil = { ...(state.ordemDoPerfil ?? {}), [aba]: ids };
+  salvar();
 }
 
 // --- Conexões -------------------------------------------------------------

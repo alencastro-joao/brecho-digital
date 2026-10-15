@@ -658,6 +658,23 @@
     </div>
   </div>
 
+  <!-- A ficha de uma peça do perfil, como a do guarda-roupa (ver usuario.js):
+       arrastar para o lado passa para a vizinha; o ♡ da wishlist mora aqui. -->
+  <div class="modal pp-modal" id="modal-peca" hidden>
+    <div class="pp-ficha">
+      <div class="pp-topo">
+        <button type="button" class="pp-fechar" id="pp-fechar" aria-label="Fechar a peça"><i data-i="seta-esq"></i></button>
+        <span class="pp-pos" id="pp-pos"></span>
+      </div>
+      <button type="button" class="pp-seta ant" id="pp-ant" aria-label="Peça anterior">‹</button>
+      <button type="button" class="pp-seta prox" id="pp-prox" aria-label="Próxima peça">›</button>
+      <div class="pp-cartao" id="pp-cartao">
+        <div class="pp-foto" id="pp-foto"><img id="pp-img" alt="" draggable="false"></div>
+        <div class="pp-dados" id="pp-dados"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ====================== TAREFAS ====================== -->
   <!-- As missões do dia, a trilha de níveis e a cápsula: o que o app pede de
        você. Quem você é fica no perfil. -->
