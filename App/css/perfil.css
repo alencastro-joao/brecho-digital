@@ -1,183 +1,274 @@
-/* Perfil (#/perfil): a sua página, em duas colunas.
-   À esquerda o cartão de quem você é, parado enquanto a vitrine rola; à
-   direita a vitrine. Ajustes da conta abrem num modal (#modal-ajustes).
-   O perfil dos outros (#/usuario/<id>) usa este mesmo desenho; o que é só
-   dele está em usuario.css.
-   Reaproveita de social.css o .perfil-handle, o .perfil-redes, o .rede-chip e
-   o cartão de conexão; de auth.css, o formulário de senha. */
+/* Perfil (#/perfil): a sua página, no jeito do Instagram.
+   Em cima o retrato redondo ao lado do @, dos números, do nome e da bio; logo
+   abaixo os emblemas das coleções como destaques; embaixo as abas, cada uma
+   com a sua grade. Ajustes da conta abrem num modal (#modal-ajustes) pela
+   engrenagem. O perfil dos outros (#/usuario/<id>) usa este mesmo desenho; o
+   que é só dele está em usuario.css.
+   Botões, abas e casas no acabamento perolado (icones.css), então seguem a
+   paleta escolhida em "Cores do site".
+   Reaproveita de social.css o .perfil-redes e o .rede-chip; de colecoes.css,
+   o .pf-emblema; de auth.css, o formulário de senha. */
 
 .view-perfil { background: #fbf8f4; overflow-y: auto; }
 
-.pf-layout {
-  flex: 1; max-width: 1120px; margin: 0 auto; align-self: flex-start;
-  padding: 40px 34px 60px;
-  display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 34px; align-items: start;
+.pf-pagina {
+  flex: 1; width: 100%; max-width: 935px; margin: 0 auto; align-self: flex-start;
+  padding: 36px 24px 60px;
 }
 
-/* ------------------------------- O cartão -------------------------------- */
-.pf-cartao {
-  position: sticky; top: 24px;
-  background: var(--branco); border: 1px solid var(--linha); border-radius: 22px;
-  overflow: hidden;
+/* -------------------------------- O topo --------------------------------- */
+.pf-topo {
+  display: grid; grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-areas: "foto linha" "foto stats" "foto info" "foto acoes";
+  grid-template-rows: auto auto auto 1fr;
+  column-gap: 40px; row-gap: 16px; align-items: start;
+  padding-bottom: 28px;
 }
-.pf-avatar { height: 250px; display: grid; place-items: center; }
-.pf-avatar .avatar-svg svg { height: 228px; }
-
-.pf-corpo { padding: 18px 20px 20px; display: flex; flex-direction: column; }
-.pf-corpo h1 {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 22px; letter-spacing: -.4px; overflow-wrap: anywhere;
+.pf-foto {
+  grid-area: foto; justify-self: center;
+  padding: 5px; border-radius: 50%; background: #fff;
+  border: 3px solid var(--wii); box-shadow: 0 0 0 4px var(--wii-brilho);
 }
-.pf-corpo .perfil-handle { margin: 4px 0 10px; }
-.pf-bio {
-  font-size: 13.5px; color: var(--tinta-suave); line-height: 1.5;
-  margin-bottom: 12px; overflow-wrap: anywhere;
+button.pf-foto { cursor: pointer; transition: transform .15s; }
+button.pf-foto:hover { transform: scale(1.02); }
+.pf-foto .retrato { display: block; }
+
+.pf-linha { grid-area: linha; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pf-arroba {
+  font-size: 20px; font-weight: 600; letter-spacing: -.2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.pf-corpo .perfil-redes { margin: 0 0 12px; }
+.pf-linha .nivel-chip { margin-left: 0; }
+.pf-linha > span:empty { display: none; }
+.pf-segue-voce { margin-left: 6px; }
 
-.pf-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid #f2ede6; border-bottom: 1px solid #f2ede6;
-  margin-bottom: 18px;
+/* Botão redondo de ícone: a engrenagem e o voltar. */
+.pf-icone {
+  flex: none; display: grid; place-items: center;
+  width: 38px; height: 38px; padding: 0; border-radius: 12px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  font-size: 19px; color: var(--tinta);
 }
-.pf-stat { padding: 11px 0; text-align: center; cursor: default; }
-.pf-stat + .pf-stat { border-left: 1px solid #f2ede6; }
-.pf-stat strong { display: block; font-size: 17px; }
-.pf-stat small { font-size: 10.5px; color: var(--tinta-suave); }
+.pf-icone:hover, .pf-icone[aria-expanded="true"] { border-color: var(--wii); }
 
-.pf-acoes { display: flex; flex-direction: column; gap: 8px; }
-.pf-dupla { display: flex; gap: 8px; }
-.pf-dupla .btn-ghost { flex: 1; margin: 0; padding: 10px 8px; }
+.pf-config { position: relative; margin-left: auto; }
+.pf-menu {
+  position: absolute; z-index: 20; right: 0; top: calc(100% + 8px);
+  min-width: 220px; padding: 6px; display: flex; flex-direction: column; gap: 4px;
+  background: var(--perola-painel); border: 2px solid var(--wii-borda); border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .12);
+}
+.pf-menu[hidden] { display: none; }
+.pf-menu button {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px 13px; border-radius: 12px; text-align: left;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  font-size: 13.5px; font-weight: 600; color: var(--tinta);
+}
+.pf-menu button:hover { border-color: var(--wii); }
+.pf-menu .ico { font-size: 17px; }
 
-/* Editar: o formulário toma o lugar do miolo do cartão. */
-.perfil-editar { gap: 12px; }
-.perfil-editar h2 { font-size: 16px; }
+.pf-stats { grid-area: stats; display: flex; gap: 36px; }
+.pf-stat {
+  display: flex; align-items: baseline; gap: 5px;
+  padding: 0; border: 0; background: none; color: var(--tinta); font: inherit;
+}
+.pf-stat strong { font-size: 16px; font-weight: 700; }
+.pf-stat small { font-size: 15px; }
+button.pf-stat { cursor: pointer; }
+button.pf-stat:hover small { text-decoration: underline; }
+
+.pf-info { grid-area: info; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pf-nome { font-size: 14.5px; font-weight: 700; overflow-wrap: anywhere; }
+.pf-bio { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.pf-info .perfil-redes { margin: 6px 0 0; }
+
+.pf-acoes { grid-area: acoes; display: flex; gap: 8px; }
+.pf-acoes > :is(.btn-ghost, .btn-dark), .pf-acoes > .btn-ghost + .btn-ghost {
+  flex: 1; margin: 0; padding: 9px 12px 11px; border-radius: 12px;
+  font-size: 13.5px; font-weight: 700;
+}
+.pf-acoes .btn-ghost {
+  background: var(--perola); border: 2px solid var(--wii-borda); color: var(--tinta);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.pf-acoes .btn-ghost:hover { border-color: var(--wii); }
+.pf-acoes .btn-dark { border: 2px solid transparent; }
+.view-usuario .pf-acoes { max-width: 260px; }
+
+/* Editar: o formulário toma o lugar do nome, da bio e dos botões. */
+.pf-topo.editando :is(.pf-info, .pf-acoes) { display: none; }
+.perfil-editar {
+  grid-area: info / info / acoes / acoes;
+  display: flex; flex-direction: column; gap: 10px; max-width: 420px;
+}
+.perfil-editar[hidden] { display: none; }
 .perfil-editar label {
   display: flex; flex-direction: column; gap: 5px;
   font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
   text-transform: uppercase; color: var(--tinta-suave);
 }
 .perfil-editar input {
-  border: 1px solid var(--linha); border-radius: 12px; padding: 8px 11px;
-  font-family: inherit; font-size: 13px; color: var(--tinta);
+  border: 2px solid var(--wii-borda); border-radius: 12px; padding: 8px 11px;
+  font-family: inherit; font-size: 13.5px; color: var(--tinta); background: #fff;
 }
-.perfil-editar input:focus { outline: none; border-color: var(--tinta); }
+.perfil-editar input:focus { outline: none; border-color: var(--wii); }
 .pf-form-acoes { display: flex; gap: 8px; }
 .pf-form-acoes .btn-dark, .pf-form-acoes .btn-ghost { width: auto; margin: 0; padding: 9px 18px; }
 
-.pf-menu { border-top: 1px solid var(--linha); display: flex; flex-direction: column; }
-.pf-menu button {
-  display: flex; justify-content: space-between; gap: 10px;
-  padding: 13px 20px; border: 0; border-bottom: 1px solid #f2ede6;
-  background: none; font-size: 13px; color: var(--tinta); text-align: left;
+/* ------------------------------ Destaques -------------------------------- */
+/* Os emblemas das coleções, como os destaques do Instagram. */
+.pf-destaques {
+  display: flex; gap: 18px; overflow-x: auto; padding: 4px 4px 22px;
+  scrollbar-width: none;
 }
-.pf-menu button:last-child { border-bottom: 0; }
-.pf-menu button:hover { background: #fbf8f4; }
-.pf-menu span { color: var(--tinta-suave); }
-
-/* ------------------------------- A vitrine ------------------------------- */
-.pf-vitrine { display: flex; flex-direction: column; gap: 30px; min-width: 0; }
-
-.pf-secao-topo { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
-.pf-secao-topo h2 { font-size: 17px; }
-.pf-secao-topo span { font-size: 12px; color: var(--tinta-suave); }
-.pf-link {
-  margin-left: auto; padding: 0; border: 0; background: none;
-  font-size: 12.5px; font-weight: 600; color: var(--tinta);
+.pf-destaques::-webkit-scrollbar { display: none; }
+.pf-destaques .pf-emblema { width: 72px; }
+.pf-destaques .pf-emblema-disco { width: 64px; height: 64px; }
+.pf-emblema.pf-emblema-todas .pf-emblema-disco {
+  display: grid; place-items: center; font-size: 24px; color: var(--tinta);
+  border: 2px solid var(--wii-borda); background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
 }
-.pf-link:hover { text-decoration: underline; }
+.pf-emblema.pf-emblema-todas:hover .pf-emblema-disco { border-color: var(--wii); }
 
-.pf-grade {
-  display: grid; gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(var(--cel-peca), 1fr));
+/* -------------------------------- As abas -------------------------------- */
+.pf-abas {
+  display: flex; gap: 6px; padding: 6px; margin-bottom: 14px;
+  background: var(--perola-painel); border: 2px solid var(--wii-borda); border-radius: 18px;
+}
+.pf-aba {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 8px 11px; border-radius: 12px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.pf-aba .ico { font-size: 18px; }
+.pf-aba:hover { border-color: var(--wii); }
+.pf-aba.ativa {
+  color: var(--tinta); border-color: var(--wii);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho);
 }
 
-/* Looks e colagens: cartão com a miniatura, o nome e as peças que o compõem.
-   A miniatura do look nasce em 360×600 (render.js); o quadro de 9:14 come só
-   a margem de cima e de baixo, então o boneco preenche o cartão sem faixa. */
-.pf-grade-obras { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; }
+/* ------------------------------- As grades ------------------------------- */
+.pf-grade { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* As roupas: a casa do guarda-roupa (usuario.css), em bloco perolado. No
+   computador cabem cinco por fileira; no celular, três. */
+.pf-grade-pecas { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.pf-grade .up-peca {
+  border: 2px solid var(--wii-borda); border-radius: 14px;
+  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+}
+.pf-grade .up-peca:hover { border-color: var(--wii); }
+
+/* Looks e colagens: só a miniatura, como um post na grade. A do look nasce em
+   360×600 (render.js); o quadro de 3:4 come a margem de cima e de baixo, então
+   o boneco preenche a casa sem faixa. */
 .pf-obra {
-  display: flex; flex-direction: column; padding: 0; overflow: hidden; text-align: left;
-  background: var(--branco); border: 1px solid var(--linha); border-radius: 18px;
-  transition: border-color .15s, transform .15s, box-shadow .15s;
+  display: block; padding: 0; overflow: hidden; text-align: left;
+  background: #fff; border: 2px solid var(--wii-borda); border-radius: 14px;
+  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+  transition: border-color .15s;
 }
-.pf-obra:hover {
-  border-color: var(--tinta); transform: translateY(-3px);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, .08);
-}
+.pf-obra:hover { border-color: var(--wii); }
 .pf-obra-foto {
-  position: relative; aspect-ratio: 9 / 14; overflow: hidden;
-  background: #fdfaf6; border-bottom: 1px solid #f2ede6;
-  display: grid; place-items: center;
+  position: relative; aspect-ratio: 3 / 4; overflow: hidden;
+  background: #fdfaf6; display: grid; place-items: center;
 }
 .pf-obra-foto img {
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; transition: transform .25s;
 }
+.pf-obra-foto .sem-thumb { padding: 10px; font-size: 12px; color: var(--tinta-suave); text-align: center; }
 /* A colagem tem formato próprio (4:5, 1:1, 9:16): inteira, no branco dela. */
 .pf-obra.colagem .pf-obra-foto { background: #fff; }
 .pf-obra.colagem .pf-obra-foto img { object-fit: contain; }
 .pf-obra:hover .pf-obra-foto img { transform: scale(1.03); }
 .pf-etiqueta {
-  position: absolute; left: 10px; top: 10px;
-  padding: 3px 9px; border-radius: 20px;
-  background: var(--tinta); color: #fff;
-  font-size: 10px; font-weight: 700; letter-spacing: .02em;
+  position: absolute; right: 8px; top: 8px;
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 14px;
 }
+/* Curtidas e comentários por cima, quando o mouse passa. */
+.pf-obra-resumo {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+  background: rgba(0, 0, 0, .32); color: #fff; font-size: 15px; font-weight: 700;
+  opacity: 0; transition: opacity .15s;
+}
+.pf-obra:hover .pf-obra-resumo { opacity: 1; }
 
-.pf-obra-info { padding: 11px 13px 4px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.pf-obra-info strong {
-  font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.pf-obra-info small { font-size: 11px; color: var(--tinta-suave); }
-
-/* As peças do look, em miniatura: dá para ver de relance do que ele é feito. */
-.pf-obra-pecas { display: flex; gap: 6px; padding: 8px 13px 13px; }
-.pf-obra-peca {
-  position: relative; flex: none; width: 32px; height: 32px;
-  border-radius: 9px; background: #faf7f2; border: 1px solid #f0eae2;
-}
-.pf-obra-peca img {
-  position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px);
-  object-fit: contain;
-}
-.pf-obra-peca.mais {
-  display: grid; place-items: center;
-  font-size: 11px; font-weight: 700; color: var(--tinta-suave);
-}
-
-.pf-amigos { display: flex; flex-wrap: wrap; gap: 18px; }
+/* Amigos e pessoas: retratos redondos com o primeiro nome. */
+.pf-grade-pessoas { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 18px 10px; padding: 6px 0; }
 .pf-amigo {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  border: 0; background: none; padding: 0;
+  border: 0; background: none; padding: 0; min-width: 0;
 }
-.pf-amigo .retrato { border-radius: 50%; transition: transform .15s; }
+.pf-amigo .retrato { border-radius: 50%; transition: transform .15s; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wii-borda); }
 .pf-amigo:hover .retrato, .pf-amigo:hover .pf-mais { transform: translateY(-2px); }
-.pf-amigo small { font-size: 11px; color: var(--tinta-suave); }
+.pf-amigo small { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pf-mais {
-  width: 54px; height: 54px; border-radius: 50%;
-  border: 1px dashed #cfc5b8; display: grid; place-items: center;
-  font-size: 20px; color: var(--tinta-suave); transition: transform .15s;
+  width: 64px; height: 64px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 28px; font-weight: 300; color: var(--tinta);
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  transition: transform .15s;
 }
 
-/* O lugar das seções vazias: o que falta e onde resolver. */
-.pf-dicas {
-  background: var(--branco); border: 1px dashed #dcd3c7; border-radius: 18px;
-  padding: 16px 18px 8px;
+/* Aba vazia: o ícone dela, uma linha e o atalho. */
+.pf-vazio {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 44px 16px 52px; text-align: center;
 }
-.pf-dicas h3 { font-size: 14px; margin-bottom: 8px; }
-.pf-dica {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 0; border-top: 1px solid #f2ede6;
+.pf-vazio-icone {
+  display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%;
+  border: 2px solid var(--tinta); font-size: 30px;
 }
-.pf-dica-icone {
-  flex: none; width: 30px; height: 30px; border-radius: 9px;
-  display: grid; place-items: center; font-size: 13px;
+.pf-vazio p { font-size: 15px; font-weight: 700; }
+.pf-vazio .btn-ghost {
+  width: auto; margin: 0; padding: 9px 18px 11px; border-radius: 12px; font-weight: 700;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
 }
-.pf-dica div { flex: 1; min-width: 0; }
-.pf-dica strong { display: block; font-size: 13px; font-weight: 600; }
-.pf-dica small { font-size: 12px; color: var(--tinta-suave); }
-.pf-dica .btn-ghost { width: auto; margin: 0; padding: 6px 14px; font-size: 12px; }
+.pf-vazio .btn-ghost:hover { border-color: var(--wii); }
+
+/* -------------------------------- Celular -------------------------------- */
+/* Como no app do Instagram: o @ e a engrenagem numa linha, o retrato menor ao
+   lado dos números empilhados, e nome, bio e botões embaixo, na largura toda.
+   As abas ficam só com o ícone. */
+@media (max-width: 900px) {
+  .pf-pagina { padding: 14px 16px 28px; }
+  .pf-topo {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "linha linha" "foto stats" "info info" "acoes acoes";
+    grid-template-rows: auto;
+    column-gap: 20px; row-gap: 12px; align-items: center; padding-bottom: 18px;
+  }
+  .pf-foto { padding: 3px; border-width: 2px; box-shadow: 0 0 0 3px var(--wii-brilho); }
+  .pf-foto .retrato { zoom: .58; }
+  .pf-arroba { font-size: 18px; }
+  .pf-stats { justify-content: space-around; gap: 8px; }
+  .pf-stat { flex-direction: column; align-items: center; gap: 0; }
+  .pf-stat strong { font-size: 17px; }
+  .pf-stat small { font-size: 12.5px; }
+  .pf-acoes > button { padding: 8px 6px 10px; font-size: 13px; }
+  .view-usuario .pf-acoes { max-width: none; }
+  .perfil-editar { max-width: none; }
+  .pf-destaques { gap: 14px; margin: 0 -16px; padding: 2px 16px 16px; }
+  .pf-destaques .pf-emblema { width: 64px; }
+  .pf-destaques .pf-emblema-disco { width: 58px; height: 58px; }
+  .pf-abas { margin-bottom: 10px; }
+  .pf-aba span { display: none; }
+  .pf-aba .ico { font-size: 21px; }
+  .pf-grade { gap: 6px; }
+  .pf-grade-pecas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pf-grade-pessoas { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 6px; }
+  .pf-obra-resumo { display: none; }
+}
 
 /* -------------------------------- Ajustes -------------------------------- */
 .aj-caixa { width: min(620px, 100%); }

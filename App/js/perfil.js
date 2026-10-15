@@ -1,18 +1,17 @@
-// Perfil: a sua página no brechó.
+// Perfil: a sua página no brechó, no jeito do Instagram.
 //
-// Duas colunas. À esquerda, o cartão de quem você é — avatar, nome, bio, os
-// três números que importam e o que se faz com a página —, parado enquanto a
-// vitrine rola. À direita, primeiro os amigos e o que falta fazer; depois a
-// vitrine: roupas, looks e colagens.
+// Em cima, o retrato redondo, o @, os três números, o nome, a bio e os botões.
+// Logo abaixo, os emblemas das coleções no lugar dos destaques. Embaixo, abas
+// com a grade de cada uma: roupas, looks, colagens e amigos.
 //
 // A vitrine é curada: mostra só o que você marcou com a estrela — ver
 // favoritos.js. Ter 60 peças não vira uma parede de 60 peças; o perfil é o que
-// você escolheu mostrar. Seção sem nada marcado some, e o que falta vira dica
-// no bloco "Complete a sua vitrine" — que fica no alto, junto dos amigos —,
-// com o atalho para onde se resolve.
+// você escolheu mostrar. Aba sem nada mostra uma linha curta e o atalho para
+// onde se resolve.
 //
-// O que é da conta e não da página — contas conectadas, senha, sair, testes —
-// mora no menu do pé do cartão e abre por cima, num modal, uma seção por vez.
+// O que é da conta e não da página — cores, contas conectadas, senha, sair,
+// testes — mora na engrenagem ao lado do @ e abre por cima, num modal, uma
+// seção por vez.
 //
 // O que é progresso — missões do dia, XP, ferramentas por nível e a cápsula —
 // mora na aba Tarefas (tarefas.js).
@@ -20,10 +19,9 @@
 import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import * as auth from './auth.js';
-import { svgAvatar, retrato, aparenciaAtual } from './avatar.js';
+import { retrato, aparenciaAtual } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
-import { ico, emo } from './icones.js';
 import { chipNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
@@ -42,8 +40,10 @@ import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
-  gradeDePecas, perfilPublico, segueDeVolta, mesAno, cartaoDeObra, botaoDePerfil,
+  gradeDePecas, perfilPublico, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar,
+  retratoDoPerfil, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
+import { ico } from './icones.js';
 
 // Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
 const meusPosts = () => postsDoAutor(db.state.usuario.id);
@@ -66,13 +66,8 @@ export function montarPerfil() {
   montarConta();
   montarTestes();
 
-  // A busca abre por cima do perfil e, ao fechar, refaz a página: quem foi
-  // seguido lá dentro entra em "seguindo" e, se retribui, em "amigos".
-  $('#btn-buscar-pessoas').addEventListener('click', () => abrirBuscaDePessoas(renderPerfil));
-
-  // Os atalhos dos cabeçalhos ("Ver guarda-roupa →") levam à tela de origem.
-  document.querySelectorAll('.view-perfil .pf-link[data-goto]').forEach(b =>
-    b.addEventListener('click', () => irPara(b.dataset.goto)));
+  // O retrato leva ao Personagem, onde ele se troca.
+  $('#perfil-avatar').addEventListener('click', () => irPara('personagem'));
 
   // Curtir ou comentar aqui é curtir no feed: quando ele repinta, esta tela
   // repinta junto (o mesmo acordo do perfil público).
@@ -112,90 +107,67 @@ function montarAtalho() {
   pintar();
 }
 
+let abaAtual = null;   // a aba de baixo escolhida; null é a primeira
+
 export function renderPerfil() {
   const u = db.state.usuario;
   const curtidas = meusPosts().reduce((soma, post) => soma + (post.curtidas || 0), 0);
 
-  // O SVG nasce em 600×1200 e quem o encolhe é .avatar-svg. O fundo é a cor
-  // que assina os seus posts no feed — a sua, como cada perfil tem a dele.
-  //
-  // É aqui que as roupinhas do vestiário aparecem: o perfil é a sua página, e
-  // a coleção é sua. No Stylist o avatar segue pelado, para a roupa
-  // fotografada cair no corpo sem duas roupas sobrepostas.
-  const moldura = el('div', { class: 'avatar-svg' });
-  moldura.innerHTML = svgAvatar({ roupas: db.roupasEquipadas() });
-  moldura.style.filter = brilhoDoEstilo(db.roupasEquipadas());
-  $('#perfil-avatar').replaceChildren(moldura);
-  $('#perfil-avatar').style.background = COR_PROPRIA;
+  // O busto com as roupinhas do vestiário, no fundo da cor que assina os seus
+  // posts no feed. No Stylist o avatar segue pelado, para a roupa fotografada
+  // cair no corpo sem duas roupas sobrepostas.
+  const foto = retratoDoPerfil(aparenciaAtual(), COR_PROPRIA, db.roupasEquipadas());
+  foto.style.filter = brilhoDoEstilo(db.roupasEquipadas());
+  $('#perfil-avatar').replaceChildren(foto);
 
-  $('#perfil-nome').replaceChildren(u.nome, chipNivel());
-  $('#perfil-handle').replaceChildren(
-    u.handle, el('br'), `no brechó desde ${mesAno(new Date(u.criadoEm))}`);
-  renderMenuCores();
+  $('#perfil-handle').textContent = u.handle;
+  $('#perfil-nivel').replaceChildren(chipNivel());
+  $('#perfil-nome').textContent = u.nome;
   $('#perfil-bio').textContent = u.bio;
   $('#perfil-bio').hidden = !u.bio;
   renderConta();
-  // As suas são as que estão ligadas de verdade — o menu "Contas conectadas",
-  // no pé do cartão, é onde se liga e desliga.
-  const redes = minhasRedes();
-  $('#perfil-redes').replaceChildren(...chipsDeRedes(redes));
-  $('#pf-menu-conexoes').textContent =
-    (redes.length ? plural(redes.length, 'ligada', 'ligadas') : 'nenhuma') + ' ›';
+  $('#perfil-redes').replaceChildren(...chipsDeRedes(minhasRedes()));
 
-  // Três números no cartão; o resto vai no título, para quem passar o mouse.
+  // Três números; o resto vai no título, para quem passar o mouse. Amigos
+  // abre a aba deles.
   const amigos = meusAmigos();
-  const stats = [
-    ['peças', db.state.inventario.length,
-      `${plural(db.state.looks.length, 'look', 'looks')} · ` +
-      `${plural(db.state.boards.length, 'colagem', 'colagens')}`],
-    ['seguidores', u.seguidores,
-      `você segue ${plural(u.seguindo.length, 'pessoa', 'pessoas')}`],
-    ['amigos', amigos.length,
-      `${plural(curtidas, 'curtida', 'curtidas')} nos seus posts`],
-  ];
-  $('#perfil-stats').replaceChildren(...stats.map(([rotulo, valor, dica]) =>
-    el('div', { class: 'pf-stat', title: dica },
-      el('strong', {}, String(valor)), el('small', {}, rotulo))));
+  $('#perfil-stats').replaceChildren(
+    numeroDoPerfil(db.state.inventario.length, 'peças',
+      `${plural(db.state.looks.length, 'look', 'looks')} · ${plural(db.state.boards.length, 'colagem', 'colagens')}`),
+    numeroDoPerfil(u.seguidores, 'seguidores', `você segue ${plural(u.seguindo.length, 'pessoa', 'pessoas')}`),
+    numeroDoPerfil(amigos.length, 'amigos', `${plural(curtidas, 'curtida', 'curtidas')} nos seus posts`,
+      () => { abaAtual = 'amigos'; renderPerfil(); }));
 
   $('#perfil-acoes').replaceChildren(
-    el('button', { class: 'btn-dark', onclick: abrirEdicao }, 'Editar perfil'),
-    el('div', { class: 'pf-dupla' },
-      el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') },
-        'Personagem'),
-      el('button', { class: 'btn-ghost', onclick: () => irPara('vestiario') },
-        'Inventário'))
-  );
+    el('button', { class: 'btn-ghost', onclick: abrirEdicao }, 'Editar perfil'),
+    el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') }, 'Personagem'),
+    el('button', { class: 'btn-ghost', onclick: () => irPara('vestiario') }, 'Inventário'));
 
   renderEmblemas();
-  const pecas = renderPecas();
-  const obras = renderObras();
-  renderAmigos(amigos);
-  renderDicas({ pecas, ...obras, amigos: amigos.length, redes: redes.length });
+  pintarAbas($('#perfil-abas'), $('#perfil-conteudo'), [
+    abaDeRoupas(), ...abasDeObras(), abaDeAmigos(amigos),
+  ], abaAtual, (id) => { abaAtual = id; renderPerfil(); });
   renderConexoes(renderPerfil);
 }
 
 // ------------------------------- Coleções ---------------------------------
-// Uma faixa só: quantas de cada tipo estão completas e uma fileira de
-// emblemas pequenos — as completas primeiro, depois as mais adiantadas. A
-// lista inteira mora na tela de Coleções ("Ver coleções").
+// Os destaques do perfil: uma fileira de emblemas redondos — as completas
+// primeiro, depois as mais adiantadas — e, no fim, o atalho para a tela de
+// Coleções, onde mora a lista inteira.
 const EMBLEMAS_NO_PERFIL = 8;
 
 function renderEmblemas() {
-  const grupos = GRUPOS_DE_COLECAO.map(([id, nome, lista]) => [id, nome, lista()]);
-  const todas = grupos.flatMap(([, , lista]) => lista);
-  $('#pf-secao-colecoes').hidden = !todas.length;
-  const completas = todas.filter(c => c.completa).length;
-  $('#perfil-colecoes-sub').textContent = `${completas} de ${todas.length} completas`;
-
+  const todas = GRUPOS_DE_COLECAO.flatMap(([, , lista]) => lista());
   const destaque = todas.filter(c => c.tem > 0)
     .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct)
     .slice(0, EMBLEMAS_NO_PERFIL);
+  const completas = todas.filter(c => c.completa).length;
   $('#perfil-colecoes').replaceChildren(
-    el('div', { class: 'pf-col-contas' }, ...grupos.filter(([, , l]) => l.length).map(([, nome, lista]) =>
-      el('span', {}, `${nome} `, el('strong', {}, `${lista.filter(c => c.completa).length}/${lista.length}`)))),
-    destaque.length
-      ? el('div', { class: 'pf-emblemas' }, ...destaque.map(emblema))
-      : el('p', { class: 'pf-col-vazio' }, 'Nenhuma coleção começada ainda.'));
+    ...destaque.map(emblema),
+    el('button', {
+      class: 'pf-emblema pf-emblema-todas', title: `${completas} de ${todas.length} coleções completas`,
+      onclick: () => irPara('colecoes'),
+    }, el('span', { class: 'pf-emblema-disco' }, ico('trofeu')), el('small', {}, 'Coleções')));
 }
 
 // Cor mostra a própria cor; marca, o logo. Sem logo (ou se ele não carregar),
@@ -221,46 +193,40 @@ function emblema(c) {
       c.marca));
 }
 
-// ------------------------------- Vitrines ---------------------------------
-// As duas seguem a mesma regra: aparece o que tem estrela, e a seção sem nada
-// marcado some. Quem diz onde fica a estrela é o bloco de dicas.
-function renderPecas() {
-  const pecas = pecasFavoritas();
-  const total = db.state.inventario.length;
-
-  $('#pf-secao-pecas').hidden = !pecas.length;
-  $('#perfil-pecas-sub').textContent = `${pecas.length} de ${total}`;
-  $('#perfil-pecas').replaceChildren(...gradeDePecas(pecas));
-  return pecas.length;
-}
-
-// Looks do Stylist e colagens em seções separadas, até três de cada (a
-// estrela não deixa passar disso — ver favoritos.js; o corte aqui é para save
-// antigo que favoritou mais). O clique devolve ao editor de origem.
-function renderObras() {
-  const secao = (tipo, chave, abrir) => {
-    const mostrados = porData(db.favoritos(tipo)).slice(0, LIMITE_FAVORITOS[tipo]);
-    $(`#pf-secao-${chave}`).hidden = !mostrados.length;
-    $(`#perfil-${chave}-sub`).textContent =
-      `${mostrados.length} de ${LIMITE_FAVORITOS[tipo]}`;
-    $(`#perfil-${chave}`).replaceChildren(...mostrados.map(item =>
-      cartaoFavorito({ ...item, tipo }, () => abrir(item.id))));
-    return mostrados.length;
-  };
+// ------------------------------- As abas -----------------------------------
+// As três de vitrine seguem a mesma regra: aparece o que tem estrela. Vazia,
+// diz em poucas palavras o que falta e leva até lá.
+function abaDeRoupas() {
+  const temPecas = db.state.inventario.length > 0;
   return {
-    looks: secao('look', 'looks', (id) => { abrirLook(id); irPara('stylist'); }),
-    colagens: secao('colagem', 'colagens', (id) => { irPara('board'); abrirBoard(id); }),
+    id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
+    itens: gradeDePecas(pecasFavoritas()),
+    vazio: temPecas ? 'Favorite roupas com ★ no Closet' : 'Garimpe a sua primeira peça',
+    botao: temPecas ? ['Abrir o Closet', () => irPara('closet')] : ['Ir à Loja', () => irPara('vitrine')],
   };
 }
 
-// As peças que entraram no look (camadas) ou na colagem (itens), sem repetir
-// e sem as que saíram do catálogo. Etiqueta de texto da colagem não tem peça.
-const pecasDaObra = (item) => [...new Set(
-  (item.camadas || item.itens || []).map(c => c.itemId).filter(Boolean)
-)].map(pecaDoCatalogo).filter(Boolean);
+// Looks do Stylist e colagens, até três de cada (a estrela não deixa passar
+// disso — ver favoritos.js; o corte aqui é para save antigo que favoritou
+// mais). O clique devolve ao editor de origem.
+function abasDeObras() {
+  const s = db.state;
+  const obras = (tipo, abrir) => porData(db.favoritos(tipo)).slice(0, LIMITE_FAVORITOS[tipo])
+    .map(item => cartaoFavorito({ ...item, tipo }, () => abrir(item.id)));
+  return [{
+    id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
+    itens: obras('look', (id) => { abrirLook(id); irPara('stylist'); }),
+    vazio: s.looks.length ? 'Favorite looks com ★ no Stylist' : 'Monte o seu primeiro look',
+    botao: ['Abrir o Stylist', () => irPara('stylist')],
+  }, {
+    id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
+    itens: obras('colagem', (id) => { irPara('board'); abrirBoard(id); }),
+    vazio: s.boards.length ? 'Favorite colagens com ★ na Colagem' : 'Monte a sua primeira colagem',
+    botao: ['Abrir a Colagem', () => irPara('board')],
+  }];
+}
 
-// O cartão é o mesmo das publicações no perfil dos outros (usuario.js). O
-// look sai desenhado com o personagem de agora, como em "Meus stylists": a
+// O look sai desenhado com o personagem de agora, como em "Meus stylists": a
 // miniatura do save fica com o cabelo e o corpo de quando ele foi salvo.
 function cartaoFavorito(item, abrir) {
   const aoVivo = item.tipo === 'look' && item.camadas?.length;
@@ -268,8 +234,7 @@ function cartaoFavorito(item, abrir) {
     nome: item.nome,
     thumb: aoVivo ? miniaturaPronta(item.camadas) || item.thumb : item.thumb,
     tipo: item.tipo,
-    pecas: pecasDaObra(item),
-    selo: item.publicado ? 'no feed' : null,
+    selo: item.publicado ? ico('publicar') : null,
     abrir,
   });
   if (aoVivo && !miniaturaPronta(item.camadas)) {
@@ -283,70 +248,22 @@ function cartaoFavorito(item, abrir) {
   return cartao;
 }
 
-// --------------------------------- Amigos ---------------------------------
 // Amigo é mão dupla: você segue e a pessoa segue de volta (usuario.js diz
-// quem retribui). Quem você segue e não retribui fica no feed, não aqui.
+// quem retribui). Quem você segue e não retribui fica no feed, não aqui. A
+// busca abre por cima e, ao fechar, refaz a página.
 const meusAmigos = () => db.state.usuario.seguindo
   .filter(segueDeVolta)
   .map(perfilPublico)
   .filter(Boolean);
 
-function renderAmigos(amigos) {
-  const seguindo = db.state.usuario.seguindo.length;
-
-  $('#perfil-amigos-sub').textContent = amigos.length
-    ? `${amigos.length} de ${seguindo} ${seguindo === 1 ? 'segue' : 'seguem'} de volta`
-    : seguindo
-      ? `você segue ${plural(seguindo, 'pessoa', 'pessoas')}, ninguém retribuiu ainda`
-      : 'quem você seguir e seguir de volta aparece aqui';
-
-  $('#perfil-amigos').replaceChildren(
-    ...amigos.map(botaoDePerfil),
-    el('button', {
-      class: 'pf-amigo', title: 'Procurar pessoas',
-      onclick: () => abrirBuscaDePessoas(renderPerfil),
-    },
-      el('span', { class: 'pf-mais' }, '+'),
-      el('small', {}, 'procurar'))
-  );
-}
-
-// ------------------------- Complete a sua vitrine -------------------------
-// O lugar das seções vazias: em vez de um buraco com "nada aqui", uma linha
-// que diz o que falta e um botão que leva até lá. Some quando não falta nada.
-function renderDicas({ pecas, looks, colagens, redes }) {
-  const s = db.state;
-  const dicas = [
-    !s.inventario.length
-      ? [emo('🛍'), 'loja', 'Garimpe a sua primeira peça', 'a vitrine do dia troca todo dia',
-        'Vitrine', () => irPara('vitrine')]
-      : !pecas && [ico('estrela-cheia'), 'inventario', 'Favorite uma roupa',
-        'abra uma peça no guarda-roupa e use ☆ Favoritar', 'Guarda-roupa', () => irPara('closet')],
-    !looks && [ico('estrela-cheia'), 'stylist',
-      s.looks.length ? 'Favorite um look' : 'Monte o seu primeiro look',
-      s.looks.length ? 'marque com ★ em "Meus looks", no Stylist' : 'vista o avatar e salve no Stylist',
-      'Stylist', () => irPara('stylist')],
-    !colagens && [ico('estrela-cheia'), 'board',
-      s.boards.length ? 'Favorite uma colagem' : 'Monte uma colagem',
-      s.boards.length ? 'marque com ★ na lista da Colagem' : 'junte peças num board de moda',
-      'Colagem', () => irPara('board')],
-    !s.usuario.bio && [ico('editar'), 'perfil', 'Escreva uma bio', 'uma linha sobre o seu garimpo',
-      'Editar', abrirEdicao],
-    !redes && [ico('publicar'), 'social', 'Conecte o Instagram ou o Pinterest',
-      'para publicar as colagens fora daqui', 'Conectar', () => abrirAjustes('conexoes')],
-  ].filter(Boolean);
-
-  $('#pf-dicas').hidden = !dicas.length;
-  $('#pf-dicas-lista').replaceChildren(...dicas.map(([icone, cor, titulo, sub, rotulo, acao]) =>
-    el('div', { class: 'pf-dica' },
-      el('span', { class: 'pf-dica-icone', style: { background: `var(--${cor})` } }, icone),
-      el('div', {}, el('strong', {}, titulo), el('small', {}, sub)),
-      el('button', { class: 'btn-ghost', onclick: acao }, rotulo))));
-}
+const abaDeAmigos = (amigos) => ({
+  id: 'amigos', icone: 'usuario', rotulo: 'Amigos', grade: 'pf-grade-pessoas',
+  itens: [...amigos.map(botaoDePerfil), botaoProcurar(() => abrirBuscaDePessoas(renderPerfil))],
+});
 
 // ----------------------------- Editar perfil ------------------------------
 // Nome, @ e bio são o que os outros leem na sua página. O formulário toma o
-// lugar do miolo do cartão enquanto está aberto.
+// lugar do nome, da bio e dos botões enquanto está aberto.
 function montarEdicao() {
   // Nome e @ são da conta: vão para o servidor, valem em qualquer navegador e
   // o @ é único entre todo mundo (por isso o servidor pode recusar). A bio é do
@@ -382,18 +299,18 @@ function abrirEdicao() {
   $('#pf-nome').value = u.nome;
   $('#pf-handle').value = u.handle.replace(/^@+/, '');
   $('#pf-bio').value = u.bio;
-  $('#pf-corpo').hidden = true;
+  $('#pf-topo').classList.add('editando');
   $('#perfil-editar').hidden = false;
   $('#pf-nome').focus();
 }
 
 const fecharEdicao = () => {
   $('#perfil-editar').hidden = true;
-  $('#pf-corpo').hidden = false;
+  $('#pf-topo').classList.remove('editando');
 };
 
 // -------------------------------- Ajustes ---------------------------------
-// O menu do pé do cartão abre o modal com uma seção só: a que foi clicada.
+// A engrenagem abre o menu; cada linha abre o modal com uma seção só.
 const TITULOS_DE_AJUSTE = {
   cores: 'Cores do site',
   conexoes: 'Contas conectadas',
@@ -404,8 +321,19 @@ const TITULOS_DE_AJUSTE = {
 function montarAjustes() {
   const modal = $('#modal-ajustes');
 
-  document.querySelectorAll('.pf-menu [data-ajuste]').forEach(b =>
-    b.addEventListener('click', () => abrirAjustes(b.dataset.ajuste)));
+  const engrenagem = $('#pf-config');
+  const menu = $('#pf-menu');
+  const mostrarMenu = (sim) => {
+    menu.hidden = !sim;
+    engrenagem.setAttribute('aria-expanded', String(sim));
+  };
+  engrenagem.addEventListener('click', () => mostrarMenu(menu.hidden));
+  // Tocar fora fecha o menu.
+  document.addEventListener('click', (e) => {
+    if (!menu.hidden && !e.target.closest('.pf-config')) mostrarMenu(false);
+  });
+  menu.querySelectorAll('[data-ajuste]').forEach(b =>
+    b.addEventListener('click', () => { mostrarMenu(false); abrirAjustes(b.dataset.ajuste); }));
 
   $('#aj-fechar').addEventListener('click', fecharAjustes);
   // Clique no fundo escuro fecha; clique dentro da caixa, não.
@@ -442,14 +370,9 @@ function renderPaletas() {
     'data-paleta': p.id,
     'aria-pressed': String(p.id === atual),
     title: p.nome, 'aria-label': p.nome,
-    onclick: () => { escolherPaleta(p.id); renderPaletas(); renderMenuCores(); },
+    onclick: () => { escolherPaleta(p.id); renderPaletas(); },
   },
   el('span', { class: 'paleta-amostra' }))));
-}
-
-function renderMenuCores() {
-  const p = PALETAS.find(x => x.id === paletaAtual());
-  $('#pf-menu-cores').textContent = `${p.nome} ›`;
 }
 
 // --------------------------------- Conta ----------------------------------
