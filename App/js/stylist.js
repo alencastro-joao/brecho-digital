@@ -18,6 +18,7 @@ import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
 import { ico, emo } from './icones.js';
+import { alcaMover } from './alcamover.js';
 
 let camadas = [];
 let selecionado = null;
@@ -462,8 +463,22 @@ function limparPalco({ manterHistorico = false } = {}) {
   renderSalvos();
 }
 
+// A alça de quatro setas ao lado da peça escolhida: puxar por ela é o mesmo
+// que arrastar a peça, só que sem o dedo em cima (celular).
+let alcaMov = null;
+function colocarAlcaMover(c) {
+  const noDe = (c) => c && $(`.camada[data-uid="${c.uid}"]`);
+  alcaMov ??= alcaMover(stage(), (e) => {
+    const atual = camadas.find(k => k.uid === selecionado);
+    const no = noDe(atual);
+    if (no) iniciarManipulacao(e, atual, no);
+  });
+  alcaMov.colocar([noDe(c)]);
+}
+
 function atualizarFerramentas() {
   const c = camadas.find(c => c.uid === selecionado);
+  colocarAlcaMover(c);
   const temSelecao = Boolean(c);
   $('#tool-empty').hidden = temSelecao;
   $$('#layer-tools .tool-btn, #layer-tools input').forEach(n => { n.disabled = !temSelecao; });
