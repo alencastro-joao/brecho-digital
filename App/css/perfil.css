@@ -234,8 +234,11 @@ button.pf-stat:hover small { text-decoration: underline; }
   position: relative; z-index: 5; pointer-events: none;
   box-shadow: 0 12px 26px rgba(30, 40, 50, .25), 0 0 0 3px var(--wii-brilho);
   border-color: var(--wii) !important;
+  /* Sem a transição da casa (usuario.css): ela fazia o quadrinho correr atrás
+     do dedo em vez de ir junto. */
+  transition: none !important; will-change: transform;
 }
-.pf-reordenavel.reordenando > :not(.pego) { opacity: .85; }
+.pf-reordenavel.reordenando > * { will-change: transform; }
 
 /* ------------------------------ Ficha da peça ------------------------------ */
 /* A mesma do guarda-roupa no celular: em cima o voltar e a posição (3/15); o
