@@ -563,7 +563,8 @@
     display: grid; place-items: center; font-size: 9px;
     background: var(--stylist); border: 1.5px solid var(--tinta);
   }
-  .view-stylist .grupo-rotulo { grid-column: 1 / -1; }
+  /* Como no closet: as peças corridas na ordem escolhida, sem os títulos de grupo. */
+  .view-stylist .grupo-rotulo { display: none; }
 
   /* Ferramentas da peça selecionada: o mesmo painel, sem títulos. */
   .view-stylist .stylist-tools {
