@@ -181,6 +181,7 @@ def reservar(corpo):
 # cabe no tempo dela; o resto volta como `continua`/`faltam`/`adiada` e a
 # tela chama de novo na hora.
 PINS = 'esteira/pins/'
+IMAGENS = 'esteira/pins/img-'    # a foto do pin, para a mesma foto salva em outro pin
 PASTAS = 'esteira/config/pinterest.json'
 TEMPO_RELEITURA = 22         # s; a Lambda da API tem 30
 FOLGA_FOTOS = 11             # s que um bloco de fotos pode levar (pinterest.TEMPO + upload)
@@ -191,13 +192,16 @@ def _pins_vistos():
     marcas) custava um GET por cartão e comia o tempo da leitura; pin antigo
     que entre de novo é pego pelo trabalhador como repetido."""
     pag = _s3.get_paginator('list_objects_v2')
-    return {obj['Key'][len(PINS):]
+    # 'img-<chave>' vira 'img:<chave>', como pinterest.conhecido procura.
+    return {obj['Key'][len(PINS):].replace('img-', 'img:', 1)
             for pagina in pag.paginate(Bucket=DADOS, Prefix=PINS)
             for obj in pagina.get('Contents', [])}
 
 
-def _marcar_pin(pin, item_id=''):
+def _marcar_pin(pin, item_id='', imagem=''):
     _s3.put_object(Bucket=DADOS, Key=PINS + pin, Body=item_id.encode('utf-8'))
+    if imagem:
+        _s3.put_object(Bucket=DADOS, Key=IMAGENS + imagem, Body=item_id.encode('utf-8'))
 
 
 def _pastas():
@@ -246,7 +250,7 @@ def _importar(pins, pasta, prazo):
                      'pin': p['pin'], 'entrada': chave,
                      'ficha': {'cat': pasta['cat']} if pasta.get('cat') else {}})
             _s3.put_object(Bucket=DADOS, Key=chave, Body=foto, ContentType=tipo)
-            _marcar_pin(p['pin'], item_id)
+            _marcar_pin(p['pin'], item_id, pinterest.imagem_do_pin(p))
             entraram += 1
     return {'entraram': entraram, 'falharam': falharam, 'resto': pins[feitos:], 'falhos': falhos}
 
@@ -268,13 +272,13 @@ def _trazer(pasta, vistos, prazo):
     pins" zera os dois (ver `_reler`) e a pasta é percorrida de novo do
     começo, pegando o que tenha ficado para trás."""
     import pinterest
-    pendentes = [p for p in pasta.get('pendentes') or [] if p['pin'] not in vistos]
+    pendentes = [p for p in pasta.get('pendentes') or [] if not pinterest.conhecido(p, vistos)]
     lida = {}
     if not pendentes:
         lida = pinterest.ler_pasta(pasta['usuario'], pasta['pasta'], prazo - FOLGA_FOTOS,
                                    marcador=pasta.get('marcador'), conhecidos=vistos,
                                    basta=BASTA, ate_conhecida=bool(pasta.get('inteira')))
-        pendentes = [p for p in lida['pins'] if p['pin'] not in vistos]
+        pendentes = [p for p in lida['pins'] if not pinterest.conhecido(p, vistos)]
         if lida.get('completa'):
             if not pasta.get('marcador'):
                 pasta['varridos'] = 0
@@ -292,7 +296,9 @@ def _trazer(pasta, vistos, prazo):
     if 'cat' not in pasta:
         pasta['cat'] = (pinterest.categoria_do_nome(pasta['titulo'])
                         or pinterest.categoria_do_nome(pasta['pasta']))
-    vistos |= {p['pin'] for p in pendentes}         # o mesmo pin em duas pastas entra uma vez
+    # O mesmo pin (ou a mesma foto) em duas pastas entra uma vez.
+    vistos |= {p['pin'] for p in pendentes}
+    vistos |= {'img:' + pinterest.imagem_do_pin(p) for p in pendentes if pinterest.imagem_do_pin(p)}
     feito = _importar(pendentes, pasta, prazo)
     # A foto que não baixou volta para a fila, até 3 vezes: antes ela se
     # perdia, porque o marcador já tinha passado dela.
@@ -373,7 +379,53 @@ def pinterest(corpo):
     return {'pasta': _publica(pasta), 'pastas': [_publica(p) for p in pastas], **r}
 
 
+# Uma leitura por vez. Duas telas abertas (celular e computador) liam as
+# mesmas páginas ao mesmo tempo e as duas importavam o mesmo pin — a marca só
+# é gravada depois da foto —, e a esteira enchia de cópias. A vez é um
+# arquivo com prazo de validade: a chamada que morrer no meio não trava as
+# outras por mais que uma chamada.
+VEZ = 'esteira/config/lendo.json'
+
+
+def _pegar_vez():
+    agora = time.time()
+    try:
+        vez = json.loads(_s3.get_object(Bucket=DADOS, Key=VEZ)['Body'].read())
+        if vez.get('ate', 0) > agora:
+            return None
+    except ClientError as e:
+        if e.response['Error']['Code'] not in ('NoSuchKey', '404'):
+            raise
+    dono = secrets.token_hex(8)
+    _s3.put_object(Bucket=DADOS, Key=VEZ, Body=json.dumps(
+        {'dono': dono, 'ate': agora + TEMPO_RELEITURA + 8}).encode('utf-8'))
+    # Quem gravou por último fica com a vez: espera a outra gravação que
+    # estivesse a caminho e relê para conferir.
+    time.sleep(0.4)
+    vez = json.loads(_s3.get_object(Bucket=DADOS, Key=VEZ)['Body'].read())
+    return dono if vez.get('dono') == dono else None
+
+
+def _soltar_vez(dono):
+    try:
+        vez = json.loads(_s3.get_object(Bucket=DADOS, Key=VEZ)['Body'].read())
+        if vez.get('dono') == dono:
+            _s3.delete_object(Bucket=DADOS, Key=VEZ)
+    except ClientError:
+        pass
+
+
 def _reler(feitas=(), varrer=False):
+    dono = _pegar_vez()
+    if not dono:
+        return {'pastas': [], 'ocupado': True}
+    try:
+        return _reler_na_vez(feitas, varrer)
+    finally:
+        _soltar_vez(dono)
+
+
+def _reler_na_vez(feitas=(), varrer=False):
     """Uma pasta por vez, de olho no relógio. A que não coube volta `adiada`;
     a que ainda tem o que ler volta com `continua` ou `faltam`: a tela chama
     de novo com `feitas` (as que já terminaram nesta rodada), até não sobrar

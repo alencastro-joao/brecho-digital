@@ -74,7 +74,7 @@ async function enviar(arquivos, origem) {
   }
 
   const fila = reserva.envios.map((envio, i) => ({ envio, foto: fotos[i], linha: linhaDeEnvio(fotos[i]) }));
-  await atualizar();                    // os cartões "enviando" já aparecem
+  await atualizar();                    // entram na contagem de "sendo cortadas"
 
   const trabalhar = async () => {
     for (let t = fila.shift(); t; t = fila.shift()) {
@@ -202,7 +202,16 @@ async function reler({ varrer = false } = {}) {
   try {
     for (let rodada = 0; rodada < MAX_RODADAS; rodada++) {
       const corpo = { reler: true, feitas, ...(varrer && !rodada ? { varrer: true } : {}) };
-      const { pastas } = await api('/pinterest', { metodo: 'POST', corpo });
+      const { pastas, ocupado } = await api('/pinterest', { metodo: 'POST', corpo });
+      // Outra tela (o celular, outra aba) está lendo agora: espera a vez dela
+      // passar em vez de ler junto e trazer cada pin duas vezes.
+      if (ocupado) {
+        for (const p of pastasPinterest) if (!feitas.includes(p.id)) estadoDaPasta.set(p.id, 'lendo em outra tela…');
+        desenharPastas();
+        await new Promise(ok => setTimeout(ok, 8000));
+        rodada -= varrer && !rodada ? 1 : 0;   // o pedido de varrer ainda não foi atendido
+        continue;
+      }
       let continuar = false;
       let andou = 0;
       for (const r of pastas) {
@@ -222,7 +231,7 @@ async function reler({ varrer = false } = {}) {
       if (pastas.some(r => r.entraram)) await atualizar();
       if (!continuar || !andou) break;
     }
-    if (total) toast(`${nFotos(total)} nova${total === 1 ? '' : 's'} do Pinterest na esteira.`, 'rare');
+    if (total) toast(`${nFotos(total)} nova${total === 1 ? '' : 's'} do Pinterest: aparece${total === 1 ? '' : 'm'} na esteira assim que estiver${total === 1 ? '' : 'em'} cortada${total === 1 ? '' : 's'} e classificada${total === 1 ? '' : 's'}.`, 'rare');
     else if (varrer) {
       const recusou = [...recusas.values()].some(n => n > 0);
       toast(recusou ? 'O Pinterest não deixou ler a pasta inteira agora. Tente de novo daqui a pouco.'
@@ -375,12 +384,23 @@ const chaveDe = (item) => JSON.stringify(ordenado({
   previa: item.previa, sugestao: item.sugestao, arquivo: item.arquivo, sel: selecionadas.has(item.id),
 }));
 
+// A peça só aparece depois de cortada e classificada: a que ainda está
+// chegando ou processando entra só na contagem acima da grade.
+const aparece = (item) => item.estado !== 'enviando' && item.estado !== 'processando';
+
 function desenhar() {
   const grade = $('#es-grade');
   const foco = document.activeElement?.closest?.('.es-cartao')?.dataset.id;
   const campoFoco = document.activeElement?.dataset?.campo;
+  const visiveis = itens.filter(aparece);
+  const chegando = itens.length - visiveis.length;
+  const aviso = $('#es-chegando');
+  aviso.hidden = !chegando;
+  aviso.textContent = chegando
+    ? `${chegando} ${chegando === 1 ? 'peça sendo cortada e classificada' : 'peças sendo cortadas e classificadas'}…`
+    : '';
 
-  const nos = itens.map(item => {
+  const nos = visiveis.map(item => {
     const chave = chaveDe(item);
     let d = desenhados.get(item.id);
     if (!d || d.item !== item || d.chave !== chave) {
@@ -389,7 +409,7 @@ function desenhar() {
     }
     return d.no;
   });
-  const vivos = new Set(itens.map(i => i.id));
+  const vivos = new Set(visiveis.map(i => i.id));
   for (const id of desenhados.keys()) if (!vivos.has(id)) desenhados.delete(id);
   // Só mexe no DOM onde a ordem mudou (peça nova entra no topo).
   let ref = grade.firstChild;
@@ -399,7 +419,7 @@ function desenhar() {
   }
   while (ref) { const prox = ref.nextSibling; ref.remove(); ref = prox; }
   grade.classList.toggle('selecionando', selecionadas.size > 0);
-  $('#es-vazio').hidden = itens.length > 0;
+  $('#es-vazio').hidden = itens.length > 0;   // com peça chegando, a contagem já diz
   atualizarLote();
 
   // Redesenhar não pode tirar o cursor do campo que a pessoa está usando.

@@ -104,6 +104,19 @@ def categoria_do_nome(nome):
     return ''
 
 
+def imagem_do_pin(p):
+    """A chave da foto no i.pinimg.com (32 hex do nome do arquivo): a mesma
+    foto salva por outra pessoa vira outro pin, mas a imagem é a mesma."""
+    achada = re.search(r'/([0-9a-f]{32})\.[a-z]+$', p.get('imagem') or '')
+    return achada.group(1) if achada else ''
+
+
+def conhecido(p, conhecidos):
+    """O pin (ou a foto dele, por outro pin) já passou pela esteira."""
+    img = imagem_do_pin(p)
+    return p['pin'] in conhecidos or bool(img and 'img:' + img in conhecidos)
+
+
 def ler_pasta(usuario, pasta, prazo=None, marcador=None, conhecidos=(), basta=None,
               ate_conhecida=False):
     """Um trecho da pasta, os mais recentes primeiro:
@@ -251,7 +264,7 @@ def _ler_inteira(usuario, pasta, prazo=None, marcador=None, conhecidos=frozenset
                 'falha': 'o Pinterest recusou %d visitas seguidas' % (tentativa + 1)}
 
     def novos():
-        return sum(1 for p in pins if p['pin'] not in conhecidos)
+        return sum(1 for p in pins if not conhecido(p, conhecidos))
 
     andou = 0 if marcador else len(pins)        # pins além do topo já relido
     if ate_conhecida and not marcador and pins and not novos():
@@ -269,7 +282,7 @@ def _ler_inteira(usuario, pasta, prazo=None, marcador=None, conhecidos=frozenset
                 break
             time.sleep(2)
             continue
-        if ate_conhecida and trecho and all(p['pin'] in conhecidos for p in trecho):
+        if ate_conhecida and trecho and all(conhecido(p, conhecidos) for p in trecho):
             proximo = None                       # chegou ao que já tinha lido
         pins += trecho
         andou += len(trecho)

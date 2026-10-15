@@ -355,3 +355,7 @@ img, canvas { -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-user
 @media (hover: none) and (pointer: coarse) {
   .es-cartao-fileira { display: none; }
 }
+
+/* Peças ainda processando: não aparecem na grade, só nesta contagem. */
+.es-chegando { text-align: center; font-size: 13px; color: var(--tinta-suave); margin: 0 0 10px; }
+.es-chegando[hidden] { display: none; }
