@@ -27,6 +27,7 @@ import { ancoraNoCorpo, ancoraNoMolde } from './proporcao.js';
 import { carregarSessao } from './auth.js';
 import { svgAvatar } from './avatar.js';
 import { el, $, $$, clamp, toast } from './util.js';
+import { alcaMover } from './alcamover.js';
 
 const API = 'api/esteira';
 const VIGIA_MS = 3000;                 // enquanto houver foto processando
@@ -884,11 +885,15 @@ function posicionar() {
   texto.textContent = `largura ${real.w} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
     + (fora ? ` — ${razao.toFixed(1).replace('.', ',')}× o padrão de ${CATEGORIAS[cat].nome}, confira` : '');
   texto.classList.toggle('alerta', fora);
+  alcaMov?.colocar([no]);
 }
+
+// A alça de quatro setas ao lado da peça: arrastar sem tapar a peça (celular).
+let alcaMov = null;
 
 function ligarMolde() {
   const no = $('#es-peca');
-  no.addEventListener('pointerdown', (e) => {
+  const pegar = (e) => {
     e.preventDefault();
     const palco = $('#es-molde').getBoundingClientRect();
     const alca = e.target.dataset?.alca;
@@ -902,7 +907,7 @@ function ligarMolde() {
     no.setPointerCapture(e.pointerId);
 
     const mover = (ev) => {
-      if (alca) {
+      if (alca && alca !== 'mov') {
         medida.w = clamp(base.w * (Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y) / raio0), 20, 600);
       } else {
         medida.x = clamp(base.x + (ev.clientX - inicio.x) / palco.width * CONFIG.STAGE_W, 0, CONFIG.STAGE_W);
@@ -918,7 +923,9 @@ function ligarMolde() {
     no.addEventListener('pointermove', mover);
     no.addEventListener('pointerup', soltar);
     no.addEventListener('pointercancel', soltar);
-  });
+  };
+  no.addEventListener('pointerdown', pegar);
+  alcaMov = alcaMover($('#es-molde'), pegar);
 
   $('#es-molde').addEventListener('wheel', (e) => {
     e.preventDefault();

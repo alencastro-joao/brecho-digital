@@ -20,6 +20,7 @@ import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
 import { ico, emo } from './icones.js';
+import { alcaMover } from './alcamover.js';
 
 const W = BOARD.W;
 
@@ -937,7 +938,21 @@ function distribuir(alvos, modo) {
   posicionarTodos();
 }
 
+// A alça de quatro setas ao lado da seleção: puxar por ela é o mesmo que
+// arrastar a peça, só que sem o dedo em cima (celular).
+let alcaMov = null;
+function colocarAlcaMover() {
+  const livres = vemDaPaleta ? [] : selecionados().filter(s => !s.travado);
+  alcaMov ??= alcaMover(prancheta(), (e) => {
+    const it = selecionados().find(s => !s.travado);
+    const no = it && prancheta().querySelector(`.pr-item[data-uid="${it.uid}"]`);
+    if (no) iniciarManipulacao(e, it, no);
+  });
+  alcaMov.colocar(livres.map(s => prancheta().querySelector(`.pr-item[data-uid="${s.uid}"]`)));
+}
+
 function atualizarFerramentas() {
+  colocarAlcaMover();
   const alvos = selecionados();
   const tem = alvos.length > 0;
   $('.view-board').classList.toggle('com-selecao', tem && !vemDaPaleta);
