@@ -795,21 +795,6 @@
   .post-pecas { padding: 36px 10px 10px; }
   .peca-mini { width: 34px; height: 34px; border-radius: 9px; }
 
-  /* ------------------------- Perfil e perfil público --------------------- */
-  .pf-layout {
-    grid-template-columns: minmax(0, 1fr); gap: 22px;
-    padding: 16px 16px 32px; width: 100%;
-  }
-  .pf-cartao { position: static; }
-  .pf-avatar { height: 210px; }
-  .pf-avatar .avatar-svg svg { height: 190px; }
-  .pf-secao-topo { flex-wrap: wrap; row-gap: 2px; }
-  .pf-secao-topo span { order: 3; flex-basis: 100%; }
-  .pf-grade { gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .pf-grade-obras { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .pf-amigos { gap: 14px; }
-  .pf-dica { flex-wrap: wrap; }
-
   /* ------------------------------ Tarefas -------------------------------- */
   .tarefas-wrapper { padding: 20px 16px 36px; gap: 20px; }
   .tarefas-head h1 { font-size: 21px; }
@@ -961,22 +946,6 @@
   /* ------------------------------ Entrar --------------------------------- */
   .auth { padding: 16px; place-items: start center; }
   .auth-caixa { padding: 24px 20px 18px; margin: auto 0; }
-}
-
-/* Celular em pé: looks e colagens do perfil viram uma fileira de arrastar
-   para o lado, um cartão por vez, com a beirada do próximo aparecendo. A
-   fileira vai até a borda da tela (come os 16px de respiro do .pf-layout) e
-   devolve o respiro por dentro, para o primeiro cartão alinhar com o título. */
-@media (max-width: 767px) {
-  .pf-grade-obras {
-    display: flex; gap: 10px;
-    margin: 0 -16px; padding: 4px 16px 8px;
-    overflow-x: auto; overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory; scroll-padding: 0 16px;
-    scrollbar-width: none;
-  }
-  .pf-grade-obras::-webkit-scrollbar { display: none; }
-  .pf-grade-obras > .pf-obra { flex: 0 0 80%; scroll-snap-align: start; }
 }
 
 /* Telefone deitado: a altura é que falta, então os palcos encolhem para
@@ -1152,44 +1121,4 @@
   .view-vestiario .vs-efeitos { flex: none; overflow: visible; }
   .view-vestiario .vs-efeito.ativo { background: #e9f3df; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
 
-  /* Perfil (o seu e o dos outros): o cartão e cada seção viram painéis; o
-     retrato, os números e as linhas do menu, blocos. */
-  :is(.view-perfil, .view-usuario) .pf-layout { padding: 12px 16px 28px; gap: 10px; }
-  :is(.view-perfil, .view-usuario) .pf-vitrine { gap: 10px; }
-  :is(.view-perfil, .view-usuario) :is(.pf-cartao, .pf-secao, .pf-dicas) {
-    border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
-  }
-  :is(.view-perfil, .view-usuario) .pf-cartao { padding: 10px; }
-  :is(.view-perfil, .view-usuario) .pf-secao { padding: 12px; }
-  :is(.view-perfil, .view-usuario) .pf-dicas { padding: 12px 12px 4px; }
-  :is(.view-perfil, .view-usuario) .pf-dica { border-top-color: var(--bloco-borda); }
-  :is(.view-perfil, .view-usuario) .pf-avatar {
-    background: #fff; border: 2px solid var(--bloco-borda); border-radius: 16px;
-    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
-  }
-  :is(.view-perfil, .view-usuario) .pf-corpo { padding: 14px 4px 4px; }
-  :is(.view-perfil, .view-usuario) .pf-stats { gap: 6px; border: 0; margin-bottom: 12px; }
-  :is(.view-perfil, .view-usuario) .pf-stat {
-    padding: 8px 0 10px; background: #fff; border: 2px solid var(--bloco-borda); border-radius: 12px;
-    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
-  }
-  :is(.view-perfil, .view-usuario) .pf-stat + .pf-stat { border-left: 2px solid var(--bloco-borda); }
-  :is(.view-perfil, .view-usuario) .pf-menu { border-top: 0; gap: 6px; padding: 8px 4px 4px; }
-  :is(.view-perfil, .view-usuario) .pf-menu button,
-  :is(.view-perfil, .view-usuario) .pf-menu button:last-child {
-    padding: 12px 14px 14px; background: var(--perola);
-    border: 2px solid var(--bloco-borda); border-radius: 12px;
-    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
-    font-weight: 600;
-  }
-  :is(.view-perfil, .view-usuario) .pf-link {
-    padding: 6px 10px 8px; border: 2px solid var(--bloco-borda); border-radius: 10px;
-    background: var(--perola); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
-    font-size: 12px; font-weight: 700;
-  }
-  :is(.view-perfil, .view-usuario) .pf-link:hover { text-decoration: none; }
-  :is(.view-perfil, .view-usuario) .pf-obra {
-    border: 2px solid var(--bloco-borda); border-radius: 14px;
-    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
-  }
 }

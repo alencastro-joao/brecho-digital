@@ -607,62 +607,30 @@
   <!-- Aberto por #/usuario/<id>, clicando em quem assina um post, um
        comentário ou uma sugestão do feed. -->
   <section class="view view-usuario" data-view="usuario" hidden>
-    <!-- O mesmo desenho do seu perfil (#/perfil), visto de fora: o cartão de
-         quem a pessoa é à esquerda e, à direita, o mesmo que o perfil dela
-         mostra a ela: amigos, roupas, looks e colagens favoritos. Perfil de
-         exemplo (sem favoritos) mostra outras pessoas e as publicações.
-         js/usuario.js. -->
-    <div class="pf-layout">
-      <aside class="pf-cartao">
-        <div class="pf-avatar" id="up-avatar"></div>
-        <div class="pf-corpo">
-          <h1 id="up-nome"></h1>
-          <p class="perfil-handle" id="up-handle"></p>
+    <!-- O mesmo desenho do seu perfil (#/perfil), visto de fora, no jeito do
+         Instagram: o retrato e os números em cima, e embaixo as abas com a
+         grade de cada uma. js/usuario.js. -->
+    <div class="pf-pagina">
+      <header class="pf-topo">
+        <div class="pf-foto" id="up-avatar"></div>
+        <div class="pf-linha">
+          <button type="button" class="pf-icone" id="up-voltar" title="Voltar ao feed" aria-label="Voltar ao feed"><i data-i="seta-esq"></i></button>
+          <h1 class="pf-arroba" id="up-handle"></h1>
+          <span id="up-nivel"></span>
+        </div>
+        <div class="pf-stats" id="up-stats"></div>
+        <div class="pf-info">
+          <strong class="pf-nome" id="up-nome"></strong>
           <p class="pf-bio" id="up-bio"></p>
           <div class="perfil-redes" id="up-redes"></div>
-          <div class="pf-stats" id="up-stats"></div>
-          <div class="pf-acoes" id="up-acoes"></div>
         </div>
-        <nav class="pf-menu">
-          <button type="button" id="up-voltar"><i data-i="seta-esq"></i> Voltar ao feed <span>›</span></button>
-        </nav>
-      </aside>
+        <div class="pf-acoes" id="up-acoes"></div>
+      </header>
 
-      <main class="pf-vitrine">
-        <section class="pf-secao">
-          <header class="pf-secao-topo">
-            <h2 id="up-outros-titulo">Outros perfis</h2><span id="up-outros-sub">quem mais está garimpando por aqui</span>
-            <button type="button" class="pf-link" id="up-buscar">+ Procurar pessoas</button>
-          </header>
-          <div class="pf-amigos" id="up-outros"></div>
-        </section>
-
-        <section class="pf-dicas" id="up-vazio" hidden></section>
-
-        <section class="pf-secao" id="up-secao-pecas">
-          <header class="pf-secao-topo">
-            <h2 id="up-pecas-titulo">Peças do guarda-roupa</h2><span id="up-pecas-sub"></span>
-          </header>
-          <div class="pf-grade" id="up-pecas"></div>
-        </section>
-
-        <section class="pf-secao" id="up-secao-looks">
-          <header class="pf-secao-topo">
-            <h2>Stylists</h2><span id="up-looks-sub"></span>
-          </header>
-          <div class="pf-grade pf-grade-obras" id="up-looks"></div>
-        </section>
-
-        <section class="pf-secao" id="up-secao-colagens">
-          <header class="pf-secao-topo">
-            <h2>Colagens</h2><span id="up-colagens-sub"></span>
-          </header>
-          <div class="pf-grade pf-grade-obras" id="up-colagens"></div>
-        </section>
-      </main>
+      <nav class="pf-abas" id="up-abas" role="tablist"></nav>
+      <div class="pf-conteudo" id="up-conteudo"></div>
     </div>
   </section>
-
   <!-- Uma publicação do perfil de alguém aberta inteira, com curtir e os
        comentários: o mesmo cartão do feed (js/usuario.js). -->
   <div class="modal" id="modal-post" hidden>
@@ -791,23 +759,35 @@
   </section>
 
   <section class="view view-perfil" data-view="perfil" hidden>
-    <div class="pf-layout">
-      <!-- O cartão: quem você é, os números e o que se faz com a página. Fica
-           parado enquanto a vitrine rola ao lado. -->
-      <aside class="pf-cartao">
-        <div class="pf-avatar" id="perfil-avatar"></div>
-
-        <div class="pf-corpo" id="pf-corpo">
-          <h1 id="perfil-nome">Você</h1>
-          <p class="perfil-handle" id="perfil-handle">@voce</p>
+    <!-- No jeito do Instagram: o retrato e os números em cima, os emblemas
+         das coleções como destaques e, embaixo, as abas com a grade de cada
+         uma. A vitrine mostra só o que tem estrela (ver js/perfil.js). -->
+    <div class="pf-pagina">
+      <header class="pf-topo" id="pf-topo">
+        <button type="button" class="pf-foto" id="perfil-avatar" title="Personagem" aria-label="Personagem"></button>
+        <div class="pf-linha">
+          <h1 class="pf-arroba" id="perfil-handle">@voce</h1>
+          <span id="perfil-nivel"></span>
+          <!-- O que é da conta e não da página: abre por cima, em modal. -->
+          <div class="pf-config">
+            <button type="button" class="pf-icone" id="pf-config" title="Ajustes" aria-label="Ajustes" aria-expanded="false"><i data-i="ajustes"></i></button>
+            <nav class="pf-menu" id="pf-menu" hidden>
+              <button type="button" data-ajuste="cores"><i data-i="paleta"></i> Cores do site</button>
+              <button type="button" data-ajuste="conexoes"><i data-i="publicar"></i> Contas conectadas</button>
+              <button type="button" data-ajuste="conta"><i data-i="usuario"></i> Sua conta</button>
+              <button type="button" data-ajuste="testes"><i data-i="dado"></i> Testes</button>
+            </nav>
+          </div>
+        </div>
+        <div class="pf-stats" id="perfil-stats"></div>
+        <div class="pf-info">
+          <strong class="pf-nome" id="perfil-nome">Você</strong>
           <p class="pf-bio" id="perfil-bio"></p>
           <div class="perfil-redes" id="perfil-redes"></div>
-          <div class="pf-stats" id="perfil-stats"></div>
-          <div class="pf-acoes" id="perfil-acoes"></div>
         </div>
+        <div class="pf-acoes" id="perfil-acoes"></div>
 
-        <form class="pf-corpo perfil-editar" id="perfil-editar" hidden>
-          <h2>Editar perfil</h2>
+        <form class="perfil-editar" id="perfil-editar" hidden>
           <label>Nome
             <input type="text" id="pf-nome" maxlength="28" autocomplete="off">
           </label>
@@ -815,77 +795,21 @@
             <input type="text" id="pf-handle" maxlength="20" autocomplete="off">
           </label>
           <label>Bio
-            <input type="text" id="pf-bio" maxlength="70" autocomplete="off"
-                   placeholder="uma linha sobre o seu garimpo">
+            <input type="text" id="pf-bio" maxlength="70" autocomplete="off">
           </label>
           <div class="pf-form-acoes">
             <button type="submit" class="btn-dark">Salvar</button>
             <button type="button" class="btn-ghost" id="pf-cancelar">Cancelar</button>
           </div>
         </form>
+      </header>
 
-        <!-- O que é da conta e não da página: abre por cima, em modal. -->
-        <nav class="pf-menu">
-          <button type="button" data-ajuste="cores">Cores do site <span id="pf-menu-cores"></span></button>
-          <button type="button" data-ajuste="conexoes">Contas conectadas <span id="pf-menu-conexoes"></span></button>
-          <button type="button" data-ajuste="conta">Sua conta <span>senha, sair ›</span></button>
-          <button type="button" data-ajuste="testes">Testes <span>›</span></button>
-        </nav>
-      </aside>
+      <div class="pf-destaques" id="perfil-colecoes"></div>
 
-      <!-- A coluna da direita abre pelos amigos e pelo que falta fazer
-           ("Complete a sua vitrine"); embaixo, a vitrine: só o que você
-           favoritou com a estrela no guarda-roupa, no Stylist e na Colagem.
-           Seção sem nada some, e o que falta vira dica no bloco de cima. -->
-      <main class="pf-vitrine">
-        <section class="pf-secao">
-          <header class="pf-secao-topo">
-            <h2>Amigos</h2><span id="perfil-amigos-sub"></span>
-            <button type="button" class="pf-link" id="btn-buscar-pessoas">+ Procurar pessoas</button>
-          </header>
-          <div class="pf-amigos" id="perfil-amigos"></div>
-        </section>
-
-        <section class="pf-dicas" id="pf-dicas" hidden>
-          <h3>Complete a sua vitrine</h3>
-          <div id="pf-dicas-lista"></div>
-        </section>
-        <section class="pf-secao" id="pf-secao-colecoes">
-          <header class="pf-secao-topo">
-            <h2>Coleções</h2><span id="perfil-colecoes-sub"></span>
-            <button type="button" class="pf-link" data-goto="colecoes">Ver coleções <i data-i="seta-dir"></i></button>
-          </header>
-          <div class="pf-emblemas-grupos" id="perfil-colecoes"></div>
-        </section>
-
-        <section class="pf-secao" id="pf-secao-pecas">
-          <header class="pf-secao-topo">
-            <h2>Roupas favoritas</h2><span id="perfil-pecas-sub"></span>
-            <button type="button" class="pf-link" data-goto="closet">Ver guarda-roupa <i data-i="seta-dir"></i></button>
-          </header>
-          <div class="pf-grade" id="perfil-pecas"></div>
-        </section>
-
-        <section class="pf-secao" id="pf-secao-looks">
-          <header class="pf-secao-topo">
-            <h2>Stylists</h2><span id="perfil-looks-sub"></span>
-            <button type="button" class="pf-link" data-goto="stylist">Abrir o Stylist <i data-i="seta-dir"></i></button>
-          </header>
-          <div class="pf-grade pf-grade-obras" id="perfil-looks"></div>
-        </section>
-
-        <section class="pf-secao" id="pf-secao-colagens">
-          <header class="pf-secao-topo">
-            <h2>Colagens</h2><span id="perfil-colagens-sub"></span>
-            <button type="button" class="pf-link" data-goto="board">Abrir a Colagem <i data-i="seta-dir"></i></button>
-          </header>
-          <div class="pf-grade pf-grade-obras" id="perfil-colagens"></div>
-        </section>
-
-      </main>
+      <nav class="pf-abas" id="perfil-abas" role="tablist"></nav>
+      <div class="pf-conteudo" id="perfil-conteudo"></div>
     </div>
   </section>
-
   <!-- ====================== AJUSTES DO PERFIL ====================== -->
   <!-- Aberto pelo menu do cartão do perfil (js/perfil.js): uma seção por vez. -->
   <div class="modal" id="modal-ajustes" hidden>
