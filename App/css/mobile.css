@@ -577,15 +577,15 @@
   .view-stylist .tool-btn { height: 42px; font-size: 17px; }
   .view-stylist .tool-btn:disabled { opacity: .45; }
 
-  /* Tudo numa tela, sem rolar: o palco em cima (a maior parte), a fileira de
-     ações e a paleta embaixo, e só a grade de peças rola por dentro. Dentro
+  /* Tudo numa tela, sem rolar: o palco em cima (a maior parte) e a paleta
+     embaixo, e só a grade de peças rola por dentro. Dentro
      do palco, os botões ficam em colunas nas laterais, que o boneco não usa:
-     à esquerda ▦, desfazer e refazer; à direita as ferramentas da peça, só
-     quando há uma selecionada (tamanho e giro são as alças no palco). O nome
+     à esquerda ▦, desfazer, refazer e, com uma peça selecionada, as
+     ferramentas dela; à direita as ações do look (tamanho e giro são as alças no palco). O nome
      do look sai daqui: o look salva como "Look N" e se renomeia em ▦. */
   .view-stylist {
     display: grid; grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.55fr) auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr);
     gap: 8px; padding: 10px 14px 10px; overflow: hidden;
   }
   .view-stylist .stylist-stage-area { display: contents; }
@@ -600,10 +600,21 @@
     border: 1.5px solid var(--tinta);
   }
   .view-stylist .st-historico { top: 56px; left: 10px; right: auto; flex-direction: column; }
-  .view-stylist .look-barra { grid-row: 2; }
-  .view-stylist .look-barra .lb-btn { height: 42px; }
+  /* As ações do look numa coluna na lateral direita do palco; os menus
+     (exportar, ⋯) abrem para a esquerda. */
+  .view-stylist .look-barra {
+    grid-row: 1; grid-column: 1; z-index: 21;
+    align-self: start; justify-self: end;
+    width: 40px; margin: 10px 10px 0 0;
+    flex-direction: column; gap: 6px;
+  }
+  .view-stylist .look-barra > .lb-btn,
+  .view-stylist .look-barra .lb-grupo { flex: none; }
+  .view-stylist .look-barra .lb-btn { width: 40px; height: 38px; }
+  .view-stylist .look-barra .lb-ico { font-size: 17px; }
+  .view-stylist .lb-menu { right: calc(100% + 8px); top: 0; bottom: auto; }
   .view-stylist .stylist-palette {
-    grid-row: 3; margin: 0; min-height: 0;
+    grid-row: 2; margin: 0; min-height: 0;
     grid-template-rows: auto auto minmax(0, 1fr); align-items: stretch;
   }
   .view-stylist .stylist-palette:not(.abertas) { row-gap: 0; }
@@ -612,13 +623,13 @@
   .view-stylist .pal-cat, .view-stylist .palette-ajustes { height: 42px; }
   .view-stylist .stylist-tools {
     grid-row: 1; grid-column: 1; z-index: 21;
-    align-self: center; justify-self: end; margin: 0 10px 0 0; padding: 0;
+    align-self: start; justify-self: start; margin: 146px 0 0 10px; padding: 0;
     border: 0; background: none; overflow: visible;
   }
   .view-stylist .stylist-tools:has(.tool-btn:disabled) { display: none; }
   .view-stylist #layer-tools > :not(.tool-row) { display: none; }
-  .view-stylist #layer-tools .tool-row { flex-direction: column; flex-wrap: nowrap; gap: 6px; }
-  .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 38px; font-size: 16px; }
+  .view-stylist #layer-tools .tool-row { flex-direction: column; flex-wrap: nowrap; gap: 5px; }
+  .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 34px; font-size: 15px; }
 
   /* ------------------------------ Colagem -------------------------------- */
   .board-main { order: 1; }
