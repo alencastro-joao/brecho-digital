@@ -113,7 +113,7 @@ const corpo = (id, cor, extra) => {
   return `
   <g fill="${cor}" stroke="${cor}"
      stroke-linejoin="round" stroke-linecap="round">
-    ${parte(null, 'pernas')}${parte('tronco', 'tronco')}${parte('cabeca', 'cabeca')}
+    ${parte('perna', 'pernas')}${parte('tronco', 'tronco')}${parte('cabeca', 'cabeca')}
   </g>`;
 };
 

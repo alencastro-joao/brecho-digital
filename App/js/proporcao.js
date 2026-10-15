@@ -23,11 +23,27 @@
 // corpo (`ancoraNoCorpo`); quem mede no corpo converte de volta antes de
 // gravar (`ancoraNoMolde`). Voltar os dois números para 1 devolve o boneco de
 // antes, sem nada para desfazer.
-export const PROPORCAO = {
+export const PROPORCAO_PADRAO = {
   cabeca: 1.3,     // 1 = cabeça de antes
   tronco: 0.85,    // 1 = tronco de antes
+  pernas: 1,       // 1 = pernas de antes
 };
 
+// Proporções em teste: abrir o site com ?proporcao=<nome> troca o boneco só
+// naquela aba, sem gravar nada — as âncoras continuam no molde, então a mesma
+// peça serve aos dois bonecos. Ex.: /?proporcao=chibi#/stylist
+export const PROPORCOES_TESTE = {
+  // tronco bem menor, pernas mais compridas, cabeça bem maior
+  chibi: { cabeca: 1.45, tronco: 0.65, pernas: 1.15 },
+};
+const pedida = (() => {
+  try { return new URLSearchParams(globalThis.location?.search || '').get('proporcao'); }
+  catch { return null; }
+})();
+export const PROPORCAO_EM_TESTE = PROPORCOES_TESTE[pedida] ? pedida : null;
+export const PROPORCAO = PROPORCOES_TESTE[pedida] || PROPORCAO_PADRAO;
+
+const CHAO = { x: 300, y: 1144 };     // sola do pé: as pernas crescem daqui para cima
 const COS = { x: 300, y: 572 };       // o tronco encolhe na direção daqui
 const PESCOCO = { x: 300, y: 208 };   // onde a cabeça encosta no tronco
 
@@ -35,7 +51,15 @@ const PESCOCO = { x: 300, y: 208 };   // onde a cabeça encosta no tronco
 const escalaEm = (p, k) => ({ k, dx: p.x * (1 - k), dy: p.y * (1 - k) });
 const aplicar = (t, x, y) => ({ x: t.k * x + t.dx, y: t.k * y + t.dy });
 
-const TRONCO = escalaEm(COS, PROPORCAO.tronco);
+// Pernas e pés crescem a partir do chão; o cós sobe junto, e o tronco vai
+// atrás dele.
+const PERNAS = escalaEm(CHAO, PROPORCAO.pernas);
+const cosNovo = aplicar(PERNAS, COS.x, COS.y);
+const TRONCO = {
+  k: PROPORCAO.tronco,
+  dx: cosNovo.x - PROPORCAO.tronco * COS.x,
+  dy: cosNovo.y - PROPORCAO.tronco * COS.y,
+};
 // A cabeça cresce em volta da base do pescoço e vai junto com ela para onde
 // o tronco a levou.
 const baseDoPescoco = aplicar(TRONCO, PESCOCO.x, PESCOCO.y);
@@ -48,7 +72,7 @@ const NADA = { k: 1, dx: 0, dy: 0 };
 
 // As regiões de CATEGORIAS (config.js) e as de cá. Mão vai no braço, que é
 // do tronco: relógio, pulseira e bolsa acompanham a mão que subiu.
-const REGIAO = { cabeca: CABECA, tronco: TRONCO, maos: TRONCO };
+const REGIAO = { cabeca: CABECA, tronco: TRONCO, maos: TRONCO, perna: PERNAS, pes: PERNAS };
 const daRegiao = (regiao) => REGIAO[regiao] || NADA;
 
 const nn = (v) => Math.round(v * 100) / 100;
@@ -91,5 +115,6 @@ export function regiaoDaRoupinha(r, z) {
   if (r.slot === 'cabeca') return 'cabeca';
   if (r.slot === 'acessorio') return z >= 60 ? 'cabeca' : 'tronco';
   if (r.slot === 'torso' || r.slot === 'cintura') return 'tronco';
+  if (r.slot === 'pernas' || r.slot === 'pes') return 'perna';
   return null;
 }

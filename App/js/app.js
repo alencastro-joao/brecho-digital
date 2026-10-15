@@ -37,6 +37,7 @@ import { montarNivel } from './nivel.js';
 import { montarAvisos } from './avisos.js';
 import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
 import { toast } from './util.js';
+import { PROPORCAO_EM_TESTE } from './proporcao.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
 
@@ -79,6 +80,14 @@ function anunciarPresente(ganhas) {
 }
 
 async function iniciar() {
+  // Boneco de teste (?proporcao=...): uma etiqueta fixa para ninguém achar que
+  // é o boneco de verdade.
+  if (PROPORCAO_EM_TESTE) {
+    const tag = document.createElement('div');
+    tag.textContent = `Proporção em teste: ${PROPORCAO_EM_TESTE}`;
+    tag.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;padding:4px 12px;border-radius:999px;background:#1c2530;color:#fff;font:600 12px system-ui;pointer-events:none;opacity:.85';
+    document.body.append(tag);
+  }
   const { conta, nova } = await entrar();
   montarPaleta();                 // a cor do site é a do save de quem entrou
 
