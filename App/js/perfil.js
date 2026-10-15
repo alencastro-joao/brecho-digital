@@ -37,6 +37,7 @@ import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
+import { PALETAS, paletaAtual, escolherPaleta } from './paleta.js';
 import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
@@ -130,6 +131,7 @@ export function renderPerfil() {
   $('#perfil-nome').replaceChildren(u.nome, chipNivel());
   $('#perfil-handle').replaceChildren(
     u.handle, el('br'), `no brechó desde ${mesAno(new Date(u.criadoEm))}`);
+  renderMenuCores();
   $('#perfil-bio').textContent = u.bio;
   $('#perfil-bio').hidden = !u.bio;
   renderConta();
@@ -393,6 +395,7 @@ const fecharEdicao = () => {
 // -------------------------------- Ajustes ---------------------------------
 // O menu do pé do cartão abre o modal com uma seção só: a que foi clicada.
 const TITULOS_DE_AJUSTE = {
+  cores: 'Cores do site',
   conexoes: 'Contas conectadas',
   conta: 'Sua conta',
   testes: 'Testes',
@@ -413,6 +416,7 @@ function montarAjustes() {
 }
 
 function abrirAjustes(qual) {
+  if (qual === 'cores') renderPaletas();
   $('#aj-titulo').textContent = TITULOS_DE_AJUSTE[qual];
   document.querySelectorAll('#modal-ajustes [data-ajuste]').forEach(s => {
     s.hidden = s.dataset.ajuste !== qual;
@@ -425,6 +429,26 @@ function fecharAjustes() {
   $('#modal-ajustes').hidden = true;
   $('#form-senha').hidden = true;
   document.body.classList.remove('com-modal');
+}
+
+// ------------------------------ Cores do site -----------------------------
+// Uma amostra perolada por paleta; tocar já troca o site inteiro.
+function renderPaletas() {
+  const atual = paletaAtual();
+  $('#paletas').replaceChildren(...PALETAS.map(p => el('button', {
+    type: 'button',
+    class: 'paleta-opcao' + (p.id === atual ? ' ativa' : ''),
+    'data-paleta': p.id,
+    'aria-pressed': String(p.id === atual),
+    onclick: () => { escolherPaleta(p.id); renderPaletas(); renderMenuCores(); },
+  },
+  el('span', { class: 'paleta-amostra' }),
+  el('span', { class: 'paleta-nome' }, p.nome))));
+}
+
+function renderMenuCores() {
+  const p = PALETAS.find(x => x.id === paletaAtual());
+  $('#pf-menu-cores').textContent = `${p.nome} ›`;
 }
 
 // --------------------------------- Conta ----------------------------------

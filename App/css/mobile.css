@@ -995,8 +995,8 @@
    brilho perolado. */
 @media (max-width: 900px) {
   .view-social, .view-tarefas {
-    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: #c9d4dc;
-    --painel: #eaf0f4;
+    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
     background: var(--papel);
   }
   .view-social :is(.feed-head h1, .feed-head p),
@@ -1080,8 +1080,8 @@
    cores de raridade das peças e o botão escuro continuam como estão. */
 @media (max-width: 900px) {
   .view-vestiario, .view-perfil, .view-usuario {
-    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: #c9d4dc;
-    --painel: #eaf0f4;
+    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
     background: var(--papel);
   }
   :is(.view-vestiario, .view-perfil, .view-usuario) .btn-ghost:not(.ativo, .destaque) {

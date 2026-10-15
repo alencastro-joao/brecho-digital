@@ -826,6 +826,7 @@
 
         <!-- O que é da conta e não da página: abre por cima, em modal. -->
         <nav class="pf-menu">
+          <button type="button" data-ajuste="cores">Cores do site <span id="pf-menu-cores"></span></button>
           <button type="button" data-ajuste="conexoes">Contas conectadas <span id="pf-menu-conexoes"></span></button>
           <button type="button" data-ajuste="conta">Sua conta <span>senha, sair ›</span></button>
           <button type="button" data-ajuste="testes">Testes <span>›</span></button>
@@ -894,6 +895,12 @@
         <button class="modal-x" id="aj-fechar" title="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="aj-corpo">
+        <!-- A paleta do site (js/paleta.js): só o tom muda, o acabamento fica. -->
+        <section class="cores-secao" data-ajuste="cores">
+          <p class="missoes-sub">O tom dos botões, das abas e dos painéis. Vale em qualquer aparelho em que você entrar.</p>
+          <div class="paletas" id="paletas"></div>
+        </section>
+
         <section class="conexoes" data-ajuste="conexoes">
           <p class="missoes-sub">De onde vêm as peças e para onde vão as colagens.</p>
           <div class="conexao-lista" id="conexao-lista"></div>

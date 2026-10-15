@@ -26,6 +26,7 @@ import { montarColecoes, aoEntrarNasColecoes } from './colecoes.js';
 import { montarPerfil, aoEntrarNoPerfil } from './perfil.js';
 import { montarPlayer } from './player.js';
 import { montarPaineis } from './paineis.js';
+import { montarPaleta } from './paleta.js';
 import { montarEditar } from './editar.js';
 import { montarConexoes } from './conexoes.js';
 import { montarBusca, montarBuscaNoFeed } from './busca.js';
@@ -79,6 +80,7 @@ function anunciarPresente(ganhas) {
 
 async function iniciar() {
   const { conta, nova } = await entrar();
+  montarPaleta();                 // a cor do site é a do save de quem entrou
 
   // Os dois em paralelo porque nenhum depende do outro, e os dois precisam
   // estar prontos antes de montar tela alguma: o catálogo para desenhar as

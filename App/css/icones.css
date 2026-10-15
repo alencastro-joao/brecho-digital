@@ -1,11 +1,43 @@
 /* Ícones (js/icones.js) e o acabamento "anos 2000 / Wii" dos botões.
    Phosphor duotone em tudo: SVG em 1em que pinta com a cor do texto. */
 
-:root {
+/* A paleta do site: o tom da pérola, das bordas e do destaque. O azul é o
+   padrão; as outras trocam só o tom e mantêm o mesmo acabamento. Quem escolhe
+   é o perfil (js/paleta.js põe `data-paleta` no <html>). */
+:root, [data-paleta="azul"] {
   --wii: #34bEED;            /* o azul do menu do Wii */
+  --wii-brilho: rgba(52, 190, 237, .28);
   --wii-borda: #cdd7de;
-  --perola: linear-gradient(180deg, #ffffff 0%, #f6f8fa 48%, #e9eef2 52%, #f5f8fa 100%);
+  --perola-1: #f6f8fa; --perola-2: #e9eef2; --perola-3: #f5f8fa;
+  --perola-degrau: #d3dde4;  /* o degrau embaixo dos botões */
+  --perola-painel: #eaf0f4;  /* fundo dos painéis das grades */
+  --perola-bloco: #c9d4dc;   /* degrau dos blocos dentro dos painéis */
   --brilho-topo: linear-gradient(180deg, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .2) 46%, rgba(255, 255, 255, 0) 54%);
+}
+/* A pérola é recalculada onde a paleta muda (no <html> e nas amostras do
+   perfil), para pegar os tons de lá. */
+:root, [data-paleta] {
+  --perola: linear-gradient(180deg, #ffffff 0%, var(--perola-1) 48%, var(--perola-2) 52%, var(--perola-3) 100%);
+}
+[data-paleta="rosa"] {
+  --wii: #f06ba8; --wii-brilho: rgba(240, 107, 168, .28); --wii-borda: #e6cfd9;
+  --perola-1: #fbf5f8; --perola-2: #f3e6ec; --perola-3: #faf4f7;
+  --perola-degrau: #e8d4dd; --perola-painel: #f6eaef; --perola-bloco: #e0c8d3;
+}
+[data-paleta="menta"] {
+  --wii: #34c08a; --wii-brilho: rgba(52, 192, 138, .28); --wii-borda: #c9dcd2;
+  --perola-1: #f5faf7; --perola-2: #e4f0e9; --perola-3: #f4f9f6;
+  --perola-degrau: #cfe1d6; --perola-painel: #e7f2ec; --perola-bloco: #c3d9cc;
+}
+[data-paleta="lilas"] {
+  --wii: #9a7cea; --wii-brilho: rgba(154, 124, 234, .28); --wii-borda: #d7d0e5;
+  --perola-1: #f8f6fb; --perola-2: #ece8f5; --perola-3: #f7f5fb;
+  --perola-degrau: #dcd5ea; --perola-painel: #efebf7; --perola-bloco: #cfc6e2;
+}
+[data-paleta="dourado"] {
+  --wii: #eea52c; --wii-brilho: rgba(238, 165, 44, .28); --wii-borda: #e3d8c4;
+  --perola-1: #fbf8f2; --perola-2: #f4ecdd; --perola-3: #faf7f0;
+  --perola-degrau: #e7dcc8; --perola-painel: #f5efe2; --perola-bloco: #ddcfb5;
 }
 
 .ico {
@@ -25,15 +57,15 @@ html body .sidebar .sidebar-btn {
 .sidebar .sidebar-btn .ico { width: 24px; height: 24px; vertical-align: 0; color: rgba(0, 0, 0, .62); }
 html body .sidebar .sidebar-btn.ativa {
   border-color: var(--wii);
-  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(60, 80, 95, .14), 0 0 0 3px rgba(52, 190, 237, .28);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(60, 80, 95, .14), 0 0 0 3px var(--wii-brilho);
 }
 
 /* Os painéis das grades (paleta do Stylist e da Colagem, closet, personagem)
    no mesmo tom: fundo pérola azulado e bordas azul-acinzentadas. */
 html body :is(.view-closet, .view-stylist, .view-board, .view-personagem, #modal-meus) {
-  --painel: #eaf0f4;
+  --painel: var(--perola-painel);
   --bloco-borda: var(--wii-borda);
-  --bloco-fundo: #c9d4dc;
+  --bloco-fundo: var(--perola-bloco);
 }
 
 /* ------------------- Botões de ícone: pérola do Wii -------------------- */
@@ -49,7 +81,7 @@ html body :is(.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr, .lb-btn, .acao-
        .abertas .closet-ajustes, .abertas .palette-ajustes, .abertas #board-ajustes) {
   background: var(--perola);
   border-color: var(--wii-borda);
-  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 #d3dde4;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
   color: var(--tinta);
 }
 html body :is(.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr, .lb-btn, .acao-btn,
@@ -69,3 +101,25 @@ html body :is(.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr, .lb-btn, .acao-
 .vs-slot-icone .ico { width: 1.5em; height: 1.5em; opacity: .45; }
 .lb-btn .lb-ico .ico { width: 1.2em; height: 1.2em; }
 .lb-btn.so-icone .ico { width: 1.1em; height: 1.1em; }
+
+/* ------------------------- Cores do site (perfil) ------------------------ */
+/* Cada opção carrega a própria paleta (data-paleta), então a amostra já é o
+   botão perolado naquele tom. */
+.paletas { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 12px; }
+.paleta-opcao {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 6px 10px; border-radius: 14px; cursor: pointer;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  font-size: 12.5px; color: var(--tinta);
+}
+.paleta-opcao:hover { border-color: var(--wii); }
+.paleta-opcao.ativa { border-color: var(--wii); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho); font-weight: 600; }
+.paleta-amostra {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brilho-topo), var(--wii);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .14), 0 0 0 3px var(--perola-painel);
+}
+@media (max-width: 520px) {
+  .paletas { grid-template-columns: repeat(3, 1fr); }
+}
