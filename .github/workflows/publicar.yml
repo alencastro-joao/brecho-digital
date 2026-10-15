@@ -42,6 +42,7 @@ jobs:
               - 'App/assets/cloths/**'
               - 'App/assets/marcas/**'
               - 'App/assets/temas/**'
+              - 'App/assets/icones/**'
               - 'nuvem/infra/publicar.sh'
             api:
               - 'nuvem/lambda/**'
