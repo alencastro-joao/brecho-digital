@@ -95,7 +95,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 
 .sidebar-btn.travada { filter: grayscale(1); opacity: .45; }
 .sidebar-btn.travada::after {
-  content: ''; display: inline-block; width: 1.25em; height: 1.25em; background: url(../assets/icones/3d/cadeado.webp) center / contain no-repeat; position: absolute; font-size: 13px;
+  content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/cadeado.svg) center / contain no-repeat; mask: url(../assets/icones/ph/cadeado.svg) center / contain no-repeat; position: absolute; font-size: 13px;
   transform: translate(16px, -16px);
 }
 .sidebar-btn { position: relative; }

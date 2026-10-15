@@ -32,7 +32,7 @@ import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
   msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
-import { e3d } from './icones.js';
+import { emo } from './icones.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -570,7 +570,7 @@ function abrirFicha(peca, raridade, no) {
   $('#ficha-colecoes').replaceChildren(
     // O título só aparece quando diz algo: a peça falta numa coleção começada.
     ...(premio || falta ? [el('span', { class: 'col-chips-titulo' },
-      premio ? [e3d('🎁'), ` Pegue e escolha um item de ${premio.marca}`] : 'Falta na sua coleção')] : []),
+      premio ? [emo('🎁'), ` Pegue e escolha um item de ${premio.marca}`] : 'Falta na sua coleção')] : []),
     ...cols.map(chipDaColecao));
 
   const acao = $('#ficha-acao');

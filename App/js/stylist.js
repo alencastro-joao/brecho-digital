@@ -17,7 +17,7 @@ import { publicarOuGuardar, pacoteDoLook, jaPublicado, apagarDoFeedPorOrigem } f
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 
 let camadas = [];
 let selecionado = null;
@@ -121,7 +121,7 @@ function montarPaleta() {
       class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
       title: g.nome,
       onclick: () => { catPaleta = g.id; montarPaleta(); },
-    }, e3d(g.icone), el('small', {}, String(g.qtd))));
+    }, emo(g.icone), el('small', {}, String(g.qtd))));
   }
 
   const grid = $('#palette-grid');

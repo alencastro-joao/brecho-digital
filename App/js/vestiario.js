@@ -48,7 +48,7 @@ import { efeitosDoLook, brilhoDoEstilo } from './efeitos.js';
 import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { todasAsColecoes, chipDaColecao } from './colecoes.js';
 
@@ -311,7 +311,7 @@ function slotBox(slot) {
   aceitarSolta(caixa, slot);
 
   if (r) caixa.innerHTML = miniatura(r);
-  else caixa.append(el('span', { class: 'vs-slot-icone' }, e3d(s.icone)));
+  else caixa.append(el('span', { class: 'vs-slot-icone' }, emo(s.icone)));
   caixa.append(el('span', { class: 'vs-slot-nome' }, s.nome));
   return caixa;
 }
@@ -325,7 +325,7 @@ function renderAbas() {
 
   for (const slot of ORDEM_SLOTS) {
     const qtd = minhas.filter(r => r.slot === slot).length;
-    if (qtd) abas.push([slot, [e3d(SLOTS[slot].icone), ` ${SLOTS[slot].nome}`], qtd]);
+    if (qtd) abas.push([slot, [emo(SLOTS[slot].icone), ` ${SLOTS[slot].nome}`], qtd]);
   }
   if (!abas.some(([id]) => id === filtro)) filtro = 'tudo';
 

@@ -16,7 +16,7 @@ import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha, escolhasDaColecao }
 import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { abrirPecaNoCloset } from './closet.js';
 
@@ -136,7 +136,7 @@ export function chipDaColecao(c) {
     title: `Ver a coleção ${c.marca}`,
     onclick: (e) => { e.stopPropagation(); abrirColecao(c.id); },
   }, disco, el('span', {}, c.marca), el('small', {}, c.completa ? ico('ok') : `${c.tem}/${c.total}`),
-  c.livres > 0 ? el('span', { class: 'col-chip-gift' }, e3d('🎁')) : null);
+  c.livres > 0 ? el('span', { class: 'col-chip-gift' }, emo('🎁')) : null);
 }
 
 // Logo depois de ganhar uma peça: o aviso diz quanto a coleção andou e leva
@@ -145,8 +145,8 @@ export function avisarColecaoDaPeca(id) {
   const cols = colecoesDaPeca(id);
   if (!cols.length) return;
   const c = [...cols].sort((a, b) => (b.livres > 0) - (a.livres > 0) || b.pct - a.pct)[0];
-  const texto = c.livres > 0 ? [e3d('🎁'), ` ${c.marca}: escolha um item do avatar`]
-    : c.completa ? [e3d('✨'), ` Coleção ${c.marca} completa!`]
+  const texto = c.livres > 0 ? [emo('🎁'), ` ${c.marca}: escolha um item do avatar`]
+    : c.completa ? [emo('✨'), ` Coleção ${c.marca} completa!`]
     : `+1 em ${c.marca} · ${c.tem}/${c.total}`;
   const stack = document.getElementById('toasts');
   if (!stack) return;
@@ -266,7 +266,7 @@ function cartaoDaColecao(c) {
     class: 'col-disco' + (c.completa ? ' completa' : ''),
     style: { '--pct': (c.pct * 100) + '%' },
   }, discoDaColecao(c));
-  const status = c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, e3d('🎁'))
+  const status = c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, emo('🎁'))
     : el('small', {}, !c.total ? 'Em breve' : c.completa ? ico('ok') : `${c.tem}/${c.total}`);
 
   return el('button', {
@@ -291,7 +291,7 @@ function painelDaColecao(c) {
       emblema,
       el('span', { class: 'col-tile-nome' }, el('strong', {}, c.marca),
         el('small', {}, !c.total ? 'Em breve' : c.completa ? [ico('ok'), ' Completa'] : `${c.tem} de ${c.total} peças`)),
-      c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, e3d('🎁'), ' Escolha um item') : null),
+      c.livres > 0 ? el('span', { class: 'col-tem-escolha' }, emo('🎁'), ' Escolha um item') : null),
     c.total ? el('div', { class: 'col-pecas' },
       ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
       resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null)
@@ -332,7 +332,7 @@ function renderDetalhe(c) {
       el('h1', {}, c.marca),
       !c.total ? el('p', { class: 'col-hero-sub' }, 'As peças deste tema chegam em breve.')
         : el('p', { class: 'col-hero-conta' }, el('strong', {}, String(c.tem)), ` / ${c.total}`),
-      c.total ? el('p', { class: 'col-hero-sub' }, c.completa ? [e3d('✨'), ' Coleção completa!']
+      c.total ? el('p', { class: 'col-hero-sub' }, c.completa ? [emo('✨'), ' Coleção completa!']
         : faltam === 1 ? 'Falta só 1 peça para completar' : `Faltam ${faltam} peças para completar`) : null),
     c.total && c.itens.length ? trilha(c) : null,
     c.livres > 0 ? blocoDeEscolha(c) : null,
@@ -364,14 +364,14 @@ function trilha(c) {
       title: r ? r.nome : presente ? 'Escolha disponível' : `${m.n} peças`,
     });
     if (r) marco.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
-    else marco.replaceChildren(e3d(presente ? '🎁' : '🔒'));
+    else marco.replaceChildren(emo(presente ? '🎁' : '🔒'));
     passos.push(el('span', { class: 'col-marco-casa' }, marco,
       el('small', {}, r ? ico('ok') : `${m.n} peças`)));
   });
   return el('section', { class: 'col-trilha' },
     el('div', { class: 'col-trilha-passos' }, ...passos),
     el('p', { class: 'col-trilha-texto' }, c.livres > 0
-      ? [e3d('🎁'), ' Você ganhou um item! Escolha abaixo.']
+      ? [emo('🎁'), ' Você ganhou um item! Escolha abaixo.']
       : proximo ? `Mais ${proximo.n - c.tem} ${proximo.n - c.tem === 1 ? 'peça' : 'peças'} e você escolhe um item do avatar`
       : 'Todos os itens desta coleção são seus.'));
 }
@@ -444,7 +444,7 @@ function itemDaColecao(id, c) {
     arte,
     el('div', { class: 'col-item-info' },
       el('strong', {}, r.nome),
-      el('small', {}, e.liberada ? [ico('ok'), ' No inventário'] : pode ? [e3d('🎁'), ' Escolher este'] : [e3d('🔒'), ` ${e.rotulo}`])));
+      el('small', {}, e.liberada ? [ico('ok'), ' No inventário'] : pode ? [emo('🎁'), ' Escolher este'] : [emo('🔒'), ` ${e.rotulo}`])));
 }
 
 // Entrar pela navegação abre a lista; pelo emblema, a coleção dele.

@@ -697,7 +697,7 @@
   .view-board .rodape-acoes { flex-direction: row; flex-wrap: nowrap; gap: 4px; margin: 0; flex: none; }
   .view-board .acao-btn { font-size: 0; }
   .view-board .acao-btn::before { font-size: 16px; line-height: 1; }
-  .view-board #bd-sortear::before { content: ''; display: inline-block; width: 1.25em; height: 1.25em; background: url(../assets/icones/3d/dado.webp) center / contain no-repeat; }
+  .view-board #bd-sortear::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/dado.svg) center / contain no-repeat; mask: url(../assets/icones/ph/dado.svg) center / contain no-repeat; }
   .view-board #bd-salvar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; }
   .view-board #bd-publicar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/publicar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/publicar.svg) center / contain no-repeat; }
   .view-board [data-bd-export="formato"]::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/baixar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/baixar.svg) center / contain no-repeat; }

@@ -19,7 +19,7 @@ import { publicarOuGuardar, pacoteDaColagem, jaPublicado } from './publicacoes.j
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 
 const W = BOARD.W;
 
@@ -158,7 +158,7 @@ function montarPaleta() {
       class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
       title: g.nome,
       onclick: () => { catPaleta = g.id; montarPaleta(); },
-    }, e3d(g.icone), el('small', {}, String(g.qtd))));
+    }, emo(g.icone), el('small', {}, String(g.qtd))));
   }
 
   const grid = $('#board-grid');

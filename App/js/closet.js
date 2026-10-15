@@ -12,7 +12,7 @@ import {
 import { ordemAtual, ordenar, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { abrirEditar } from './editar.js';
 import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
@@ -165,7 +165,7 @@ function montarRail() {
       dataset: { cat: g.id }, title: g.nome,
       onclick: () => carregarCategoria(g.id),
     },
-      el('span', { class: 'cat-icone' }, e3d(g.icone)),
+      el('span', { class: 'cat-icone' }, emo(g.icone)),
       g.qtd ? el('span', { class: 'cat-qtd' }, String(g.qtd)) : null
     );
     rail.insertBefore(botao, divisor());

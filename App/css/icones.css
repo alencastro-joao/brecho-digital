@@ -1,6 +1,5 @@
 /* Ícones (js/icones.js) e o acabamento "anos 2000 / Wii" dos botões.
-   Phosphor duotone nos botões: SVG em 1em que pinta com a cor do texto.
-   Fluent Emoji 3D nas roupas, nas abas e nos emoji do jogo. */
+   Phosphor duotone em tudo: SVG em 1em que pinta com a cor do texto. */
 
 :root {
   --wii: #34bEED;            /* o azul do menu do Wii */
@@ -13,11 +12,6 @@
   display: inline-block; width: 1em; height: 1em; flex: none;
   vertical-align: -.14em;
 }
-.e3d {
-  display: inline-block; width: 1.25em; height: 1.25em; flex: none;
-  object-fit: contain; vertical-align: -.25em;
-  user-select: none; -webkit-user-drag: none;
-}
 
 /* ------------------------------ Abas ---------------------------------- */
 .sidebar .sidebar-btn {
@@ -26,7 +20,7 @@
   border-color: rgba(255, 255, 255, .9);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .08);
 }
-.sidebar .sidebar-btn .e3d { width: 26px; height: 26px; vertical-align: 0; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .15)); }
+.sidebar .sidebar-btn .ico { width: 24px; height: 24px; vertical-align: 0; color: rgba(0, 0, 0, .62); }
 .sidebar .sidebar-btn.ativa {
   border-color: var(--wii);
   box-shadow: 0 0 0 3px rgba(52, 190, 237, .28), 0 4px 12px rgba(0, 0, 0, .1);
@@ -51,9 +45,8 @@
 .lb-btn.destaque { background-image: var(--brilho-topo); }
 
 /* Abas de categoria (closet, paleta do Stylist e da Colagem, vestiário). */
-.cat-icone .e3d { width: 1.5em; height: 1.5em; vertical-align: middle; }
-.pal-cat .e3d { width: 1.35em; height: 1.35em; }
-.vs-slot-icone .e3d { width: 1.6em; height: 1.6em; opacity: .55; }
-.bau-icone .e3d { width: 1em; height: 1em; }
+.cat-icone .ico { width: 1.3em; height: 1.3em; vertical-align: middle; }
+.pal-cat .ico { width: 1.25em; height: 1.25em; }
+.vs-slot-icone .ico { width: 1.5em; height: 1.5em; opacity: .45; }
 .lb-btn .lb-ico .ico { width: 1.2em; height: 1.2em; }
 .lb-btn.so-icone .ico { width: 1.1em; height: 1.1em; }

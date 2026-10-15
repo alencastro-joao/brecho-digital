@@ -17,7 +17,7 @@ import * as estoque from './estoque.js';
 import {
   el, $, toast, hojeISO, msAteMeiaNoite, msAteSegunda, formatarContagem, formatarDias,
 } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { barraDeNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { colecaoMaisPerto, todasAsColecoes, abrirColecao } from './colecoes.js';
@@ -67,7 +67,7 @@ function renderCartaoColecoes() {
     el('span', { class: 'tf-col-info' },
       el('strong', {}, 'Coleções'),
       el('small', {}, comEscolha
-        ? [e3d('🎁'), ` ${comEscolha.marca}: escolha um item do avatar`]
+        ? [emo('🎁'), ` ${comEscolha.marca}: escolha um item do avatar`]
         : perto
         ? (perto.tem
           ? `${perto.marca}: ${faltam === 1 ? 'falta 1 peça' : `faltam ${faltam} peças`} para fechar`
@@ -244,7 +244,7 @@ function linhaDeBau(box, { nome, bau, feitos, meta, unidade, pronto, abrir, aber
     box.className = 'bau aberto';
     box.replaceChildren(
       pecas.length ? el('div', { class: 'bau-pecas' }, ...pecas.slice(0, 3).map(miniPeca))
-                   : el('span', { class: 'bau-icone' }, e3d('🎁')),
+                   : el('span', { class: 'bau-icone' }, emo('🎁')),
       el('div', { class: 'bau-info' },
         el('strong', {}, `${nome} aberto`),
         el('small', {}, [...pecas.map(nomeDaPeca), `${aberto.xp} XP`].join(' + '))),
@@ -255,7 +255,7 @@ function linhaDeBau(box, { nome, bau, feitos, meta, unidade, pronto, abrir, aber
   const { atual, proximo } = premioDoBau(bau, nivel);
   box.className = 'bau' + (pronto ? ' pronto' : '') + (dourado ? ' dourado' : '');
   box.replaceChildren(
-    el('span', { class: 'bau-icone' }, e3d(pronto ? '🎁' : dourado ? '👑' : '🔒')),
+    el('span', { class: 'bau-icone' }, emo(pronto ? '🎁' : dourado ? '👑' : '🔒')),
     el('div', { class: 'bau-info' },
       el('strong', {}, nome),
       el('small', {}, `${descreverPremio(atual)}.`),
