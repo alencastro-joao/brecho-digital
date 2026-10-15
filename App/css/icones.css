@@ -27,22 +27,31 @@
 }
 
 /* ------------------- Botões de ícone: pérola do Wii -------------------- */
-.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr:not(.escuro),
-.lb-btn:not(.escuro):not(.destaque), .acao-btn:not(.forte), .ordem-sentido {
+/* O visual dos botões da direita do Stylist no celular vale para todos os
+   botões de ícone do app: pérola azulada, borda azul-acinzentada e o degrau
+   embaixo. Este arquivo carrega depois do mobile.css, e o `html body` mais o
+   id dentro do :is() ganham das regras de cada tela. Botão ligado (aberto,
+   ativo, escuro) fica de fora e mantém a cor da tela. */
+html body :is(.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr, .lb-btn, .acao-btn,
+  .ordem-sentido, .btn-meus, .st-hist-btn, .pal-cat, .palette-ajustes, #board-ajustes,
+  .closet-ajustes, .closet-voltar, .ficha-seta, .cat-btn, .closet-paginas button,
+  .pg-acoes button, .pg-abas button):not(.escuro, .forte, .active, .ativa, .on, [aria-expanded="true"], #pg-salvar,
+       .abertas .closet-ajustes, .abertas .palette-ajustes, .abertas #board-ajustes) {
   background: var(--perola);
   border-color: var(--wii-borda);
-  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0, 0, 0, .07);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 #d3dde4;
+  color: var(--tinta);
 }
-.tool-btn:hover:not(:disabled), .bar-btn:hover:not(:disabled), .modal-x:hover, .ficha-x:hover,
-.mp-ferr:not(.escuro):hover:not(:disabled), .lb-btn:not(.escuro):not(.destaque):hover,
-.acao-btn:not(.forte):hover:not(:disabled), .ordem-sentido:hover {
+html body :is(.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr, .lb-btn, .acao-btn,
+  .ordem-sentido, .btn-meus, .st-hist-btn, .pal-cat, .palette-ajustes, #board-ajustes,
+  .closet-ajustes, .closet-voltar, .ficha-seta, .cat-btn, .closet-paginas button,
+  .pg-acoes button, .pg-abas button):not(.escuro, .forte, .active, .ativa, .on, [aria-expanded="true"], #pg-salvar,
+       .abertas .closet-ajustes, .abertas .palette-ajustes, .abertas #board-ajustes):hover:not(:disabled) {
   border-color: var(--wii);
-  box-shadow: inset 0 1px 0 #fff, 0 0 0 3px rgba(52, 190, 237, .2);
 }
 .btn-dark, .lb-btn.escuro, .acao-btn.forte, .mp-ferr.escuro {
   background-image: linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .06) 48%, rgba(255, 255, 255, 0) 52%);
 }
-.lb-btn.destaque { background-image: var(--brilho-topo); }
 
 /* Abas de categoria (closet, paleta do Stylist e da Colagem, vestiário). */
 .cat-icone .ico { width: 1.3em; height: 1.3em; vertical-align: middle; }
