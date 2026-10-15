@@ -5,7 +5,8 @@
 // gerar do Stylist, pelo da Colagem e pelos perfis fictícios do feed — assim
 // os três sorteiam com o mesmo critério.
 
-import { BOARD, ASSINATURA_PADRAO, ancoraDaPeca, escalaMural } from './config.js';
+import { BOARD, ASSINATURA_PADRAO, CATEGORIAS, ancoraDaPeca, escalaMural } from './config.js';
+import { doAtualParaPadrao } from './proporcao.js';
 import { proporcao } from './catalog.js';
 import { alturaDe, areaUtil } from './boardgeo.js';
 import { shuffle } from './util.js';
@@ -69,14 +70,16 @@ export function sortearConjunto(acervo, rnd = Math.random, { minimo = 3 } = {}) 
 // Converte o conjunto em camadas vestidas no avatar. Cada peça entra do jeito
 // que foi configurada — ponto e largura da âncora dela, sem giro —, igual a
 // vestir clicando na paleta. O sorteio escolhe as peças, não mexe nelas.
+// Sai no formato gravado (boneco de verdade), como um look salvo.
 export function camadasParaAvatar(pecas) {
   return pecas.map(peca => {
     const a = ancoraDaPeca(peca);
+    const p = doAtualParaPadrao(CATEGORIAS[peca.cat]?.regiao, a);
     return {
       itemId: peca.id,
       cat: peca.cat,
-      x: a.x,
-      y: a.y,
+      x: p.x,
+      y: p.y,
       escala: 1,
       rot: 0,
       flip: false,

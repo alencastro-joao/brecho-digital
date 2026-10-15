@@ -6,7 +6,8 @@
 // ancoragem da sua categoria (engine de lookbook) e dentro da sua camada de
 // z-index; dali a pessoa move, gira e redimensiona à vontade.
 
-import { CONFIG, RARIDADE, escalaGrade, ancoraDaPeca } from './config.js';
+import { CONFIG, CATEGORIAS, RARIDADE, escalaGrade, ancoraDaPeca } from './config.js';
+import { doPadraoParaAtual, doAtualParaPadrao } from './proporcao.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande } from './catalog.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
@@ -435,7 +436,7 @@ function ligarFerramentas() {
   $$('[data-export]').forEach(b => b.addEventListener('click', async () => {
     if (!camadas.length) return toast('Monte um look antes de exportar.', 'aviso');
     b.disabled = true;
-    await baixarLook(camadas, b.dataset.export, $('#outfit-nome').value.trim() || 'meu look');
+    await baixarLook(estruturaLimpa(), b.dataset.export, $('#outfit-nome').value.trim() || 'meu look');
     b.disabled = false;
     toast('PNG gerado. Confere os downloads.');
   }));
@@ -513,7 +514,7 @@ export function gerarLook() {
   }
 
   if (camadas.length) marcar();
-  const sorteadas = camadasParaAvatar(sortearConjunto(acervo));
+  const sorteadas = noAtual(camadasParaAvatar(sortearConjunto(acervo)));
   camadas = sorteadas.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
   // O look sorteado é outro look: o nome do que estava aberto não vem junto,
@@ -557,7 +558,13 @@ async function salvarLook({ silencioso = false } = {}) {
   return look;
 }
 
-const estruturaLimpa = () => camadas.map(({ uid, ...resto }) => ({ ...resto }));
+const estruturaLimpa = () => noPadrao(camadas.map(({ uid, ...resto }) => ({ ...resto })));
+
+// O palco trabalha no boneco de agora; o que é gravado (look salvo, post,
+// exportação) fica no boneco de verdade. Fora do teste de proporção é igual.
+const regiaoDe = (c) => CATEGORIAS[pecaDoCatalogo(c.itemId)?.cat || c.cat]?.regiao;
+const noAtual = (cs) => cs.map(c => ({ ...c, ...doPadraoParaAtual(regiaoDe(c), c) }));
+const noPadrao = (cs) => cs.map(c => ({ ...c, ...doAtualParaPadrao(regiaoDe(c), c) }));
 
 async function publicarLook() {
   const look = await salvarLook({ silencioso: true });
@@ -601,7 +608,7 @@ export function abrirLook(id) {
   const look = db.state.looks.find(l => l.id === id);
   if (!look) return;
   lookAtualId = look.id;
-  camadas = look.camadas.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
+  camadas = noAtual(look.camadas).map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
   $('#outfit-nome').value = look.nome;
   zerarHistorico();

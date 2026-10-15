@@ -3,7 +3,8 @@
 // Serve para dois fins: as miniaturas do feed e a exportação para o Instagram
 // (Story 1080×1920 e Post 1080×1350), como no "gerador de assets para social".
 
-import { CONFIG, BOARD, ancoraDaPeca } from './config.js';
+import { CONFIG, BOARD, CATEGORIAS, ancoraDaPeca } from './config.js';
+import { doPadraoParaAtual } from './proporcao.js';
 import { item as pecaDoCatalogo, proporcao, srcGrande } from './catalog.js';
 import { avatarDataURL, aparenciaAtual } from './avatar.js';
 import { alturaDe, posAssinatura, fonteCss } from './boardgeo.js';
@@ -81,7 +82,9 @@ export async function renderizarLook(camadas, opts = {}) {
     const larguraUnidades = ancoraDaPeca(peca).w * (c.escala ?? 1);
     const lw = larguraUnidades * escala;
     const lh = lw / proporcao(peca);
-    const [cx, cy] = paraTela(c.x, c.y);
+    // Look gravado está no boneco de verdade; o desenho é no de agora.
+    const p = doPadraoParaAtual(CATEGORIAS[peca.cat]?.regiao, c);
+    const [cx, cy] = paraTela(p.x, p.y);
 
     ctx.save();
     ctx.translate(cx, cy);
