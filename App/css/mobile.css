@@ -1144,4 +1144,25 @@
     border: 2px solid var(--wii-borda); border-radius: 16px;
     box-shadow: inset 0 -3px 0 var(--perola-degrau);
   }
+  /* O retrato vem redondo, com o fundo dele; no botão quadrado ele ocupa a
+     caixa toda, senão sobram dois tons de fundo. */
+  .perfil-atalho .retrato { border-radius: 0; }
+
+  /* A ficha da peça: painel da paleta, com a foto num bloco branco. */
+  .view-vitrine .ficha {
+    background: var(--perola-painel); border: 2px solid var(--wii-borda); border-radius: 20px;
+    box-shadow: inset 0 1px 0 #fff, 0 18px 44px rgba(0, 0, 0, .18);
+  }
+  .view-vitrine .ficha .ficha-img {
+    background: #fff; border: 2px solid var(--wii-borda); border-radius: 14px;
+    box-shadow: inset 0 -3px 0 var(--perola-bloco); padding: 6px;
+  }
+  .view-vitrine .ficha .ficha-img img { max-height: 72px; }
+  .view-vitrine .ficha .ficha-rar { background-color: #fff; border-width: 2px; }
+  .view-vitrine .ficha .ficha-chance { color: var(--tinta-suave); }
+  .view-vitrine .ficha :is(.btn-dark, .btn-ghost) { border-radius: 14px; }
+  .view-vitrine .ficha .btn-dark:disabled {
+    background: var(--perola); border: 2px solid var(--wii-borda);
+    box-shadow: inset 0 -3px 0 var(--perola-degrau);
+  }
 }
