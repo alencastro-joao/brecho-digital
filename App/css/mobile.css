@@ -1073,3 +1073,123 @@
   }
   .view-tarefas .tf-colecoes, .view-tarefas .bau { background-color: #fff; background-image: var(--perola); }
 }
+
+/* --------------- Roupas e Perfil no padrão do Closet/Stylist ---------------
+   Mesmo acabamento do Feed e das Tarefas: sem título nem sino/perfil no topo
+   (avisos.css), painéis pérola azulada e blocos com o degrau embaixo. As
+   cores de raridade das peças e o botão escuro continuam como estão. */
+@media (max-width: 900px) {
+  .view-vestiario, .view-perfil, .view-usuario {
+    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: #c9d4dc;
+    --painel: #eaf0f4;
+    background: var(--papel);
+  }
+  :is(.view-vestiario, .view-perfil, .view-usuario) .btn-ghost:not(.ativo, .destaque) {
+    background: var(--perola); border: 2px solid var(--bloco-borda); border-radius: 14px;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
+    color: var(--tinta); font-weight: 700;
+  }
+  :is(.view-vestiario, .view-perfil, .view-usuario) .btn-dark {
+    border-radius: 14px; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .35);
+  }
+
+  /* Roupas: o boneco e os lugares do corpo num painel; a ficha e a mochila,
+     painéis embaixo. O "Tirar tudo" fica sozinho na direita, sem o título. */
+  .view-vestiario .vs-palco { padding: 12px 16px 10px; gap: 10px; }
+  .view-vestiario .vs-palco-topo h1 { display: none; }
+  .view-vestiario .vs-palco-topo { justify-content: flex-end; }
+  .view-vestiario .vs-palco-topo .btn-ghost { padding: 9px 16px; }
+  .view-vestiario .vs-corpo {
+    padding: 10px; border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel); height: min(62dvh, 500px);
+  }
+  .view-vestiario .vs-previa {
+    background-color: #fff; border: 2px solid var(--bloco-borda); border-radius: 16px;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-vestiario .vs-slot { box-shadow: inset 0 -3px 0 var(--bloco-fundo); }
+  .view-vestiario .vs-slot.vazio { border-style: solid; border-color: var(--bloco-borda); background: #f7f9fb; }
+  .view-vestiario .vs-slot.selecionado { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wii); }
+  .view-vestiario .vs-ficha {
+    border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
+  }
+  .view-vestiario .vs-ficha-arte {
+    background-color: #fff; border: 2px solid var(--bloco-borda);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-vestiario .vs-painel {
+    /* Painel com 16px de margem, 12px de respiro e 2px de borda de cada lado,
+       e quatro vãos de 8px entre as cinco casas. */
+    --casa: calc((100vw - 92px) / 5);
+    margin: 0 16px 20px; padding: 12px;
+    border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
+  }
+  .view-vestiario .vs-painel-topo::before, .view-vestiario .vs-painel-topo::after { display: none; }
+  .view-vestiario .vs-painel-topo h1 { font-size: 11px; color: #6f8290; }
+  .view-vestiario .vs-abas { gap: 6px; }
+  .view-vestiario .vs-aba {
+    padding: 7px 11px 9px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--perola); color: var(--tinta);
+    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-vestiario .vs-aba.ativa {
+    background: var(--vestiario) var(--brilho-topo); border-color: var(--tinta); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+  .view-vestiario .vs-item { box-shadow: inset 0 -3px 0 var(--bloco-fundo); }
+  .view-vestiario .vs-item.vaga { border-style: solid; border-color: var(--bloco-borda); background: #f7f9fb; box-shadow: none; }
+  .view-vestiario .vs-item.selecionado { box-shadow: 0 0 0 2px var(--painel), 0 0 0 4px var(--wii); }
+  .view-vestiario .vs-paginacao { border-top-color: var(--bloco-borda); }
+  .view-vestiario .vs-pag-seta {
+    border: 2px solid var(--bloco-borda); border-radius: 11px; background: var(--perola);
+    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-vestiario .vs-pag-ponto.ativa { background: var(--wii); border-color: var(--wii); }
+  .view-vestiario .vs-efeito {
+    border: 2px solid var(--bloco-borda); background: #fff;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo); padding: 8px 11px 10px;
+  }
+  .view-vestiario .vs-efeitos { flex: none; overflow: visible; }
+  .view-vestiario .vs-efeito.ativo { background: #e9f3df; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
+
+  /* Perfil (o seu e o dos outros): o cartão e cada seção viram painéis; o
+     retrato, os números e as linhas do menu, blocos. */
+  :is(.view-perfil, .view-usuario) .pf-layout { padding: 12px 16px 28px; gap: 10px; }
+  :is(.view-perfil, .view-usuario) .pf-vitrine { gap: 10px; }
+  :is(.view-perfil, .view-usuario) :is(.pf-cartao, .pf-secao, .pf-dicas) {
+    border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
+  }
+  :is(.view-perfil, .view-usuario) .pf-cartao { padding: 10px; }
+  :is(.view-perfil, .view-usuario) .pf-secao { padding: 12px; }
+  :is(.view-perfil, .view-usuario) .pf-dicas { padding: 12px 12px 4px; }
+  :is(.view-perfil, .view-usuario) .pf-dica { border-top-color: var(--bloco-borda); }
+  :is(.view-perfil, .view-usuario) .pf-avatar {
+    background: #fff; border: 2px solid var(--bloco-borda); border-radius: 16px;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  :is(.view-perfil, .view-usuario) .pf-corpo { padding: 14px 4px 4px; }
+  :is(.view-perfil, .view-usuario) .pf-stats { gap: 6px; border: 0; margin-bottom: 12px; }
+  :is(.view-perfil, .view-usuario) .pf-stat {
+    padding: 8px 0 10px; background: #fff; border: 2px solid var(--bloco-borda); border-radius: 12px;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  :is(.view-perfil, .view-usuario) .pf-stat + .pf-stat { border-left: 2px solid var(--bloco-borda); }
+  :is(.view-perfil, .view-usuario) .pf-menu { border-top: 0; gap: 6px; padding: 8px 4px 4px; }
+  :is(.view-perfil, .view-usuario) .pf-menu button,
+  :is(.view-perfil, .view-usuario) .pf-menu button:last-child {
+    padding: 12px 14px 14px; background: var(--perola);
+    border: 2px solid var(--bloco-borda); border-radius: 12px;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
+    font-weight: 600;
+  }
+  :is(.view-perfil, .view-usuario) .pf-link {
+    padding: 6px 10px 8px; border: 2px solid var(--bloco-borda); border-radius: 10px;
+    background: var(--perola); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--bloco-fundo);
+    font-size: 12px; font-weight: 700;
+  }
+  :is(.view-perfil, .view-usuario) .pf-link:hover { text-decoration: none; }
+  :is(.view-perfil, .view-usuario) .pf-obra {
+    border: 2px solid var(--bloco-borda); border-radius: 14px;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+}
