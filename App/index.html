@@ -613,18 +613,17 @@
     <div class="pf-pagina">
       <header class="pf-topo">
         <div class="pf-foto" id="up-avatar"></div>
-        <div class="pf-linha">
-          <button type="button" class="pf-icone" id="up-voltar" title="Voltar ao feed" aria-label="Voltar ao feed"><i data-i="seta-esq"></i></button>
-          <h1 class="pf-arroba" id="up-handle"></h1>
-          <span id="up-nivel"></span>
-        </div>
-        <div class="pf-stats" id="up-stats"></div>
         <div class="pf-info">
-          <strong class="pf-nome" id="up-nome"></strong>
+          <h1 class="pf-nome" id="up-nome"></h1>
+          <p class="pf-arroba" id="up-handle"></p>
           <p class="pf-bio" id="up-bio"></p>
           <div class="perfil-redes" id="up-redes"></div>
         </div>
-        <div class="pf-acoes" id="up-acoes"></div>
+        <div class="pf-stats" id="up-stats"></div>
+        <div class="pf-acoes">
+          <button type="button" class="pf-icone" id="up-voltar" title="Voltar ao feed" aria-label="Voltar ao feed"><i data-i="seta-esq"></i></button>
+          <div class="pf-acoes-botoes" id="up-acoes"></div>
+        </div>
       </header>
 
       <nav class="pf-abas" id="up-abas" role="tablist"></nav>
@@ -759,15 +758,21 @@
   </section>
 
   <section class="view view-perfil" data-view="perfil" hidden>
-    <!-- No jeito do Instagram: o retrato e os números em cima, os emblemas
-         das coleções como destaques e, embaixo, as abas com a grade de cada
-         uma. A vitrine mostra só o que tem estrela (ver js/perfil.js). -->
+    <!-- No jeito do Instagram: o retrato (com o nível em volta) e os números
+         em cima e, embaixo, as abas com a grade de cada uma. A vitrine mostra
+         só o que tem estrela (ver js/perfil.js). -->
     <div class="pf-pagina">
       <header class="pf-topo" id="pf-topo">
-        <button type="button" class="pf-foto" id="perfil-avatar" title="Personagem" aria-label="Personagem"></button>
-        <div class="pf-linha">
-          <h1 class="pf-arroba" id="perfil-handle">@voce</h1>
-          <span id="perfil-nivel"></span>
+        <button type="button" class="pf-foto" id="perfil-avatar" aria-label="Personagem"></button>
+        <div class="pf-info">
+          <h1 class="pf-nome" id="perfil-nome">Você</h1>
+          <p class="pf-arroba" id="perfil-handle">@voce</p>
+          <p class="pf-bio" id="perfil-bio"></p>
+          <div class="perfil-redes" id="perfil-redes"></div>
+        </div>
+        <div class="pf-stats" id="perfil-stats"></div>
+        <div class="pf-acoes">
+          <div class="pf-acoes-botoes" id="perfil-acoes"></div>
           <!-- O que é da conta e não da página: abre por cima, em modal. -->
           <div class="pf-config">
             <button type="button" class="pf-icone" id="pf-config" title="Ajustes" aria-label="Ajustes" aria-expanded="false"><i data-i="ajustes"></i></button>
@@ -779,13 +784,6 @@
             </nav>
           </div>
         </div>
-        <div class="pf-stats" id="perfil-stats"></div>
-        <div class="pf-info">
-          <strong class="pf-nome" id="perfil-nome">Você</strong>
-          <p class="pf-bio" id="perfil-bio"></p>
-          <div class="perfil-redes" id="perfil-redes"></div>
-        </div>
-        <div class="pf-acoes" id="perfil-acoes"></div>
 
         <form class="perfil-editar" id="perfil-editar" hidden>
           <label>Nome
@@ -803,8 +801,6 @@
           </div>
         </form>
       </header>
-
-      <div class="pf-destaques" id="perfil-colecoes"></div>
 
       <nav class="pf-abas" id="perfil-abas" role="tablist"></nav>
       <div class="pf-conteudo" id="perfil-conteudo"></div>

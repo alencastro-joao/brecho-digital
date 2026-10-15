@@ -1,8 +1,7 @@
 /* Perfil (#/perfil): a sua página, no jeito do Instagram.
-   Em cima o retrato redondo ao lado do @, dos números, do nome e da bio; logo
-   abaixo os emblemas das coleções como destaques; embaixo as abas, cada uma
-   com a sua grade. Ajustes da conta abrem num modal (#modal-ajustes) pela
-   engrenagem. O perfil dos outros (#/usuario/<id>) usa este mesmo desenho; o
+   Em cima o retrato redondo, com o nível no anel em volta, ao lado do nome,
+   da bio e dos números; embaixo as abas, cada uma com a sua grade. Ajustes
+   da conta abrem num modal (#modal-ajustes) pela engrenagem. O perfil dos outros (#/usuario/<id>) usa este mesmo desenho; o
    que é só dele está em usuario.css.
    Botões, abas e casas no acabamento perolado (icones.css), então seguem a
    paleta escolhida em "Cores do site".
@@ -19,27 +18,34 @@
 /* -------------------------------- O topo --------------------------------- */
 .pf-topo {
   display: grid; grid-template-columns: 220px minmax(0, 1fr);
-  grid-template-areas: "foto linha" "foto stats" "foto info" "foto acoes";
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-areas: "foto info" "foto stats" "foto acoes";
+  grid-template-rows: auto auto 1fr;
   column-gap: 40px; row-gap: 16px; align-items: start;
   padding-bottom: 28px;
 }
+/* O retrato no anel do nível: o anel é a barra de XP (enche com --xp, na cor
+   da paleta) e a moeda perolada embaixo diz o número. */
 .pf-foto {
-  grid-area: foto; justify-self: center;
-  padding: 5px; border-radius: 50%; background: #fff;
-  border: 3px solid var(--wii); box-shadow: 0 0 0 4px var(--wii-brilho);
+  grid-area: foto; justify-self: center; position: relative;
+  padding: 7px; border: 0; border-radius: 50%;
+  background: conic-gradient(var(--wii) var(--xp, 100%), var(--wii-borda) 0);
+  box-shadow: 0 0 0 4px var(--wii-brilho);
 }
 button.pf-foto { cursor: pointer; transition: transform .15s; }
 button.pf-foto:hover { transform: scale(1.02); }
-.pf-foto .retrato { display: block; }
-
-.pf-linha { grid-area: linha; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.pf-arroba {
-  font-size: 20px; font-weight: 600; letter-spacing: -.2px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.pf-foto .retrato { display: block; box-shadow: 0 0 0 5px #fff; }
+.pf-nivel {
+  position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
+  display: flex; align-items: baseline; gap: 3px;
+  padding: 3px 12px 6px; border-radius: 99px; white-space: nowrap;
+  background: var(--perola); border: 2px solid var(--wii);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 3px 8px rgba(0, 0, 0, .1);
+  color: var(--tinta);
 }
-.pf-linha .nivel-chip { margin-left: 0; }
-.pf-linha > span:empty { display: none; }
+.pf-nivel small { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--tinta-suave); }
+.pf-nivel strong { font-size: 17px; font-weight: 800; line-height: 1; }
+
+.pf-arroba { font-size: 13.5px; color: var(--tinta-suave); overflow-wrap: anywhere; }
 .pf-segue-voce { margin-left: 6px; }
 
 /* Botão redondo de ícone: a engrenagem e o voltar. */
@@ -52,7 +58,7 @@ button.pf-foto:hover { transform: scale(1.02); }
 }
 .pf-icone:hover, .pf-icone[aria-expanded="true"] { border-color: var(--wii); }
 
-.pf-config { position: relative; margin-left: auto; }
+.pf-config { position: relative; flex: none; }
 .pf-menu {
   position: absolute; z-index: 20; right: 0; top: calc(100% + 8px);
   min-width: 220px; padding: 6px; display: flex; flex-direction: column; gap: 4px;
@@ -80,13 +86,16 @@ button.pf-foto:hover { transform: scale(1.02); }
 button.pf-stat { cursor: pointer; }
 button.pf-stat:hover small { text-decoration: underline; }
 
-.pf-info { grid-area: info; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.pf-nome { font-size: 14.5px; font-weight: 700; overflow-wrap: anywhere; }
+.pf-info { grid-area: info; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pf-nome { font-size: 22px; font-weight: 700; letter-spacing: -.3px; overflow-wrap: anywhere; }
+.pf-bio { margin-top: 4px; }
 .pf-bio { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
 .pf-info .perfil-redes { margin: 6px 0 0; }
 
-.pf-acoes { grid-area: acoes; display: flex; gap: 8px; }
-.pf-acoes > :is(.btn-ghost, .btn-dark), .pf-acoes > .btn-ghost + .btn-ghost {
+.pf-acoes { grid-area: acoes; display: flex; gap: 8px; align-items: center; }
+.pf-acoes-botoes { flex: 1; display: flex; gap: 8px; min-width: 0; }
+.pf-acoes .pf-icone { width: 42px; height: 42px; }
+.pf-acoes-botoes > :is(.btn-ghost, .btn-dark), .pf-acoes-botoes > .btn-ghost + .btn-ghost {
   flex: 1; margin: 0; padding: 9px 12px 11px; border-radius: 12px;
   font-size: 13.5px; font-weight: 700;
 }
@@ -96,10 +105,10 @@ button.pf-stat:hover small { text-decoration: underline; }
 }
 .pf-acoes .btn-ghost:hover { border-color: var(--wii); }
 .pf-acoes .btn-dark { border: 2px solid transparent; }
-.view-usuario .pf-acoes { max-width: 260px; }
+.view-usuario .pf-acoes { max-width: 320px; }
 
 /* Editar: o formulário toma o lugar do nome, da bio e dos botões. */
-.pf-topo.editando :is(.pf-info, .pf-acoes) { display: none; }
+.pf-topo.editando :is(.pf-info, .pf-stats, .pf-acoes) { display: none; }
 .perfil-editar {
   grid-area: info / info / acoes / acoes;
   display: flex; flex-direction: column; gap: 10px; max-width: 420px;
@@ -118,15 +127,10 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-form-acoes { display: flex; gap: 8px; }
 .pf-form-acoes .btn-dark, .pf-form-acoes .btn-ghost { width: auto; margin: 0; padding: 9px 18px; }
 
-/* ------------------------------ Destaques -------------------------------- */
-/* Os emblemas das coleções, como os destaques do Instagram. */
-.pf-destaques {
-  display: flex; gap: 18px; overflow-x: auto; padding: 4px 4px 22px;
-  scrollbar-width: none;
-}
-.pf-destaques::-webkit-scrollbar { display: none; }
-.pf-destaques .pf-emblema { width: 72px; }
-.pf-destaques .pf-emblema-disco { width: 64px; height: 64px; }
+/* Coleções: os emblemas em grade, e o "Ver todas" no fim. */
+.pf-grade-colecoes { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 18px 10px; padding: 8px 0; }
+.pf-grade-colecoes .pf-emblema { width: auto; min-width: 0; }
+.pf-grade-colecoes .pf-emblema-disco { width: 64px; height: 64px; }
 .pf-emblema.pf-emblema-todas .pf-emblema-disco {
   display: grid; place-items: center; font-size: 24px; color: var(--tinta);
   border: 2px solid var(--wii-borda); background: var(--perola);
@@ -237,30 +241,32 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-vazio .btn-ghost:hover { border-color: var(--wii); }
 
 /* -------------------------------- Celular -------------------------------- */
-/* Como no app do Instagram: o @ e a engrenagem numa linha, o retrato menor ao
-   lado dos números empilhados, e nome, bio e botões embaixo, na largura toda.
-   As abas ficam só com o ícone. */
+/* Como no app do Instagram: o retrato menor ao lado dos números empilhados,
+   e nome, bio e botões embaixo, na largura toda. As abas ficam só com o
+   ícone. */
 @media (max-width: 900px) {
   .pf-pagina { padding: 14px 16px 28px; }
   .pf-topo {
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "linha linha" "foto stats" "info info" "acoes acoes";
+    grid-template-areas: "foto stats" "info info" "acoes acoes";
     grid-template-rows: auto;
-    column-gap: 20px; row-gap: 12px; align-items: center; padding-bottom: 18px;
+    column-gap: 20px; row-gap: 18px; align-items: center; padding: 6px 0 18px;
   }
-  .pf-foto { padding: 3px; border-width: 2px; box-shadow: 0 0 0 3px var(--wii-brilho); }
-  .pf-foto .retrato { zoom: .58; }
-  .pf-arroba { font-size: 18px; }
+  .pf-foto { padding: 5px; box-shadow: 0 0 0 3px var(--wii-brilho); }
+  .pf-foto .retrato { zoom: .62; box-shadow: 0 0 0 4px #fff; }
+  .pf-nivel { bottom: -10px; padding: 2px 9px 5px; }
+  .pf-nivel strong { font-size: 15px; }
+  .pf-nome { font-size: 17px; }
+  .pf-acoes .pf-icone { width: 40px; height: 40px; }
   .pf-stats { justify-content: space-around; gap: 8px; }
   .pf-stat { flex-direction: column; align-items: center; gap: 0; }
   .pf-stat strong { font-size: 17px; }
   .pf-stat small { font-size: 12.5px; }
-  .pf-acoes > button { padding: 8px 6px 10px; font-size: 13px; }
+  .pf-acoes-botoes { gap: 6px; }
+  .pf-acoes-botoes > :is(.btn-ghost, .btn-dark) { padding: 8px 4px 10px; font-size: 12.5px; white-space: nowrap; }
   .view-usuario .pf-acoes { max-width: none; }
   .perfil-editar { max-width: none; }
-  .pf-destaques { gap: 14px; margin: 0 -16px; padding: 2px 16px 16px; }
-  .pf-destaques .pf-emblema { width: 64px; }
-  .pf-destaques .pf-emblema-disco { width: 58px; height: 58px; }
+  .pf-grade-colecoes { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 6px; }
   .pf-abas { margin-bottom: 10px; }
   .pf-aba span { display: none; }
   .pf-aba .ico { font-size: 21px; }
