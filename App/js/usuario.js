@@ -272,9 +272,19 @@ function abasDosPosts(p, posts) {
       itens: obras(posts.filter(post => post.tipo !== 'board')), vazio: 'Nenhum look ainda' },
     { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
       itens: obras(posts.filter(post => post.tipo === 'board')), vazio: 'Nenhuma colagem ainda' },
-    { id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
-      itens: gradeDePecas(pecasDe(p.id), { desejo: true }), vazio: 'Nenhuma roupa ainda' },
+    abaDeRoupasDe(p, []),
   ];
+}
+
+// A prévia do guarda-roupa dela: as favoritas primeiro, depois as outras.
+function abaDeRoupasDe(p, favoritas) {
+  const todas = previaDeRoupas(favoritas, guardaRoupaDe(p) || []);
+  return {
+    id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
+    itens: gradeDaPrevia(todas, favoritas,
+      () => abrirListaDePecas(`Guarda-roupa de ${p.nome.split(' ')[0]}`, todas)),
+    vazio: 'Nenhuma roupa ainda',
+  };
 }
 
 // ------------------------------- A vitrine --------------------------------
@@ -284,7 +294,7 @@ function abasDosPosts(p, posts) {
 function abasDaVitrine(p) {
   const favoritos = p.favoritos || {};
   const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
-  const obras = (tipo, lista = []) => lista.map(obra => cartaoDeObra({
+  const obras = (tipo, lista = []) => favoritasPrimeiro(lista).map(obra => cartaoDeObra({
     nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
     thumb: obra.thumb,
     solto: tipo === 'look' && Boolean(p.obras),
@@ -293,13 +303,42 @@ function abasDaVitrine(p) {
     abrir: () => abrirObra(obra, tipo),
   }));
   return [
-    { id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
-      itens: gradeDePecas(doCatalogo(favoritos.pecas), { desejo: true }), vazio: 'Nenhuma roupa favorita' },
+    abaDeRoupasDe(p, doCatalogo(favoritos.pecas)),
     { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
       itens: obras('look', todas.looks), vazio: 'Nenhum look ainda' },
     { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
       itens: obras('colagem', todas.colagens), vazio: 'Nenhuma colagem ainda' },
   ];
+}
+
+// ------------------------------- A prévia ---------------------------------
+// A aba Roupas é uma prévia do guarda-roupa: as favoritas primeiro e, para
+// completar, as outras peças. A lista inteira mora no botão Guarda-roupa, e o
+// último quadrinho da prévia também a abre. Looks e colagens seguem a mesma
+// ordem: as (até três) favoritas na frente, depois o resto.
+export const PREVIA_DE_ROUPAS = 15;
+
+export function previaDeRoupas(favoritas, todas) {
+  const ids = new Set();
+  return [...favoritas, ...todas].filter(p => p && !ids.has(p.id) && ids.add(p.id));
+}
+
+export const favoritasPrimeiro = (lista = []) =>
+  [...lista.filter(o => o.favorito), ...lista.filter(o => !o.favorito)];
+
+// A grade da aba Roupas: a prévia e, se sobrou peça de fora, o "ver todas".
+export function gradeDaPrevia(pecas, favoritas, abrirTudo) {
+  const marcadas = new Set(favoritas.map(p => p.id));
+  // Passou do tamanho da prévia: o último quadrinho vira o "ver todas", para a
+  // grade fechar certinho (15 = três ou cinco por fileira).
+  const cabem = pecas.length > PREVIA_DE_ROUPAS ? PREVIA_DE_ROUPAS - 1 : PREVIA_DE_ROUPAS;
+  const celulas = gradeDePecas(pecas.slice(0, cabem), { desejo: true, favoritas: marcadas });
+  const sobra = pecas.length - cabem;
+  if (sobra > 0) {
+    celulas.push(el('button', { type: 'button', class: 'up-peca pf-ver-todas', onclick: abrirTudo },
+      el('strong', {}, `+${sobra}`), el('small', {}, 'ver todas')));
+  }
+  return celulas;
 }
 
 // ------------------------- Guarda-roupa e wishlist -------------------------
@@ -467,13 +506,15 @@ function fecharPost() {
 
 // A célula é a mesma do guarda-roupa, sem aura nem arrastar. Com `desejo`,
 // cada peça que você ainda não tem ganha o ♡ da wishlist no canto.
-export const gradeDePecas = (pecas, { desejo = false } = {}) => pecas.map(peca =>
+// `favoritas` (ids) ganham a estrela no outro canto.
+export const gradeDePecas = (pecas, { desejo = false, favoritas = null } = {}) => pecas.map(peca =>
   el('div', {
     class: 'up-peca',
     title: `${nomeDaPeca(peca)} · ${rotuloCategoria(peca.cat)}`,
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
       el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })),
+    favoritas?.has(peca.id) ? el('span', { class: 'pf-estrela', title: 'Favorita' }, ico('estrela-cheia')) : null,
     desejo && !db.temPeca(peca.id) ? botaoDesejo(peca) : null
   ));
 

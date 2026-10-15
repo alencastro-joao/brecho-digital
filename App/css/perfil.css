@@ -189,6 +189,21 @@ button.pf-stat:hover small { text-decoration: underline; }
 }
 .pf-grade .up-peca:hover { border-color: var(--wii); }
 
+/* A estrela da favorita, no canto de cima à esquerda. */
+.pf-estrela {
+  position: absolute; z-index: 2; top: 7px; left: 7px;
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); color: #ffd35c; font-size: 13px;
+}
+
+/* O último quadrinho da prévia: quantas faltam, e abre a lista inteira. */
+.pf-ver-todas {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--perola); color: var(--tinta);
+}
+.pf-ver-todas strong { font-size: 22px; font-weight: 800; }
+.pf-ver-todas small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+
 /* O ♡ da wishlist no canto da peça de outra pessoa. */
 .pf-desejo {
   position: absolute; z-index: 2; top: 6px; right: 6px;
