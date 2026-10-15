@@ -180,7 +180,7 @@ function proximoPremio() {
   if (!vez) { premioNaTela = null; return; }
   const { m, r, ultima } = vez;
   const melhor = r.pecas.map(p => p.peca.raridade)
-    .sort((a, b) => ordem(b) - ordem(a))[0] || 'uncommon';
+    .sort((a, b) => ordem(b) - ordem(a))[0] || 'nenhuma';
 
   const pecas = r.pecas.map(({ item, peca }, i) => {
     const rar = RARIDADE[peca.raridade] || RARIDADE.common;
@@ -252,9 +252,11 @@ function htmlBoasVindas() {
     <div class="intro-abertura">
       <span class="intro-logo">BD</span>
       <h2>Bem-vindo ao Brechó Digital!</h2>
-      <p class="intro-dica">Vamos começar um tutorial rápido. Você vai criar o seu personagem,
-        pegar a sua primeira roupa e conhecer tudo o que dá pra fazer aqui.</p>
-      <p class="intro-dica">Cada missão dá um prêmio, e a última é uma <b>peça épica</b>.</p>
+      <div class="intro-balao" data-digitar>
+        <p class="intro-dica">Vamos começar um tutorial rápido. Você vai criar o seu personagem,
+          pegar a sua primeira roupa e conhecer tudo o que dá pra fazer aqui.</p>
+        <p class="intro-dica">Cada missão dá um prêmio, e a última é uma <b>peça épica</b>.</p>
+      </div>
       <button class="btn-dark" data-acao="comecar" type="button">Começar o tutorial</button>
       <button class="link-btn" data-acao="pular" type="button">Pular tutorial</button>
     </div>`;
@@ -268,7 +270,7 @@ function htmlAberta(m, passo) {
       ${missao ? '<button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>' : ''}
     </div>
     <h2>${m.nome}</h2>
-    <p class="intro-dica">${comCor(m.dica)}</p>
+    <div class="intro-balao" data-digitar><p class="intro-dica">${comCor(m.dica)}</p></div>
     ${missao ? `<p class="intro-premio">${emoHtml('🎁')} ${rotuloDoPremio(m.premio)}</p>` : ''}
     ${pontos(passo)}
     <div class="intro-acoes">
@@ -315,10 +317,92 @@ function desenhar() {
     modo === 'aberta' ? htmlAberta(m, passo) :
     modo === 'bolha' ? htmlBolha(passo) :
     htmlBarra(m, passo);
+  digitar(modo === 'boasvindas' || modo === 'aberta' ? `${modo}:${passo}` : null);
   posicionar();
 }
 
+// ------------------------------ Digitando ---------------------------------
+// O texto do balão aparece letra por letra, como se alguém digitasse. Só na
+// primeira vez que aquele balão aparece: redesenhar no meio (um aviso de
+// missão, um toque) continua de onde parou, e voltar a um balão já lido mostra
+// tudo de uma vez. Um toque no balão termina na hora.
+const MS_POR_LETRA = 22;
+const lidos = new Set();
+let digitando = null;   // { chave, mostradas, timer }
+
+function digitar(chave) {
+  if (digitando && digitando.chave !== chave) pararDeDigitar();
+  const balao = chave && caixa.querySelector('[data-digitar]');
+  if (!balao || lidos.has(chave) ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // Cada pedaço de texto guarda o conteúdo inteiro e começa vazio; as letras
+  // vão sendo devolvidas em ordem, atravessando o <b> e os parágrafos.
+  const nos = [];
+  const andar = document.createTreeWalker(balao, NodeFilter.SHOW_TEXT);
+  while (andar.nextNode()) {
+    const n = andar.currentNode;
+    nos.push({ n, texto: n.nodeValue });
+  }
+  const total = nos.reduce((t, x) => t + x.texto.length, 0);
+  // O balão já nasce do tamanho do texto inteiro, para o cartão não crescer
+  // (e pular) enquanto digita.
+  balao.style.minHeight = `${balao.offsetHeight}px`;
+  if (!digitando) digitando = { chave, mostradas: 0, timer: 0 };
+  clearTimeout(digitando.timer);
+  balao.classList.add('digitando');
+
+  const cursor = el('span', { class: 'intro-cursor', 'aria-hidden': 'true' });
+  const pintar = () => {
+    let resta = digitando.mostradas;
+    let ultimo = nos[0]?.n;
+    for (const { n, texto } of nos) {
+      n.nodeValue = texto.slice(0, Math.max(0, resta));
+      if (resta > 0 && texto.trim()) ultimo = n;
+      resta -= texto.length;
+    }
+    ultimo?.after(cursor);
+  };
+  const passo = () => {
+    // Espaços em sequência (a quebra do HTML) contam como um só.
+    do digitando.mostradas++;
+    while (digitando.mostradas < total && /\s/.test(letraEm(nos, digitando.mostradas)) &&
+           /\s/.test(letraEm(nos, digitando.mostradas - 1)));
+    pintar();
+    if (digitando.mostradas >= total) { terminar(); return; }
+    const letra = letraEm(nos, digitando.mostradas - 1);
+    digitando.timer = setTimeout(passo, /[.!?:]/.test(letra) ? MS_POR_LETRA * 8 : MS_POR_LETRA);
+  };
+  const terminar = () => {
+    for (const { n, texto } of nos) n.nodeValue = texto;
+    cursor.remove();
+    balao.classList.remove('digitando');
+    lidos.add(chave);
+    clearTimeout(digitando.timer);
+    digitando = null;
+  };
+  digitando.terminar = terminar;
+  pintar();
+  digitando.timer = setTimeout(passo, digitando.mostradas ? MS_POR_LETRA : 180);
+}
+
+function letraEm(nos, i) {
+  for (const { texto } of nos) {
+    if (i < texto.length) return texto[i];
+    i -= texto.length;
+  }
+  return '';
+}
+
+function pararDeDigitar() {
+  if (!digitando) return;
+  clearTimeout(digitando.timer);
+  lidos.add(digitando.chave);
+  digitando = null;
+}
+
 function fechar() {
+  pararDeDigitar();
   caixa?.remove();
   caixa = null;
   document.body.classList.remove('com-intro', 'intro-embaixo');
@@ -370,7 +454,7 @@ function soltarArrasto() {
 function clique(e) {
   if (acabouDeArrastar) { acabouDeArrastar = false; return; }
   const acao = e.target.closest('[data-acao]')?.dataset.acao;
-  if (!acao) return;
+  if (!acao) { if (digitando && e.target.closest('[data-digitar]')) digitando.terminar(); return; }
   if (acao === 'comecar') { passoNovo(); desenhar(); }
   else if (acao === 'entendi') entendi();
   else if (acao === 'abrir') { modo = 'aberta'; desenhar(); }

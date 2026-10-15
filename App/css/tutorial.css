@@ -7,39 +7,78 @@
   right: 120px; bottom: 28px;
   width: min(380px, calc(100vw - 32px));
   padding: 16px 18px 14px;
-  background: #fff; color: var(--tinta);
-  border: 1px solid var(--linha); border-radius: 22px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, .2);
+  background: var(--perola-painel); color: var(--tinta);
+  border: 2px solid var(--wii-borda); border-radius: 22px;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 18px 50px rgba(30, 50, 65, .22);
   animation: intro-entra .35s cubic-bezier(.2, .9, .3, 1.2);
 }
 @keyframes intro-entra { from { opacity: 0; transform: translateY(16px); } }
 body.com-modal .intro { display: none; }
 
 .intro h2 { margin: 4px 0 6px; font-size: 19px; line-height: 1.2; }
-.intro-sobre { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--tinta-suave); }
+.intro-sobre { margin: 0; font-size: 11.5px; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--wii); }
 .intro-dica { margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-suave); }
-.intro-premio { margin: 10px 0 0; font-size: 13.5px; font-weight: 700; }
+.intro-premio { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0;
+  padding: 5px 12px; border-radius: 99px; font-size: 13.5px; font-weight: 700;
+  background: var(--perola); border: 2px solid var(--wii-borda); box-shadow: inset 0 -2px 0 var(--perola-degrau); }
+
+/* O balão de fala: um bloco branco dentro do painel pérola, com a pontinha
+   do lado do título. O texto entra digitado (digitar em js/tutorial.js). */
+.intro-balao {
+  position: relative; margin-top: 4px; padding: 10px 13px;
+  background: #fff; border: 2px solid var(--wii-borda); border-radius: 16px;
+  box-shadow: inset 0 -3px 0 var(--perola-painel);
+}
+.intro-balao::before {
+  content: ""; position: absolute; left: 22px; top: -9px; width: 14px; height: 14px;
+  background: #fff; border-left: 2px solid var(--wii-borda); border-top: 2px solid var(--wii-borda);
+  transform: rotate(45deg); border-radius: 3px 0 0 0;
+}
+.intro-balao .intro-dica { color: var(--tinta); }
+.intro-balao .intro-dica + .intro-dica { margin-top: 8px; }
+/* O cursor piscando no fim do que já foi digitado. */
+.intro-cursor {
+  content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 2px;
+  vertical-align: -.15em; background: var(--wii); animation: intro-cursor .8s steps(1) infinite;
+}
+@keyframes intro-cursor { 50% { opacity: 0; } }
 
 .intro-topo { display: flex; justify-content: space-between; align-items: center; }
 .intro-min { background: none; border: 0; width: 32px; height: 28px; margin-right: -8px;
   font-size: 22px; line-height: 1; color: var(--tinta-suave); }
 
 .intro-pontos { display: flex; gap: 5px; margin: 12px 0 12px; }
-.intro-pontos i { flex: 1 1 0; height: 4px; border-radius: 4px; background: var(--linha); }
-.intro-pontos i.feito { background: #2f7a4a; }
-.intro-pontos i.ativo { background: var(--tinta); }
+.intro-pontos i { flex: 1 1 0; height: 5px; border-radius: 5px; background: var(--perola-bloco); }
+.intro-pontos i.feito { background: var(--wii); }
+.intro-pontos i.ativo { background: var(--wii); box-shadow: 0 0 0 2px var(--wii-brilho); }
 
 .intro-acoes { display: flex; gap: 8px; margin-top: 12px; }
 .intro-pontos + .intro-acoes { margin-top: 0; }
 .intro-acoes .btn-ghost, .intro-acoes .btn-dark { margin: 0; padding: 12px 14px; font-size: 14px; flex: 1 1 0; }
+
+/* Botões no acabamento dos outros: o secundário em pérola com degrau, o
+   principal na cor da paleta com o brilho em cima. */
+.intro .btn-ghost, .intro-min {
+  background: var(--perola); border: 2px solid var(--wii-borda); color: var(--tinta);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.intro .btn-ghost:hover, .intro-min:hover { border-color: var(--wii); }
+.intro .btn-dark {
+  background: var(--brilho-topo), var(--wii); border: 2px solid var(--wii); color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .16), 0 0 0 3px var(--wii-brilho);
+}
+.intro .btn-dark:hover { filter: brightness(1.05); }
+.intro-min { border-radius: 10px; width: 34px; height: 30px; margin-right: 0; font-size: 18px; }
 
 /* Minimizado: uma faixa de uma linha. */
 .intro[data-modo="barra"] { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 18px; }
 .intro-faixa { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px;
   background: none; border: 0; padding: 0; text-align: left; color: inherit; }
 .intro-num { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
-  background: var(--papel); border: 1px solid var(--linha); font-size: 12px; font-weight: 800; }
+  background: var(--perola); border: 2px solid var(--wii); font-size: 12px; font-weight: 800;
+  box-shadow: inset 0 -2px 0 var(--perola-degrau); }
 .intro-texto { min-width: 0; display: flex; flex-direction: column; }
 .intro-texto b, .intro-texto small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .intro-texto b { font-size: 14px; }
@@ -72,13 +111,14 @@ body.com-modal .intro { display: none; }
      usa para tocar. */
   left: 12px; right: auto; top: calc(4px + env(safe-area-inset-top)); bottom: auto;
   width: auto; padding: 0; border-radius: 50%;
-  background: var(--tinta); border-color: var(--tinta);
+  background: var(--brilho-topo), var(--wii); border-color: var(--wii);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .16), 0 0 0 3px var(--wii-brilho), 0 8px 20px rgba(30, 50, 65, .25);
   animation: none;
 }
 .intro-bolha {
   display: grid; place-items: center;
   width: 50px; height: 50px; padding: 0; border: 0; border-radius: 50%;
-  background: none; color: #fff; font-size: 13px; font-weight: 800;
+  background: none; color: #fff; font-size: 13px; font-weight: 800; text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
 }
 @media (min-width: 901px) {
   .intro[data-modo="bolha"] { left: auto; right: 120px; top: auto; bottom: 28px; }
@@ -88,32 +128,40 @@ body.com-modal .intro { display: none; }
 .intro[data-modo="boasvindas"] {
   inset: 0; width: auto; max-width: none; transform: none;
   display: grid; place-items: center; padding: 24px;
-  border: 0; border-radius: 0; box-shadow: none; background: #fff;
+  border: 0; border-radius: 0; box-shadow: none;
+  background: radial-gradient(120% 70% at 50% 0%, #fff 0%, var(--perola-1) 45%, var(--perola-painel) 100%);
   z-index: 1100; animation: intro-surge .4s ease;
 }
 @keyframes intro-surge { from { opacity: 0; } }
 .intro-abertura { width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
 .intro-abertura h2 { font-size: 24px; margin: 6px 0 0; }
 .intro-abertura .intro-dica { font-size: 15px; }
+.intro-abertura .intro-balao { width: 100%; text-align: left; margin-top: 10px; }
+.intro-abertura .intro-balao::before { left: calc(50% - 7px); }
+.intro-abertura .link-btn { color: var(--tinta-suave); }
 .intro-abertura .btn-dark { margin-top: 10px; padding: 14px 16px; font-size: 15px; }
-.intro-logo { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px;
-  background: var(--tinta); color: #fff; font-weight: 800; font-size: 22px; }
+.intro-logo { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 22px;
+  background: var(--brilho-topo), var(--wii); border: 2px solid var(--wii); color: #fff;
+  font-weight: 800; font-size: 23px; text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .16), 0 0 0 4px var(--wii-brilho), 0 12px 28px rgba(30, 50, 65, .2); }
 
 /* Prêmio de missão (anunciar em js/tutorial.js): um cartão no meio da tela
    que comemora e some sozinho. Só o cartão recebe toque; o resto do app segue
    usável por trás. */
 .premio {
-  --borda: #2f7a4a;
+  --borda: var(--wii);   /* sem peça: a cor da paleta; com peça, a da raridade */
   position: fixed; z-index: 950; left: 50%; top: 50%;
   width: min(340px, calc(100vw - 32px));
   padding: 22px 18px 14px; overflow: hidden;
   transform: translate(-50%, -50%);
-  background: #fff; color: var(--tinta); text-align: center;
+  background: var(--perola-painel); color: var(--tinta); text-align: center;
   border: 3px solid var(--borda); border-radius: 26px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .3), 0 0 0 9999px rgba(0, 0, 0, .18);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau),
+    0 24px 70px rgba(0, 0, 0, .3), 0 0 0 9999px rgba(30, 50, 65, .18);
   animation: premio-entra .45s cubic-bezier(.2, .9, .3, 1.35);
   cursor: pointer;
 }
+.premio.r-uncommon  { --borda: #2fbf63; }
 .premio.r-rare      { --borda: #2f7ff0; }
 .premio.r-epic      { --borda: #9b46f0; }
 .premio.r-legendary { --borda: #d4a514; }
@@ -138,7 +186,7 @@ body.com-modal .intro { display: none; }
 .premio-peca {
   flex: 0 1 130px; display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 8px 8px 10px; border-radius: 18px;
-  background: var(--bg); border: 2px solid var(--cor);
+  background: #fff; border: 2px solid var(--cor); box-shadow: inset 0 -3px 0 var(--bg);
   animation: premio-peca .5s cubic-bezier(.2, .9, .3, 1.5) backwards;
 }
 @keyframes premio-peca { from { opacity: 0; transform: translateY(14px) scale(.7); } }
@@ -153,8 +201,10 @@ body.com-modal .intro { display: none; }
   padding: 8px 14px; border-radius: 99px; font-size: 17px; font-weight: 800;
   animation: premio-peca .5s cubic-bezier(.2, .9, .3, 1.5) .35s backwards;
 }
-.premio-bonus.xp    { background: #fff4c7; color: #7a5a00; }
-.premio-bonus.ficha { background: #e3f4ea; color: #1f6a3c; }
+.premio-bonus { background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau); }
+.premio-bonus.xp    { color: #7a5a00; }
+.premio-bonus.ficha { color: #1f6a3c; }
 
 .premio-fim { margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: var(--tinta-suave); }
 .premio-toque { margin: 12px 0 0; font-size: 11px; color: var(--tinta-suave); opacity: .7; }
