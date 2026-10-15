@@ -125,9 +125,9 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
   }
   .view-vitrine .vitrine-head > div:first-child { display: none; }
 
-  /* No closet, no Stylist, na Colagem, no personagem, no Feed e nas Tarefas, nem espaço nem sino/perfil: a tela sobe até o topo. */
-  .app:has(> :is(.view-closet, .view-stylist, .view-board, .view-personagem, .view-social, .view-tarefas):not([hidden]))::before { display: none; }
-  body:has(:is(.view-closet, .view-stylist, .view-board, .view-personagem, .view-social, .view-tarefas):not([hidden])) :is(.avisos-btn, .perfil-atalho, .avisos-painel) { display: none; }
+  /* No closet, no Stylist, na Colagem, no personagem, no Feed, nas Tarefas, nas Roupas e no Perfil, nem espaço nem sino/perfil: a tela sobe até o topo. */
+  .app:has(> :is(.view-closet, .view-stylist, .view-board, .view-personagem, .view-social, .view-tarefas, .view-vestiario, .view-perfil, .view-usuario):not([hidden]))::before { display: none; }
+  body:has(:is(.view-closet, .view-stylist, .view-board, .view-personagem, .view-social, .view-tarefas, .view-vestiario, .view-perfil, .view-usuario):not([hidden])) :is(.avisos-btn, .perfil-atalho, .avisos-painel) { display: none; }
   .view-vitrine .vitrine-acoes { background: none; border-radius: 0; padding: 0; }
   .view-vitrine .picks-badge { padding: 6px 15px; border-radius: 16px; }
   .view-vitrine .picks-badge #picks-left { font-size: 26px; }
