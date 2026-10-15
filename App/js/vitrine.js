@@ -33,6 +33,7 @@ import {
   msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
 import { emo } from './icones.js';
+import { botaoDesejo } from './usuario.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -599,6 +600,8 @@ function abrirFicha(peca, raridade, no) {
 
   const acao = $('#ficha-acao');
   const possuida = db.temPeca(peca.id);
+  // O ♡ da wishlist: a loja é um dos poucos lugares onde ela enche.
+  $('#ficha-desejo')?.replaceChildren(...(possuida ? [] : [botaoDesejo(peca)]));
   acao.textContent = possuida ? 'Já está no seu closet' : 'Pegar';
   acao.disabled = possuida;
   acao.onclick = () => { pegar(peca.id, no); fecharFicha(); };

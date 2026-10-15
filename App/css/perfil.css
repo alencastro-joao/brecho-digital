@@ -18,8 +18,8 @@
 /* -------------------------------- O topo --------------------------------- */
 .pf-topo {
   display: grid; grid-template-columns: 220px minmax(0, 1fr);
-  grid-template-areas: "foto info" "foto stats" "foto acoes";
-  grid-template-rows: auto auto 1fr;
+  grid-template-areas: "foto info" "foto stats" "foto acoes" "foto listas";
+  grid-template-rows: auto auto auto 1fr;
   column-gap: 40px; row-gap: 16px; align-items: start;
   padding-bottom: 28px;
 }
@@ -107,8 +107,27 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-acoes .btn-dark { border: 2px solid transparent; }
 .view-usuario .pf-acoes { max-width: 320px; }
 
+/* O guarda-roupa e a wishlist: dois botões que abrem a lista inteira. */
+.pf-listas { grid-area: listas; display: flex; gap: 8px; }
+.pf-listas:empty { display: none; }
+.pf-lista-btn {
+  flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 9px 14px 11px; border-radius: 12px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  font-size: 13.5px; font-weight: 700; color: var(--tinta);
+}
+.pf-lista-btn:hover { border-color: var(--wii); }
+.pf-lista-btn .ico { font-size: 18px; }
+.pf-lista-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-lista-btn strong {
+  margin-left: auto; min-width: 24px; padding: 1px 7px; border-radius: 99px;
+  background: var(--perola-painel); border: 1px solid var(--wii-borda);
+  font-size: 12px; text-align: center;
+}
+
 /* Editar: o formulário toma o lugar do nome, da bio e dos botões. */
-.pf-topo.editando :is(.pf-info, .pf-stats, .pf-acoes) { display: none; }
+.pf-topo.editando :is(.pf-info, .pf-stats, .pf-acoes, .pf-listas) { display: none; }
 .perfil-editar {
   grid-area: info / info / acoes / acoes;
   display: flex; flex-direction: column; gap: 10px; max-width: 420px;
@@ -170,6 +189,22 @@ button.pf-stat:hover small { text-decoration: underline; }
 }
 .pf-grade .up-peca:hover { border-color: var(--wii); }
 
+/* O ♡ da wishlist no canto da peça de outra pessoa. */
+.pf-desejo {
+  position: absolute; z-index: 2; top: 6px; right: 6px;
+  display: grid; place-items: center; width: 30px; height: 30px; padding: 0;
+  border-radius: 50%; background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau);
+  font-size: 15px; color: var(--tinta-suave);
+}
+.pf-desejo:hover { border-color: var(--wii); color: var(--tinta); }
+.pf-desejo.ativo { color: #e0466e; border-color: #f1b3c4; }
+
+/* O modal das listas. */
+.lp-caixa { width: min(760px, 100%); }
+.lp-corpo { overflow-y: auto; padding: 16px 20px 22px; }
+.lp-vazio { padding: 30px 10px; text-align: center; font-size: 14px; font-weight: 600; color: var(--tinta-suave); }
+
 /* Looks e colagens: só a miniatura, como um post na grade. A do look nasce em
    360×600 (render.js); o quadro de 3:4 come a margem de cima e de baixo, então
    o boneco preenche a casa sem faixa. */
@@ -193,6 +228,14 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-obra.colagem .pf-obra-foto { background: #fff; }
 .pf-obra.colagem .pf-obra-foto img { object-fit: contain; }
 .pf-obra:hover .pf-obra-foto img { transform: scale(1.03); }
+
+/* O look solto: sem moldura, sem fundo, o boneco inteiro (3:5, o formato da
+   miniatura) em pé na grade. */
+.pf-obra.solto { background: none; border: 0; box-shadow: none; border-radius: 0; overflow: visible; }
+.pf-obra.solto .pf-obra-foto { aspect-ratio: 3 / 5; background: none; overflow: visible; }
+.pf-obra.solto .pf-obra-foto img { object-fit: contain; transition: transform .2s; }
+.pf-obra.solto:hover .pf-obra-foto img { transform: translateY(-4px); }
+.pf-obra.solto .pf-obra-resumo { border-radius: 14px; }
 .pf-etiqueta {
   position: absolute; right: 8px; top: 8px;
   display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
@@ -248,7 +291,7 @@ button.pf-stat:hover small { text-decoration: underline; }
   .pf-pagina { padding: 14px 16px 28px; }
   .pf-topo {
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "foto stats" "info info" "acoes acoes";
+    grid-template-areas: "foto stats" "info info" "acoes acoes" "listas listas";
     grid-template-rows: auto;
     column-gap: 20px; row-gap: 18px; align-items: center; padding: 6px 0 18px;
   }
@@ -258,6 +301,8 @@ button.pf-stat:hover small { text-decoration: underline; }
   .pf-nivel strong { font-size: 15px; }
   .pf-nome { font-size: 17px; }
   .pf-acoes .pf-icone { width: 40px; height: 40px; }
+  .pf-lista-btn { gap: 6px; padding: 8px 10px 10px; font-size: 13px; }
+  .lp-corpo { padding: 12px 14px 18px; }
   .pf-stats { justify-content: space-around; gap: 8px; }
   .pf-stat { flex-direction: column; align-items: center; gap: 0; }
   .pf-stat strong { font-size: 17px; }

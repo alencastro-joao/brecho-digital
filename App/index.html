@@ -139,6 +139,8 @@
     <!-- Ficha da peça: abre ao clicar numa roupa do mural -->
     <aside class="ficha" id="ficha-peca" hidden>
       <button class="ficha-x" id="ficha-x" title="Fechar"><i data-i="x"></i></button>
+      <!-- O ♡ da wishlist: é aqui, vendo a peça, que ela entra na lista. -->
+      <span class="ficha-desejo" id="ficha-desejo"></span>
       <div class="ficha-img"><img id="ficha-img" alt=""></div>
       <span class="ficha-rar" id="ficha-rar"></span>
       <h3 class="ficha-nome" id="ficha-nome"></h3>
@@ -625,12 +627,25 @@
           <button type="button" class="pf-icone" id="up-voltar" title="Voltar ao feed" aria-label="Voltar ao feed"><i data-i="seta-esq"></i></button>
           <div class="pf-acoes-botoes" id="up-acoes"></div>
         </div>
+        <div class="pf-listas" id="up-listas"></div>
       </header>
 
       <nav class="pf-abas" id="up-abas" role="tablist"></nav>
       <div class="pf-conteudo" id="up-conteudo"></div>
     </div>
   </section>
+  <!-- O guarda-roupa inteiro ou a wishlist de alguém (ou os seus), abertos
+       pelos botões embaixo do perfil (js/usuario.js). -->
+  <div class="modal" id="modal-lista" hidden>
+    <div class="modal-caixa lp-caixa">
+      <header class="modal-topo">
+        <h2 id="lp-titulo"></h2>
+        <button class="modal-x" id="lp-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="lp-corpo" id="lp-corpo"></div>
+    </div>
+  </div>
+
   <!-- Uma publicação do perfil de alguém aberta inteira, com curtir e os
        comentários: o mesmo cartão do feed (js/usuario.js). -->
   <div class="modal" id="modal-post" hidden>
@@ -785,6 +800,7 @@
             </nav>
           </div>
         </div>
+        <div class="pf-listas" id="perfil-listas"></div>
 
         <form class="perfil-editar" id="perfil-editar" hidden>
           <label>Nome

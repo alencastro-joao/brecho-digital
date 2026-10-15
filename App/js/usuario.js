@@ -17,10 +17,11 @@
 // ninguém cadastrar nada. Quando existir backend, é essa função que some.
 
 import { PERFIS_MOCK, escalaGrade } from './config.js';
-import { item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria } from './catalog.js';
+import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria } from './catalog.js';
+import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
 import { aparenciaDoPerfil, retrato } from './avatar.js';
-import { el, $, mulberry32, sementeDoTexto, toast } from './util.js';
+import { el, $, mulberry32, sementeDoTexto, shuffle, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
@@ -30,7 +31,6 @@ import {
   cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed,
 } from './social.js';
 
-const MAX_PECAS = 12;
 
 let idAtual = null;          // de quem é a página aberta
 let gerando = false;         // uma leva de colagens por vez
@@ -120,7 +120,7 @@ function pecasDe(id) {
       if (peca) vistas.set(camada.itemId, peca);
     }
   }
-  return [...vistas.values()].slice(0, MAX_PECAS);
+  return [...vistas.values()];
 }
 
 const plural = (n, um, muitos) => `${n} ${n === 1 ? um : muitos}`;
@@ -130,6 +130,7 @@ const doCatalogo = (ids = []) => ids.map(pecaDoCatalogo).filter(Boolean);
 
 // --------------------------------- Tela -----------------------------------
 export function montarUsuario() {
+  montarListaDePecas();
   $('#up-voltar').addEventListener('click', () => irPara('social'));
 
   const modal = $('#modal-post');
@@ -236,7 +237,13 @@ function renderUsuario() {
       onclick: () => alternarSeguir(p.id),
     }, segue ? 'Seguindo' : 'Seguir'));
 
-  const abas = p.real && p.favoritos ? abasDaVitrine(p.favoritos) : abasDosPosts(p, posts);
+  // O guarda-roupa inteiro e a wishlist dela, cada um num botão. Conta de
+  // versão antiga do app, que não mandou a lista, fica sem o botão.
+  const roupas = guardaRoupaDe(p);
+  const desejos = wishlistDe(p);
+  $('#up-listas').replaceChildren(...botoesDeListas(p.nome.split(' ')[0], roupas, desejos));
+
+  const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
   abas.push(abaDePessoas(p));
   pintarAbas($('#up-abas'), $('#up-conteudo'), abas, abaAtual,
     (id) => { abaAtual = id; renderUsuario(); });
@@ -246,9 +253,15 @@ function renderUsuario() {
 // Perfil de exemplo, ou conta antiga sem vitrine: o que ela publicou, e as
 // peças que aparecem nas publicações.
 function abasDosPosts(p, posts) {
+  // O look do perfil de exemplo sai solto, redesenhado das camadas com o rosto
+  // dela; post do feed compartilhado (só ids de peças) fica com a miniatura.
+  const aparencia = aparenciaDoPerfil(p);
   const obras = (lista) => lista.map(post => cartaoDeObra({
     nome: post.nome,
-    thumb: post.thumb,
+    thumb: post.tipo !== 'board' && post.camadas?.length
+      ? miniaturaSoltaPronta(post.camadas, aparencia) || miniaturaSoltaAtual(post.camadas, aparencia)
+      : post.thumb,
+    solto: post.tipo !== 'board' && Boolean(post.camadas?.length),
     tipo: post.tipo === 'board' ? 'colagem' : 'look',
     selo: post.curtido ? ico('coracao-cheio') : null,
     resumo: [ico('coracao-cheio'), ` ${post.curtidas || 0}`, ' ', emo('💬'), ` ${(post.comentarios || []).length}`],
@@ -260,28 +273,132 @@ function abasDosPosts(p, posts) {
     { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
       itens: obras(posts.filter(post => post.tipo === 'board')), vazio: 'Nenhuma colagem ainda' },
     { id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
-      itens: gradeDePecas(pecasDe(p.id)), vazio: 'Nenhuma roupa ainda' },
+      itens: gradeDePecas(pecasDe(p.id), { desejo: true }), vazio: 'Nenhuma roupa ainda' },
   ];
 }
 
 // ------------------------------- A vitrine --------------------------------
-// O que o perfil da pessoa mostra a ela: roupas, looks e colagens com estrela,
-// nas mesmas abas e com os mesmos quadrinhos do seu perfil (perfil.js).
-function abasDaVitrine(favoritos) {
+// O que o perfil da pessoa mostra a ela: as roupas com estrela e todos os
+// looks e colagens, nas mesmas abas e com os mesmos quadrinhos do seu perfil
+// (perfil.js). Versão antiga do app só mandou os favoritos: ficam eles.
+function abasDaVitrine(p) {
+  const favoritos = p.favoritos || {};
+  const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
   const obras = (tipo, lista = []) => lista.map(obra => cartaoDeObra({
     nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
     thumb: obra.thumb,
+    solto: tipo === 'look' && Boolean(p.obras),
     tipo,
+    selo: obra.favorito ? ico('estrela-cheia') : null,
     abrir: () => abrirObra(obra, tipo),
   }));
   return [
     { id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
-      itens: gradeDePecas(doCatalogo(favoritos.pecas)), vazio: 'Nenhuma roupa favorita' },
+      itens: gradeDePecas(doCatalogo(favoritos.pecas), { desejo: true }), vazio: 'Nenhuma roupa favorita' },
     { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-      itens: obras('look', favoritos.looks), vazio: 'Nenhum look favorito' },
+      itens: obras('look', todas.looks), vazio: 'Nenhum look ainda' },
     { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-      itens: obras('colagem', favoritos.colagens), vazio: 'Nenhuma colagem favorita' },
+      itens: obras('colagem', todas.colagens), vazio: 'Nenhuma colagem ainda' },
   ];
+}
+
+// ------------------------- Guarda-roupa e wishlist -------------------------
+// Conta real: as listas que ela mandou (null quando a versão do app dela não
+// manda). Perfil de exemplo: as peças das publicações mais um punhado do
+// acervo, e uma wishlist, os dois sorteados com a semente do id — sempre os
+// mesmos, em qualquer navegador.
+const ROUPAS_DE_EXEMPLO = 24;
+const DESEJOS_DE_EXEMPLO = 8;
+
+function sorteioDoAcervo(id, fio, quantos, fora = new Set()) {
+  const rnd = mulberry32(sementeDoTexto(id + fio));
+  const ordem = shuffle([...catalogo.itens].sort((a, b) => a.id < b.id ? -1 : 1), rnd);
+  return ordem.filter(peca => !fora.has(peca.id)).slice(0, quantos);
+}
+
+export function guardaRoupaDe(p) {
+  if (p.real) return p.guardaRoupa ? doCatalogo(p.guardaRoupa) : null;
+  const dosPosts = pecasDe(p.id);
+  const ja = new Set(dosPosts.map(x => x.id));
+  return [...dosPosts, ...sorteioDoAcervo(p.id, ':guarda-roupa',
+    Math.max(0, ROUPAS_DE_EXEMPLO - dosPosts.length), ja)];
+}
+
+export function wishlistDe(p) {
+  if (p.real) return p.wishlist ? doCatalogo(p.wishlist) : null;
+  const tem = new Set((guardaRoupaDe(p) || []).map(x => x.id));
+  return sorteioDoAcervo(p.id, ':wishlist', DESEJOS_DE_EXEMPLO, tem);
+}
+
+// Os dois botões embaixo dos outros: abrem a lista inteira num modal. Lista
+// nula (conta que não mandou) não tem botão.
+export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar = null } = {}) {
+  const botao = (icone, rotulo, lista, titulo, vazio) => lista && el('button', {
+    type: 'button', class: 'pf-lista-btn',
+    onclick: () => abrirListaDePecas(titulo, lista, { vazio, aoFechar }),
+  }, ico(icone), el('span', {}, rotulo), el('strong', {}, String(lista.length)));
+  return [
+    botao('cabide', 'Guarda-roupa', roupas, minha ? 'Seu guarda-roupa' : `Guarda-roupa de ${dono}`,
+      'Nenhuma peça ainda'),
+    botao('coracao', 'Wishlist', desejos, minha ? 'Sua wishlist' : `Wishlist de ${dono}`,
+      minha ? 'Toque no ♡ de uma peça na Loja ou no perfil de alguém' : 'Nada na wishlist ainda'),
+  ].filter(Boolean);
+}
+
+// O modal das listas: a grade das peças, com o ♡ para levar à sua wishlist
+// (a peça que você já tem fica sem). Na sua wishlist o ♡ cheio tira a peça de
+// lá. `aoFechar` repinta quem abriu, para os números dos botões acompanharem.
+let aoFecharLista = null;
+
+export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null } = {}) {
+  aoFecharLista = aoFechar;
+  $('#lp-titulo').textContent = titulo;
+  $('#lp-corpo').replaceChildren(pecas.length
+    ? el('div', { class: 'pf-grade pf-grade-pecas' }, ...gradeDePecas(pecas, { desejo: true }))
+    : el('p', { class: 'lp-vazio' }, vazio));
+  $('#modal-lista').hidden = false;
+  document.body.classList.add('com-modal');
+}
+
+function fecharLista() {
+  $('#modal-lista').hidden = true;
+  document.body.classList.remove('com-modal');
+  const depois = aoFecharLista;
+  aoFecharLista = null;
+  depois?.();
+}
+
+export function montarListaDePecas() {
+  const modal = $('#modal-lista');
+  $('#lp-fechar').addEventListener('click', fecharLista);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fecharLista(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) fecharLista();
+  });
+}
+
+// O ♡ de uma peça: põe ou tira da sua wishlist. Peça que você já tem não
+// leva o botão — não faz sentido desejar o que está no seu closet.
+export function botaoDesejo(peca, aoMudar = null) {
+  const pintar = (b) => {
+    const tem = db.naWishlist(peca.id);
+    b.classList.toggle('ativo', tem);
+    b.title = tem ? 'Tirar da wishlist' : 'Pôr na wishlist';
+    b.setAttribute('aria-pressed', String(tem));
+    b.replaceChildren(ico(tem ? 'coracao-cheio' : 'coracao'));
+  };
+  const b = el('button', {
+    type: 'button', class: 'pf-desejo',
+    onclick: (e) => {
+      e.stopPropagation();
+      const entrou = db.alternarWishlist(peca.id);
+      pintar(b);
+      toast(entrou ? 'Na sua wishlist.' : 'Saiu da wishlist.');
+      aoMudar?.(entrou);
+    },
+  });
+  pintar(b);
+  return b;
 }
 
 // Amigos dela, quando a página veio completa do servidor (conta real); senão,
@@ -311,7 +428,7 @@ function abrirObra(obra, tipo) {
     pecas.length
       ? el('div', { class: 'up-obra-pecas' },
         el('small', {}, plural(pecas.length, 'peça', 'peças')),
-        el('div', { class: 'pf-grade' }, ...gradeDePecas(pecas)))
+        el('div', { class: 'pf-grade' }, ...gradeDePecas(pecas, { desejo: true })))
       : null);
   $('#modal-post').hidden = false;
   document.body.classList.add('com-modal');
@@ -348,27 +465,38 @@ function fecharPost() {
 // então estas seções nascem aqui e o perfil próprio as enche com o que é dele:
 // as favoritas no lugar das peças dos posts, e os seus looks no lugar dos dela.
 
-// A célula é a mesma do guarda-roupa, sem aura nem arrastar.
-export const gradeDePecas = (pecas) => pecas.map(peca =>
+// A célula é a mesma do guarda-roupa, sem aura nem arrastar. Com `desejo`,
+// cada peça que você ainda não tem ganha o ♡ da wishlist no canto.
+export const gradeDePecas = (pecas, { desejo = false } = {}) => pecas.map(peca =>
   el('div', {
     class: 'up-peca',
     title: `${nomeDaPeca(peca)} · ${rotuloCategoria(peca.cat)}`,
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
-      el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' }))
+      el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })),
+    desejo && !db.temPeca(peca.id) ? botaoDesejo(peca) : null
   ));
 
 // Um look ou colagem na grade: só a miniatura, no formato dela, como um post
 // na grade do Instagram. O nome vai no título; `selo` é o ícone no canto, e
 // `resumo` (curtidas e comentários) aparece por cima quando o mouse passa.
-export function cartaoDeObra({ nome, thumb, tipo, selo = null, resumo = null, abrir }) {
-  return el('button', { class: `pf-obra ${tipo}`, title: nome, 'aria-label': nome, onclick: abrir },
-    el('div', { class: 'pf-obra-foto' },
-      thumb
-        ? el('img', { src: thumb, alt: nome, loading: 'lazy' })
-        : el('span', { class: 'sem-thumb' }, nome),
-      selo ? el('span', { class: 'pf-etiqueta' }, selo) : null,
-      resumo ? el('span', { class: 'pf-obra-resumo' }, ...resumo) : null));
+// `solto` é o look sem moldura: o boneco inteiro, sem fundo nem borda.
+// `thumb` pode ser uma promessa (o look ainda sendo desenhado): a vaga fica
+// vazia e a imagem entra quando ficar pronta.
+export function cartaoDeObra({ nome, thumb, tipo, solto = false, selo = null, resumo = null, abrir }) {
+  const imagem = (src) => el('img', { src, alt: nome, loading: 'lazy' });
+  const espera = thumb && typeof thumb.then === 'function';
+  const foto = el('div', { class: 'pf-obra-foto' },
+    espera ? el('span', { class: 'sem-thumb' }) : thumb ? imagem(thumb) : el('span', { class: 'sem-thumb' }, nome),
+    selo ? el('span', { class: 'pf-etiqueta' }, selo) : null,
+    resumo ? el('span', { class: 'pf-obra-resumo' }, ...resumo) : null);
+  if (espera) {
+    thumb.then(url => foto.querySelector('.sem-thumb')?.replaceWith(imagem(url)),
+      () => { const v = foto.querySelector('.sem-thumb'); if (v) v.textContent = nome; });
+  }
+  return el('button', {
+    class: `pf-obra ${tipo}${solto ? ' solto' : ''}`, title: nome, 'aria-label': nome, onclick: abrir,
+  }, foto);
 }
 
 // Um atalho para a página de alguém: o retrato redondo e o primeiro nome.

@@ -171,6 +171,12 @@
   font-size: 10px; color: var(--tinta-suave);
 }
 .ficha-x:hover { border-color: var(--tinta); color: var(--tinta); }
+/* O ♡ da wishlist, no canto oposto ao fechar (o botão é o de usuario.js). */
+.ficha-desejo { position: absolute; top: 4px; left: 4px; z-index: 2; }
+.ficha-desejo:empty { display: none; }
+.ficha-desejo .pf-desejo { position: static; }
+/* No celular a ficha é uma grade: sem isto o ♡ se ancoraria na coluna do texto. */
+.ficha > .ficha-desejo { grid-column: auto; grid-row: auto; }
 .ficha-img {
   height: 116px; margin-bottom: 12px;
   display: grid; place-items: center;

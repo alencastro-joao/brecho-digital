@@ -20,7 +20,7 @@ import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import * as auth from './auth.js';
 import { retrato, aparenciaAtual } from './avatar.js';
-import { miniaturaAtual, miniaturaPronta } from './render.js';
+import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
@@ -32,14 +32,13 @@ import { atualizarBadge, montarVitrine } from './vitrine.js';
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
-import { LIMITE_FAVORITOS } from './favoritos.js';
 import { sincronizarSocial } from './pessoas.js';
 import { PALETAS, paletaAtual, escolherPaleta } from './paleta.js';
 import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
-  gradeDePecas, perfilPublico, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar,
+  gradeDePecas, perfilPublico, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
   retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
 import { ico } from './icones.js';
@@ -146,6 +145,11 @@ export function renderPerfil() {
     el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') }, 'Personagem'),
     el('button', { class: 'btn-ghost', onclick: () => irPara('vestiario') }, 'Inventário'));
 
+  // O seu guarda-roupa inteiro e a sua wishlist, como os outros os veem.
+  const roupas = db.state.inventario.map(x => pecaDoCatalogo(x.id)).filter(Boolean);
+  const desejos = (db.state.wishlist || []).map(pecaDoCatalogo).filter(Boolean);
+  $('#perfil-listas').replaceChildren(...botoesDeListas('', roupas, desejos, { minha: true, aoFechar: renderPerfil }));
+
   pintarAbas($('#perfil-abas'), $('#perfil-conteudo'), [
     abaDeRoupas(), ...abasDeObras(), abaDeColecoes(), abaDeAmigos(amigos),
   ], abaAtual, (id) => { abaAtual = id; renderPerfil(); });
@@ -208,46 +212,36 @@ function abaDeRoupas() {
   };
 }
 
-// Looks do Stylist e colagens, até três de cada (a estrela não deixa passar
-// disso — ver favoritos.js; o corte aqui é para save antigo que favoritou
-// mais). O clique devolve ao editor de origem.
+// Todos os looks do Stylist e todas as colagens, do mais novo para o mais
+// velho; a estrela vira o selo no canto. O clique devolve ao editor de origem.
 function abasDeObras() {
-  const s = db.state;
-  const obras = (tipo, abrir) => porData(db.favoritos(tipo)).slice(0, LIMITE_FAVORITOS[tipo])
-    .map(item => cartaoFavorito({ ...item, tipo }, () => abrir(item.id)));
+  const obras = (lista, tipo, abrir) => porData(lista)
+    .map(item => cartaoDaObra({ ...item, tipo }, () => abrir(item.id)));
   return [{
     id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-    itens: obras('look', (id) => { abrirLook(id); irPara('stylist'); }),
-    vazio: s.looks.length ? 'Favorite looks com ★ no Stylist' : 'Monte o seu primeiro look',
+    itens: obras(db.state.looks, 'look', (id) => { abrirLook(id); irPara('stylist'); }),
+    vazio: 'Monte o seu primeiro look',
     botao: ['Abrir o Stylist', () => irPara('stylist')],
   }, {
     id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-    itens: obras('colagem', (id) => { irPara('board'); abrirBoard(id); }),
-    vazio: s.boards.length ? 'Favorite colagens com ★ na Colagem' : 'Monte a sua primeira colagem',
+    itens: obras(db.state.boards, 'colagem', (id) => { irPara('board'); abrirBoard(id); }),
+    vazio: 'Monte a sua primeira colagem',
     botao: ['Abrir a Colagem', () => irPara('board')],
   }];
 }
 
-// O look sai desenhado com o personagem de agora, como em "Meus stylists": a
-// miniatura do save fica com o cabelo e o corpo de quando ele foi salvo.
-function cartaoFavorito(item, abrir) {
-  const aoVivo = item.tipo === 'look' && item.camadas?.length;
-  const cartao = cartaoDeObra({
+// O look sai solto, sem moldura: o boneco inteiro, desenhado com o personagem
+// de agora (o cabelo e o corpo do save podem ser de quando ele foi salvo).
+function cartaoDaObra(item, abrir) {
+  const look = item.tipo === 'look' && item.camadas?.length;
+  return cartaoDeObra({
     nome: item.nome,
-    thumb: aoVivo ? miniaturaPronta(item.camadas) || item.thumb : item.thumb,
+    thumb: look ? miniaturaSoltaPronta(item.camadas) || miniaturaSoltaAtual(item.camadas) : item.thumb,
+    solto: Boolean(look),
     tipo: item.tipo,
-    selo: item.publicado ? ico('publicar') : null,
+    selo: item.favorito ? ico('estrela-cheia') : item.publicado ? ico('publicar') : null,
     abrir,
   });
-  if (aoVivo && !miniaturaPronta(item.camadas)) {
-    const foto = cartao.querySelector('.pf-obra-foto img');
-    if (foto) foto.style.visibility = 'hidden';
-    miniaturaAtual(item.camadas).then(url => {
-      const vaga = cartao.querySelector('.pf-obra-foto img, .pf-obra-foto .sem-thumb');
-      vaga?.replaceWith(el('img', { src: url, alt: item.nome }));
-    }, () => { if (foto) foto.style.visibility = ''; });
-  }
-  return cartao;
 }
 
 // Amigo é mão dupla: você segue e a pessoa segue de volta (usuario.js diz
