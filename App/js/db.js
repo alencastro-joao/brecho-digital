@@ -71,7 +71,7 @@ function estadoInicial() {
     dia: { data: hojeISO(), resgates: 0, extras: 0, guardados: 0, posicoes: {} },   // posicoes: peça arrastada no mural
                                                                     // extras: resgates comprados com fichas hoje
                                                                     // guardados: extras de dias anteriores ainda não usados
-                                                                    // arrumacao/estoque: sementes da vitrine do dia (ver vitrine.js)
+                                                                    // estoque: semente da vitrine do dia (ver vitrine.js)
     looks: [],                 // { id, nome, criadoEm, camadas[], thumb, publicado }
     boards: [],                // colagens: { id, nome, formato, margem, assinatura, itens[], guias }
     feed: [],                  // posts (meus + dos perfis fictícios)

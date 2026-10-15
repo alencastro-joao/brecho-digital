@@ -47,19 +47,16 @@ let tamanhoMontado = { w: 0, h: 0 };
 let zTopo = 100;
 const trazerParaFrente = (no) => { no.style.zIndex = String(++zTopo); };
 
-// A arrumação do mural é sorteada uma vez por dia e fica no save (`dia.arrumacao`):
-// recarregar a página ou sair e entrar na conta mostra a loja como estava.
-// Antes ela era sorteada a cada carregamento, e a loja parecia outra.
+// A arrumação do mural é sorteada a cada carregamento da página e não vai para o
+// save: recarregar embaralha as roupas de novo. Dentro da mesma página ela fica
+// fixa, para trocar de tela ou girar o celular não reembaralhar a arara.
 //
 // O estoque fora do sorteio do dia (`dia.estoque`) é o que o botão de repor
 // (admin) usa para trocar a arara sem esperar a meia-noite. Também fica no save,
 // senão a loja reposta voltava a ser a do dia no próximo login. `null` = loja do dia.
 // Os dois somem sozinhos na virada do dia, junto com o resto de `state.dia`.
 const novaSemente = () => (Math.random() * 0x100000000) >>> 0;
-function sementeArrumacao() {
-  if (db.state.dia.arrumacao == null) { db.state.dia.arrumacao = novaSemente(); db.salvar(); }
-  return db.state.dia.arrumacao;
-}
+let sementeArrumacao = novaSemente();
 const sementeEstoque = () => db.state.dia.estoque ?? null;
 let posicoesLimpas = false;
 
@@ -159,8 +156,30 @@ const OCUPACAO_MAX = 1.35;
 // medida no layout não conta isso. Parar alguns pixels antes da borda é mais
 // barato que refazer a conta com a matriz de transformação.
 const FOLGA_BORDA = 8;
+// No celular as roupas aparecem 20% maiores que a conta do aperto daria: a tela
+// é pequena e a peça miúda não dava para ver. Elas se sobrepõem mais, e só.
+const ESCALA_CELULAR = 1.2;
+// Quanto a flutuação sobe e gira (ver @keyframes peca-flutuar) e quanto o
+// hover cresce (.item-roupa:hover).
+const FLUTUA_SOBE = 9, FLUTUA_GIRO = 1, CRESCE_HOVER = 1.06;
 
-function medidasDoMural(pecas, largura, altura) {
+// O que a peça, girada e flutuando, passa da própria caixa em cada lado. O
+// giro é em volta do centro da caixa toda (imagem + rodapé), então numa calça
+// comprida um giro de 5° já joga a barra uns 30px para o lado — bem mais que
+// a FOLGA_BORDA. Sem essa conta, a peça encostada na borda flutuava para fora.
+function sobraDoGiro(w, h, caixa, giroGraus) {
+  const t = (Math.abs(giroGraus) + FLUTUA_GIRO) * Math.PI / 180;
+  const sen = Math.sin(t), cos = Math.cos(t);
+  const meiaAltura = caixa.h / 2;
+  const lado = CRESCE_HOVER * (w / 2 * cos + meiaAltura * sen) - caixa.w / 2;
+  const topo = CRESCE_HOVER * (meiaAltura * cos + w / 2 * sen) - meiaAltura + FLUTUA_SOBE;
+  // Embaixo conta só a imagem: o rodapé (botão) pode sobrar para fora.
+  const fundoImg = meiaAltura - RODAPE_PECA;
+  const fundo = CRESCE_HOVER * (fundoImg * cos + w / 2 * sen) - fundoImg;
+  return { lado: Math.max(0, lado), topo: Math.max(0, topo), fundo: Math.max(0, fundo) };
+}
+
+function medidasDoMural(pecas, largura, altura, escala = 1) {
   const cruas = pecas.map(p => tamanhoNoMural(p, proporcao(p)));
 
   // Teto do que cabe: a largura entre as margens e a altura entre o cabeçalho e
@@ -181,8 +200,10 @@ function medidasDoMural(pecas, largura, altura) {
   // Um fator só para todo mundo: o tamanho no mural é a medida real da peça, e
   // duas camisas de mesma medida têm que sair iguais na loja. Ou a arara
   // inteira encolhe junto, ou não encolhe ninguém.
-  const fator = clamp(
-    Math.min(1, fatorAperto, ...cruas.map(m => Math.min(tetoW / m.w, tetoH / m.h))), 0.34, 1);
+  const tetoCabe = Math.min(...cruas.map(m => Math.min(tetoW / m.w, tetoH / m.h)));
+  const fatorBase = clamp(Math.min(1, fatorAperto, tetoCabe), 0.34, 1);
+  // A escala do celular passa por cima do aperto, mas nunca do que cabe no mural.
+  const fator = Math.min(fatorBase * escala, Math.max(fatorBase, tetoCabe));
 
   return cruas.map(({ w, h }) => {
     const pw = Math.round(w * fator), ph = Math.round(h * fator);
@@ -325,7 +346,7 @@ export function montarVitrine() {
   ligarAdmin();
 
   const iso = db.state.dia.data;
-  const rnd = mulberry32(sementeArrumacao());
+  const rnd = mulberry32(sementeArrumacao);
 
   // Peça arrastada volta para o lugar sorteado quando a página recarrega: a
   // posição é em pixels da tela em que foi arrastada, e no celular ela cairia
@@ -351,7 +372,8 @@ export function montarVitrine() {
 
   // Mede todo mundo antes de espalhar: o Poisson precisa do tamanho de cada
   // peça para saber onde ela ainda cabe inteira.
-  const medidas = medidasDoMural(pecas, largura, altura);
+  const celular = matchMedia('(max-width: 900px)').matches;
+  const medidas = medidasDoMural(pecas, largura, altura, celular ? ESCALA_CELULAR : 1);
 
   // Não deixa peça cair atrás do cabeçalho — nem em cima do dono da loja,
   // quando ele está na tela. A faixa do cabeçalho é medida, não chutada: no
@@ -365,7 +387,6 @@ export function montarVitrine() {
   // No celular não há faixa de cabeçalho: o contador fica num canto e o sino
   // e o perfil no outro, flutuando sobre o mural. Só os três viram zona
   // proibida (medidos, com folga) e o resto do topo é das peças.
-  const celular = matchMedia('(max-width: 900px)').matches;
   const zonaDe = (no, folga = 8) => {
     const r = no?.getBoundingClientRect();
     if (!r?.width) return null;
@@ -411,9 +432,12 @@ export function montarVitrine() {
     // uma janela maior pode deixar a roupa pendurada para fora do mural.
     const guardada = db.posicaoGuardada(peca.id);
     const bruta = guardada || pontos[i] || { x: 26, y: 88 };
+    const sobra = sobraDoGiro(w, h, caixa, giro);
+    const xMin = FOLGA_BORDA + sobra.lado, yMin = FOLGA_BORDA + sobra.topo;
     const pos = {
-      x: clamp(bruta.x, FOLGA_BORDA, Math.max(FOLGA_BORDA, largura - caixa.w - FOLGA_BORDA)),
-      y: clamp(bruta.y, FOLGA_BORDA, Math.max(FOLGA_BORDA, altura - fundoDaPeca(caixa) - FOLGA_BORDA)),
+      x: clamp(bruta.x, xMin, Math.max(xMin, largura - caixa.w - xMin)),
+      y: clamp(bruta.y, yMin,
+        Math.max(yMin, altura - fundoDaPeca(caixa) - FOLGA_BORDA - sobra.fundo)),
     };
 
     const no = el('div', {
@@ -749,7 +773,7 @@ export function reporLoja() {
   db.salvar();
   db.limparPosicoes();
   db.state.dia.estoque = novaSemente();
-  db.state.dia.arrumacao = novaSemente();
+  sementeArrumacao = novaSemente();
   db.salvar();
   montarVitrine();
   falarDe('boasVindas');
@@ -765,7 +789,7 @@ export function devolverRoupas() {
   estoque.devolver(db.state.inventario.map(p => ({ id: p.id, raridade: p.raridade })));
   const qtd = db.devolverTudoParaALoja();
   db.limparPosicoes();
-  db.state.dia.arrumacao = novaSemente();
+  sementeArrumacao = novaSemente();
   db.salvar();
   montarVitrine();
   toast(qtd
