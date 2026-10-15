@@ -26,6 +26,7 @@ let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
 let selecionada = null;
 let pagina = 0;                 // a página aberta da grade (começa em 0)
+let gradeEntra = false;         // a próxima pintura da grade chega em cascata
 
 // A "Minha ordem" é a que a pessoa arrasta; os outros modos de organizar
 // (ordenacao.js, compartilhado com o Stylist e a Colagem) só ordenam a vista.
@@ -180,7 +181,7 @@ let pecasDaVista = [];           // as peças da categoria aberta, já ordenadas
 export function carregarCategoria(cat, { manterPagina = false } = {}) {
   const grupos = agrupamento().grupos;
   if (!grupos[cat]) cat = 'todas';
-  if (cat !== categoriaAtual || !manterPagina) pagina = 0;
+  if (cat !== categoriaAtual || !manterPagina) { pagina = 0; gradeEntra = true; }
   categoriaAtual = cat;
   document.querySelectorAll('.cat-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.cat === cat));
@@ -205,6 +206,14 @@ export function carregarCategoria(cat, { manterPagina = false } = {}) {
 function desenharPagina() {
   const grid = $('#inventory-grid');
   grid.innerHTML = '';
+  // Trocar de aba ou de página faz as peças chegarem uma a uma; repintar no
+  // mesmo lugar (redimensionar, editar) não, para a grade não piscar.
+  grid.classList.remove('grade-entra');
+  if (gradeEntra) {
+    void grid.offsetWidth;
+    grid.classList.add('grade-entra');
+    gradeEntra = false;
+  }
 
   if (!pecasDaVista.length) {
     $('#closet-paginas').hidden = true;
@@ -235,6 +244,7 @@ function desenharPagina() {
 }
 
 function irParaPagina(n) {
+  if (n !== pagina) gradeEntra = true;
   pagina = n;
   limparPreview();
   desenharPagina();

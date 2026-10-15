@@ -8,6 +8,7 @@ import { FERRAMENTAS, nivelDaFerramenta } from './config.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { ico, emo } from './icones.js';
+import { festejar, flutuarTexto } from './animacoes.js';
 
 // Chip pequeno "Nv 3" para pendurar ao lado de um nome (feed, perfil, listas).
 export function chipNivel(n = db.nivel()) {
@@ -17,6 +18,9 @@ export function chipNivel(n = db.nivel()) {
 export function montarNivel() {
   db.onXP(evento => {
     renderSeloNivel();
+    const selo = $('#nivel-selo');
+    if (evento.xp > 0) flutuarTexto(selo, `+${evento.xp} XP`);
+    if (evento.subiu) festejar(selo, 'confete');
     if (evento.subiu) {
       const p = db.progresso();
       toast(`Subiu para o nível ${p.nivel}!`, 'legendary');
@@ -39,6 +43,11 @@ export function renderSeloNivel() {
   if (!selo) return;
   const p = db.progresso();
 
+  // A barrinha nasce onde a anterior estava e anda até o valor novo; ao
+  // subir de nível ela enche e recomeça do zero.
+  const antes = selo.querySelector('.nivel-barra span')?.style.width;
+  const nivelAntes = Number(selo.dataset.nivel || p.nivel);
+  selo.dataset.nivel = p.nivel;
   selo.innerHTML = '';
   selo.title = p.maximo
     ? `Nível máximo (${p.nivel})`
@@ -47,8 +56,10 @@ export function renderSeloNivel() {
     el('strong', {}, String(p.nivel)),
     el('small', {}, 'nível'),
     el('div', { class: 'nivel-barra mini' },
-      el('span', { style: { width: p.pct + '%' } }))
+      el('span', { style: { width: (antes && nivelAntes === p.nivel ? antes : (nivelAntes < p.nivel ? '0%' : p.pct + '%')) } }))
   );
+  const barra = selo.querySelector('.nivel-barra span');
+  requestAnimationFrame(() => requestAnimationFrame(() => { barra.style.width = p.pct + '%'; }));
 
   renderTravasDaSidebar();
 }

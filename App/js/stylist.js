@@ -256,10 +256,19 @@ export function vestirPeca(itemId) {
   montarPaleta();
 }
 
+// As peças que já estavam no palco: só a que acabou de chegar cai no corpo.
+const jaNoPalco = new Set();
+
 function renderCamadas() {
   const raiz = $('#stage-layers');
   raiz.innerHTML = '';
-  for (const c of camadas) raiz.append(criarCamadaDOM(c));
+  for (const c of camadas) {
+    const no = criarCamadaDOM(c);
+    if (!jaNoPalco.has(c.uid)) no.classList.add('chegou');
+    raiz.append(no);
+  }
+  jaNoPalco.clear();
+  for (const c of camadas) jaNoPalco.add(c.uid);
   atualizarFerramentas();
 }
 

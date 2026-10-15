@@ -33,6 +33,7 @@ import {
   publicacoes, feedLidoEm, carregarFeed, aoMudarPublicacoes, apagarPublicacao, gerarNoServidor,
   curtirPublicacao, comentarPublicacao, apagarComentarioPublicado,
 } from './publicacoes.js';
+import { festejar } from './animacoes.js';
 
 const sou = (id) => id === db.state.usuario.id;
 
@@ -399,7 +400,7 @@ export function cardDoPost(post) {
       el('button', {
         class: 'curtir' + (post.curtido ? ' on' : ''),
         title: post.curtido ? 'Descurtir' : 'Curtir',
-        onclick: () => alternarCurtida(post),
+        onclick: (e) => alternarCurtida(post, e.currentTarget),
       }, ico(post.curtido ? 'coracao-cheio' : 'coracao'), el('span', {}, String(post.curtidas))),
       pecasPorCima(post, pecas)
     ),
@@ -634,9 +635,10 @@ function alternarThread(post) {
   repintar();
 }
 
-async function alternarCurtida(post) {
+async function alternarCurtida(post, botao) {
   // Curtir o look de outra pessoa conta para a missão da semana (uma vez por post).
   const conta = !post.curtido && !sou(post.autor);
+  if (!post.curtido) festejar(botao, 'coracao');
   if (post.real) {
     try { await curtirPublicacao(post); }
     catch (e) { return toast(e.message || 'Não consegui curtir agora.', 'aviso'); }
