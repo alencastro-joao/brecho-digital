@@ -23,7 +23,7 @@ import { item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria } from './catalog.j
 import * as db from './db.js';
 import { aparenciaDoPerfil, svgAvatar, retrato } from './avatar.js';
 import { el, $, mulberry32, sementeDoTexto, tempoRelativo, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipNivel } from './nivel.js';
@@ -310,7 +310,7 @@ function renderPosts(posts) {
       tipo: post.tipo === 'board' ? 'colagem' : 'look',
       pecas: pecasDeUmPost(post),
       selo: post.curtido ? [ico('coracao-cheio'), ' curtido'] : null,
-      resumo: [ico('coracao-cheio'), ` ${post.curtidas || 0} · `, e3d('💬'), ` ${(post.comentarios || []).length}`],
+      resumo: [ico('coracao-cheio'), ` ${post.curtidas || 0} · `, emo('💬'), ` ${(post.comentarios || []).length}`],
       abrir: () => abrirPost(post.id),
     })));
   };

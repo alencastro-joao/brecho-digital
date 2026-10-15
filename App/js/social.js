@@ -17,7 +17,7 @@ import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from '.
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { aparenciaDoPerfil, aparenciaAtual, retrato } from './avatar.js';
 import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.js';
 import { abrirLook } from './stylist.js';
@@ -430,7 +430,7 @@ export function cardDoPost(post) {
         class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
         title: 'Comentários',
         onclick: () => alternarThread(post),
-      }, e3d('💬'), el('span', {}, String(post.comentarios.length))),
+      }, emo('💬'), el('span', {}, String(post.comentarios.length))),
       el('button', {
         class: 'post-mais', title: 'Mais opções',
         onclick: (e) => menuDoPost(post, e.currentTarget),

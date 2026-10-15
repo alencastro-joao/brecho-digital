@@ -7,7 +7,7 @@
 import { FERRAMENTAS, nivelDaFerramenta } from './config.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 
 // Chip pequeno "Nv 3" para pendurar ao lado de um nome (feed, perfil, listas).
 export function chipNivel(n = db.nivel()) {
@@ -98,7 +98,7 @@ export function listaDeFerramentas() {
       el('div', { class: 'ferramenta-info' },
         el('strong', {}, f.nome),
         el('small', {}, f.desc)),
-      liberada ? null : el('span', { class: 'cadeado' }, e3d('🔒'))
+      liberada ? null : el('span', { class: 'cadeado' }, emo('🔒'))
     ));
   }
   return lista;

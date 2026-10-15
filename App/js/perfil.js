@@ -23,7 +23,7 @@ import * as auth from './auth.js';
 import { svgAvatar, retrato, aparenciaAtual } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
-import { ico, e3d } from './icones.js';
+import { ico, emo } from './icones.js';
 import { chipNivel } from './nivel.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
@@ -316,7 +316,7 @@ function renderDicas({ pecas, looks, colagens, redes }) {
   const s = db.state;
   const dicas = [
     !s.inventario.length
-      ? [e3d('🛍'), 'loja', 'Garimpe a sua primeira peça', 'a vitrine do dia troca todo dia',
+      ? [emo('🛍'), 'loja', 'Garimpe a sua primeira peça', 'a vitrine do dia troca todo dia',
         'Vitrine', () => irPara('vitrine')]
       : !pecas && [ico('estrela-cheia'), 'inventario', 'Favorite uma roupa',
         'abra uma peça no guarda-roupa e use ☆ Favoritar', 'Guarda-roupa', () => irPara('closet')],
