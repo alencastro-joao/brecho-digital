@@ -1,0 +1,135 @@
+/* Animações de interação (js/animacoes.js): o que o site responde quando você
+   mexe nele. Só movimento que diz alguma coisa — apertou, abriu, chegou,
+   favoritou, sorteou — no espírito dos botões do Wii: o botão afunda no
+   degrau, a pérola brilha, a janela dá um pulinho ao abrir.
+   Carrega por último para ganhar das regras de cada tela; quem pede menos
+   movimento no sistema fica sem nada disso (fim do arquivo). */
+
+/* ------------------------- Apertar: afunda no degrau -------------------- */
+/* Os botões perolados têm um degrau embaixo (icones.css). Ao apertar, o botão
+   desce até ele; ao soltar, volta com uma molinha. */
+html body :is(.btn-dark, .btn-ghost, .lb-btn, .acao-btn, .bar-btn, .tool-btn,
+  .st-hist-btn, .btn-meus, .modal-x, .ficha-x, .mp-ferr, .cat-btn, .pal-cat,
+  .closet-paginas button, .pg-acoes button, .pg-abas button) {
+  transition-property: transform, background-color, border-color, box-shadow, color, background-position, filter;
+  transition-duration: .2s, .2s, .2s, .2s, .2s, .7s, .12s;
+  transition-timing-function: cubic-bezier(.3, 1.6, .5, 1), ease, ease, ease, ease, ease, ease;
+}
+html body :is(.btn-dark, .btn-ghost, .lb-btn, .acao-btn, .bar-btn, .tool-btn,
+  .st-hist-btn, .btn-meus, .modal-x, .ficha-x, .mp-ferr, .cat-btn, .pal-cat,
+  .closet-paginas button, .pg-acoes button, .pg-abas button):active:not(:disabled) {
+  transform: translateY(2px) scale(.97);
+  filter: brightness(.96);
+  transition-duration: .06s;
+}
+/* As abas da lateral afundam igual, e o ícone dá um pulinho ao virar a aba
+   da vez. */
+html body .sidebar .sidebar-btn { transition: transform .22s cubic-bezier(.3, 1.6, .5, 1), box-shadow .2s, border-color .2s; }
+html body .sidebar .sidebar-btn:active { transform: translateY(2px) scale(.94); transition-duration: .06s; }
+.sidebar .sidebar-btn.ativa .ico { animation: anim-pulinho .5s cubic-bezier(.3, 1.6, .5, 1); }
+
+@keyframes anim-pulinho {
+  0%   { transform: translateY(0) scale(1); }
+  35%  { transform: translateY(-5px) scale(1.12, .92); }
+  65%  { transform: translateY(0) scale(.95, 1.06); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ------------------- Botão principal: brilho que passa ------------------ */
+/* Nos botões escuros (a ação principal da tela) um reflexo atravessa a pérola
+   quando o mouse chega, como no menu do Wii. Só onde existe hover de
+   verdade — no celular o toque não deixa o reflexo parado no meio. */
+@media (hover: hover) {
+  html body :is(.btn-dark, .lb-btn.escuro, .acao-btn.forte, .mp-ferr.escuro) {
+    background-image:
+      linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .34) 50%, transparent 62%),
+      linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .06) 48%, rgba(255, 255, 255, 0) 52%);
+    background-size: 260% 100%, 100% 100%;
+    background-position: 100% 0, 0 0;
+    background-repeat: no-repeat;
+  }
+  html body :is(.btn-dark, .lb-btn.escuro, .acao-btn.forte, .mp-ferr.escuro):hover:not(:disabled) {
+    background-image:
+      linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .34) 50%, transparent 62%),
+      linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .06) 48%, rgba(255, 255, 255, 0) 52%);
+    background-position: 0% 0, 0 0;
+  }
+}
+
+/* ------------------------------ Gerar look ------------------------------ */
+/* O dado do "Gerar" (Stylist e Colagem) rola quando você sorteia. */
+.rolando .ico { animation: anim-dado .6s cubic-bezier(.3, 1.3, .5, 1); }
+@keyframes anim-dado {
+  0%   { transform: rotate(0) scale(1); }
+  30%  { transform: rotate(-200deg) scale(1.25); }
+  70%  { transform: rotate(-340deg) scale(.9); }
+  100% { transform: rotate(-360deg) scale(1); }
+}
+
+/* ----------------------------- Telas e janelas -------------------------- */
+/* Trocar de aba: a tela nova chega num esmaecer curto. Só opacidade — um
+   transform aqui mudaria a referência do que é `position: fixed` lá dentro. */
+.view:not([hidden]) { animation: anim-tela .22s ease-out; }
+@keyframes anim-tela { from { opacity: 0; } }
+
+/* Janela (modal) abre com um pulinho e o fundo escurece devagar. */
+.modal:not([hidden]) { animation: anim-fundo .2s ease-out; }
+.modal:not([hidden]) > .modal-caixa { animation: anim-janela .32s cubic-bezier(.2, 1.3, .4, 1); }
+@keyframes anim-fundo { from { opacity: 0; } }
+@keyframes anim-janela {
+  from { opacity: 0; transform: translateY(14px) scale(.94); }
+}
+
+/* -------------------------- Peças no guarda-roupa ----------------------- */
+/* A casa da peça sobe um pouco mais no hover e a peça inclina de leve, como
+   quem tira do cabide. */
+@media (hover: hover) {
+  .item-slot .peca-caixa { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+  .item-slot:hover .peca-caixa { transform: rotate(-3deg) scale(1.04); }
+}
+
+/* --------------------------- Toque: onda de pérola ---------------------- */
+/* Um anel na cor da paleta sai de onde você tocou num botão (js/animacoes.js
+   cria e apaga). Fica por cima de tudo e não pega clique. */
+.anim-onda {
+  position: fixed; z-index: 2000; pointer-events: none;
+  width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+  border: 2px solid var(--wii);
+  box-shadow: 0 0 10px var(--wii-brilho), inset 0 0 8px var(--wii-brilho);
+  animation: anim-onda .45s ease-out forwards;
+}
+@keyframes anim-onda {
+  from { transform: scale(.2); opacity: .9; }
+  to   { transform: scale(1.3); opacity: 0; }
+}
+
+/* ------------------------- Favoritar: estrelinhas ----------------------- */
+/* Ao pôr a estrela numa peça, look ou colagem, estrelinhas douradas saltam
+   do botão (js/animacoes.js festejar()). */
+.anim-faisca {
+  position: fixed; z-index: 2000; pointer-events: none;
+  width: 14px; height: 14px; margin: -7px 0 0 -7px;
+  background: #f2c230;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  animation: anim-faisca .7s cubic-bezier(.2, .8, .4, 1) forwards;
+}
+@keyframes anim-faisca {
+  0%   { transform: translate(0, 0) scale(.3) rotate(0); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--giro)); opacity: 0; }
+}
+/* A estrela em si dá um pulo ao acender. */
+.fav-estrela.anim-acendeu { animation: anim-pulinho .5s cubic-bezier(.3, 1.6, .5, 1); }
+
+/* ------------------------- Quem pede menos movimento -------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .sidebar-btn.ativa .ico, .rolando .ico, .view:not([hidden]),
+  .modal:not([hidden]), .modal:not([hidden]) > .modal-caixa,
+  .fav-estrela.anim-acendeu { animation: none; }
+  .anim-onda, .anim-faisca { display: none; }
+  html body :is(.btn-dark, .btn-ghost, .lb-btn, .acao-btn, .bar-btn, .tool-btn,
+    .st-hist-btn, .btn-meus, .modal-x, .ficha-x, .mp-ferr, .cat-btn, .pal-cat,
+    .closet-paginas button, .pg-acoes button, .pg-abas button):active:not(:disabled),
+  html body .sidebar .sidebar-btn:active { transform: none; }
+  .item-slot:hover .peca-caixa { transform: none; }
+}

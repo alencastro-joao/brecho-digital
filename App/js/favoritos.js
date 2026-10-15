@@ -8,6 +8,7 @@
 import * as db from './db.js';
 import { el, toast } from './util.js';
 import { ico } from './icones.js';
+import { festejar } from './animacoes.js';
 
 // Nome e concordância de cada coisa favoritável, para o aviso sair em português.
 const ROTULO = {
@@ -42,6 +43,8 @@ export function estrelaFavorito(tipo, id, aoMudar) {
         return;
       }
       const agora = db.alternarFavorito(tipo, id);
+      // Antes de repintar: depois disso o botão já é outro.
+      if (agora) festejar(e.currentTarget);
       toast(agora
         ? `${nome} ${participio} — está no seu perfil.`
         : `${nome} fora do perfil.`);

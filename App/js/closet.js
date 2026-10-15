@@ -16,6 +16,7 @@ import { ico, emo } from './icones.js';
 import { abrirEditar } from './editar.js';
 import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
+import { festejar } from './animacoes.js';
 import { vestirPeca } from './stylist.js';
 import { adicionar as soltarNaColagem } from './board.js';
 import { colecoesDaPeca, chipDaColecao, abrirColecao } from './colecoes.js';
@@ -106,10 +107,11 @@ export function montarCloset() {
   });
 
   // Favoritar é o que escolhe as roupas que aparecem no seu perfil.
-  $('#btn-favorita-peca').addEventListener('click', () => {
+  $('#btn-favorita-peca').addEventListener('click', (e) => {
     if (!selecionada) return;
     const agora = db.alternarFavorito('peca', selecionada);
     rotularFavorito();
+    if (agora) festejar(e.currentTarget);
     // A estrelinha do slot acompanha sem repintar a grade inteira.
     document.querySelector(`.item-slot[data-id="${selecionada}"]`)
       ?.classList.toggle('favorita', agora);
