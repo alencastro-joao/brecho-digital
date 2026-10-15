@@ -576,43 +576,48 @@
   .view-stylist .tool-btn { height: 42px; font-size: 17px; }
   .view-stylist .tool-btn:disabled { opacity: .45; }
 
-  /* Tudo numa tela, sem rolar: o palco em cima, a fileira de ações e a paleta
-     embaixo, e só a grade de peças rola por dentro. O nome do look vai para
-     o alto do palco, e as ferramentas da peça aparecem no pé do palco só
-     quando há uma peça selecionada (as alças no palco fazem tamanho e giro). */
+  /* Tudo numa tela, sem rolar: o palco em cima (a maior parte), a fileira de
+     ações e a paleta embaixo, e só a grade de peças rola por dentro. Dentro
+     do palco, os botões ficam em colunas nas laterais, que o boneco não usa:
+     à esquerda ▦, desfazer e refazer; à direita as ferramentas da peça, só
+     quando há uma selecionada (tamanho e giro são as alças no palco). O nome
+     do look sai daqui: o look salva como "Look N" e se renomeia em ▦. */
   .view-stylist {
     display: grid; grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.1fr) auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.55fr) auto minmax(0, 1fr);
     gap: 8px; padding: 10px 14px 10px; overflow: hidden;
   }
   .view-stylist .stylist-stage-area { display: contents; }
-  .view-stylist .stage-frame { grid-row: 1; grid-column: 1; height: auto; min-height: 0; padding: 54px 8px 8px; }
-  .view-stylist .stage-caption {
-    grid-row: 1; grid-column: 1; z-index: 21;
-    align-self: start; justify-self: start;
-    width: calc(100% - 62px - 106px); margin: 12px 0 0 62px;
+  .view-stylist .stage-frame {
+    grid-row: 1; grid-column: 1; height: auto; min-height: 0;
+    padding: 6px 50px;
   }
-  .view-stylist #outfit-nome {
-    min-width: 0; width: 100%; height: 36px; padding: 0 8px; font-size: 13.5px; text-align: center;
-    background: rgba(255, 255, 255, .9);
+  .view-stylist .stage-caption { display: none; }
+  .view-stylist .btn-meus { width: 40px; height: 38px; padding: 0; justify-content: center; }
+  .view-stylist .btn-meus small {
+    position: absolute; top: -7px; right: -8px; min-width: 18px; padding: 1px 5px;
+    border: 1.5px solid var(--tinta);
   }
+  .view-stylist .st-historico { top: 56px; left: 10px; right: auto; flex-direction: column; }
   .view-stylist .look-barra { grid-row: 2; }
   .view-stylist .look-barra .lb-btn { height: 42px; }
   .view-stylist .stylist-palette {
     grid-row: 3; margin: 0; min-height: 0;
     grid-template-rows: auto auto minmax(0, 1fr); align-items: stretch;
   }
+  .view-stylist .stylist-palette:not(.abertas) { row-gap: 0; }
+  .view-stylist .stylist-palette:not(.abertas) .palette-grid { margin-top: 8px; }
   .view-stylist .palette-grid { max-height: none; min-height: 0; overflow-y: auto; align-self: stretch; }
   .view-stylist .pal-cat, .view-stylist .palette-ajustes { height: 42px; }
   .view-stylist .stylist-tools {
     grid-row: 1; grid-column: 1; z-index: 21;
-    align-self: end; margin: 0 10px 10px; padding: 0;
+    align-self: center; justify-self: end; margin: 0 10px 0 0; padding: 0;
     border: 0; background: none; overflow: visible;
   }
   .view-stylist .stylist-tools:has(.tool-btn:disabled) { display: none; }
   .view-stylist #layer-tools > :not(.tool-row) { display: none; }
-  .view-stylist #layer-tools .tool-row { flex-wrap: nowrap; gap: 6px; }
-  .view-stylist #layer-tools .tool-btn { height: 38px; font-size: 16px; }
+  .view-stylist #layer-tools .tool-row { flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+  .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 38px; font-size: 16px; }
 
   /* ------------------------------ Colagem -------------------------------- */
   .board-main { order: 1; }
