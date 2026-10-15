@@ -1122,3 +1122,26 @@
   .view-vestiario .vs-efeito.ativo { background: #e9f3df; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
 
 }
+
+/* ---------------------- Loja no padrão das outras telas ---------------------
+   Pouca coisa: o mural fica como está, só com os pontinhos no tom da paleta;
+   o contador de resgates, o sino e o perfil viram blocos perolados com o
+   degrau embaixo. Esgotado mantém o amarelo, com o brilho. */
+@media (max-width: 900px) {
+  .view-vitrine .mural-area { background-image: radial-gradient(var(--wii-borda) 1px, transparent 1px); }
+  .view-vitrine .picks-badge, .avisos-btn {
+    background: var(--perola); border: 2px solid var(--wii-borda);
+    box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  }
+  .view-vitrine .picks-badge { border-radius: 16px; padding: 6px 15px 8px; }
+  .view-vitrine .picks-badge.esgotado {
+    background: #fff6e0 var(--brilho-topo); border-color: #f0dfb4;
+    box-shadow: inset 0 -3px 0 #f0dfb4;
+  }
+  .avisos-btn { border-radius: 14px; }
+  .avisos-btn[aria-expanded="true"] { border-color: var(--wii); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho); }
+  .perfil-atalho {
+    border: 2px solid var(--wii-borda); border-radius: 16px;
+    box-shadow: inset 0 -3px 0 var(--perola-degrau);
+  }
+}
