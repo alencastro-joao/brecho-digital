@@ -38,7 +38,7 @@ import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
-  gradeDePecas, perfilPublico, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
+  perfilPublico, previaDeRoupas, gradeDaPrevia, favoritasPrimeiro, abrirListaDePecas, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
   retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
 import { ico } from './icones.js';
@@ -202,20 +202,29 @@ function emblema(c) {
 // ------------------------------- As abas -----------------------------------
 // As três de vitrine seguem a mesma regra: aparece o que tem estrela. Vazia,
 // diz em poucas palavras o que falta e leva até lá.
+// A prévia do guarda-roupa: as favoritas primeiro e, para completar, as que
+// chegaram por último.
 function abaDeRoupas() {
-  const temPecas = db.state.inventario.length > 0;
+  const favoritas = pecasFavoritas();
+  const todas = previaDeRoupas(favoritas, porObtencao(db.state.inventario)
+    .map(x => pecaDoCatalogo(x.id)));
   return {
     id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
-    itens: gradeDePecas(pecasFavoritas()),
-    vazio: temPecas ? 'Favorite roupas com ★ no Closet' : 'Garimpe a sua primeira peça',
-    botao: temPecas ? ['Abrir o Closet', () => irPara('closet')] : ['Ir à Loja', () => irPara('vitrine')],
+    itens: gradeDaPrevia(todas, favoritas,
+      () => abrirListaDePecas('Seu guarda-roupa', todas, { aoFechar: renderPerfil })),
+    vazio: 'Garimpe a sua primeira peça',
+    botao: ['Ir à Loja', () => irPara('vitrine')],
   };
 }
 
-// Todos os looks do Stylist e todas as colagens, do mais novo para o mais
-// velho; a estrela vira o selo no canto. O clique devolve ao editor de origem.
+const porObtencao = (lista) => [...lista]
+  .sort((a, b) => new Date(b.obtidoEm || 0) - new Date(a.obtidoEm || 0));
+
+// Todos os looks do Stylist e todas as colagens: as (até três) favoritas na
+// frente, depois do mais novo para o mais velho; a estrela vira o selo no
+// canto. O clique devolve ao editor de origem.
 function abasDeObras() {
-  const obras = (lista, tipo, abrir) => porData(lista)
+  const obras = (lista, tipo, abrir) => favoritasPrimeiro(porData(lista))
     .map(item => cartaoDaObra({ ...item, tipo }, () => abrir(item.id)));
   return [{
     id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
