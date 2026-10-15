@@ -14,16 +14,26 @@
 }
 
 /* ------------------------------ Abas ---------------------------------- */
-.sidebar .sidebar-btn {
+/* Cada aba mantém a cor dela, com o acabamento dos botões perolados: brilho
+   em cima, borda azul-acinzentada e o degrau embaixo. */
+html body .sidebar .sidebar-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  background-image: var(--brilho-topo);
-  border-color: rgba(255, 255, 255, .9);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .08);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .75) 0%, rgba(255, 255, 255, .35) 48%, rgba(255, 255, 255, .1) 52%, rgba(255, 255, 255, .3) 100%);
+  border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(60, 80, 95, .14);
 }
 .sidebar .sidebar-btn .ico { width: 24px; height: 24px; vertical-align: 0; color: rgba(0, 0, 0, .62); }
-.sidebar .sidebar-btn.ativa {
+html body .sidebar .sidebar-btn.ativa {
   border-color: var(--wii);
-  box-shadow: 0 0 0 3px rgba(52, 190, 237, .28), 0 4px 12px rgba(0, 0, 0, .1);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(60, 80, 95, .14), 0 0 0 3px rgba(52, 190, 237, .28);
+}
+
+/* Os painéis das grades (paleta do Stylist e da Colagem, closet, personagem)
+   no mesmo tom: fundo pérola azulado e bordas azul-acinzentadas. */
+html body :is(.view-closet, .view-stylist, .view-board, .view-personagem, #modal-meus) {
+  --painel: #eaf0f4;
+  --bloco-borda: var(--wii-borda);
+  --bloco-fundo: #c9d4dc;
 }
 
 /* ------------------- Botões de ícone: pérola do Wii -------------------- */
