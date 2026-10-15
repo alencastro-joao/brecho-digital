@@ -392,3 +392,88 @@
 .toast.col-toast strong { color: #f0d27a; }
 .toast.col-toast .col-chip-disco { background: #fff; }
 .vs-ficha-colecao { margin-top: 4px; }
+
+/* --------------------- No padrão perolado do site ------------------------ */
+/* Como Closet, Feed e Tarefas: o conteúdo em painéis pérola com borda, cada
+   coisa tocável vira um bloco com o degrau embaixo, e o progresso das
+   coleções na cor da paleta escolhida em "Cores do site". */
+.view-colecoes {
+  --painel: var(--perola-painel); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+  background: var(--papel);
+}
+.view-colecoes .col-voltar {
+  padding: 7px 14px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+  background: var(--perola); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  color: var(--tinta);
+}
+.view-colecoes .col-voltar:hover { border-color: var(--wii); }
+.view-colecoes .col-grupos {
+  gap: 6px; padding: 6px; border: 2px solid var(--bloco-borda); border-radius: 18px;
+  background: var(--painel);
+}
+.view-colecoes .col-grupo {
+  height: 40px; padding: 0 18px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+  background: var(--perola); color: var(--tinta);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.view-colecoes .col-grupo.ativo {
+  background: var(--tarefas) var(--brilho-topo); border-color: var(--tinta);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+}
+
+/* A grade de emblemas e as seções do álbum, cada uma num painel. */
+.view-colecoes :is(.col-lista, .col-trilha, .col-album) {
+  padding: 14px; border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
+}
+.view-colecoes .col-disco {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(var(--wii) var(--pct, 0%), var(--bloco-borda) 0) border-box;
+  box-shadow: 0 3px 0 var(--bloco-fundo);
+}
+.view-colecoes .col-disco.completa {
+  background: linear-gradient(#fff, #fff) padding-box, linear-gradient(#e8c46a, #c9a443) border-box;
+  box-shadow: 0 3px 0 var(--bloco-fundo), 0 0 0 3px #fbf0cc;
+}
+.view-colecoes .col-tile.selecionado .col-disco { box-shadow: 0 3px 0 var(--bloco-fundo), 0 0 0 4px var(--wii-brilho); }
+.view-colecoes .col-tile.selecionado > strong { text-decoration: none; color: var(--tinta); }
+
+/* A prévia aberta e as casas do álbum: blocos brancos com degrau. */
+.view-colecoes .col-tile.aberto,
+.view-colecoes :is(.col-peca, .col-album-casa, .col-item, .col-escolha-item) {
+  background: #fff; border: 2px solid var(--bloco-borda);
+  box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+}
+.view-colecoes .col-tile.aberto { border-radius: 18px; }
+.view-colecoes :is(.col-peca.falta, .col-album-casa.falta) { background: var(--perola-1); border-style: dashed; box-shadow: none; }
+.view-colecoes .col-tile.aberto.completa { background: #fbf6e8; border-color: #e3d3a5; }
+.view-colecoes .col-ver {
+  padding: 9px 16px; border: 2px solid var(--tinta); border-radius: 12px;
+  background: var(--tarefas) var(--brilho-topo); color: var(--tinta);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+}
+
+.view-colecoes .col-trilha-liga { background: var(--bloco-borda); }
+.view-colecoes .col-marco { border-color: var(--bloco-borda); }
+.view-colecoes .col-escolha { border-width: 2px; }
+.view-colecoes .col-album { gap: 10px; }
+
+/* Fora da tela: chips das fichas e emblemas do perfil no mesmo tom. */
+.col-chip { border-color: var(--wii-borda); box-shadow: inset 0 -2px 0 var(--perola-degrau); }
+.col-chip-disco { background: var(--perola-1); }
+.pf-emblema:not(.completa) .pf-emblema-disco {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(var(--wii) var(--pct, 0%), var(--wii-borda) 0) border-box;
+}
+
+/* No celular, como as outras telas: sem título, sino nem perfil no topo
+   (avisos.css), e o "voltar" ao lado das abas de grupo. */
+@media (max-width: 900px) {
+  .view-colecoes .col-wrapper { padding-top: 12px; gap: 10px; }
+  .view-colecoes .col-head-linha { display: none; }
+  .view-colecoes .col-head { gap: 8px; }
+  .view-colecoes .col-grupos { align-self: stretch; }
+  .view-colecoes .col-grupo { flex: 1; padding: 0 8px; }
+  .view-colecoes .col-hero h1 { font-size: 22px; }
+}
