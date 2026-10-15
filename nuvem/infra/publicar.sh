@@ -75,6 +75,15 @@ if [ -d "$APP/assets/temas" ]; then
     --cache-control 'public, max-age=86400' --content-type 'image/svg+xml' --exclude '*' --include '*.svg'
 fi
 
+# Ícones do app (js/icones.js): Fluent 3D em webp e Phosphor em SVG. Nome
+# fixo e podem ser trocados, então um dia no cache, como os logos.
+if [ -d "$APP/assets/icones" ]; then
+  aws s3 sync "$APP/assets/icones/3d" "s3://$SITE/assets/icones/3d" --delete \
+    --cache-control 'public, max-age=86400' --content-type 'image/webp' --exclude '*' --include '*.webp'
+  aws s3 sync "$APP/assets/icones/ph" "s3://$SITE/assets/icones/ph" --delete \
+    --cache-control 'public, max-age=86400' --content-type 'image/svg+xml' --exclude '*' --include '*.svg'
+fi
+
 if [ -d "$APP/assets/audio" ] && [ -n "$(ls -A "$APP/assets/audio" 2>/dev/null)" ]; then
   aws s3 sync "$APP/assets/audio" "s3://$SITE/assets/audio" --cache-control "$ETERNO"
 fi
