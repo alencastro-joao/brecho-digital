@@ -38,25 +38,17 @@ import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
-  perfilPublico, previaDeRoupas, gradeDaPrevia, favoritasPrimeiro, abrirListaDePecas, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
+  perfilPublico, gradeDaPrevia, abrirListaDePecas, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
   retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
 import { ico } from './icones.js';
+import { pecasFavoritas, minhasRoupas, meusLooks, minhasColagens } from './minhavitrine.js';
 
 // Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
 const meusPosts = () => postsDoAutor(db.state.usuario.id);
 
 const plural = (n, um, muitos) => `${n} ${n === 1 ? um : muitos}`;
 
-// Do mais novo para o mais velho: a vitrine abre pelo que você acabou de fazer.
-const porData = (lista) => [...lista]
-  .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
-
-// As peças favoritas. O inventário guarda só o id, então a imagem vem do
-// catálogo: favorita de acervo desligado simplesmente não entra.
-const pecasFavoritas = () => db.favoritos('peca')
-  .map(p => pecaDoCatalogo(p.id))
-  .filter(Boolean);
 
 export function montarPerfil() {
   montarEdicao();
@@ -146,7 +138,7 @@ export function renderPerfil() {
     el('button', { class: 'btn-ghost', onclick: () => irPara('vestiario') }, 'Inventário'));
 
   // O seu guarda-roupa inteiro e a sua wishlist, como os outros os veem.
-  const roupas = db.state.inventario.map(x => pecaDoCatalogo(x.id)).filter(Boolean);
+  const roupas = minhasRoupas();
   const desejos = (db.state.wishlist || []).map(pecaDoCatalogo).filter(Boolean);
   $('#perfil-listas').replaceChildren(...botoesDeListas('', roupas, desejos, { minha: true, aoFechar: renderPerfil }));
 
@@ -200,40 +192,46 @@ function emblema(c) {
 }
 
 // ------------------------------- As abas -----------------------------------
+// Segurar e arrastar grava a ordem nova e repinta, para a ficha que abre ao
+// tocar seguir a ordem que ficou na tela.
+const arrumar = (aba, ids) => { db.guardarOrdemDoPerfil(aba, ids); renderPerfil(); };
+
 // As três de vitrine seguem a mesma regra: aparece o que tem estrela. Vazia,
 // diz em poucas palavras o que falta e leva até lá.
 // A prévia do guarda-roupa: as favoritas primeiro e, para completar, as que
-// chegaram por último.
+// chegaram por último — ou a ordem que você arrumou (minhavitrine.js).
+// Segurar e arrastar uma peça muda a ordem; o "ver todas" fica no fim.
 function abaDeRoupas() {
   const favoritas = pecasFavoritas();
-  const todas = previaDeRoupas(favoritas, porObtencao(db.state.inventario)
-    .map(x => pecaDoCatalogo(x.id)));
+  const todas = minhasRoupas();
   return {
     id: 'roupas', icone: 'cabide', rotulo: 'Roupas', grade: 'pf-grade-pecas',
     itens: gradeDaPrevia(todas, favoritas,
-      () => abrirListaDePecas('Seu guarda-roupa', todas, { aoFechar: renderPerfil })),
+      () => abrirListaDePecas('Seu guarda-roupa', todas, { aoFechar: renderPerfil, minha: true }),
+      { minha: true }),
+    reordenar: (ids) => arrumar('roupas', ids),
     vazio: 'Garimpe a sua primeira peça',
     botao: ['Ir à Loja', () => irPara('vitrine')],
   };
 }
 
-const porObtencao = (lista) => [...lista]
-  .sort((a, b) => new Date(b.obtidoEm || 0) - new Date(a.obtidoEm || 0));
-
 // Todos os looks do Stylist e todas as colagens: as (até três) favoritas na
-// frente, depois do mais novo para o mais velho; a estrela vira o selo no
-// canto. O clique devolve ao editor de origem.
+// frente, depois do mais novo para o mais velho, ou a ordem que você arrumou
+// segurando e arrastando; a estrela vira o selo no canto. O clique devolve ao
+// editor de origem.
 function abasDeObras() {
-  const obras = (lista, tipo, abrir) => favoritasPrimeiro(porData(lista))
+  const obras = (lista, tipo, abrir) => lista
     .map(item => cartaoDaObra({ ...item, tipo }, () => abrir(item.id)));
   return [{
     id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-    itens: obras(db.state.looks, 'look', (id) => { abrirLook(id); irPara('stylist'); }),
+    itens: obras(meusLooks(), 'look', (id) => { abrirLook(id); irPara('stylist'); }),
+    reordenar: (ids) => arrumar('looks', ids),
     vazio: 'Monte o seu primeiro look',
     botao: ['Abrir o Stylist', () => irPara('stylist')],
   }, {
     id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-    itens: obras(db.state.boards, 'colagem', (id) => { irPara('board'); abrirBoard(id); }),
+    itens: obras(minhasColagens(), 'colagem', (id) => { irPara('board'); abrirBoard(id); }),
+    reordenar: (ids) => arrumar('colagens', ids),
     vazio: 'Monte a sua primeira colagem',
     botao: ['Abrir a Colagem', () => irPara('board')],
   }];
@@ -244,6 +242,7 @@ function abasDeObras() {
 function cartaoDaObra(item, abrir) {
   const look = item.tipo === 'look' && item.camadas?.length;
   return cartaoDeObra({
+    id: item.id,
     nome: item.nome,
     thumb: look ? miniaturaSoltaPronta(item.camadas) || miniaturaSoltaAtual(item.camadas) : item.thumb,
     solto: Boolean(look),
