@@ -7,7 +7,7 @@
 // formato. Assim o que você monta na tela sai idêntico na exportação, em qualquer
 // resolução. As coordenadas de cada peça são o centro dela.
 
-import { BOARD, escalaGrade, escalaMural } from './config.js';
+import { BOARD, RARIDADE, escalaGrade, escalaMural } from './config.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
@@ -98,6 +98,17 @@ export function montarBoard() {
   montarPaleta();
   render();
 
+  // Só no celular: ⇅ mostra o agrupar, a ordem e a busca da paleta, e ⚙ troca
+  // a paleta pelas ferramentas (seleção, arranjo, assinatura, colagens).
+  $('#board-ajustes').addEventListener('click', (e) => {
+    const aberto = $('.board-palette').classList.toggle('abertas');
+    e.currentTarget.setAttribute('aria-expanded', String(aberto));
+  });
+  $('#bd-ferramentas').addEventListener('click', (e) => {
+    const aberto = $('.view-board').classList.toggle('com-ferramentas');
+    e.currentTarget.setAttribute('aria-expanded', String(aberto));
+  });
+
   new ResizeObserver(() => { if (ajustarSozinho) encaixar(); })
     .observe($('#board-scroll'));
 }
@@ -167,8 +178,11 @@ function montarPaleta() {
     if (!peca) return null;
     const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' });
     aplicarContorno(img, peca);
+    // A raridade pinta o bloco no celular, como na grade do closet.
+    const r = RARIDADE[p.raridade] || RARIDADE.common;
     return el('button', {
-      class: 'pal-item', title: nomeDaPeca(peca) + ' — clique para soltar',
+      class: `pal-item r-${p.raridade || 'common'}`, title: nomeDaPeca(peca) + ' — clique para soltar',
+      style: { '--rar-borda': r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor },
       onclick: () => adicionar(p.id),
     }, el('div', {
       class: 'peca-caixa',

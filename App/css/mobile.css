@@ -632,20 +632,142 @@
   .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 34px; font-size: 15px; }
 
   /* ------------------------------ Colagem -------------------------------- */
-  .board-main { order: 1; }
-  .board-bar {
-    height: auto; flex-wrap: wrap;
-    gap: 8px 12px; padding: 8px 12px;
+  /* No padrão do Stylist: tudo numa tela, sem rolar. A colagem em cima,
+     num painel, com os botões em colunas nas laterais (à esquerda desfazer,
+     refazer, texto e encaixar; à direita gerar, salvar, publicar, PNG, nova
+     e ⚙); embaixo a paleta em blocos. O ⚙ troca a paleta pelas ferramentas
+     (seleção, arranjo, assinatura e as colagens salvas). Réguas, zoom, as
+     opções da barra, o nome e a dica ficam para o computador. */
+  .view-board {
+    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --painel: #f3eee6;
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 8px; padding: 10px 14px; overflow: hidden;
+    background: var(--papel);
   }
-  .bar-btn { width: 34px; height: 34px; }
-  .bar-dir { margin-left: 0; }
-  .board-scroll { flex: none; height: min(62dvh, 600px); padding: 34px 30px; }
-  .board-rodape { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
-  #board-nome { flex: 1 1 100%; width: auto; }
-  .board-dica { display: none; }
-  .rodape-acoes { margin-left: 0; flex-wrap: wrap; flex: 1 1 100%; }
-  .acao-btn { flex: 1 1 auto; padding: 9px 12px; }
-  .board-tools .saved-list { max-height: none; }
+  .view-board .board-main { display: contents; }
+  .view-board .board-scroll {
+    grid-row: 1; grid-column: 1; height: auto; min-height: 0;
+    padding: 12px 54px; overflow: hidden;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel);
+  }
+  .view-board :is(.regua, .regua-canto) { display: none; }
+  .view-board .prancheta { box-shadow: 0 6px 18px rgba(0, 0, 0, .1); }
+
+  .view-board :is(.bar-btn, .acao-btn, .pal-cat, .palette-ajustes, .ordem-sentido) {
+    width: 40px; height: 38px; padding: 0; margin: 0;
+    display: grid; place-items: center;
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo); transform: none;
+  }
+  .view-board :is(.bar-btn, .acao-btn):disabled { opacity: .45; }
+  .view-board :is(.pal-cat.active, .board-palette.abertas .palette-ajustes,
+                  .ordem-sentido.on, .acao-btn[aria-expanded="true"]),
+  .view-board #bd-salvar {
+    background: var(--board); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+
+  .view-board .board-bar {
+    grid-row: 1; grid-column: 1; z-index: 21;
+    align-self: start; justify-self: start;
+    height: auto; margin: 10px 0 0 10px; padding: 0;
+    flex-direction: column; align-items: stretch; gap: 6px;
+    border: 0; background: none;
+  }
+  .view-board .bar-grupo { flex-direction: column; gap: 6px; }
+  .view-board .bar-grupo:nth-child(n + 4),
+  .view-board [data-zoom="-"], .view-board [data-zoom="+"], .view-board .bar-zoom { display: none; }
+  .view-board #bd-add-texto { font-size: 0; }
+  .view-board #bd-add-texto::before { content: 'T'; font-size: 17px; font-weight: 800; font-family: Georgia, serif; }
+
+  .view-board .board-rodape {
+    grid-row: 1; grid-column: 1; z-index: 21;
+    align-self: start; justify-self: end;
+    min-height: 0; margin: 10px 10px 0 0; padding: 0;
+    border: 0; background: none;
+  }
+  .view-board #board-nome, .view-board .board-dica,
+  .view-board [data-bd-export="alta"] { display: none; }
+  .view-board .rodape-acoes { flex-direction: column; gap: 6px; margin: 0; flex: none; }
+  .view-board .acao-btn { font-size: 0; }
+  .view-board .acao-btn::before { font-size: 17px; line-height: 1; }
+  .view-board #bd-sortear::before { content: '🎲'; }
+  .view-board #bd-salvar::before { content: '✓'; font-weight: 800; }
+  .view-board #bd-publicar::before { content: '↗'; font-weight: 800; }
+  .view-board [data-bd-export="formato"]::before { content: '⬇'; }
+  .view-board #bd-nova::before { content: '＋'; font-weight: 800; }
+  .view-board #bd-ferramentas { display: grid; }
+  .view-board #bd-ferramentas::before { content: '⚙'; }
+
+  /* Paleta: o mesmo painel do Stylist, com o ⇅ mostrando agrupar, ordem e busca. */
+  .view-board .board-palette {
+    grid-row: 2; grid-column: 1; min-height: 0; margin: 0; padding: 8px;
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    align-items: center; gap: 8px;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel);
+  }
+  .view-board .board-palette:not(.abertas) { row-gap: 0; }
+  .view-board .board-palette:not(.abertas) .palette-grid { margin-top: 8px; }
+  .view-board .board-palette .palette-head { display: contents; }
+  .view-board .board-palette :is(h2, .palette-hint) { display: none; }
+  .view-board #board-cats { grid-column: 1 / 3; grid-row: 1; gap: 6px; padding: 0; }
+  .view-board .pal-cat { flex: 1 0 44px; width: auto; height: 42px; font-size: 19px; }
+  .view-board .pal-cat small { display: none; }
+  .view-board #board-ajustes { grid-column: 3; grid-row: 1; width: 44px; height: 42px; font: inherit; cursor: pointer; }
+  .view-board #board-ajustes::before { content: '⇅'; font-size: 17px; font-weight: 700; }
+  .view-board :is(#board-agrupar, #board-ordem, .pal-busca) { display: none; }
+  .view-board #board-agrupar { grid-row: 2; grid-column: 1; }
+  .view-board #board-ordem { grid-row: 2; grid-column: 2 / 4; }
+  .view-board .pal-busca { grid-row: 3; grid-column: 1 / -1; }
+  .view-board .board-palette.abertas :is(#board-agrupar, #board-ordem, .pal-busca) { display: flex; }
+  .view-board .pal-busca input {
+    height: 38px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); font-size: 14px;
+  }
+  .view-board #board-ordem .ordem-sel {
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--tinta);
+    height: 38px; padding: 0 10px; border-radius: 11px;
+    border: 2px solid var(--bloco-borda); background: var(--bloco);
+  }
+  .view-board .palette-grid {
+    grid-column: 1 / -1; grid-row: 4; align-self: stretch;
+    max-height: none; min-height: 0; overflow-y: auto; gap: 7px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .view-board .pal-item {
+    padding: 6px; border-radius: 11px;
+    border: 2px solid var(--bloco-borda);
+    background: color-mix(in srgb, var(--rar-borda) 24%, #fff);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07);
+  }
+  .view-board .pal-item.r-common { background: var(--bloco); }
+  .view-board .pal-item.r-legendary { background: color-mix(in srgb, var(--rar-borda) 42%, #fff); }
+  .view-board .pal-item .peca-caixa { inset: 6px; }
+  .view-board .pal-item:hover { transform: none; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07); }
+  .view-board .grupo-rotulo { display: none; }
+
+  /* Ferramentas: só com o ⚙, no lugar da paleta, rolando por dentro. */
+  .view-board .board-tools { display: none; }
+  .view-board.com-ferramentas .board-palette { visibility: hidden; }
+  .view-board.com-ferramentas .board-tools {
+    display: flex; grid-row: 2; grid-column: 1; z-index: 22;
+    min-height: 0; margin: 0; padding: 12px 14px; gap: 14px;
+    overflow-y: auto;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel);
+  }
+  .view-board .board-tools .tool-btn {
+    height: 38px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  .view-board .board-tools .tool-btn.largo { font-size: 13px; }
+  .view-board .board-tools .saved-list { max-height: none; }
 
   /* -------------------------------- Feed --------------------------------- */
   .feed-wrapper { overflow: visible; padding: 0 16px 24px; }

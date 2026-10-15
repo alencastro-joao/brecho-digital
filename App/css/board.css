@@ -17,6 +17,7 @@
   padding: 7px 13px; font-family: inherit; font-size: 12px; background: #fdfcfa;
 }
 .pal-busca input:focus { outline: none; border-color: var(--tinta); }
+#bd-ferramentas { display: none; }
 
 /* --------------------------------- Mesa --------------------------------- */
 .board-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
