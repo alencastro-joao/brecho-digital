@@ -24,6 +24,10 @@ const W = BOARD.W;
 
 let board = novaColagem();
 let selecao = new Set();
+// No celular, selecionar uma peça no palco troca a paleta pelas ferramentas.
+// Peça recém-solta pela paleta já nasce selecionada, mas aí a paleta fica:
+// quem está soltando peças quer continuar soltando.
+let vemDaPaleta = false;
 let historico = [], futuro = [];
 let uidSeq = 1;
 let zoom = 1, ajustarSozinho = true;
@@ -223,10 +227,12 @@ export function adicionar(itemId) {
   };
   board.itens.push(it);
   selecao = new Set([it.uid]);
+  vemDaPaleta = true;
   render();
 }
 
 export function adicionarTexto() {
+  vemDaPaleta = false;
   marcar();
   const area = areaUtil(board, W, H());
   const it = {
@@ -478,6 +484,8 @@ function iniciarManipulacao(e, it, no) {
   e.stopPropagation();
 
   const alca = e.target.dataset?.alca;
+  // Tocar numa peça (mesmo a que acabou de cair da paleta) abre as ferramentas.
+  if (vemDaPaleta) { vemDaPaleta = false; atualizarFerramentas(); }
   if (!selecao.has(it.uid)) {
     if (e.shiftKey) selecao.add(it.uid);
     else selecao = new Set([it.uid]);
@@ -629,6 +637,7 @@ function ligarPalco() {
       x: clamp(unidadesX(rect, e.clientX - rect.left), 0, W),
       y: clamp(unidadesY(rect, e.clientY - rect.top), 0, alt),
     };
+    vemDaPaleta = false;
     if (!e.shiftKey) { selecao.clear(); marcarSelecaoNoDOM(); atualizarFerramentas(); }
 
     const laco = $('#pr-marquee');
@@ -930,6 +939,7 @@ function distribuir(alvos, modo) {
 function atualizarFerramentas() {
   const alvos = selecionados();
   const tem = alvos.length > 0;
+  $('.view-board').classList.toggle('com-selecao', tem && !vemDaPaleta);
   $('#bd-vazio').hidden = tem;
   $('#bd-qtd-sel').textContent = tem ? `(${alvos.length})` : '';
   $$('#bd-selecao .tool-btn, #bd-selecao input').forEach(n => {

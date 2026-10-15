@@ -752,10 +752,12 @@
   .view-board .pal-item:hover { transform: none; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07); }
   .view-board .grupo-rotulo { display: none; }
 
-  /* Ferramentas: só com o ⚙, no lugar da paleta, rolando por dentro. */
+  /* Ferramentas: com o ⚙ ou com uma peça selecionada no palco, no lugar da
+     paleta, rolando por dentro. Tocar no vazio do palco tira a seleção e a
+     paleta volta. */
   .view-board .board-tools { display: none; }
-  .view-board.com-ferramentas .board-palette { visibility: hidden; }
-  .view-board.com-ferramentas .board-tools {
+  .view-board:is(.com-ferramentas, .com-selecao) .board-palette { visibility: hidden; }
+  .view-board:is(.com-ferramentas, .com-selecao) .board-tools {
     display: flex; grid-row: 2; grid-column: 1; z-index: 22;
     min-height: 0; margin: 0; padding: 12px 14px; gap: 14px;
     overflow-y: auto;
@@ -768,6 +770,8 @@
   }
   .view-board .board-tools .tool-btn.largo { font-size: 13px; }
   .view-board .board-tools .saved-list { max-height: none; }
+  /* Com uma peça selecionada no palco, só as ferramentas dela; o ⚙ mostra o resto. */
+  .view-board.com-selecao:not(.com-ferramentas) .board-tools > :not(#bd-selecao) { display: none; }
 
   /* -------------------------------- Feed --------------------------------- */
   .feed-wrapper { overflow: visible; padding: 0 16px 24px; }
