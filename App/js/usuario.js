@@ -439,12 +439,12 @@ export function abrirFichaDePeca(pecas, i, { minha = false } = {}) {
   fichaPecas = pecas;
   fichaMinha = minha;
   pintarFicha(i);
-  $('#modal-peca').hidden = false;
+  $('#modal-pp').hidden = false;
   document.body.classList.add('com-modal');
 }
 
 function fecharFicha() {
-  $('#modal-peca').hidden = true;
+  $('#modal-pp').hidden = true;
   destravarSeNada();
 }
 
@@ -486,7 +486,7 @@ function pintarFicha(i) {
 }
 
 function montarFichaDePeca() {
-  const modal = $('#modal-peca');
+  const modal = $('#modal-pp');
   const cartao = $('#pp-cartao');
   const ir = (passo) => pintarFicha(fichaPos + passo);
   const pode = (passo) => Boolean(fichaPecas[fichaPos + passo]);
