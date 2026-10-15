@@ -633,23 +633,23 @@
 
   /* ------------------------------ Colagem -------------------------------- */
   /* No padrão do Stylist: tudo numa tela, sem rolar. A colagem em cima,
-     num painel, com os botões em colunas nas laterais (à esquerda desfazer,
-     refazer, texto e encaixar; à direita gerar, salvar, publicar, PNG, nova
-     e ⚙); embaixo a paleta em blocos. O ⚙ troca a paleta pelas ferramentas
+     num painel ocupando o máximo dele, com desfazer, refazer, texto e
+     encaixar numa fileira embaixo e nova, gerar, salvar, publicar, PNG e ⚙
+     numa coluna à direita; embaixo a paleta em blocos. O ⚙ troca a paleta pelas ferramentas
      (seleção, arranjo, assinatura e as colagens salvas). Réguas, zoom, as
      opções da barra, o nome e a dica ficam para o computador. */
   .view-board {
     --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
     display: grid; grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr);
     gap: 8px; padding: 10px 14px; overflow: hidden;
     background: var(--papel);
   }
   .view-board .board-main { display: contents; }
   .view-board .board-scroll {
     grid-row: 1; grid-column: 1; height: auto; min-height: 0;
-    padding: 12px 54px; overflow: hidden;
+    padding: 8px 56px 54px 8px; overflow: hidden;
     border: 2px solid var(--bloco-borda); border-radius: 20px;
     background: var(--painel);
   }
@@ -673,12 +673,12 @@
 
   .view-board .board-bar {
     grid-row: 1; grid-column: 1; z-index: 21;
-    align-self: start; justify-self: start;
-    height: auto; margin: 10px 0 0 10px; padding: 0;
-    flex-direction: column; align-items: stretch; gap: 6px;
+    align-self: end; justify-self: start;
+    height: auto; margin: 0 0 10px 10px; padding: 0;
+    flex-direction: row; align-items: stretch; gap: 6px;
     border: 0; background: none;
   }
-  .view-board .bar-grupo { flex-direction: column; gap: 6px; }
+  .view-board .bar-grupo { gap: 6px; }
   .view-board .bar-grupo:nth-child(n + 4),
   .view-board [data-zoom="-"], .view-board [data-zoom="+"], .view-board .bar-zoom { display: none; }
   .view-board #bd-add-texto { font-size: 0; }

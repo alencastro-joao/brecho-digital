@@ -297,8 +297,16 @@ function render() {
 function larguraAlvo() {
   const area = $('#board-scroll');
   const alt = H();
-  const dispW = Math.max(240, (area?.clientWidth || 900) - 104);
-  const dispH = Math.max(240, (area?.clientHeight || 700) - 112);
+  // No celular não há réguas: a folga é só o padding do painel (onde ficam
+  // os botões), para a colagem ocupar todo o resto.
+  let folgaW = 104, folgaH = 112;
+  if (area && matchMedia('(max-width: 900px)').matches) {
+    const cs = getComputedStyle(area);
+    folgaW = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    folgaH = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  }
+  const dispW = Math.max(200, (area?.clientWidth || 900) - folgaW);
+  const dispH = Math.max(200, (area?.clientHeight || 700) - folgaH);
   const base = Math.min(dispW, dispH * (W / alt));
   return Math.round(base * zoom);
 }
