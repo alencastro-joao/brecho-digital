@@ -367,6 +367,77 @@
   .ms-apagar { width: 34px; height: 36px; opacity: .7; }
   .ms-menu { left: 6px; right: 6px; min-width: 0; bottom: 52px; }
   .ms-menu button { padding: 12px; font-size: 14px; }
+
+  /* No padrão do closet: sem título, busca e filtros em blocos, os looks
+     num painel, cartões em bloco só com o nome e o ⋯ (apagar, renomear e
+     duplicar ficam no ⋯), e os selos viram ícones. */
+  #modal-meus {
+    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --painel: #f3eee6;
+  }
+  #modal-meus .modal-caixa { position: relative; background: var(--papel); }
+  #modal-meus .modal-topo {
+    position: absolute; z-index: 3;
+    top: calc(10px + env(safe-area-inset-top)); right: 14px;
+    padding: 0; border: 0; background: none;
+  }
+  #modal-meus .ms-titulos { display: none; }
+  #modal-meus :is(.modal-x, #ms-busca, #ms-ordem, .ms-filtro, .ms-mais, .fav-estrela.mini, #ms-novo) {
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  #modal-meus :is(#ms-busca, #ms-ordem) { box-shadow: none; height: 42px; font-size: 14px; }
+  #modal-meus .modal-x { width: 42px; height: 42px; font-size: 15px; font-weight: 700; }
+  #modal-meus .ms-barra {
+    padding: calc(10px + env(safe-area-inset-top)) 14px 0; border: 0;
+  }
+  #modal-meus #ms-busca { padding: 0 12px; }
+  #modal-meus #ms-ordem { width: 112px; margin-right: 50px; padding: 0 8px; font-weight: 600; }
+  #modal-meus .ms-filtros { gap: 6px; padding-bottom: 3px; }
+  #modal-meus .ms-filtro { height: 38px; padding: 0 12px; font-size: 13px; }
+  #modal-meus .ms-filtro.ativo {
+    background: var(--stylist); border-color: var(--tinta); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+  #modal-meus .ms-filtro.ativo small { color: var(--tinta-suave); }
+
+  #modal-meus .ms-grade {
+    margin: 10px 14px 0; padding: 10px; gap: 8px;
+    border: 2px solid var(--bloco-borda); border-radius: 20px;
+    background: var(--painel);
+  }
+  #modal-meus .ms-card {
+    border: 2px solid var(--bloco-borda); border-radius: 13px;
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+  }
+  #modal-meus .ms-card.aberto {
+    border-color: var(--tinta); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
+  #modal-meus .ms-thumb {
+    border-radius: 11px 11px 0 0; padding: 6px;
+    background: var(--bloco); background-image: none;
+  }
+  #modal-meus .ms-selo {
+    font-size: 0; width: 24px; height: 24px; padding: 0;
+    display: grid; place-items: center; top: 8px; left: 8px;
+  }
+  #modal-meus .ms-selo + .ms-selo { top: 36px; }
+  #modal-meus .ms-selo::before { content: '✎'; font-size: 12px; }
+  #modal-meus .ms-selo.feed::before { content: '↗'; font-size: 13px; font-weight: 800; }
+  #modal-meus .ms-fav { top: 6px; right: 6px; }
+  #modal-meus .ms-fav .fav-estrela.mini { width: 32px; height: 30px; font-size: 15px; }
+  #modal-meus .ms-fav .fav-estrela.mini.on { background: var(--stylist); border-color: var(--tinta); }
+  #modal-meus .ms-info { padding: 4px 6px 8px 10px; }
+  #modal-meus .ms-info small, #modal-meus .ms-apagar { display: none; }
+  #modal-meus .ms-mais { width: 34px; height: 32px; font-size: 16px; }
+
+  #modal-meus .modal-rodape { border: 0; background: none; }
+  #modal-meus #ms-novo {
+    flex: 1; height: 46px; padding: 0; font-size: 15px; font-weight: 700;
+    background: var(--stylist); border-color: var(--tinta);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+  }
 }
 
 /* ---------------------------- Barra do look ----------------------------- */
