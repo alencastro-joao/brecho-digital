@@ -953,7 +953,7 @@ export function progressoDoNivel(total) {
 //
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
-export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike']);
+export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike', 'oakley']);
 // Tema usa o `icone` dele em ESTILOS: bandeira redonda do circle-flags (MIT,
 // github.com/HatScripts/circle-flags; licença em assets/temas).
 export const logoDaColecao = (c) => c.icone
@@ -1004,6 +1004,14 @@ export const COLECOES = [
       'viseira-nike': ['viseira', 'Viseira Nike', '#1f1f1f'],
     },
     efeito: { tipo: 'resgate-gratis', texto: 'Chance de o resgate não gastar o limite do dia' } },
+  { id: 'oakley', marca: 'Oakley',
+    itens: ['oculos-oakley', 'viseira-oakley', 'corta-vento-oakley'],
+    variantes: {
+      'oculos-oakley': ['oculos-sol', 'Óculos Oakley', '#2f5f8f'],
+      'viseira-oakley': ['viseira', 'Viseira Oakley', '#e9e6df'],
+      'corta-vento-oakley': ['corta-vento', 'Corta-vento Oakley', '#3d4a3a'],
+    },
+    efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
