@@ -117,7 +117,7 @@
      A peça tocada abre no lugar da grade (ver js/closet.js). */
   .view-closet {
     flex-direction: column;
-    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
   }
   .view-closet .cat-rail {
@@ -450,7 +450,7 @@
   /* No padrão do closet: painéis de borda clara, botões em bloco com um
      degrau embaixo, só ícones, e o ativo na cor do Stylist. */
   .view-stylist {
-    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
     background: var(--papel);
   }
@@ -639,7 +639,7 @@
      (seleção, arranjo, assinatura e as colagens salvas). Réguas, zoom, as
      opções da barra, o nome e a dica ficam para o computador. */
   .view-board {
-    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
     display: grid; grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1.7fr) minmax(0, 1fr);
@@ -830,7 +830,7 @@
      uma aba por parte (corpo, pele, cabelo, cor do cabelo, nariz) e só as
      opções da aba aberta, em blocos. Tudo numa tela, sem rolar. */
   .view-personagem {
-    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
     display: grid; grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -964,7 +964,7 @@
    brilho perolado. */
 @media (max-width: 900px) {
   .view-social, .view-tarefas {
-    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
     --painel: var(--perola-painel);
     background: var(--papel);
   }
@@ -1049,7 +1049,7 @@
    cores de raridade das peças e o botão escuro continuam como estão. */
 @media (max-width: 900px) {
   .view-vestiario, .view-perfil, .view-usuario {
-    --bloco: #ffffff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
     --painel: var(--perola-painel);
     background: var(--papel);
   }

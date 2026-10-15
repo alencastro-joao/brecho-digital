@@ -1,6 +1,6 @@
 /* Editar personagem: prévia grande à esquerda, escolhas à direita. */
 
-.view-personagem { background: #fbf8f4; }
+.view-personagem { background: var(--papel); }
 
 .pg-palco {
   flex: 1; min-width: 0;

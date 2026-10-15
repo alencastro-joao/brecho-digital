@@ -1,12 +1,12 @@
 /* Feed, sugestões, player e perfil. */
 
-.view-social { background: #fbf8f4; }
+.view-social { background: var(--papel); }
 
 /* O cabeçalho fica parado enquanto o feed rola por baixo. */
 .feed-wrapper { flex: 1; min-width: 0; overflow-y: auto; padding: 0 34px 40px; }
 .feed-head {
   position: sticky; top: 0; z-index: 5;
-  background: #fbf8f4; padding: 26px 0 14px; margin-bottom: 6px;
+  background: var(--papel); padding: 26px 0 14px; margin-bottom: 6px;
   border-bottom: 1px solid var(--linha);
 }
 .feed-titulo { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }

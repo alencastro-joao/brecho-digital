@@ -2,7 +2,7 @@
    semana como etiquetas com barra de progresso, os carimbos, as fichas e a
    trilha de níveis. Reaproveita o .missoes-sub definido em social.css. */
 
-.view-tarefas { background: #fbf8f4; overflow-y: auto; }
+.view-tarefas { background: var(--papel); overflow-y: auto; }
 .tarefas-wrapper {
   flex: 1; max-width: 1040px; margin: 0 auto; width: 100%;
   padding: 36px 34px 60px; display: flex; flex-direction: column; gap: 24px;

@@ -1,6 +1,6 @@
 /* Stylist: paleta · palco · ferramentas (o layout do rascunho editor.png). */
 
-.view-stylist { background: #fbf8f4; }
+.view-stylist { background: var(--papel); }
 
 /* -------------------------------- Paleta -------------------------------- */
 .stylist-palette {
@@ -372,7 +372,7 @@
      num painel, cartões em bloco só com o nome e o ⋯ (apagar, renomear e
      duplicar ficam no ⋯), e os selos viram ícones. */
   #modal-meus {
-    --bloco: #ffffff; --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
+    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
   }
   #modal-meus .modal-caixa { position: relative; background: var(--papel); }

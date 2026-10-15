@@ -2,7 +2,7 @@
    fidelidade de Tarefas. Aqui também moram o cartão "Coleções" de Tarefas, os
    emblemas do perfil e os atributos na ficha do Inventário. */
 
-.view-colecoes { background: #fbf8f4; overflow-y: auto; }
+.view-colecoes { background: var(--papel); overflow-y: auto; }
 .col-wrapper {
   flex: 1; max-width: 1040px; margin: 0 auto; width: 100%;
   padding: 30px 34px 60px; display: flex; flex-direction: column; gap: 20px;

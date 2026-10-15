@@ -8,7 +8,7 @@
    Reaproveita de social.css o .perfil-redes e o .rede-chip; de colecoes.css,
    o .pf-emblema; de auth.css, o formulário de senha. */
 
-.view-perfil { background: #fbf8f4; overflow-y: auto; }
+.view-perfil { background: var(--papel); overflow-y: auto; }
 
 .pf-pagina {
   flex: 1; width: 100%; max-width: 935px; margin: 0 auto; align-self: flex-start;
@@ -245,7 +245,7 @@ button.pf-stat:hover small { text-decoration: underline; }
    cartão branco com a foto (na cor da raridade) e os dados embaixo; as pontas
    das fichas vizinhas aparecem dos lados. */
 .pp-modal {
-  --bloco: #fff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+  --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
 }
 .pp-ficha {
   position: relative; display: flex; flex-direction: column;
