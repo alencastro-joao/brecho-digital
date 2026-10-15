@@ -212,8 +212,8 @@
 }
 
 .vs-item.vestida::after {
-  content: '✓'; position: absolute; top: 3px; right: 6px;
-  font-size: 11px; font-weight: 800; color: #2fbf63;
+  content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; position: absolute; top: 3px; right: 6px;
+  font-size: 14px; font-weight: 800; color: #2fbf63;
 }
 .vs-item .vs-novo {
   position: absolute; top: 4px; left: 5px;

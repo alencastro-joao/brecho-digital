@@ -168,7 +168,7 @@
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
     font-size: 0; color: var(--tinta); cursor: pointer;
   }
-  .view-closet .closet-ajustes::before { content: '⇅'; font-size: 16px; font-weight: 700; }
+  .view-closet .closet-ajustes::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ordenar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ordenar.svg) center / contain no-repeat; font-size: 20px; }
   .view-closet .closet-head.abertas .closet-ajustes {
     background: var(--inventario); border-color: var(--tinta);
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
@@ -263,7 +263,7 @@
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
     font-size: 0; color: var(--tinta); cursor: pointer;
   }
-  .view-closet .closet-voltar::before { content: '←'; font-size: 18px; font-weight: 700; line-height: 1; }
+  .view-closet .closet-voltar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/seta-esq.svg) center / contain no-repeat; mask: url(../assets/icones/ph/seta-esq.svg) center / contain no-repeat; font-size: 20px; }
   .view-closet .ficha-pos {
     font-size: 15px; font-weight: 800; color: var(--tinta);
     padding: 5px 12px; border-radius: 11px;
@@ -340,7 +340,7 @@
   }
   .view-closet .preview-meta h3 { margin: 6px 0 10px; font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px; cursor: text; }
   .view-closet .preview-meta h3.sem-nome { color: var(--tinta-suave); }
-  .view-closet .preview-meta h3::after { content: ' ✎'; font-size: 14px; font-weight: 600; color: var(--tinta-suave); }
+  .view-closet .preview-meta h3::after { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; margin-left: 6px; vertical-align: -1px; font-size: 16px; color: var(--tinta-suave); }
   .view-closet .preview-meta .nome-campo {
     flex: 0 0 100%; margin: 4px 0 8px; padding: 4px 8px;
     font: inherit; font-size: 22px; font-weight: 800; color: var(--tinta);
@@ -481,7 +481,7 @@
     top: 10px; left: 10px; height: 38px; padding: 0 10px; gap: 5px;
     font-size: 0;
   }
-  .view-stylist .btn-meus::before { content: '▦'; font-size: 17px; }
+  .view-stylist .btn-meus::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/grade.svg) center / contain no-repeat; mask: url(../assets/icones/ph/grade.svg) center / contain no-repeat; font-size: 20px; }
   .view-stylist .btn-meus small { font-size: 11px; }
   .view-stylist .st-historico { top: 10px; right: 10px; }
   .view-stylist .st-hist-btn { width: 40px; height: 38px; }
@@ -524,7 +524,7 @@
     display: grid; place-items: center; grid-column: 3; grid-row: 1;
     width: 44px; height: 46px; padding: 0; font: inherit; cursor: pointer;
   }
-  .view-stylist .palette-ajustes::before { content: '⇅'; font-size: 17px; font-weight: 700; }
+  .view-stylist .palette-ajustes::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ordenar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ordenar.svg) center / contain no-repeat; font-size: 20px; }
   .view-stylist #palette-agrupar, .view-stylist #palette-ordem { grid-row: 2; display: none; }
   .view-stylist #palette-agrupar { grid-column: 1; }
   .view-stylist #palette-ordem { grid-column: 2 / 4; }
@@ -697,13 +697,13 @@
   .view-board .rodape-acoes { flex-direction: row; flex-wrap: nowrap; gap: 4px; margin: 0; flex: none; }
   .view-board .acao-btn { font-size: 0; }
   .view-board .acao-btn::before { font-size: 16px; line-height: 1; }
-  .view-board #bd-sortear::before { content: '🎲'; }
-  .view-board #bd-salvar::before { content: '✓'; font-weight: 800; }
-  .view-board #bd-publicar::before { content: '↗'; font-weight: 800; }
-  .view-board [data-bd-export="formato"]::before { content: '⬇'; }
+  .view-board #bd-sortear::before { content: ''; display: inline-block; width: 1.25em; height: 1.25em; background: url(../assets/icones/3d/dado.webp) center / contain no-repeat; }
+  .view-board #bd-salvar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; }
+  .view-board #bd-publicar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/publicar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/publicar.svg) center / contain no-repeat; }
+  .view-board [data-bd-export="formato"]::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/baixar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/baixar.svg) center / contain no-repeat; }
   .view-board #bd-nova::before { content: '＋'; font-weight: 800; }
   .view-board #bd-ferramentas { display: grid; }
-  .view-board #bd-ferramentas::before { content: '⚙'; }
+  .view-board #bd-ferramentas::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ajustes.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ajustes.svg) center / contain no-repeat; }
 
   /* Paleta: o mesmo painel do Stylist, com o ⇅ mostrando agrupar, ordem e busca. */
   .view-board .board-palette {
@@ -722,7 +722,7 @@
   .view-board .pal-cat { flex: 1 0 44px; width: auto; height: 42px; font-size: 19px; }
   .view-board .pal-cat small { display: none; }
   .view-board #board-ajustes { grid-column: 3; grid-row: 1; width: 44px; height: 42px; font: inherit; cursor: pointer; }
-  .view-board #board-ajustes::before { content: '⇅'; font-size: 17px; font-weight: 700; }
+  .view-board #board-ajustes::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ordenar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ordenar.svg) center / contain no-repeat; font-size: 20px; }
   .view-board :is(#board-agrupar, #board-ordem, .pal-busca) { display: none; }
   .view-board #board-agrupar { grid-row: 2; grid-column: 1; }
   .view-board #board-ordem { grid-row: 2; grid-column: 2 / 4; }
@@ -880,11 +880,11 @@
   .view-personagem .pg-acoes button { pointer-events: auto; }
   .view-personagem .pg-acoes button::before { font-size: 18px; font-weight: 800; }
   .view-personagem #pg-voltar { order: 0; margin-right: auto; }
-  .view-personagem #pg-voltar::before { content: '←'; }
+  .view-personagem #pg-voltar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/seta-esq.svg) center / contain no-repeat; mask: url(../assets/icones/ph/seta-esq.svg) center / contain no-repeat; }
   .view-personagem #pg-padrao { order: 1; }
-  .view-personagem #pg-padrao::before { content: '⟲'; }
+  .view-personagem #pg-padrao::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/girar-esq.svg) center / contain no-repeat; mask: url(../assets/icones/ph/girar-esq.svg) center / contain no-repeat; }
   .view-personagem #pg-salvar { order: 2; }
-  .view-personagem #pg-salvar::before { content: '✓'; }
+  .view-personagem #pg-salvar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; }
   .view-personagem #pg-salvar,
   .view-personagem .pg-abas button.ativa {
     background: var(--perfil); border-color: var(--tinta);

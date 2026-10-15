@@ -28,6 +28,7 @@ import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { darTrioDaCor } from './presente.js';
 import { el, $ } from './util.js';
+import { e3dHtml } from './icones.js';
 
 let caixa = null;
 let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'bolha'
@@ -268,7 +269,7 @@ function htmlAberta(m, passo) {
     </div>
     <h2>${m.nome}</h2>
     <p class="intro-dica">${comCor(m.dica)}</p>
-    ${missao ? `<p class="intro-premio">🎁 ${rotuloDoPremio(m.premio)}</p>` : ''}
+    ${missao ? `<p class="intro-premio">${e3dHtml('🎁')} ${rotuloDoPremio(m.premio)}</p>` : ''}
     ${pontos(passo)}
     <div class="intro-acoes">
       <button class="btn-ghost" data-acao="pular" type="button">Pular tutorial</button>
@@ -279,7 +280,7 @@ function htmlAberta(m, passo) {
 }
 
 function htmlBarra(m, passo) {
-  const sub = m.evento ? `🎁 ${rotuloDoPremio(m.premio)}` : 'toque para ler';
+  const sub = m.evento ? `${e3dHtml('🎁')} ${rotuloDoPremio(m.premio)}` : 'toque para ler';
   return `
     <button class="intro-faixa" data-acao="abrir" type="button">
       <span class="intro-num">${passo + 1}/${INTRO.length}</span>

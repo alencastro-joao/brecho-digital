@@ -12,6 +12,7 @@ import {
 import { ordemAtual, ordenar, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 import { abrirEditar } from './editar.js';
 import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
@@ -153,7 +154,7 @@ function montarRail() {
     dataset: { cat: 'todas' }, title: 'Todas as peças',
     onclick: () => carregarCategoria('todas'),
   },
-    el('span', { class: 'cat-icone' }, '✦'),
+    el('span', { class: 'cat-icone' }, ico('brilho')),
     total ? el('span', { class: 'cat-qtd' }, String(total)) : null
   );
   rail.insertBefore(todas, divisor());
@@ -164,7 +165,7 @@ function montarRail() {
       dataset: { cat: g.id }, title: g.nome,
       onclick: () => carregarCategoria(g.id),
     },
-      el('span', { class: 'cat-icone' }, g.icone),
+      el('span', { class: 'cat-icone' }, e3d(g.icone)),
       g.qtd ? el('span', { class: 'cat-qtd' }, String(g.qtd)) : null
     );
     rail.insertBefore(botao, divisor());
@@ -282,7 +283,7 @@ function criarSlot(peca) {
       style: { '--esc': String(escalaGrade(cat)) },
     }, el('img', { src: cat.src, alt: nomeDaPeca(cat), loading: 'lazy' })) : null);
 
-  if (peca.origem === 'collab') slot.append(el('span', { class: 'selo-collab' }, '★'));
+  if (peca.origem === 'collab') slot.append(el('span', { class: 'selo-collab' }, ico('estrela-cheia')));
   if (peca.favorito) slot.classList.add('favorita');
 
   slot.addEventListener('dragstart', (e) => {
@@ -520,7 +521,7 @@ function rotularFavorito() {
   const favorita = selecionada && db.ehFavorito('peca', selecionada);
   botao.classList.toggle('on', Boolean(favorita));
   // No celular só a estrela aparece; o rótulo fica para o computador.
-  botao.replaceChildren(favorita ? '★' : '☆',
+  botao.replaceChildren(ico(favorita ? 'estrela-cheia' : 'estrela'),
     el('span', { class: 'so-pc' }, favorita ? ' Nas favoritas' : ' Favoritar'));
   botao.setAttribute('aria-label', favorita ? 'Nas favoritas' : 'Favoritar');
   botao.title = favorita

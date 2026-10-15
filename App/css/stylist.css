@@ -51,9 +51,9 @@
   box-shadow: inset 0 0 0 1px var(--tinta);
 }
 .pal-item.vestida::after {
-  content: '✓';
+  content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat;
   position: absolute; top: 6px; right: 8px;
-  font-size: 10px; font-weight: 800; color: var(--tinta);
+  font-size: 12px; font-weight: 800; color: var(--tinta);
 }
 .palette-vazia, .palette-hint {
   grid-column: 1 / -1; font-size: 11.5px; color: var(--tinta-suave); line-height: 1.6;
@@ -423,8 +423,8 @@
     display: grid; place-items: center; top: 8px; left: 8px;
   }
   #modal-meus .ms-selo + .ms-selo { top: 36px; }
-  #modal-meus .ms-selo::before { content: '✎'; font-size: 12px; }
-  #modal-meus .ms-selo.feed::before { content: '↗'; font-size: 13px; font-weight: 800; }
+  #modal-meus .ms-selo::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; font-size: 13px; }
+  #modal-meus .ms-selo.feed::before { -webkit-mask-image: url(../assets/icones/ph/publicar.svg); mask-image: url(../assets/icones/ph/publicar.svg); }
   #modal-meus .ms-fav { top: 6px; right: 6px; }
   #modal-meus .ms-fav .fav-estrela.mini { width: 32px; height: 30px; font-size: 15px; }
   #modal-meus .ms-fav .fav-estrela.mini.on { background: var(--stylist); border-color: var(--tinta); }
@@ -487,7 +487,7 @@
 .lb-menu button small { color: var(--tinta-suave); font-size: 11px; }
 .lb-menu button:hover { background: #f6f1e8; }
 .lb-menu button:disabled { opacity: .5; }
-.lb-menu #btn-guia.ativo::after { content: '✓'; font-weight: 800; }
+.lb-menu #btn-guia.ativo::after { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; margin-left: auto; }
 .lb-menu button.perigo { color: #b3261e; }
 .lb-menu button.perigo:hover:not(:disabled) { background: #fdecea; }
 

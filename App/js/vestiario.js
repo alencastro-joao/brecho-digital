@@ -48,6 +48,7 @@ import { efeitosDoLook, brilhoDoEstilo } from './efeitos.js';
 import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { todasAsColecoes, chipDaColecao } from './colecoes.js';
 
@@ -264,7 +265,7 @@ function renderEfeitos() {
       el('strong', {}, e.nome),
       el('span', { class: 'vs-efeito-pct' }, e.ativo ? `+${e.pct}%` : `${e.n}/${e.meta}`)),
     el('small', { class: 'vs-efeito-texto' }, e.texto),
-    e.completa ? el('small', { class: 'vs-efeito-prox' }, '✦ Coleção completa vestida')
+    e.completa ? el('small', { class: 'vs-efeito-prox' }, ico('brilho'), ' Coleção completa vestida')
       : e.proximo ? el('small', { class: 'vs-efeito-prox' },
         `Mais ${e.proximo.faltam} ${e.proximo.faltam === 1 ? 'item' : 'itens'}: +${e.proximo.pct}%`)
         : null));
@@ -310,7 +311,7 @@ function slotBox(slot) {
   aceitarSolta(caixa, slot);
 
   if (r) caixa.innerHTML = miniatura(r);
-  else caixa.append(el('span', { class: 'vs-slot-icone' }, s.icone));
+  else caixa.append(el('span', { class: 'vs-slot-icone' }, e3d(s.icone)));
   caixa.append(el('span', { class: 'vs-slot-nome' }, s.nome));
   return caixa;
 }
@@ -320,11 +321,11 @@ function slotBox(slot) {
 // caminho que não leva a lugar nenhum.
 function renderAbas() {
   const minhas = db.roupinhasLiberadas();
-  const abas = [['tudo', '✦ todas', minhas.length]];
+  const abas = [['tudo', [ico('brilho'), ' todas'], minhas.length]];
 
   for (const slot of ORDEM_SLOTS) {
     const qtd = minhas.filter(r => r.slot === slot).length;
-    if (qtd) abas.push([slot, `${SLOTS[slot].icone} ${SLOTS[slot].nome}`, qtd]);
+    if (qtd) abas.push([slot, [e3d(SLOTS[slot].icone), ` ${SLOTS[slot].nome}`], qtd]);
   }
   if (!abas.some(([id]) => id === filtro)) filtro = 'tudo';
 
@@ -454,7 +455,7 @@ function renderFicha() {
       el('span', { class: 'vs-tag raridade', style: estiloDaRaridade(r) },
         RARIDADE[r.raridade].nome),
       el('span', { class: 'vs-tag' }, SLOTS[r.slot].nome),
-      equipada(r) ? el('span', { class: 'vs-tag vestida' }, '✓ vestida') : null),
+      equipada(r) ? el('span', { class: 'vs-tag vestida' }, ico('ok'), ' vestida') : null),
     // Os três atributos que se combinam no corpo: marca, cor e estilo.
     el('div', { class: 'vs-atributos' },
       el('span', { class: 'vs-atr' }, el('small', {}, 'Marca'), atr.marca ?? '—'),
@@ -463,7 +464,7 @@ function renderFicha() {
     // De onde ela veio. A peça já é sua, então isto não é uma meta: é a
     // procedência dela, que é metade do valor de uma peça de coleção.
     el('div', { class: 'vs-condicao ok' },
-      el('strong', {}, '✓ ' + db.estadoDaRoupinha(r).rotulo)),
+      el('strong', {}, ico('ok'), ' ' + db.estadoDaRoupinha(r).rotulo)),
     colecaoDoItem(r),
   ].filter(Boolean)), el('div', { class: 'vs-ficha-acoes' }, ...acoes(r)));
 }

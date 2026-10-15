@@ -7,6 +7,7 @@
 import { FERRAMENTAS, nivelDaFerramenta } from './config.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 
 // Chip pequeno "Nv 3" para pendurar ao lado de um nome (feed, perfil, listas).
 export function chipNivel(n = db.nivel()) {
@@ -93,11 +94,11 @@ export function listaDeFerramentas() {
   for (const f of [...FERRAMENTAS].sort((a, b) => a.nivel - b.nivel)) {
     const liberada = atual >= f.nivel;
     lista.append(el('div', { class: 'ferramenta' + (liberada ? ' ok' : '') },
-      el('span', { class: 'ferramenta-nivel' }, liberada ? '✓' : `Nv ${f.nivel}`),
+      el('span', { class: 'ferramenta-nivel' }, liberada ? ico('ok') : `Nv ${f.nivel}`),
       el('div', { class: 'ferramenta-info' },
         el('strong', {}, f.nome),
         el('small', {}, f.desc)),
-      liberada ? null : el('span', { class: 'cadeado' }, '🔒')
+      liberada ? null : el('span', { class: 'cadeado' }, e3d('🔒'))
     ));
   }
   return lista;

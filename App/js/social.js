@@ -17,6 +17,7 @@ import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from '.
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
+import { ico, e3d } from './icones.js';
 import { aparenciaDoPerfil, aparenciaAtual, retrato } from './avatar.js';
 import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.js';
 import { abrirLook } from './stylist.js';
@@ -399,7 +400,7 @@ export function cardDoPost(post) {
         class: 'curtir' + (post.curtido ? ' on' : ''),
         title: post.curtido ? 'Descurtir' : 'Curtir',
         onclick: () => alternarCurtida(post),
-      }, post.curtido ? '♥' : '♡', el('span', {}, String(post.curtidas))),
+      }, ico(post.curtido ? 'coracao-cheio' : 'coracao'), el('span', {}, String(post.curtidas))),
       pecasPorCima(post, pecas)
     ),
 
@@ -429,11 +430,11 @@ export function cardDoPost(post) {
         class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
         title: 'Comentários',
         onclick: () => alternarThread(post),
-      }, '💬', el('span', {}, String(post.comentarios.length))),
+      }, e3d('💬'), el('span', {}, String(post.comentarios.length))),
       el('button', {
         class: 'post-mais', title: 'Mais opções',
         onclick: (e) => menuDoPost(post, e.currentTarget),
-      }, '⋯')
+      }, ico('mais'))
     ),
 
     thread(post)
@@ -560,7 +561,7 @@ function thread(post) {
         ? el('button', {
             class: 'apagar-com', title: 'Apagar',
             onclick: () => apagarComentario(post, c),
-          }, '✕')
+          }, ico('x'))
         : null
     ));
   }

@@ -90,7 +90,7 @@
 /* Peça favoritada: marca do lado oposto ao selo da cápsula, para as duas
    caberem na mesma peça. */
 .item-slot.favorita::after {
-  content: '★'; position: absolute; top: 6px; left: 8px;
+  content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/estrela-cheia.svg) center / contain no-repeat; mask: url(../assets/icones/ph/estrela-cheia.svg) center / contain no-repeat; position: absolute; top: 6px; left: 8px;
   font-size: 12px; color: #d6a81f;
 }
 .closet-paginas {

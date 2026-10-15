@@ -12,6 +12,7 @@
 //   vitrine, item do inventário...). Esses dão preventDefault no pointerdown, e
 //   o ouvinte do document, que roda depois deles, enxerga isso;
 // - modal aberto.
+import { ico } from './icones.js';
 
 const LIMITE = 70;          // px de puxão (já amortecido) que disparam a atualização
 const MAXIMO = 110;         // até onde a bolinha desce
@@ -30,7 +31,10 @@ function criarBolinha() {
   bolinha = document.createElement('div');
   bolinha.className = 'puxar';
   bolinha.setAttribute('aria-hidden', 'true');
-  bolinha.innerHTML = '<span class="puxar-seta">↓</span>';
+  const seta = document.createElement('span');
+  seta.className = 'puxar-seta';
+  seta.append(ico('seta-baixo'));
+  bolinha.append(seta);
   document.body.appendChild(bolinha);
 }
 
