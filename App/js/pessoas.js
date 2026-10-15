@@ -28,6 +28,7 @@ import * as db from './db.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { roupasSorteadas } from './roupinhas.js';
 import { sementeDoTexto } from './util.js';
+import { miniaturaSoltaAtual } from './render.js';
 
 // Id de conta real: 'u-' e 16 hexadecimais (contas.py). Os fictícios são
 // 'u-lia', 'u-tom'... e nunca casam.
@@ -69,8 +70,12 @@ function paraPerfil(c) {
     nSeguindo: c.seguindo,
     voceSegue: Boolean(c.voceSegue),
     segueVoce: Boolean(c.segueVoce),
-    // Só a página completa traz estes dois; undefined quer dizer "não sei".
+    // Só a página completa traz estes; undefined quer dizer "não sei" (ou
+    // versão antiga do app, que não manda).
     favoritos: c.favoritos,
+    obras: c.obras,
+    guardaRoupa: c.guardaRoupa,
+    wishlist: c.wishlist,
     amigos: c.amigos?.map(a => guardar(a).id),
   };
 }
@@ -80,8 +85,7 @@ function guardar(cartao) {
   // Um cartão curto (busca, feed, seguir) não apaga o que a página já trouxe.
   const antes = reais.get(perfil.id);
   if (antes) {
-    perfil.favoritos ??= antes.favoritos;
-    perfil.amigos ??= antes.amigos;
+    for (const k of ['favoritos', 'obras', 'guardaRoupa', 'wishlist', 'amigos']) perfil[k] ??= antes[k];
   }
   reais.set(perfil.id, perfil);
   return perfil;
@@ -212,6 +216,14 @@ const obrasFavoritas = (tipo) => db.favoritos(tipo)
     pecas: [...new Set((o.camadas || o.itens || []).map(c => c.itemId).filter(Boolean))],
   }));
 
+// Todos os looks e colagens, do mais novo para o mais velho, com a estrela.
+// O look vai como as camadas (`desenho`): a miniatura pública é ele solto,
+// sem fundo, desenhado na hora de enviar (ver enviarPerfil).
+const OBRAS_NO_PERFIL = 40;
+const todasAsObras = (lista) => [...lista]
+  .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))
+  .slice(0, OBRAS_NO_PERFIL);
+
 const fotoDoPerfil = () => ({
   bio: db.state.usuario.bio || '',
   avatar: { ...db.state.usuario.avatar },
@@ -221,12 +233,35 @@ const fotoDoPerfil = () => ({
     looks: obrasFavoritas('look'),
     colagens: obrasFavoritas('colagem'),
   },
+  obras: {
+    looks: todasAsObras(db.state.looks).map(o => ({
+      nome: o.nome || '',
+      desenho: o.camadas || [],
+      pecas: [...new Set((o.camadas || []).map(c => c.itemId).filter(Boolean))],
+      favorito: Boolean(o.favorito),
+    })),
+    colagens: todasAsObras(db.state.boards).map(o => ({
+      nome: o.nome || '',
+      thumb: o.thumb || '',
+      pecas: [...new Set((o.itens || []).map(c => c.itemId).filter(Boolean))],
+      favorito: Boolean(o.favorito),
+    })),
+  },
+  guardaRoupa: db.state.inventario.map(p => p.id),
+  wishlist: [...(db.state.wishlist || [])],
 });
 
 // A foto com cada miniatura trocada pela impressão: é o que diz se algo mudou
-// sem carregar data URLs na comparação.
+// sem carregar data URLs na comparação. O look desenhado depende do rosto,
+// que já está na foto (avatar).
 const assinatura = (foto) => JSON.stringify(foto, (k, v) =>
   k === 'thumb' && v ? impressao(v) : v);
+
+// O look solto, sem fundo, com o personagem de agora (render.js).
+async function thumbDoLook(camadas) {
+  if (!camadas.length) return '';
+  try { return await miniaturaSoltaAtual(camadas); } catch { return ''; }
+}
 
 async function enviarPerfil() {
   // Depois de sair da conta o estado volta ao inicial ('local-user'): não há
@@ -239,7 +274,12 @@ async function enviarPerfil() {
     // Miniatura que não subiu vai sem imagem agora e tenta de novo depois.
     let faltou = false;
     const { favoritos } = foto;
-    for (const obra of [...favoritos.looks, ...favoritos.colagens]) {
+    for (const obra of foto.obras.looks) {
+      obra.thumb = await thumbDoLook(obra.desenho);
+      delete obra.desenho;
+    }
+    for (const obra of [...favoritos.looks, ...favoritos.colagens,
+      ...foto.obras.looks, ...foto.obras.colagens]) {
       const tinha = obra.thumb;
       obra.thumb = await miniaturaPublica(tinha);
       if (tinha.startsWith('data:image/') && !obra.thumb) faltou = true;

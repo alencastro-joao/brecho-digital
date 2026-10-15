@@ -65,6 +65,9 @@ function estadoInicial() {
     // XP (ver roupinhaLiberada).
     vestiario: { equipado: { ...VESTIARIO_PADRAO }, conhecidas: [], novas: [], ordem: [] },
     inventario: [],            // { id, cat, raridade, obtidoEm, origem, ordem, numero? }
+    // A wishlist: ids de peças que você viu (na loja ou no perfil de alguém) e
+    // quer. Só entra por ali — não existe lista de todas as peças para escolher.
+    wishlist: [],
     pecasProprias: [],         // peças que você mesmo subiu: { id, cat, marca, nome, src, w, h, ancora }
     marcas: [],                // marcas já usadas: { nome, usos, em }
     cores: [],                 // cores já usadas: { nome, usos, em }
@@ -855,6 +858,20 @@ export function alternarFavorito(tipo, id) {
 }
 
 export const favoritos = (tipo) => colecao(tipo).filter(x => x.favorito);
+
+// --- Wishlist -------------------------------------------------------------
+// Peças que você viu e quer. Quem chama é só quem mostra uma peça de verdade
+// (a ficha da loja, o perfil de alguém): é o que obriga a garimpar para
+// encher a lista. A mais nova vem primeiro.
+export const naWishlist = (id) => (state.wishlist ?? []).includes(id);
+
+export function alternarWishlist(id) {
+  const lista = state.wishlist ?? [];
+  const entra = !lista.includes(id);
+  state.wishlist = entra ? [id, ...lista] : lista.filter(x => x !== id);
+  salvar();
+  return entra;
+}
 
 // --- Conexões -------------------------------------------------------------
 // Sem backend não há OAuth: aqui a ligação é simulada e guarda só o @ digitado.

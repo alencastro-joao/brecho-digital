@@ -33,6 +33,9 @@ NOME_MAX = 60
 PECAS_FAV_MAX = 40
 OBRAS_FAV_MAX = 3
 PECAS_POR_OBRA = 40
+OBRAS_MAX = 40
+GUARDA_ROUPA_MAX = 600
+WISHLIST_MAX = 200
 
 
 def preparar():
@@ -149,9 +152,10 @@ def perfil_de(eu_id, alvo_id, completo=True):
         cartao = _cartao(con, linha, eu_id)
         if not completo:
             return cartao
-        favoritos = _perfil(linha).get('favoritos')
-        if favoritos is not None:
-            cartao['favoritos'] = favoritos
+        publico = _perfil(linha)
+        for chave in ('favoritos', 'obras', 'guardaRoupa', 'wishlist'):
+            if publico.get(chave) is not None:
+                cartao[chave] = publico[chave]
         amigos = con.execute(
             'SELECT u.* FROM segue a JOIN segue b ON b.de = a.para AND b.para = a.de'
             ' JOIN usuarios u ON u.id = a.para WHERE a.de=? ORDER BY u.id LIMIT ?',
@@ -222,20 +226,23 @@ def miniatura_ok(eu_id):
                       % re.escape(str(eu_id or '')))
 
 
-def _obras(bruto, eu_id):
+def _obras(bruto, eu_id, maximo=OBRAS_FAV_MAX, com_favorito=False):
     if not isinstance(bruto, list):
         return []
     thumb_ok = miniatura_ok(eu_id)
     saida = []
-    for obra in bruto[:OBRAS_FAV_MAX]:
+    for obra in bruto[:maximo]:
         if not isinstance(obra, dict):
             continue
         thumb = str(obra.get('thumb') or '')
-        saida.append({
+        limpa = {
             'nome': ' '.join(str(obra.get('nome') or '').split())[:NOME_MAX],
             'thumb': thumb if thumb_ok.match(thumb) else '',
             'pecas': _ids(obra.get('pecas'), PECAS_POR_OBRA),
-        })
+        }
+        if com_favorito:
+            limpa['favorito'] = bool(obra.get('favorito'))
+        saida.append(limpa)
     return saida
 
 
@@ -257,6 +264,18 @@ def limpar_perfil(corpo, eu_id=None):
     }
     if 'favoritos' in corpo:
         perfil['favoritos'] = limpar_favoritos(corpo.get('favoritos'), eu_id)
+    # Todos os looks e colagens, o guarda-roupa inteiro e a wishlist: o que a
+    # página mostra além dos favoritos. Versão antiga do app não manda.
+    if 'obras' in corpo:
+        obras = corpo.get('obras') if isinstance(corpo.get('obras'), dict) else {}
+        perfil['obras'] = {
+            'looks': _obras(obras.get('looks'), eu_id, OBRAS_MAX, True),
+            'colagens': _obras(obras.get('colagens'), eu_id, OBRAS_MAX, True),
+        }
+    if 'guardaRoupa' in corpo:
+        perfil['guardaRoupa'] = _ids(corpo.get('guardaRoupa'), GUARDA_ROUPA_MAX)
+    if 'wishlist' in corpo:
+        perfil['wishlist'] = _ids(corpo.get('wishlist'), WISHLIST_MAX)
     return perfil
 
 

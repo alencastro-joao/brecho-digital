@@ -130,6 +130,35 @@ export function miniaturaAtual(camadas) {
   return feita.promessa;
 }
 
+// O look solto, sem fundo: o boneco inteiro com as roupas e nada em volta. É
+// como os looks aparecem no perfil (o seu e o dos outros). `aparencia` nula é
+// o seu personagem de agora; a de outra pessoa desenha o look dela.
+const soltoDesenhado = new Map();
+
+export function miniaturaSoltaAtual(camadas, aparencia = null) {
+  const chave = JSON.stringify([aparencia || aparenciaAtual(), camadas]);
+  let feita = soltoDesenhado.get(chave);
+  if (!feita) {
+    feita = {
+      promessa: renderizarLook(camadas, { formato: 'thumb', fundo: false, aparencia })
+        .then(canvas => {
+          // webp guarda o transparente; o jpeg de reserva, não — fica no branco.
+          try {
+            const url = canvas.toDataURL('image/webp', 0.8);
+            if (url.startsWith('data:image/webp')) return url;
+          } catch {}
+          return canvas.toDataURL('image/png');
+        }),
+    };
+    soltoDesenhado.set(chave, feita);
+    feita.promessa.then(url => { feita.url = url; }, () => soltoDesenhado.delete(chave));
+  }
+  return feita.promessa;
+}
+
+export const miniaturaSoltaPronta = (camadas, aparencia = null) =>
+  soltoDesenhado.get(JSON.stringify([aparencia || aparenciaAtual(), camadas]))?.url || null;
+
 // A imagem do post no feed. A coluna do mural tem ~320 px, e em tela de alta
 // densidade isso é o dobro: a miniatura (360 px, bem comprimida) borra. Esta
 // sai com o dobro da largura e menos compressão — só para o feed, porque não
