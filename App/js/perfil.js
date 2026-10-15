@@ -417,6 +417,7 @@ function montarAjustes() {
 
 function abrirAjustes(qual) {
   if (qual === 'cores') renderPaletas();
+  $('#modal-ajustes').classList.toggle('so-cores', qual === 'cores');
   $('#aj-titulo').textContent = TITULOS_DE_AJUSTE[qual];
   document.querySelectorAll('#modal-ajustes [data-ajuste]').forEach(s => {
     s.hidden = s.dataset.ajuste !== qual;
@@ -440,10 +441,10 @@ function renderPaletas() {
     class: 'paleta-opcao' + (p.id === atual ? ' ativa' : ''),
     'data-paleta': p.id,
     'aria-pressed': String(p.id === atual),
+    title: p.nome, 'aria-label': p.nome,
     onclick: () => { escolherPaleta(p.id); renderPaletas(); renderMenuCores(); },
   },
-  el('span', { class: 'paleta-amostra' }),
-  el('span', { class: 'paleta-nome' }, p.nome))));
+  el('span', { class: 'paleta-amostra' }))));
 }
 
 function renderMenuCores() {

@@ -9,11 +9,16 @@
 import * as db from './db.js';
 
 export const PALETAS = [
-  { id: 'azul',    nome: 'Azul',    cor: '#34bEED' },
-  { id: 'rosa',    nome: 'Rosa',    cor: '#f06ba8' },
-  { id: 'menta',   nome: 'Menta',   cor: '#34c08a' },
-  { id: 'lilas',   nome: 'Lilás',   cor: '#9a7cea' },
-  { id: 'dourado', nome: 'Dourado', cor: '#eea52c' },
+  { id: 'azul',     nome: 'Azul',     cor: '#34bEED' },
+  { id: 'rosa',     nome: 'Rosa',     cor: '#f06ba8' },
+  { id: 'menta',    nome: 'Menta',    cor: '#34c08a' },
+  { id: 'lilas',    nome: 'Lilás',    cor: '#9a7cea' },
+  { id: 'dourado',  nome: 'Dourado',  cor: '#eea52c' },
+  { id: 'coral',    nome: 'Coral',    cor: '#ff7a5c' },
+  { id: 'lima',     nome: 'Lima',     cor: '#8cc63f' },
+  { id: 'turquesa', nome: 'Turquesa', cor: '#1fbfae' },
+  { id: 'anil',     nome: 'Anil',     cor: '#5a72ee' },
+  { id: 'grafite',  nome: 'Grafite',  cor: '#6e7b88' },
 ];
 export const PALETA_PADRAO = 'azul';
 
