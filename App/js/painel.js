@@ -8,8 +8,7 @@ import { el, $ } from './util.js';
 
 const ORIGENS = {
   vitrine: 'Loja do dia', presente: 'Boas-vindas', missao: 'Missões', semana: 'Baú dos dias',
-  'bau-especial': 'Baú semanal', nivel: 'Trilha de níveis', collab: 'Cápsula', propria: 'Peça própria',
-  teste: 'Teste',
+  'bau-especial': 'Baú semanal', nivel: 'Trilha de níveis', collab: 'Cápsula', teste: 'Teste',
 };
 
 export async function renderPainel() {
@@ -26,7 +25,8 @@ export async function renderPainel() {
   }
   const { contas, posts, pecas } = d;
   const origens = Object.entries(pecas.porOrigemHoje).sort((a, b) => b[1] - a[1]);
-  caixa.replaceChildren(
+  // replaceChildren escreveria "null" no lugar do bloco que não existe.
+  caixa.replaceChildren(...[
     el('div', { class: 'pa-numeros' },
       numero(contas.ativasHoje, 'ativas hoje', `${contas.ativas7} nos últimos 7 dias`),
       numero(contas.novasHoje, 'contas novas', `${contas.novas7} na semana · ${contas.total} no total`),
@@ -37,7 +37,7 @@ export async function renderPainel() {
     lista('Mais levadas hoje', pecas.maisLevadasHoje),
     lista('Mais levadas desde o começo', pecas.maisLevadas),
     pecas.esgotadas.length ? lista('Esgotadas', pecas.esgotadas.map(p => ({ ...p, n: RARIDADE[p.raridade]?.nome }))) : null,
-  );
+  ].filter(Boolean));
 }
 
 const numero = (n, rotulo, dica) => el('div', { class: 'pa-numero' },

@@ -16,6 +16,7 @@ import { RARIDADE } from './config.js';
 let mapa = {};
 let online = false;
 let numeros = {};              // o número da cópia de cada peça levada agora
+let barradas = new Set();      // as que o servidor recusou pela cota do dia
 
 // Que cópia da tiragem a pessoa levou (a 12ª de 1000...). Só existe logo
 // depois do levar() que a reservou; quem chama grava na peça.
@@ -64,6 +65,7 @@ export async function levar(pecas) {
       { pecas: pecas.map(({ id, raridade, origem }) => ({ id, raridade, origem })) });
     mapa = feito.mapa || mapa;
     numeros = { ...numeros, ...(feito.numeros || {}) };
+    barradas = new Set(feito.limite || []);
     online = true;
     return new Set(feito.levadas || []);
   } catch {
@@ -80,6 +82,8 @@ export function numerar(pecas) {
 }
 
 export const conseguiu = (resultado, id, raridade) => resultado.has(chave(id, raridade));
+// Não levou porque a conta já pegou o máximo de peças do dia (cota do servidor).
+export const barradaPelaCota = (id, raridade) => barradas.has(chave(id, raridade));
 
 // Peças pegas antes de o servidor numerar as cópias ficaram sem o "nº 127 de
 // 1000". Aqui cada uma reserva a próxima cópia da tiragem dela (é dela, então

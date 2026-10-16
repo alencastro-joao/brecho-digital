@@ -43,7 +43,6 @@ import {
   retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
 import { ico } from './icones.js';
-import { renderPainel } from './painel.js';
 import { pecasFavoritas, minhasRoupas, meusLooks, minhasColagens } from './minhavitrine.js';
 
 // Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
@@ -328,8 +327,6 @@ const TITULOS_DE_AJUSTE = {
   cores: 'Cores do site',
   conexoes: 'Contas conectadas',
   conta: 'Sua conta',
-  testes: 'Testes',
-  painel: 'Painel',
 };
 
 function montarAjustes() {
@@ -348,6 +345,8 @@ function montarAjustes() {
   });
   menu.querySelectorAll('[data-ajuste]').forEach(b =>
     b.addEventListener('click', () => { mostrarMenu(false); abrirAjustes(b.dataset.ajuste); }));
+  // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
+  $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
 
   $('#aj-fechar').addEventListener('click', fecharAjustes);
   // Clique no fundo escuro fecha; clique dentro da caixa, não.
@@ -359,7 +358,6 @@ function montarAjustes() {
 
 function abrirAjustes(qual) {
   if (qual === 'cores') renderPaletas();
-  if (qual === 'painel') renderPainel();
   $('#modal-ajustes').classList.toggle('so-cores', qual === 'cores');
   $('#aj-titulo').textContent = TITULOS_DE_AJUSTE[qual];
   document.querySelectorAll('#modal-ajustes [data-ajuste]').forEach(s => {
@@ -460,8 +458,7 @@ function renderConta() {
   if (!conta) return;
   const papel = conta.papel === 'admin' ? ' · administrador' : '';
   $('#conta-resumo').textContent = `${conta.email} · ${conta.handle}${papel}`;
-  $('#limpeza-contas').hidden = conta.papel !== 'admin';
-  $('#pf-menu-painel').hidden = conta.papel !== 'admin';
+  $('#pf-menu-admin').hidden = conta.papel !== 'admin';
 }
 
 // ------------------------- Limpeza de contas (admin) -----------------------
@@ -540,7 +537,7 @@ function montarLimpeza() {
   botaoLimpar.addEventListener('click', limpar);
 }
 
-// -------------------------------- Testes ----------------------------------
+// ------------------------- Testes (tela de admin) --------------------------
 function montarTestes() {
   $('#btn-reset-dia').addEventListener('click', () => {
     db.state.dia.resgates = 0;
@@ -570,25 +567,13 @@ function montarTestes() {
     renderPerfil();
   });
 
-  // Reset é do jogador, não do acervo: o que foi cadastrado (peças subidas,
-  // marcas, cores) sobrevive, porque um dia vai migrar para a base do site.
+  // Zera a partida da conta (o save da nuvem junto); as marcas e cores que o
+  // admin registrou na esteira ficam.
   $('#btn-reset').addEventListener('click', async () => {
-    if (!await confirmar(
-      'As peças que você adicionou e o registro de marcas e cores ficam.',
-      { titulo: 'Apagar inventário, looks, colagens, feed e XP deste navegador?', sim: 'Apagar', perigo: true }
+    if (!await confirmar('Isso não volta.',
+      { titulo: 'Apagar peças, looks, colagens, posts e XP da sua conta?', sim: 'Apagar', perigo: true }
     )) return;
     db.resetar();
-    location.reload();
-  });
-
-  $('#btn-apagar-acervo').addEventListener('click', async () => {
-    const quantas = db.state.pecasProprias.length;
-    if (!quantas) return toast('Nenhuma peça guardada neste navegador — as do acervo vivem em assets/.');
-    if (!await confirmar(
-      'Isso não volta. O acervo em assets/acervo.json não é tocado.',
-      { titulo: `Apagar as ${quantas} peças guardadas neste navegador, mais marcas e cores?`, sim: 'Apagar', perigo: true }
-    )) return;
-    db.apagarAcervoLocal();
     location.reload();
   });
 }

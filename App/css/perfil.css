@@ -485,3 +485,28 @@ button.pf-stat:hover small { text-decoration: underline; }
   display: inline-block; width: .5em; height: .5em; margin-left: .35em; vertical-align: .12em;
   border-radius: 50%; border: 1px solid rgba(0, 0, 0, .15);
 }
+
+/* ---------------------------- Administração ---------------------------- */
+.view-admin { background: var(--papel); overflow-y: auto; }
+.adm-pagina {
+  flex: 1; max-width: 720px; margin: 0 auto; width: 100%;
+  padding: 30px 34px 60px; display: flex; flex-direction: column; gap: 14px;
+}
+.adm-topo { display: flex; flex-direction: column; gap: 10px; }
+.adm-topo h1 { font-size: 24px; letter-spacing: -.5px; }
+.adm-bloco {
+  padding: 16px 18px; border: 2px solid var(--wii-borda); border-radius: 16px;
+  background: var(--perola); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-bloco);
+}
+.adm-bloco h2 {
+  margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.adm-bloco .tool-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+.adm-bloco .tool-row .btn-ghost { width: auto; flex: 1 1 150px; margin: 0; }
+@media (max-width: 760px) {
+  .adm-pagina { padding: calc(14px + env(safe-area-inset-top)) 14px 90px; }
+}
+@media (min-width: 761px) {
+  .view-admin .pa-numeros { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
