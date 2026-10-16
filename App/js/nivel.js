@@ -25,9 +25,8 @@ export function montarNivel() {
       const p = db.progresso();
       toast(`Subiu para o nível ${p.nivel}!`, 'legendary');
       anunciarDesbloqueios(evento.de, evento.nivel);
-    } else if (evento.motivo) {
-      toast(`+${evento.xp} XP — ${evento.motivo}.`);
     }
+    // O XP comum não vira pop-up: o "+XP" já sobe flutuando no selo.
   });
 
   // Recalcula o selo em qualquer gravação (virada do dia, reset, import).
