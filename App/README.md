@@ -38,7 +38,7 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 | **Guarda-roupa** | Abre em **Todas as peças**; botão de adicionar peça própria; categorias com contador, raridade identificada pela cor do slot, arrastar para reordenar (persiste), destaque com ficha da peça |
 | **Stylist** | Palco 600×1200 com o avatar base, paleta com aba "todas", uma peça por categoria (escolher outra troca), botão de sortear look com as suas peças, peça entra encaixada no ponto de ancoragem da categoria, mover/girar/redimensionar/espelhar/camada, salvar, publicar, exportar Story 1080×1920 e Post 1080×1350 |
 | **Colagem** | A colagem livre estilo board de moda, sempre em fundo branco: botão de sortear colagem, réguas e guias, ímã de alinhamento, assinatura, etiquetas de texto, seleção múltipla, undo/redo e exportação |
-| **Feed** | Abas Seguindo/Descobrir, 32 perfis fictícios publicando looks **e colagens** geradas na hora, com o retrato de quem postou no canto da imagem e o resto (nome, tempo, comentários, menu) no look aberto; curtir (ou dois toques na imagem), comentar, seguir, compartilhar; um toque abre o look grande com as peças (cada uma abre a ficha, com o ♡ da wishlist), os comentários e "mais como este"; player da trilha do mês. A coluna "Quem seguir" procura por nome, sobrenome, @ ou bio — **contas reais incluídas**, é assim que se acha um amigo |
+| **Feed** | Abas Seguindo/Descobrir, 32 perfis fictícios publicando looks **e colagens** geradas na hora, com o retrato de quem postou no canto da imagem e o resto (nome, tempo, comentários, menu) no look aberto; curtir (ou dois toques na imagem), comentar, seguir, compartilhar; um toque abre o look grande com as peças (cada uma abre a ficha, com o ♡ da wishlist), os comentários e "mais como este". A coluna "Quem seguir" procura por nome, sobrenome, @ ou bio — **contas reais incluídas**, é assim que se acha um amigo |
 | **Tarefas** | Lista limpa: nível e fichas numa fileira (tocar nas fichas troca por resgate), abas Hoje e Semana com um bloco por pedido (verde quando fecha), o botão do prêmio quando há marco pronto e a trilha dos carimbos até o baú (tocar no baú diz o que tem dentro). Embaixo, os botões de Baús e de Coleções. Tocar no nível abre a **trilha de níveis**: um prêmio por nível, do 2 ao 40 (fichas, fichas de repor a loja e baús comum, raro, épico e lendário com peças sorteadas), pegos um a um ou todos de uma vez. A ficha de repor a loja aparece como ↻ na Loja e troca a arara do dia sem zerar os resgates. Abrir um baú é animado (ele treme, abre e as peças pulam com a aura da raridade); tocar numa peça abre a ficha dela. Pontinhos vermelhos marcam o caminho até o que é novo (prêmio, baú, item para escolher nas Coleções) e apagam quando você chega lá, mesmo que a coisa continue esperando |
 | **Baús** | Todo baú ganho (dos dias, semanal, da trilha de níveis e das missões do tutorial) vem fechado para cá: um cartão por tipo, do lendário ao comum, com a quantidade. Tocar abre um (as peças são sorteadas na hora) e "Abrir todos" abre de uma vez. Baú novo acende o pontinho vermelho de Tarefas até ele, e o baú ganho voa até o botão de Tarefas. O tutorial apresenta a tela logo depois do primeiro baú |
 | **Coleções** | Uma página por marca da loja (Puma, Swear London, Borra, Adidas, Jnco, Ecko): as peças que você garimpou, as que faltam em cinza e os itens do avatar que a coleção libera (1ª peça, metade e coleção completa). Abre pelo cartão em Tarefas e pelos emblemas do perfil |
@@ -98,7 +98,6 @@ App/
     acervo.json         as peças do jogo: imagem, ficha, raridade, dimensões e path SVG
     cloths/*.webp       imagens otimizadas das peças
     mestres/*.png       recortes em alta das peças subidas pelo admin
-    audio/              vazio: solte base.mp3 e collab-01.mp3 aqui para ligar o player
 ```
 
 ## Contas
@@ -1315,7 +1314,7 @@ fino aparece.
 | Guarda-roupa | trilho de categorias e a coluna de destaque |
 | Stylist | paleta de peças e a caixa de ferramentas |
 | Colagem | paleta de peças e a caixa de ferramentas |
-| Feed | a coluna da direita (sugestões e player) |
+| Feed | a coluna da direita (sugestões) |
 
 - A largura fica gravada por painel e volta assim na próxima vez
 - Duplo clique no puxador devolve o tamanho padrão
@@ -1337,6 +1336,5 @@ mural volta a reservar aquele espaço — nenhuma outra mudança é necessária.
 
 - Backend real (Lambda + DynamoDB), login e social graph de verdade
 - Coleção do ilustrador convidado: a cápsula usa 5 peças do acervo como marcador
-- Trilha sonora: o player está pronto, faltam os arquivos em `assets/audio/`
 - Compartilhamento direto no Instagram (hoje exporta o PNG no formato certo)
 - Na colagem: colar imagem de fora e modelos prontos de enquadramento

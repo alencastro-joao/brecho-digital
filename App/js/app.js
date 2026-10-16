@@ -25,7 +25,6 @@ import { montarTarefas, aoEntrarNasTarefas } from './tarefas.js';
 import { montarColecoes, aoEntrarNasColecoes } from './colecoes.js';
 import { montarBaus, aoEntrarNosBaus } from './baus.js';
 import { montarPerfil, aoEntrarNoPerfil } from './perfil.js';
-import { montarPlayer } from './player.js';
 import { montarPaineis } from './paineis.js';
 import { montarPaleta } from './paleta.js';
 import { montarEditar } from './editar.js';
@@ -156,7 +155,6 @@ async function iniciar() {
   montarUsuario();
   montarBusca();
   montarBuscaNoFeed();
-  montarPlayer();
   montarTutorial();
 
   onEnter('vitrine', aoEntrarNaVitrine);
