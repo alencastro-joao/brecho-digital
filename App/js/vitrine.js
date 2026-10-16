@@ -34,6 +34,7 @@ import {
 } from './util.js';
 import { emo } from './icones.js';
 import { botaoDesejo } from './usuario.js';
+import { mostrar } from './janela.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -911,6 +912,37 @@ export function atualizarBadge() {
   badge.querySelector('small').textContent = restantes === 0
     ? `volta em ${formatarContagem(msAteMeiaNoite())}`
     : '';
+  badge.onclick = abrirJanelaDosResgates;
+  badge.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirJanelaDosResgates(); }
+  };
+}
+
+// Tocar no contador: quanto falta para os resgates do dia voltarem e de onde
+// vieram os que sobraram (os do dia são gastos antes dos das fichas).
+function abrirJanelaDosResgates() {
+  if (document.querySelector('.resgates-janela')) return;
+  db.virarODiaSeNecessario();
+  const limite = CONFIG.RESGATES_POR_DIA;
+  const restantes = db.resgatesRestantes(limite);
+  const deFichas = Math.min(restantes, db.resgatesDeFichas());
+  const doDia = restantes - deFichas;
+  const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+  const linha = (rotulo, valor, extra) => el('div', { class: 'rj-linha' },
+    el('span', { class: 'rj-rotulo' }, rotulo),
+    el('b', { class: 'rj-valor' }, valor),
+    extra ? el('small', {}, extra) : null);
+
+  const conteudo = el('div', { class: 'resgates-janela' },
+    el('div', { class: 'rj-relogio' },
+      el('small', {}, restantes === 0 ? 'Próximo resgate em' : `Os ${limite} do dia voltam em`),
+      el('strong', {}, formatarContagem(msAteMeiaNoite()))),
+    el('div', { class: 'rj-lista' },
+      linha('Do dia', `${doDia}/${limite}`, 'renovam à meia-noite'),
+      linha('Das fichas', String(deFichas), deFichas ? 'não vencem' : 'troque fichas nas missões')),
+    el('p', { class: 'rj-total' },
+      restantes ? `Você tem ${plural(restantes, 'resgate', 'resgates')} agora.` : 'Seus resgates acabaram por hoje.'));
+  mostrar(conteudo, { titulo: 'Seus resgates' });
 }
 
 let fichaLigada = false;
