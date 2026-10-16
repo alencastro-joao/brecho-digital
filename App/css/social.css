@@ -130,8 +130,10 @@
 .post-pecas small { font-size: 11.5px; font-weight: 600; }
 .post-pecas small b { color: #a5f0bd; }
 
-/* O rodapé, fora da imagem: quem postou, comentários e o menu. */
+/* Quem postou, comentários e o menu: em cima da imagem, numa linha só, para
+   não parecer o rodapé do card de cima no mural. */
 .post-pe { display: flex; align-items: center; gap: 8px; padding: 9px 2px 0; }
+.post-topo { padding: 0 2px 8px; }
 .post-pe > .autor-link { flex: none; }
 .post-autor { flex: 1; min-width: 0; }
 .post-autor strong { display: flex; align-items: center; min-width: 0; font-size: 12.5px; }
@@ -376,3 +378,75 @@
   background: #faf7f2; border-radius: 12px; padding: 10px 12px;
 }
 
+
+/* O nível dos seus posts: um selinho no canto do retrato. */
+.post-retrato { position: relative; flex: none; }
+.post-nivel {
+  position: absolute; right: -5px; bottom: -3px;
+  min-width: 16px; height: 16px; padding: 0 3px; border-radius: 99px;
+  background: var(--perola, #fff8e6); border: 1.5px solid var(--wii-borda, #e5d6b8);
+  font-size: 9px; font-weight: 800; line-height: 13px; color: var(--tinta); text-align: center;
+}
+
+/* Um toque abre o look; dois curtem. Sem o zoom do toque duplo do celular
+   nem a seleção azul da imagem. */
+.post-thumb.abrivel, .look-foto { cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+
+/* "♥ Rafa e mais 2", embaixo da imagem. */
+.post-curtiram {
+  display: flex; align-items: center; gap: 5px; margin: 7px 2px 0;
+  font-size: 11px; color: var(--tinta-suave); min-width: 0;
+}
+.post-curtiram-ico { flex: none; color: #e0466e; font-size: 11px; display: flex; }
+.post-curtiram > span:not(.post-curtiram-ico) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-curtiram .nome { font-weight: 700; color: var(--tinta); }
+.post-curtiram.completo { font-size: 12.5px; margin: 6px 0 0; }
+
+/* O coração que estoura no meio da imagem no toque duplo. */
+.coracao-estouro {
+  position: fixed; z-index: 900; pointer-events: none;
+  width: 86px; height: 86px; margin: -43px 0 0 -43px;
+  color: #e0466e; filter: drop-shadow(0 4px 10px rgba(160, 30, 70, .35));
+  animation: coracao-estouro .8s cubic-bezier(.2, 1.4, .4, 1) forwards;
+}
+.coracao-estouro svg { width: 100%; height: 100%; display: block; }
+@keyframes coracao-estouro {
+  0% { transform: scale(.2); opacity: 0; }
+  25% { transform: scale(1.15); opacity: 1; }
+  45% { transform: scale(.95); }
+  75% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.1) translateY(-18px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coracao-estouro { animation-duration: .4s; }
+}
+
+/* ------------------------------ Look aberto ------------------------------ */
+.modal-caixa.look-caixa { width: min(520px, 100%); }
+.look-topo { gap: 12px; }
+.look-autor { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.look-autor .post-autor strong { font-size: 15px; }
+.look-autor .post-autor small { font-size: 12px; }
+.look-corpo { overflow-y: auto; padding: 16px 20px 22px; }
+.look-foto { border-radius: 18px; }
+.look-foto img { max-height: 64vh; width: 100%; object-fit: contain; }
+.look-nome { margin: 12px 0 0; font-size: 16px; font-weight: 800; }
+.look-secao { margin-top: 18px; }
+.look-secao h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; }
+.look-secao h4 small { font-weight: 700; color: #2f9e5a; }
+.look-pecas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.look-pecas .up-peca.tenho::after {
+  content: '✓'; position: absolute; right: 6px; top: 6px; z-index: 2;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #2f9e5a; color: #fff; font-size: 11px; font-weight: 800;
+  display: grid; place-items: center;
+}
+.look-secao .post-thread.aberta { margin-top: 0; max-height: none; }
+.look-parecidos { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.look-parecido {
+  padding: 0; border: 2px solid var(--wii-borda, var(--linha)); border-radius: 14px;
+  background: var(--papel); overflow: hidden; aspect-ratio: 3 / 4;
+}
+.look-parecido.colagem { background: #fff; }
+.look-parecido img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.look-parecido:hover { border-color: var(--tinta); }

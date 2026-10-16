@@ -11,6 +11,7 @@
 // A tela é organizada em abas (Seguindo · Tudo), sempre com looks
 // e colagens juntos. Os posts formam um mural: colunas em que cada card
 // tem a altura da própria imagem, e passar o mouse mostra as peças usadas.
+// Um toque abre o look grande (abrirPostGrande); dois toques curtem.
 
 import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, SERVICOS, RARIDADE } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
@@ -24,10 +25,9 @@ import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
 import { irPara, viewAtual } from './router.js';
-import { chipNivel } from './nivel.js';
 // Ciclo de propósito: o feed leva ao perfil de alguém e o perfil mostra os
 // mesmos cards daqui. Os dois lados só se chamam em tempo de execução.
-import { abrirPerfilDe } from './usuario.js';
+import { abrirPerfilDe, abrirFichaDePeca, gradeDePecas } from './usuario.js';
 import { renderPessoas, atualizarPessoas } from './busca.js';
 import { ehFicticio, seguirNoServidor, perfilDe, roupasDoPerfil } from './pessoas.js';
 import {
@@ -385,62 +385,130 @@ function mensagemVazia() {
 // ================================ O card ==================================
 // A imagem manda: o card tem a altura dela. Por cima, o coração (curtir) e,
 // passando o mouse, as peças usadas. Embaixo, quem postou, comentários e o menu.
-export function cardDoPost(post) {
+// O card: quem postou em cima (assim não parece o rodapé do card de cima no
+// mural), a imagem com o coração e, embaixo, quem curtiu. Número zero não
+// aparece: um mural cheio de "0" parece vazio. Um toque na imagem abre o look
+// grande (abrirPostGrande); dois toques curtem, como no Instagram. `abrivel`
+// desliga o toque onde o card já está aberto num modal (perfil de alguém).
+export function cardDoPost(post, { abrivel = true } = {}) {
   const meu = sou(post.autor);
-  const autor = autorDe(post.autor);
-  const segue = db.state.usuario.seguindo.includes(post.autor);
   post.comentarios ??= [];
   prepararGerado(post);
   const pecas = pecasDoPost(post);
 
   return el('article', { class: 'post' + (meu ? ' meu' : '') },
-    el('div', { class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') },
+    topoDoPost(post),
+    el('div', {
+      class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') + (abrivel ? ' abrivel' : ''),
+      onclick: abrivel ? (e) => tocarNaImagem(post, e) : null,
+    },
       post.thumb || post.gerado
         ? imagemDoPost(post)
         : el('div', { class: 'sem-thumb' }, 'sem prévia'),
-      el('button', {
-        class: 'curtir' + (post.curtido ? ' on' : ''),
-        title: post.curtido ? 'Descurtir' : 'Curtir',
-        onclick: (e) => alternarCurtida(post, e.currentTarget),
-      }, ico(post.curtido ? 'coracao-cheio' : 'coracao'), el('span', {}, String(post.curtidas))),
+      botaoCurtir(post),
       pecasPorCima(post, pecas)
     ),
-
-    el('footer', { class: 'post-pe' },
-      el('button', {
-        class: 'autor-link', title: `Ver o perfil de ${autor.nome}`,
-        onclick: () => abrirAutor(post.autor),
-      }, retratoDe(post.autor, 28)),
-      el('div', { class: 'post-autor' },
-        el('strong', {},
-          el('button', {
-            class: 'autor-link nome', title: autor.handle,
-            onclick: () => abrirAutor(post.autor),
-          }, autor.nome),
-          meu ? chipNivel() : null),
-        el('small', {}, tempoRelativo(post.criadoEm))
-      ),
-      // Seguir só aparece para quem você ainda não segue: deixar de seguir
-      // fica no perfil da pessoa e na coluna ao lado.
-      meu
-        ? el('span', { class: 'tag-meu' }, 'seu')
-        : segue ? null : el('button', {
-            class: 'btn-seguir mini',
-            onclick: () => alternarSeguir(post.autor),
-          }, 'seguir'),
-      el('button', {
-        class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
-        title: 'Comentários',
-        onclick: () => alternarThread(post),
-      }, emo('💬'), el('span', {}, String(post.comentarios.length))),
-      el('button', {
-        class: 'post-mais', title: 'Mais opções',
-        onclick: (e) => menuDoPost(post, e.currentTarget),
-      }, ico('mais'))
-    ),
-
+    quemCurtiu(post),
     thread(post)
   );
+}
+
+// "8h" no lugar de "há 8 h": no card de 160px do celular o "há" quebrava a
+// linha em três.
+const tempoCurto = (iso) => tempoRelativo(iso).replace(/^há /, '').replace(/ (min|h|d)$/, '$1');
+
+function topoDoPost(post) {
+  const meu = sou(post.autor);
+  const autor = autorDe(post.autor);
+  const segue = db.state.usuario.seguindo.includes(post.autor);
+  const n = post.comentarios.length;
+  return el('header', { class: 'post-pe post-topo' },
+    // O nível é um selinho no retrato, não um chip solto ao lado do nome.
+    el('button', {
+      class: 'autor-link post-retrato', title: `Ver o perfil de ${autor.nome}`,
+      onclick: () => abrirAutor(post.autor),
+    }, retratoDe(post.autor, 28), meu ? el('span', { class: 'post-nivel', title: `Nível ${db.nivel()}` }, String(db.nivel())) : null),
+    el('div', { class: 'post-autor' },
+      el('strong', {},
+        el('button', {
+          class: 'autor-link nome', title: autor.handle,
+          onclick: () => abrirAutor(post.autor),
+        }, autor.nome)),
+      el('small', { title: tempoRelativo(post.criadoEm) }, tempoCurto(post.criadoEm))
+    ),
+    // Seguir só aparece para quem você ainda não segue: deixar de seguir
+    // fica no perfil da pessoa e na coluna ao lado.
+    meu || segue ? null : el('button', {
+      class: 'btn-seguir mini',
+      onclick: () => alternarSeguir(post.autor),
+    }, 'seguir'),
+    el('button', {
+      class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
+      title: 'Comentários',
+      onclick: () => alternarThread(post),
+    }, emo('💬'), n ? el('span', {}, String(n)) : null),
+    el('button', {
+      class: 'post-mais', title: 'Mais opções',
+      onclick: (e) => menuDoPost(post, e.currentTarget),
+    }, ico('mais'))
+  );
+}
+
+function botaoCurtir(post) {
+  return el('button', {
+    class: 'curtir' + (post.curtido ? ' on' : ''),
+    title: post.curtido ? 'Descurtir' : 'Curtir',
+    onclick: (e) => { e.stopPropagation(); alternarCurtida(post, e.currentTarget); },
+  }, ico(post.curtido ? 'coracao-cheio' : 'coracao'), post.curtidas ? el('span', {}, String(post.curtidas)) : null);
+}
+
+// "♥ Rafa e mais 2": um rosto vale mais que um número. Só existe para os
+// posts do servidor, que trazem quem curtiu (os de exemplo só têm a conta).
+function quemCurtiu(post, { completo = false } = {}) {
+  const outros = (post.curtiram || []).filter(id => !sou(id) && podeMostrar(id));
+  if (!outros.length || !post.curtidas) return null;
+  const primeiro = outros[0];
+  const resto = post.curtidas - 1;
+  return el('p', { class: 'post-curtiram' + (completo ? ' completo' : '') },
+    completo ? null : el('span', { class: 'post-curtiram-ico' }, ico('coracao-cheio')),
+    retratoDe(primeiro, 16),
+    el('span', {},
+      completo ? 'curtido por ' : '',
+      el('button', { class: 'autor-link nome forte', onclick: () => abrirAutor(primeiro) }, autorDe(primeiro).nome),
+      resto > 0 ? ` e mais ${resto}` : ''));
+}
+
+const podeMostrar = (id) => Boolean(perfilDe(id));
+
+// Um toque espera um instante para ver se vem o segundo: dois toques curtem
+// (e só curtem — como no Instagram, não descurtem), um só abre o look.
+const TOQUE_DUPLO = 280;
+let toque = null;
+
+function tocarNaImagem(post, e, umToque = () => abrirPostGrande(post.id)) {
+  if (e.target.closest('button, a, input')) return;
+  const thumb = e.currentTarget;
+  if (toque?.id === post.id) {
+    clearTimeout(toque.timer);
+    toque = null;
+    estourarCoracao(thumb);
+    if (!post.curtido) alternarCurtida(post, thumb.querySelector('.curtir'));
+    return;
+  }
+  if (toque) clearTimeout(toque.timer);
+  toque = { id: post.id, timer: setTimeout(() => { toque = null; umToque?.(); }, TOQUE_DUPLO) };
+}
+
+// O coração grande que estoura no meio da imagem. Mora no body, por cima:
+// curtir repinta o feed e a imagem de baixo é trocada no meio da animação.
+function estourarCoracao(alvo) {
+  navigator.vibrate?.(12);
+  const r = alvo.getBoundingClientRect();
+  const c = el('span', { class: 'coracao-estouro', 'aria-hidden': 'true' }, ico('coracao-cheio'));
+  Object.assign(c.style, { left: `${r.left + r.width / 2}px`, top: `${r.top + r.height / 2}px` });
+  document.body.append(c);
+  c.addEventListener('animationend', () => c.remove());
+  setTimeout(() => c.remove(), 1200);
 }
 
 // ============================ Imagem do post ==============================
@@ -544,8 +612,8 @@ function pecaMini(p) {
 // ============================== Comentários ===============================
 // Fechada, a conversa é só o contador no rodapé do card. Aberta, é a lista
 // inteira e o campo, logo abaixo — a coluna do mural alonga, as outras não.
-function thread(post) {
-  if (!expandidos.has(post.id)) return null;
+function thread(post, sempre = false) {
+  if (!sempre && !expandidos.has(post.id)) return null;
   const caixa = el('div', { class: 'post-thread aberta' });
 
   for (const c of post.comentarios) {
@@ -614,7 +682,8 @@ async function comentar(post, campo) {
     rascunhos.delete(post.id);
     db.salvar();
   }
-  expandidos.add(post.id);
+  // Comentado no look aberto: a conversa não abre também no card do mural.
+  if (!campo.closest('#modal-look')) expandidos.add(post.id);
   focarEm = post.id;
   repintar();
 }
@@ -768,6 +837,127 @@ export function alternarSeguir(id) {
     avisar();
     toast(erro.message || 'Não consegui seguir agora. Tente de novo.', 'aviso');
   });
+}
+
+// ============================== Look aberto ===============================
+// Um toque no card abre o look grande: quem postou, a imagem, curtir, as
+// peças que ele usa (tocar numa abre a ficha, com o ♡ da wishlist) e os
+// comentários. Embaixo, "mais como este": looks com as mesmas peças ou marcas,
+// para ir de um a outro sem voltar ao mural.
+let lookAberto = null;
+let lookMontado = false;
+const MAIS_COMO_ESTE = 6;
+
+function montarLook() {
+  if (lookMontado) return;
+  lookMontado = true;
+  const modal = $('#modal-look');
+  $('#look-fechar').addEventListener('click', fecharPostGrande);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fecharPostGrande(); });
+  document.addEventListener('keydown', (e) => {
+    // A ficha da peça abre por cima e fecha primeiro (usuario.js).
+    if (e.key === 'Escape' && !modal.hidden && $('#modal-pp').hidden) fecharPostGrande();
+  });
+  // Curtir ou comentar aqui repinta o feed; o look aberto repinta junto.
+  aoAtualizarFeed(() => { if (lookAberto) renderLook(); });
+}
+
+export function abrirPostGrande(id) {
+  montarLook();
+  lookAberto = id;
+  renderLook();
+  $('#look-corpo').scrollTop = 0;
+  $('#modal-look').hidden = false;
+  document.body.classList.add('com-modal');
+}
+
+function fecharPostGrande() {
+  if (!lookAberto) return;
+  lookAberto = null;
+  $('#modal-look').hidden = true;
+  $('#look-corpo').replaceChildren();
+  if (!document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
+}
+
+function renderLook() {
+  const post = todosOsPosts().find(p => p.id === lookAberto);
+  if (!post) return fecharPostGrande();
+  post.comentarios ??= [];
+  prepararGerado(post);
+  const autor = autorDe(post.autor);
+  const pecas = pecasDoPost(post);
+  const corpo = $('#look-corpo');
+  const rolagem = corpo.scrollTop;
+  const ir = (fn) => () => { fecharPostGrande(); fn(); };
+
+  $('#look-autor').replaceChildren(
+    el('button', { class: 'autor-link', title: `Ver o perfil de ${autor.nome}`, onclick: ir(() => abrirAutor(post.autor)) },
+      retratoDe(post.autor, 34)),
+    el('div', { class: 'post-autor' },
+      el('strong', {}, el('button', { class: 'autor-link nome', onclick: ir(() => abrirAutor(post.autor)) }, autor.nome)),
+      el('small', {}, tempoRelativo(post.criadoEm))));
+
+  const tenho = pecas.filter(p => db.temPeca(p.id)).length;
+  const grade = gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i) });
+  grade.forEach((b, i) => b.classList.toggle('tenho', db.temPeca(pecas[i].id)));
+  const parecidos = maisComoEste(post);
+
+  // replaceChildren escreveria "null" no lugar das seções que não existem.
+  corpo.replaceChildren(...[
+    el('div', {
+      class: 'look-foto post-thumb' + (post.tipo === 'board' ? ' colagem' : ''),
+      // Aqui um toque não tem o que abrir: dois curtem, como no card.
+      onclick: (e) => tocarNaImagem(post, e, null),
+    },
+      post.thumb || post.gerado ? imagemDoPost(post) : el('div', { class: 'sem-thumb' }, 'sem prévia'),
+      botaoCurtir(post)),
+    el('h3', { class: 'look-nome' }, post.nome),
+    quemCurtiu(post, { completo: true }),
+    pecas.length
+      ? el('section', { class: 'look-secao' },
+        el('h4', {}, `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`,
+          tenho ? el('small', {}, ` · você tem ${tenho}`) : null),
+        el('div', { class: 'pf-grade look-pecas' }, ...grade))
+      : null,
+    el('section', { class: 'look-secao' },
+      el('h4', {}, post.comentarios.length ? `Comentários (${post.comentarios.length})` : 'Comentários'),
+      thread(post, true)),
+    parecidos.length
+      ? el('section', { class: 'look-secao' },
+        el('h4', {}, 'Mais como este'),
+        el('div', { class: 'look-parecidos' }, ...parecidos.map(p => el('button', {
+          class: 'look-parecido' + (p.tipo === 'board' ? ' colagem' : ''), title: p.nome,
+          onclick: () => abrirPostGrande(p.id),
+        }, imagemDoPost(p)))))
+      : null,
+  ].filter(Boolean));
+  corpo.scrollTop = rolagem;
+}
+
+// Parecido é quem divide peças com este look (vale mais), depois marca e
+// tipo de peça. Empate fica com o mais novo; sem nada em comum, não entra.
+function maisComoEste(post) {
+  const minhas = pecasDoPost(post);
+  const ids = new Set(minhas.map(p => p.id));
+  const marcas = new Set(minhas.map(p => p.marca?.trim().toLowerCase()).filter(Boolean));
+  const cats = new Set(minhas.map(p => p.cat));
+  return todosOsPosts()
+    .filter(p => p.id !== post.id && (p.thumb || p.gerado))
+    .map(p => {
+      prepararGerado(p);
+      let nota = 0;
+      for (const peca of pecasDoPost(p)) {
+        if (ids.has(peca.id)) nota += 4;
+        else if (marcas.has(peca.marca?.trim().toLowerCase())) nota += 2;
+        else if (cats.has(peca.cat)) nota += 0.3;
+      }
+      if (p.tipo === post.tipo) nota += 0.5;
+      return { p, nota };
+    })
+    .filter(x => x.nota >= 2)
+    .sort((a, b) => b.nota - a.nota || maisNovoPrimeiro(a.p, b.p))
+    .slice(0, MAIS_COMO_ESTE)
+    .map(x => x.p);
 }
 
 export const aoEntrarNoSocial = montarSocial;

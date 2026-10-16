@@ -194,6 +194,8 @@ def _publico(item, eu_id):
         'camadas': json.loads(item.get('camadas') or '[]'),
         'curtidas': len(curtidas),
         'curtido': eu_id in curtidas,
+        # Quem curtiu, para o "♥ Rafa e mais 2" do card: só os dois primeiros.
+        'curtiram': sorted(c for c in curtidas if c != eu_id)[:2],
         'comentarios': [dict(c) for c in item.get('comentarios') or []],
         'real': True,
     }
@@ -211,13 +213,15 @@ def _com_autores(itens, eu_id):
     """Os posts e os cartões de todo mundo que aparece neles — quem postou e
     quem comentou —, para a tela desenhar o retrato sem mais uma ida ao
     servidor por pessoa."""
+    posts = [_publico(i, eu_id) for i in itens]
     ids = set()
-    for item in itens:
+    for item, post in zip(itens, posts):
         ids.add(item['autor'])
         ids.update(c['autor'] for c in item.get('comentarios') or [])
+        ids.update(post['curtiram'])
     eu = _pegar('USER#' + eu_id) or {}
     return {
-        'posts': [_publico(i, eu_id) for i in itens],
+        'posts': posts,
         'autores': _cartoes(ids, eu),
     }
 
