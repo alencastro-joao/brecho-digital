@@ -12,7 +12,7 @@ import { pedirConta } from './telaauth.js';
 import { carregarCatalogo, catalogo } from './catalog.js';
 import * as db from './db.js';
 import { carregarEstoque, numerarAntigas } from './estoque.js';
-import { darPresente, resumoDoPresente, incomunsDoPresente } from './presente.js';
+import { darPresente } from './presente.js';
 import { montarNPC, falarDe } from './npc.js';
 import { iniciarRouter, onEnter } from './router.js';
 import { montarVitrine, aoEntrarNaVitrine, atualizarBadge } from './vitrine.js';
@@ -62,22 +62,12 @@ async function entrar() {
   return { conta, nova };
 }
 
-// O presente em um toast só: seis toasts, um por peça, empilhariam a tela
-// inteira em cima da vitrine que a pessoa está vendo pela primeira vez. O que
-// veio de incomum é dito pelo nome — é o que faz o presente parecer garimpo e
-// não formulário preenchido.
+// O presente de boas-vindas aparece no tutorial, que a conta nova sempre
+// começa: um baú para abrir, com as peças da mesma cor na frente
+// (anunciarPresente em js/tutorial.js). Aqui fica só a fala do dono da loja.
 function anunciarPresente(ganhas) {
   if (!ganhas.length) return;
-
   falarDe('presente', { tempo: 9000 });
-
-  const incomuns = incomunsDoPresente(ganhas);
-  toast(`Presente de boas-vindas: ${resumoDoPresente(ganhas)} no seu guarda-roupa.`);
-  if (incomuns.length) {
-    toast(incomuns.length === 1
-      ? `${incomuns[0]} veio incomum.`
-      : `${incomuns.join(' e ')} vieram incomuns.`, 'uncommon');
-  }
 }
 
 async function iniciar() {
