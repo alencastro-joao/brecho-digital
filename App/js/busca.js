@@ -32,7 +32,7 @@
 
 import { PERFIS_MOCK } from './config.js';
 import * as db from './db.js';
-import { aparenciaDoPerfil, retrato } from './avatar.js';
+import { aparenciaDoPerfil, cabeca } from './avatar.js';
 import { buscarReais, roupasDoPerfil } from './pessoas.js';
 import { el, $, toast } from './util.js';
 import { abrirPerfilDe, segueDeVolta } from './usuario.js';
@@ -182,7 +182,7 @@ function linhaDePessoa(p, { aoMudar, aoAbrir } = {}) {
     el('button', {
       class: 'autor-link', title: `Ver o perfil de ${p.nome}`,
       onclick: abrir,
-    }, retrato(aparenciaDoPerfil(p), 38, p.cor, roupasDoPerfil(p))),
+    }, cabeca(aparenciaDoPerfil(p), 38, roupasDoPerfil(p))),
 
     el('div', { class: 'sug-info' },
       el('strong', {},

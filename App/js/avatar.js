@@ -90,9 +90,11 @@ const [, RETRATO_Y, , RETRATO_H] = recorteNaRegiao('cabeca', [225, 43, 150, 150]
 
 // `quadro` abre o enquadramento: 1 é cabeça e ombros; mais que isso desce o
 // centro e pega mais do corpo, como um busto, com uma folga acima da cabeça.
-export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1) {
+// `desce` é quanto do que abriu vai para baixo: menos que isso sobra mais
+// espaço em cima, para o cabelo alto.
+export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1, desce = 0.38) {
   const janela = RETRATO_H * quadro;
-  const centro = RETRATO_Y + RETRATO_H / 2 + (janela - RETRATO_H) * 0.38;
+  const centro = RETRATO_Y + RETRATO_H / 2 + (janela - RETRATO_H) * desce;
   const k = tamanho / janela;
   const caixa = el('span', {
     class: 'retrato',
@@ -109,6 +111,22 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, qu
   return caixa;
 }
 
+// Cabecinha: só a cabeça do avatar (cabelo, rosto, chapéu e óculos), sem
+// fundo nem moldura — é o que aparece no lugar das bolinhas (botão do topo,
+// feed, avisos, busca, amigos). O quadrado pega a cabeça com folga para o
+// cabelo dos lados e de cima, no molde, e acompanha a proporção.
+const CABECINHA = recorteNaRegiao('cabeca', [212, 21, 176, 176]);
+
+export function cabeca(aparencia, tamanho = 34, roupas = null) {
+  const caixa = el('span', {
+    class: 'cabecinha',
+    style: { width: tamanho + 'px', height: tamanho + 'px' },
+  });
+  caixa.innerHTML = svgAvatar({ aparencia, roupas, recorte: CABECINHA, soCabeca: true });
+  Object.assign(caixa.querySelector('svg').style, { width: '100%', height: '100%' });
+  return caixa;
+}
+
 // O boneco é um monte de peça sobreposta (braço, tronco, pescoço, cabeça). Dar
 // contorno a cada uma mostraria as costuras por dentro da silhueta, então ele é
 // desenhado duas vezes: primeiro engordado na cor do traço, depois na cor da
@@ -119,7 +137,9 @@ const CONTORNO = 6;   // largura da borda; metade sobra para fora da silhueta
 // valendo: o contorno é o da união das partes já escaladas. A engorda de cada
 // parte é dividida pela escala dela, para a linha sair da mesma grossura na
 // cabeça e no tronco.
-const corpo = (id, cor, extra) => {
+// `soCabeca` deixa o pescoço e o resto de fora: é a cabecinha que flutua nos
+// botões, sem moldura.
+const corpo = (id, cor, extra, soCabeca = false) => {
   const forma = CORPOS[id] || CORPOS.masculino;
   const parte = (regiao, nome) => {
     const e = extra / escalaDe(regiao);
@@ -128,7 +148,7 @@ const corpo = (id, cor, extra) => {
   return `
   <g fill="${cor}" stroke="${cor}"
      stroke-linejoin="round" stroke-linecap="round">
-    ${parte('perna', 'pernas')}${parte('tronco', 'tronco')}${parte('cabeca', 'cabeca')}
+    ${soCabeca ? '' : parte('perna', 'pernas') + parte('tronco', 'tronco')}${parte('cabeca', 'cabeca')}
   </g>`;
 };
 
@@ -164,11 +184,14 @@ const comVolume = (arte, cor) => (arte.trim()
 // `recorte` é [x, y, w, h] no sistema do palco: o mesmo desenho, enquadrado em
 // um pedaço dele. É como as miniaturas de corte e de nariz mostram só a cabeça
 // sem existir um segundo desenho para manter em dia.
+// `soCabeca` desenha só a cabeça: cabelo, rosto, chapéu e óculos, sem pescoço,
+// corpo nem a roupa dele.
 export function svgAvatar({
   guia = false, fundo = 'none', aparencia = null, recorte = null, roupas = null,
+  soCabeca = false,
 } = {}) {
   const ap = aparencia || aparenciaAtual();
-  const veste = partesDasRoupas(roupas, ap.corpo);
+  const veste = partesDasRoupas(roupas, ap.corpo, soCabeca);
   const corte = CABELOS[ap.cabelo] || CABELOS.curto;
 
   // Chapéu na cabeça corta o cabelo na altura que ele mandar (roupinhas.js:
@@ -208,6 +231,7 @@ export function svgAvatar({
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}"
      width="${vw}" height="${vh}">
   <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="${fundo}"/>
+  ${soCabeca ? esmaecerEmbaixo(idCorte, vy + vh) : ''}
   ${veste.corteDoCabelo == null ? '' : `<clipPath id="${idCorte}">
     <rect x="0" y="${veste.corteDoCabelo}" width="${CONFIG.STAGE_W}"
           height="${CONFIG.STAGE_H}"/>
@@ -219,9 +243,10 @@ export function svgAvatar({
   <!-- roupinha que fica atrás do corpo: capa, mochila, asas, capuz caído -->
   ${veste.atras}
 
-  ${corpoDesenhado ? daArtista(idCorte, corpoDesenhado.corpos[ap.corpo], ap.pele, escurecerTraco(ap.traco)) : `
-  ${corpo(ap.corpo, ap.traco, CONTORNO)}
-  ${corpo(ap.corpo, ap.pele, 0)}`}
+  ${corpoDesenhado ? cortadoNaCabeca(idCorte, soCabeca,
+    daArtista(idCorte, corpoDesenhado.corpos[ap.corpo], ap.pele, escurecerTraco(ap.traco))) : `
+  ${corpo(ap.corpo, ap.traco, CONTORNO, soCabeca)}
+  ${corpo(ap.corpo, ap.pele, 0, soCabeca)}`}
 
   <!-- roupinha vestida, por camada: calça, calçado, torso, alça, luva -->
   ${veste.frente}
@@ -240,8 +265,41 @@ export function svgAvatar({
 
   <!-- o que vem depois do rosto: óculos e chapéu, por cima do cabelo -->
   ${veste.rosto}
+  ${soCabeca ? '</g>' : ''}
   ${pontos}
 </svg>`.trim();
+}
+
+// A cabecinha não tem moldura, então o SVG deixa o desenho passar da caixa
+// (afro e coque sobem um pouco além dela). Só embaixo há um limite: cabelo
+// comprido desceria até a cintura, e ele some num degradê no fim da caixa em
+// vez de terminar numa linha reta. Abre um <g> que svgAvatar fecha.
+function esmaecerEmbaixo(id, fim) {
+  const comeco = fim - 26;
+  return `<linearGradient id="${id}-fim" gradientUnits="userSpaceOnUse"
+      x1="0" y1="${comeco}" x2="0" y2="${fim}">
+    <stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <mask id="${id}-mascara" maskUnits="userSpaceOnUse" x="-${CONFIG.STAGE_W}" y="-${CONFIG.STAGE_H}"
+        width="${CONFIG.STAGE_W * 3}" height="${CONFIG.STAGE_H * 2}">
+    <rect x="-${CONFIG.STAGE_W}" y="-${CONFIG.STAGE_H}" width="${CONFIG.STAGE_W * 3}"
+          height="${CONFIG.STAGE_H + fim}" fill="url(#${id}-fim)"/>
+  </mask>
+  <g mask="url(#${id}-mascara)">`;
+}
+
+// O corpo da artista é um desenho só, do topo ao pé: para sobrar a cabeça ele
+// é recortado numa oval que pega as orelhas e para no queixo, antes do pescoço.
+// (Feita já no palco: dentro de <clipPath> não vale <g>, então não dá para
+// usar o naRegiao.)
+function cortadoNaCabeca(id, soCabeca, svg) {
+  if (!soCabeca || !svg) return svg;
+  const [x, y, w, h] = recorteNaRegiao('cabeca', [220, 43, 160, 138]);
+  return `<clipPath id="${id}-cabeca">
+    <ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}"/>
+    <rect x="0" y="-${CONFIG.STAGE_H}" width="${CONFIG.STAGE_W}" height="${CONFIG.STAGE_H + y + h / 2}"/>
+  </clipPath>
+  <g clip-path="url(#${id}-cabeca)">${svg}</g>`;
 }
 
 // O traço do desenho é fino: na cor exata do contorno de código ele some.

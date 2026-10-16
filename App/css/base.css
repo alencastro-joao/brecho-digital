@@ -195,6 +195,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .autor-link.forte { font-weight: 700; margin-right: 3px; }
 .autor-link.nome:hover { text-decoration: underline; }
 .autor-link:hover .retrato { box-shadow: 0 0 0 2px var(--tinta); }
+.autor-link:hover .cabecinha { transform: translateY(-1px) scale(1.06); }
 .retrato { transition: box-shadow .15s; }
 
 .link-btn {

@@ -19,7 +19,7 @@
 import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import * as auth from './auth.js';
-import { retrato, aparenciaAtual } from './avatar.js';
+import { cabeca, aparenciaAtual } from './avatar.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
 import { confirmar, pedirTexto } from './janela.js';
@@ -68,25 +68,24 @@ export function montarPerfil() {
   renderPerfil();
 }
 
-// O botão de perfil do topo, ao lado do sino: o rosto do seu avatar, com a roupinha
-// (chapéu e óculos aparecem no recorte). Só redesenha quando o rosto muda —
-// o onChange dispara a cada save.
+// O botão de perfil do topo, ao lado do sino: só a cabeça do seu avatar,
+// flutuando, sem moldura (chapéu e óculos aparecem). Só redesenha quando o
+// rosto muda — o onChange dispara a cada save.
 function montarAtalho() {
   const botao = $('#perfil-atalho');
   botao.addEventListener('click', () => irPara('perfil'));
-  // No computador o botão é do tamanho do sino; no celular, maior e em busto.
+  // No computador a cabeça é do tamanho do sino; no celular, maior.
   const pc = matchMedia('(min-width: 901px)');
   let ultimo = null;
   const pintar = () => {
     const u = db.state.usuario;
     const roupas = db.roupasEquipadas();
-    const tamanho = pc.matches ? 42 : 54;
-    const quadro = pc.matches ? 1 : 1.75;
+    const tamanho = pc.matches ? 46 : 54;
     const chave = JSON.stringify([u.avatar, roupas, u.nome, tamanho]);
     if (chave === ultimo) return;
     ultimo = chave;
     try {
-      botao.replaceChildren(retrato(aparenciaAtual(), tamanho, COR_PROPRIA, roupas, quadro));
+      botao.replaceChildren(cabeca(aparenciaAtual(), tamanho, roupas));
     } catch {
       // Sem desenho possível, fica a inicial do nome.
       botao.replaceChildren(el('span', { class: 'perfil-atalho-inicial' },

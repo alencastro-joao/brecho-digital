@@ -11,22 +11,20 @@
   transition: transform .2s, border-color .2s;
 }
 .avisos-btn:hover { transform: translateY(-1px); border-color: #d8d0c4; }
-/* O Perfil não fica na barra de telas: é o rosto do seu avatar, no canto, com o
-   sino logo à esquerda (no celular, mais embaixo, o mesmo em tamanho menor). */
+/* O Perfil não fica na barra de telas: é a cabeça do seu avatar, solta no
+   canto, sem moldura, com o sino logo à esquerda (no celular, mais embaixo). */
 .app > .sidebar .sidebar-btn.perfil { display: none; }
 .perfil-atalho {
   position: fixed; top: 22px; right: calc(90px + 18px);
-  width: 44px; height: 44px; padding: 0; border-radius: 50%;
-  border: 1px solid var(--linha); background: var(--perfil);
-  box-shadow: var(--sombra);
+  width: 44px; height: 44px; padding: 0;
+  border: 0; background: none; box-shadow: none;
   display: grid; place-items: center;
-  overflow: hidden; z-index: 700;
-  transition: transform .2s, border-color .2s;
+  z-index: 700; cursor: pointer;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .12));
+  transition: transform .2s;
 }
-.perfil-atalho:hover { transform: translateY(-1px); border-color: #d8d0c4; }
+.perfil-atalho:hover { transform: translateY(-1px) scale(1.05); }
 .perfil-atalho-inicial { font-size: 17px; font-weight: 800; color: var(--tinta); }
-body:has(.view-perfil:not([hidden])) .perfil-atalho,
-body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--tinta); }
 .avisos-btn[aria-expanded="true"] { border-color: var(--tinta); }
 .avisos-btn svg {
   width: 21px; height: 21px;
@@ -81,7 +79,7 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
 .aviso:hover { background: #f6f2ec; }
 .aviso.novo { background: #fbf3e6; }
 .aviso.novo:hover { background: #f6ead6; }
-.aviso > .retrato { flex: none; }
+.aviso > .cabecinha { flex: none; }
 /* Texto e hora numa linha só, cortados em duas: a lista cabe mais avisos. */
 .aviso-texto {
   font-size: 12.5px; line-height: 1.35; min-width: 0; overflow-wrap: anywhere;

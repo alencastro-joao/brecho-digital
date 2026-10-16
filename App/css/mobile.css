@@ -1135,13 +1135,6 @@
   }
   .avisos-btn { border-radius: 14px; }
   .avisos-btn[aria-expanded="true"] { border-color: var(--wii); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho); }
-  .perfil-atalho {
-    border: 2px solid var(--wii-borda); border-radius: 16px;
-    box-shadow: inset 0 -3px 0 var(--perola-degrau);
-  }
-  /* O retrato vem redondo, com o fundo dele; no botão quadrado ele ocupa a
-     caixa toda, senão sobram dois tons de fundo. */
-  .perfil-atalho .retrato { border-radius: 0; }
 
   /* A ficha da peça: painel da paleta, com a foto num bloco branco. */
   .view-vitrine .ficha {
