@@ -40,9 +40,20 @@ export const PROPORCOES_TESTE = {
   // crescem igual (tronco mais curto que largo, pernas mais grossas).
   artista: { cabeca: 1.32, tronco: [0.82, 0.718], pernas: [1.15, 1.09], corpo: 'artista' },
 };
+// A escolha fica guardada no aparelho: abrir uma vez com o link basta, e o app
+// instalado (que abre sem o parâmetro) continua no boneco de teste.
+// ?proporcao=padrao volta ao boneco de verdade e esquece a escolha.
+const GUARDADA = 'bd:proporcao';
 const pedida = (() => {
-  try { return new URLSearchParams(globalThis.location?.search || '').get('proporcao'); }
-  catch { return null; }
+  try {
+    const daUrl = new URLSearchParams(globalThis.location?.search || '').get('proporcao');
+    if (daUrl != null) {
+      if (PROPORCOES_TESTE[daUrl]) localStorage.setItem(GUARDADA, daUrl);
+      else localStorage.removeItem(GUARDADA);
+      return daUrl;
+    }
+    return localStorage.getItem(GUARDADA);
+  } catch { return null; }
 })();
 export const PROPORCAO_EM_TESTE = PROPORCOES_TESTE[pedida] ? pedida : null;
 export const PROPORCAO = PROPORCOES_TESTE[pedida] || PROPORCAO_PADRAO;
