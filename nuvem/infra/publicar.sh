@@ -42,6 +42,17 @@ aws s3 sync "$APP/js" "s3://$SITE/js" --delete \
 aws s3 cp "$APP/esteira.html" "s3://$SITE/esteira.html" \
   --cache-control "$REVALIDA" --content-type 'text/html; charset=utf-8'
 
+# App instalável (PWA). O sw.js e o manifesto têm nome fixo e precisam ser
+# relidos a cada visita, senão uma versão velha do service worker ficaria presa.
+aws s3 cp "$APP/manifest.webmanifest" "s3://$SITE/manifest.webmanifest" \
+  --cache-control "$REVALIDA" --content-type 'application/manifest+json; charset=utf-8'
+
+aws s3 cp "$APP/sw.js" "s3://$SITE/sw.js" \
+  --cache-control "$REVALIDA" --content-type 'text/javascript; charset=utf-8'
+
+aws s3 sync "$APP/assets/app" "s3://$SITE/assets/app" --delete \
+  --cache-control 'public, max-age=86400' --content-type 'image/png' --exclude '*' --include '*.png'
+
 # O acervo.json NÃO sobe daqui: quem escreve nele é a Lambda, quando a esteira
 # publica uma peça. Subir o do disco apagaria as peças publicadas desde o último
 # `tools/sincronizar.py`.
