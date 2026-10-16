@@ -76,7 +76,7 @@ async function iniciar() {
   // é o boneco de verdade.
   if (PROPORCAO_EM_TESTE) {
     const tag = document.createElement('div');
-    tag.textContent = `Proporção em teste: ${PROPORCAO_EM_TESTE}`;
+    tag.textContent = `Proporção em teste: ${PROPORCAO_EM_TESTE} (sair: ?proporcao=padrao)`;
     tag.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;padding:4px 12px;border-radius:999px;background:#1c2530;color:#fff;font:600 12px system-ui;pointer-events:none;opacity:.85';
     document.body.append(tag);
   }
