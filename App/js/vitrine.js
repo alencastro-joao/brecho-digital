@@ -735,27 +735,32 @@ async function pegar(id, noDOM) {
   else if (nova.raridade === 'epic' || nova.raridade === 'rare') falarDe('raro');
   else falarDe('pegou');
 
-  avisoComDesfazer(`${nomeDaPeca(peca)} — ${r.nome} · foi para o guarda-roupa`, nova.raridade,
-    () => desfazerResgate(nova, foto));
-  avisarColecaoDaPeca(id);
+  avisoComDesfazer(nova.raridade, () => desfazerResgate(nova, foto));
+  avisarColecaoDaPeca(id, noDOM);
   if (subiu) toast(`Efeito ${marcaDoEfeito('raridade-acima')}: a peça veio ${r.nome.toLowerCase()}, uma raridade acima.`, nova.raridade);
   if (gratis) toast(`Efeito ${marcaDoEfeito('resgate-gratis')}: este resgate não gastou o limite do dia.`, 'rare');
   if (ficha) toast(`Efeito ${marcaDoEfeito('fichas')}: +1 ficha.`, 'rare');
   atualizarBadge();
 }
 
-// Pegou sem querer: 10 segundos para devolver. O aviso do resgate ganha o
-// botão e uma barrinha que esvazia; tocar devolve a cópia para a loja (no
+// Pegou sem querer: 10 segundos para devolver. O aviso do resgate é só o
+// botão e a contagem (os segundos e uma barrinha que esvazia): a peça voando
+// para o closet já diz o que aconteceu. Tocar devolve a cópia para a loja (no
 // servidor, ver estoque.desfazer) e volta o save à foto de antes do toque.
 const TEMPO_DE_DESFAZER = 10e3;
 
-function avisoComDesfazer(texto, tipo, desfazer) {
+function avisoComDesfazer(tipo, desfazer) {
   const stack = document.getElementById('toasts');
   if (!stack) return;
+  // Um resgate novo encerra o Desfazer do anterior: dois juntos só empilham.
+  for (const velho of stack.querySelectorAll('.toast.desfazer')) velho.fechar?.();
   let feito = false;
-  const sair = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); };
+  let falta = Math.round(TEMPO_DE_DESFAZER / 1000);
+  const segundos = el('span', { class: 'desfazer-seg' }, `${falta}s`);
+  const relogio = setInterval(() => { falta = Math.max(0, falta - 1); segundos.textContent = `${falta}s`; }, 1000);
+  const sair = () => { clearInterval(relogio); t.classList.remove('show'); setTimeout(() => t.remove(), 300); };
   const t = el('div', { class: `toast desfazer ${tipo}`, style: { '--tempo': TEMPO_DE_DESFAZER + 'ms' } },
-    el('span', {}, texto),
+    segundos,
     el('button', {
       type: 'button', class: 'desfazer-btn',
       onclick: async (e) => {
@@ -767,9 +772,10 @@ function avisoComDesfazer(texto, tipo, desfazer) {
       },
     }, 'Desfazer'),
     el('i', { class: 'desfazer-barra', 'aria-hidden': 'true' }));
+  t.fechar = () => { feito = true; sair(); };
   stack.append(t);
   requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { feito = true; sair(); }, TEMPO_DE_DESFAZER);
+  setTimeout(t.fechar, TEMPO_DE_DESFAZER);
 }
 
 async function desfazerResgate(peca, foto) {

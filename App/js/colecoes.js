@@ -19,6 +19,7 @@ import { el, $, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { abrirPecaNoCloset } from './closet.js';
+import { flutuarTexto } from './animacoes.js';
 
 let grupo = 'marcas';
 let expandida = null;        // emblema da lista aberto mostrando as peças
@@ -139,24 +140,53 @@ export function chipDaColecao(c) {
   c.livres > 0 ? el('span', { class: 'col-chip-gift' }, emo('🎁')) : null);
 }
 
-// Logo depois de ganhar uma peça: o aviso diz quanto a coleção andou e leva
-// até ela. Vai a que tem escolha esperando; senão, a mais perto de fechar.
-export function avisarColecaoDaPeca(id) {
+// Logo depois de ganhar uma peça: o emblema da coleção sai de onde a peça
+// estava e voa num arco até o botão de Tarefas (como o baú, em baus.js), que
+// dá um pulinho e mostra o "+1". Sem texto: o pontinho e a tela de coleções
+// contam o resto. Vai a que tem escolha esperando; senão, a mais perto de fechar.
+export function avisarColecaoDaPeca(id, origem = null) {
   const cols = colecoesDaPeca(id);
   if (!cols.length) return;
   const c = [...cols].sort((a, b) => (b.livres > 0) - (a.livres > 0) || b.pct - a.pct)[0];
-  const texto = c.livres > 0 ? [emo('🎁'), ` ${c.marca}: escolha um item do avatar`]
-    : c.completa ? [emo('✨'), ` Coleção ${c.marca} completa!`]
-    : `+1 em ${c.marca} · ${c.tem}/${c.total}`;
-  const stack = document.getElementById('toasts');
-  if (!stack) return;
-  const t = el('button', {
-    type: 'button', class: 'toast col-toast',
-    onclick: () => { t.remove(); abrirColecao(c.id); },
-  }, el('span', { class: 'col-chip-disco' }, discoDaColecao(c)), texto, el('strong', {}, 'Ver ›'));
-  stack.append(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 4500);
+  const r = origem?.isConnected && origem.getBoundingClientRect();
+  const de = r && r.width ? { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+                          : { x: innerWidth / 2, y: innerHeight / 2 };
+  // Deixa a peça sair voando para o closet primeiro.
+  setTimeout(() => voarParaTarefas(c, de), 350);
+}
+
+const visivel = (r) => r && r.width > 0 && r.bottom > 0 && r.top < innerHeight;
+
+function voarParaTarefas(c, de) {
+  const alvo = [...document.querySelectorAll('.sidebar-btn[data-goto="tarefas"]')]
+    .find(b => visivel(b.getBoundingClientRect()));
+  if (!alvo) return;
+  const fim = alvo.getBoundingClientRect();
+  const para = { x: fim.left + fim.width / 2, y: fim.top + fim.height / 2 };
+  const chegar = () => {
+    alvo.classList.remove('recebeu');
+    void alvo.offsetWidth;
+    alvo.classList.add('recebeu');
+    setTimeout(() => alvo.classList.remove('recebeu'), 600);
+    flutuarTexto(alvo, '+1');
+  };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { chegar(); return; }
+
+  const tam = 54;
+  const voando = el('div', { class: 'col-voando', 'aria-hidden': 'true' },
+    el('span', { class: 'col-chip-disco' }, discoDaColecao(c)));
+  Object.assign(voando.style, { left: `${de.x - tam / 2}px`, top: `${de.y - tam / 2}px` });
+  document.body.append(voando);
+
+  const dx = para.x - de.x, dy = para.y - de.y;
+  const alto = Math.min(140, 50 + Math.abs(dx) * 0.3);
+  voando.animate([
+    { transform: 'translate(0, 0) scale(.4)', opacity: 0 },
+    { transform: `translate(${dx * 0.1}px, ${-alto * 0.7}px) scale(1.1)`, opacity: 1, offset: 0.25 },
+    { transform: `translate(${dx * 0.55}px, ${dy * 0.35 - alto}px) scale(.85) rotate(-10deg)`, offset: 0.6 },
+    { transform: `translate(${dx}px, ${dy}px) scale(.35)`, opacity: 0.9 },
+  ], { duration: 950, easing: 'cubic-bezier(.45, 0, .6, 1)', fill: 'forwards' }).finished
+    .then(() => { voando.remove(); chegar(); });
 }
 
 export function montarColecoes() {
