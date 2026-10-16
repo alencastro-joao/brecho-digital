@@ -1172,10 +1172,12 @@ export const FERRAMENTAS = [
 // Missões de introdução (js/tutorial.js): a primeira sessão de conta nova. Um
 // passo por vez, na ordem, cada um levando à tela de que fala. Passo com
 // `evento` é missão: pede uma ação e paga um prêmio que sobe com a cadeia (a
-// última é uma peça épica). Passo sem `evento` só explica e segue no "Entendi".
+// última é um baú épico; baú segue BAUS e CHANCE_NO_BAU, como os de Tarefas). Passo sem `evento` só explica e segue no "Entendi".
 // `evento` é o mesmo de progredirMissao; fazer a coisa antes de chegar na
 // missão já vale.
 // `pecas` é uma faixa por peça (sem peça na faixa, desce: ver faixasDeTroca).
+// `bau` é um baú de BAUS: a quantidade e as raridades seguem a mesma regra
+// dos baús de Tarefas (CHANCE_NO_BAU).
 // `lugar` é onde o cartão fica no celular enquanto a missão é feita: em cima
 // (sobre o cabeçalho) quando o que se toca na tela está embaixo — a mochila,
 // a paleta, a ficha da peça — e embaixo quando está em cima.
@@ -1188,7 +1190,7 @@ export const INTRO = [
       'Você pode pegar 3 peças por dia, e as mais raras ficam escondidas por baixo da pilha.' },
   { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Pegue uma roupa',
     dica: 'Toque numa peça do mural e resgate. Se uma estiver por cima da outra, arraste para garimpar.',
-    premio: { pecas: ['uncommon'] } },
+    premio: { bau: 'incomum' } },
   { ir: 'closet', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica guardado aqui. A cor da borda é a raridade: comum, incomum, ' +
       'rara, épica ou lendária. Toque numa peça para ver a ficha: cada uma pode ter marca, cor e estilo.' },
@@ -1210,10 +1212,10 @@ export const INTRO = [
     premio: { xp: 40 } },
   { evento: 'board', ir: 'board', lugar: 'cima', nome: 'Salve uma colagem',
     dica: 'Na Colagem, espalhe as peças no fundo branco do jeito que quiser e salve.',
-    premio: { pecas: ['uncommon'], xp: 20 } },
+    premio: { bau: 'incomum', xp: 20 } },
   { evento: 'publicar', ir: 'stylist', lugar: 'cima', nome: 'Publique no feed',
     dica: 'Publique um look do Stylist ou uma colagem: é o que os outros veem de você.',
-    premio: { pecas: ['rare'], xp: 30 } },
+    premio: { bau: 'raro', xp: 30 } },
   { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
     dica: 'No Feed ficam os looks de todo mundo. Toque em Seguir em quem você curtir; dá pra achar amigos pelo nome ou @.',
     premio: { fichas: 2 } },
@@ -1223,7 +1225,7 @@ export const INTRO = [
     premio: { fichas: 1, xp: 20 } },
   { evento: 'favoritar', ir: 'closet', lugar: 'cima', nome: 'Escolha uma peça favorita',
     dica: 'Abra uma peça e toque na estrela: ela vai para a vitrine do seu perfil.',
-    premio: { pecas: ['epic'], xp: 50 } },
+    premio: { bau: 'epico', xp: 50 } },
 ];
 
 export const ferramenta = (id) => FERRAMENTAS.find(f => f.id === id);
