@@ -17,7 +17,7 @@
 
 import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import {
-  CONFIG, RARIDADES, MISSOES, INTRO, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
+  CONFIG, RARIDADES, PREMIOS_DE_NIVEL, premioDoNivel, MISSOES, INTRO, MISSOES_SEMANA, PREMIO_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO,
   MARCOS_DIA, MARCOS_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta, migrarCategoria,
   COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
 } from './config.js';
@@ -90,6 +90,7 @@ function estadoInicial() {
     semana: missoesDaSemana(), // zera na segunda-feira
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
     fichas: 0,                 // ganhas nos marcos das missões, trocadas por resgate
+    fichasDeRepor: 0,          // prêmio da trilha de níveis: trocam a arara do dia
     semanasFechadas: 0,        // semanas carimbadas desde o último baú semanal
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0, semanasCompletas: 0 },
@@ -1126,10 +1127,42 @@ export function abrirBauEspecial(sorteadas = []) {
   return { pecas, xp };
 }
 
+// --- Trilha de níveis ------------------------------------------------------
+// Os níveis cujo prêmio já foi pego ficam em `progresso.premios`. Quem já
+// estava num nível alto quando a trilha chegou pega todos os de baixo.
+const premiosPegos = () => state.progresso.premios ?? [];
+export const premioDoNivelPego = (n) => premiosPegos().includes(n);
+export const premioDoNivelPronto = (n) => n >= 2 && n <= nivel() && !premioDoNivelPego(n);
+export const premiosDoNivelProntos = () => PREMIOS_DE_NIVEL.filter(p => premioDoNivelPronto(p.nivel));
+
+// Entrega o prêmio do nível n. Baú chega com as peças já sorteadas pela tela.
+export function pegarPremioDoNivel(n, sorteadas = []) {
+  if (!premioDoNivelPronto(n)) return null;
+  const premio = premioDoNivel(n);
+  state.progresso.premios = [...premiosPegos(), n];
+  let pecas = [];
+  if (premio.tipo === 'fichas') state.fichas = fichas() + premio.qtd;
+  else if (premio.tipo === 'repor') state.fichasDeRepor = fichasDeRepor() + premio.qtd;
+  else pecas = guardarSorteadas(sorteadas, 'nivel');
+  salvar();
+  return { ...premio, pecas };
+}
+
+// Ficha de repor a loja: gastar uma troca a arara do dia por outra (a troca
+// em si é da vitrine, que conhece o sorteio).
+export const fichasDeRepor = () => state.fichasDeRepor ?? 0;
+export function gastarFichaDeRepor() {
+  if (!fichasDeRepor()) return false;
+  state.fichasDeRepor = fichasDeRepor() - 1;
+  salvar();
+  return true;
+}
+
 // Tem prêmio esperando o toque? Acende o pontinho do botão de Tarefas.
 export const temPremioParaResgatar = () =>
   Boolean(marcoDoDiaPronto()) || fichasDaSemanaProntas() || carimboDaSemanaPronto() ||
-  bauDosDiasPronto() || bauEspecialPronto() || podeTrocarFichas();
+  bauDosDiasPronto() || bauEspecialPronto() || podeTrocarFichas() ||
+  premiosDoNivelProntos().length > 0;
 
 // --- Nível e XP -----------------------------------------------------------
 // Quem quiser reagir ao XP (badge da sidebar, toast de nível novo) escuta aqui:

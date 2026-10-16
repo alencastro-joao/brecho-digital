@@ -141,7 +141,7 @@ function aoGanharXP(evento) {
   }
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
-             texto: `Você chegou ao nível ${evento.nivel}.` });
+             texto: `Você chegou ao nível ${evento.nivel}. Tem prêmio esperando na trilha.` });
   }
 }
 

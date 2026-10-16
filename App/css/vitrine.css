@@ -27,6 +27,17 @@
 .btn-admin:hover { border-color: var(--tinta); transform: translateY(-1px); }
 .btn-admin:active { transform: none; }
 
+/* Ficha de repor a loja: o ↻ com quantas sobram, ao lado dos resgates. */
+.btn-repor-ficha {
+  pointer-events: auto; order: 1; display: flex; align-items: center; gap: 6px;
+  height: 46px; padding: 0 14px; border-radius: 16px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+  font-size: 15px; color: var(--tinta);
+}
+.btn-repor-ficha[hidden] { display: none; }
+.btn-repor-ficha .ico { font-size: 20px; }
+
 .picks-badge {
   pointer-events: auto;
   background: var(--branco); border: 1px solid var(--linha);

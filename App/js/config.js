@@ -934,6 +934,33 @@ export function progressoDoNivel(total) {
   };
 }
 
+// --------------------------- Trilha de níveis -----------------------------
+// Cada nível, do 2 ao NIVEL.MAX, tem um prêmio que espera o toque na trilha
+// (Tarefas → tocar no nível). Três tipos:
+//   fichas: `qtd` fichas (FICHAS.porResgate viram um resgate)
+//   repor:  `qtd` fichas de repor a loja — usar uma troca a arara do dia
+//   bau:    um baú de BAUS, com peças sorteadas na faixa de cada uma
+// A cada 5 níveis um baú épico; a cada 10, o lendário.
+export const BAUS = {
+  comum:    { nome: 'Baú comum',    pecas: ['uncommon', 'common'] },
+  raro:     { nome: 'Baú raro',     pecas: ['rare', 'uncommon'] },
+  epico:    { nome: 'Baú épico',    pecas: ['epic', 'rare'] },
+  lendario: { nome: 'Baú lendário', pecas: ['legendary', 'epic', 'rare'] },
+};
+
+export function premioDoNivel(n) {
+  if (n % 10 === 0) return { nivel: n, tipo: 'bau', bau: 'lendario' };
+  if (n % 5 === 0) return { nivel: n, tipo: 'bau', bau: 'epico' };
+  switch (n % 5) {
+    case 1: return { nivel: n, tipo: 'fichas', qtd: 3 + Math.floor(n / 10) * 2 };
+    case 2: return { nivel: n, tipo: 'repor', qtd: n >= 20 ? 2 : 1 };
+    case 3: return { nivel: n, tipo: 'bau', bau: n >= 20 ? 'raro' : 'comum' };
+    default: return { nivel: n, tipo: 'fichas', qtd: FICHAS.porResgate };
+  }
+}
+
+export const PREMIOS_DE_NIVEL = Array.from({ length: NIVEL.MAX - 1 }, (_, i) => premioDoNivel(i + 2));
+
 // ------------------------------ Coleções ----------------------------------
 // Cada coleção é uma marca da loja. Garimpar as peças dela vai liberando as
 // roupinhas do avatar que ela adotou: a primeira com a 1ª peça, a do meio com

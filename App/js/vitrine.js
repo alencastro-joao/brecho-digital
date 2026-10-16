@@ -805,6 +805,28 @@ export function reporLoja() {
   avisarLojaReposta();
 }
 
+// Ficha de repor a loja (prêmio da trilha de níveis): a mesma arara nova do
+// repor do admin, mas os resgates do dia continuam contados.
+export function reporComFicha() {
+  if (!db.gastarFichaDeRepor()) return;
+  db.limparPosicoes();
+  db.state.dia.estoque = novaSemente();
+  sementeArrumacao = novaSemente();
+  db.salvar();
+  montarVitrine();
+  falarDe('boasVindas');
+  toast('Loja reposta!', 'rare');
+}
+
+function renderFichaDeRepor() {
+  const botao = $('#btn-repor-ficha');
+  if (!botao) return;
+  const n = db.fichasDeRepor();
+  botao.hidden = !n;
+  botao.querySelector('b').textContent = n;
+  botao.onclick = reporComFicha;
+}
+
 // Devolver: o contrário do resgate. As roupas saem do guarda-roupa e voltam a
 // ser estoque — as mesmas peças, com a mesma ficha, disponíveis para pegar de
 // novo. Nada sai do acervo, e os looks e colagens montados com elas continuam
@@ -834,6 +856,7 @@ function ligarAdmin() {
 }
 
 export function atualizarBadge() {
+  renderFichaDeRepor();
   const restantes = db.resgatesRestantes(CONFIG.RESGATES_POR_DIA);
   const campo = $('#picks-left');
   if (campo) campo.textContent = restantes;

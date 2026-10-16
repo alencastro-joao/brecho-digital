@@ -33,6 +33,14 @@
 .tf-fichas b { font-variant-numeric: tabular-nums; }
 .tf-fichas.pronto { background: #fbf1d0 var(--brilho-topo); border-color: #e3cf8f; animation: premio 1.8s ease-in-out infinite; }
 
+.tf-nivel { position: relative; font: inherit; text-align: left; }
+.tf-repor {
+  flex: none; display: flex; align-items: center; gap: 6px; height: 46px; padding: 0 12px;
+  border: 2px solid var(--bb); border-radius: 14px; background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--pb); color: var(--tinta); font-size: 14px;
+}
+.tf-repor .ico { font-size: 18px; }
+
 /* Abas Hoje e Semana. */
 .tf-abas { display: flex; gap: 6px; padding: 6px; border: 2px solid var(--bb); border-radius: 18px; background: var(--pn); }
 .tf-abas button {
@@ -45,7 +53,7 @@
   background: var(--tarefas) var(--brilho-topo); border-color: var(--tinta);
   box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
 }
-.tf-abas button.tem-premio::after {
+.tf-nivel.tem-premio::after, .tf-abas button.tem-premio::after {
   content: ''; position: absolute; top: 5px; right: 6px;
   width: 9px; height: 9px; border-radius: 50%; background: #e0533a; border: 2px solid #fff;
 }
@@ -168,3 +176,52 @@
 .bau-peca .peca-caixa { inset: 0; }
 .bau-pecas { display: flex; flex: none; }
 .bau-pecas .bau-peca + .bau-peca { margin-left: -14px; }
+
+/* ---------------------------- Trilha de níveis --------------------------- */
+/* Um prêmio por nível numa linha vertical: o número na bolinha, o ícone e o
+   nome do prêmio; à direita o Pegar, o ok ou o cadeado. */
+.tn-caixa { width: min(460px, 100%); background: var(--papel); }
+.tn-lista {
+  --bb: var(--wii-borda); --pb: var(--perola-bloco);
+  position: relative; flex: 1; min-height: 0; overflow-y: auto;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+}
+.tn-lista::before {
+  content: ''; position: absolute; left: 32px; top: 24px; bottom: 24px; width: 3px;
+  background: var(--bb); border-radius: 2px;
+}
+.tn-nivel {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px 10px 8px;
+  background: #fff; border: 2px solid var(--bb); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--pb);
+  margin-left: 0;
+}
+.tn-num {
+  width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: var(--perola); border: 2px solid var(--bb); font-size: 12px; font-weight: 800; color: var(--tinta-suave);
+}
+.tn-ico {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px;
+  background: var(--perola); border: 2px solid var(--bb); font-size: 19px; color: var(--tinta);
+}
+.tn-ico .ficha-moeda { width: 20px; height: 20px; }
+.tn-nivel strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; }
+.tn-fim { font-size: 18px; color: var(--tinta-suave); display: grid; }
+.tn-nivel .btn-premio {
+  width: auto; flex: none; padding: 8px 18px; border: 2px solid #c9a443; border-radius: 12px;
+  background-image: var(--brilho-topo); box-shadow: inset 0 -3px 0 rgba(60, 80, 95, .16);
+}
+/* Os baús na cor da raridade de cima. */
+.tn-nivel.bau-raro .tn-ico { color: #2f7ff0; border-color: #b9d6f2; }
+.tn-nivel.bau-epico .tn-ico { color: #9b46f0; border-color: #c3a6f2; }
+.tn-nivel.bau-lendario .tn-ico { color: #b8860b; border-color: #e3cf8f; background: #fbf1d0 var(--brilho-topo); }
+.tn-nivel.pronto { border-color: #e3cf8f; background: #fffaf0; }
+.tn-nivel.pronto .tn-num { background: var(--wii); border-color: var(--wii); color: #fff; }
+.tn-nivel.pego { background: #eef6e6; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
+.tn-nivel.pego .tn-num { background: #6b8f4e; border-color: #5a7c40; color: #fff; }
+.tn-nivel.pego .tn-fim { color: #6b8f4e; }
+.tn-nivel.pego strong { color: var(--tinta-suave); }
+.tn-nivel.travado { opacity: .62; }
+.tn-nivel.proximo { opacity: 1; border-color: var(--tinta); }
+.tn-rodape { flex: none; padding: 0 16px 14px; }
+.tn-rodape:has(> [hidden]) { display: none; }
+.tn-rodape .btn-premio { border: 2px solid #c9a443; border-radius: 14px; background-image: var(--brilho-topo); }
