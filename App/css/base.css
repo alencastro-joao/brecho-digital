@@ -206,7 +206,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 /* ------------------------------- Toasts -------------------------------- */
 .toast-stack {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  display: flex; flex-direction: column; gap: 5px; align-items: center;
   z-index: 900; pointer-events: none;
 }
 .toast {
