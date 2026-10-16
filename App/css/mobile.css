@@ -659,6 +659,23 @@
     background: var(--painel);
   }
   .view-board :is(.regua, .regua-canto) { display: none; }
+  /* Minhas colagens: o mesmo ▦ do Stylist, no canto de cima da folha. */
+  .view-board { position: relative; }
+  .view-board .btn-meus {
+    position: absolute; top: 20px; left: 24px; z-index: 21;
+    width: 40px; height: 38px; padding: 0; gap: 5px; justify-content: center;
+    font-size: 0;
+    border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); color: var(--tinta);
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo);
+    backdrop-filter: none; transform: none;
+  }
+  .view-board .btn-meus:active { transform: translateY(1px); }
+  .view-board .btn-meus::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/grade.svg) center / contain no-repeat; mask: url(../assets/icones/ph/grade.svg) center / contain no-repeat; font-size: 20px; }
+  .view-board .btn-meus small {
+    position: absolute; top: -7px; right: -8px; min-width: 18px; padding: 1px 5px;
+    border: 1.5px solid var(--tinta); font-size: 11px;
+  }
   .view-board .prancheta { box-shadow: 0 6px 18px rgba(0, 0, 0, .1); }
 
   .view-board :is(.bar-btn, .acao-btn, .pal-cat, .palette-ajustes, .ordem-sentido) {

@@ -99,7 +99,7 @@ html body .sidebar .sidebar-btn.ativa {
 
 /* Os painéis das grades (paleta do Stylist e da Colagem, closet, personagem)
    no mesmo tom: fundo pérola azulado e bordas azul-acinzentadas. */
-html body :is(.view-closet, .view-stylist, .view-board, .view-personagem, #modal-meus) {
+html body :is(.view-closet, .view-stylist, .view-board, .view-personagem, #modal-meus, #modal-colagens) {
   --painel: var(--perola-painel);
   --bloco-borda: var(--wii-borda);
   --bloco-fundo: var(--perola-bloco);

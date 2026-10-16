@@ -15,7 +15,7 @@ import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorn
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
 import { miniaturaBoard, baixarBoard } from './render.js';
-import { publicarOuGuardar, pacoteDaColagem, jaPublicado } from './publicacoes.js';
+import { publicarOuGuardar, pacoteDaColagem, jaPublicado, apagarDoFeedPorOrigem } from './publicacoes.js';
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
@@ -103,10 +103,11 @@ export function montarBoard() {
   ligarReguas();
   ligarTeclado();
   montarPaleta();
+  montarMinhasColagens();
   render();
 
   // Só no celular: ⇅ mostra o agrupar, a ordem e a busca da paleta, e ⚙ troca
-  // a paleta pelas ferramentas (seleção, arranjo, assinatura, colagens).
+  // a paleta pelas ferramentas (seleção, arranjo, assinatura).
   $('#board-ajustes').addEventListener('click', (e) => {
     const aberto = $('.board-palette').classList.toggle('abertas');
     e.currentTarget.setAttribute('aria-expanded', String(aberto));
@@ -308,7 +309,7 @@ function larguraAlvo() {
   const alt = H();
   // No celular não há réguas: a folga é só o padding do painel (onde ficam
   // os botões), para a colagem ocupar todo o resto.
-  let folgaW = 104, folgaH = 112;
+  let folgaW = 104, folgaH = 120;
   if (area && matchMedia('(max-width: 900px)').matches) {
     const cs = getComputedStyle(area);
     folgaW = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
@@ -1093,36 +1094,272 @@ async function publicarBoard() {
     : 'Sem conexão: publicada só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
+// As colagens salvas moram só no painel "Minhas colagens" (mais abaixo),
+// aberto pelo botão em cima da mesa; aqui só se atualiza o número dele e o
+// painel, se estiver aberto.
 function renderLista() {
-  const lista = $('#bd-lista');
-  if (!lista) return;
-  lista.innerHTML = '';
-  if (!db.state.boards.length) {
-    lista.append(el('p', { class: 'tool-hint' }, 'Nenhuma colagem salva ainda.'));
-    const vazio = $('#bd-qtd-boards');
-    if (vazio) vazio.textContent = '';
+  const qtd = $('#mc-qtd');
+  if (qtd) qtd.textContent = db.state.boards.length ? String(db.state.boards.length) : '';
+  if ($('#modal-colagens') && !$('#modal-colagens').hidden) renderMinhas();
+}
+
+// --- Minhas colagens ------------------------------------------------------
+// O mesmo painel do Meus stylists (stylist.js), com as mesmas classes ms-*:
+// no PC um modal com uma grade de cartões; no celular a tela toda, duas
+// colunas. O cartão abre a colagem na mesa, e o ⋯ guarda o resto: renomear,
+// duplicar e apagar.
+let mcFiltro = 'todos';
+let mcMenuAberto = null;      // id da colagem com o menu ⋯ aberto
+let mcRenomeando = null;      // id da colagem com o nome virando campo
+const miniaturas = new Map(); // id -> miniatura desenhada agora (save sem thumb)
+
+const quandoDaColagem = (b) => b.editadoEm || b.criadoEm || '';
+
+function ordenarColagens(boards, ordem) {
+  const lista = [...boards];
+  if (ordem === 'nome') return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const pos = new Map(boards.map((b, i) => [b.id, i]));
+  lista.sort((a, b) =>
+    quandoDaColagem(b).localeCompare(quandoDaColagem(a)) || pos.get(b.id) - pos.get(a.id));
+  return ordem === 'antigos' ? lista.reverse() : lista;
+}
+
+function dataCurta(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+    .replace(/ de /g, ' ').replace('.', '');
+}
+
+function montarMinhasColagens() {
+  const modal = $('#modal-colagens');
+  if (!modal) return;
+  $('#btn-minhas-colagens').addEventListener('click', abrirMinhas);
+  $('#mc-fechar').addEventListener('click', fecharMinhas);
+  $('#mc-novo').addEventListener('click', async () => {
+    fecharMinhas();
+    if (board.itens.length && !await confirmar('O que não foi salvo nesta colagem se perde.',
+      { titulo: 'Começar uma colagem nova?', sim: 'Começar' })) return;
+    board = novaColagem();
+    selecao.clear(); historico = []; futuro = [];
+    encaixar(); render();
+    toast('Mesa limpa: monte a colagem nova e salve.');
+  });
+  $('#mc-busca').addEventListener('input', renderMinhas);
+  $('#mc-ordem').addEventListener('change', renderMinhas);
+  modal.addEventListener('pointerdown', (e) => { if (e.target === modal) fecharMinhas(); });
+  // Clicar fora do ⋯ fecha o menu dele.
+  modal.addEventListener('click', (e) => {
+    if (mcMenuAberto && !e.target.closest('.ms-menu, .ms-mais')) {
+      mcMenuAberto = null;
+      renderMinhas();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || modal.hidden || mcRenomeando) return;
+    if (mcMenuAberto) { mcMenuAberto = null; renderMinhas(); return; }
+    fecharMinhas();
+  });
+}
+
+function abrirMinhas() {
+  mcMenuAberto = null;
+  mcRenomeando = null;
+  $('#mc-busca').value = '';
+  $('#modal-colagens').hidden = false;
+  document.body.classList.add('com-modal');
+  renderMinhas();
+}
+
+function fecharMinhas() {
+  $('#modal-colagens').hidden = true;
+  document.body.classList.remove('com-modal');
+  mcMenuAberto = null;
+  mcRenomeando = null;
+}
+
+function renderMinhas() {
+  const boards = db.state.boards;
+  const favs = boards.filter(b => b.favorito).length;
+  const noFeed = boards.filter(b => b.publicado).length;
+
+  $('#mc-sub').textContent = boards.length
+    ? `${boards.length} ${boards.length === 1 ? 'colagem salva' : 'colagens salvas'} · ${favs} de 3 no perfil`
+    : '';
+
+  $('#mc-filtros').replaceChildren(...[
+    ['todos', 'Todas', boards.length],
+    ['fav', [ico('estrela-cheia'), ' Favoritas'], favs],
+    ['feed', 'No feed', noFeed],
+  ].map(([id, nome, n]) => el('button', {
+    type: 'button',
+    class: 'ms-filtro' + (mcFiltro === id ? ' ativo' : ''),
+    onclick: () => { mcFiltro = id; renderMinhas(); },
+  }, nome, el('small', {}, String(n)))));
+
+  const termo = $('#mc-busca').value.trim().toLocaleLowerCase('pt-BR');
+  const visiveis = ordenarColagens(boards, $('#mc-ordem').value).filter(b =>
+    (mcFiltro === 'todos' || (mcFiltro === 'fav' ? b.favorito : b.publicado)) &&
+    (!termo || b.nome.toLocaleLowerCase('pt-BR').includes(termo)));
+
+  const grade = $('#mc-grade');
+  grade.replaceChildren();
+  if (!boards.length) {
+    grade.append(el('div', { class: 'ms-vazio' },
+      el('strong', {}, 'Nenhuma colagem salva ainda'),
+      el('p', {}, 'Solte as suas peças na mesa e toque em "salvar": ela aparece aqui.')));
     return;
   }
-  const contador = $('#bd-qtd-boards');
-  if (contador) contador.textContent = db.state.boards.length ? `(${db.state.boards.length})` : '';
-
-  for (const b of [...db.state.boards].reverse()) {
-    // Mesma linha do Stylist: abrir de um lado, favoritar do outro.
-    lista.append(el('div', {
-      class: 'saved-item' + (b.id === board.id ? ' ativo' : ''),
-    },
-      el('button', {
-        class: 'saved-abrir',
-        title: 'Abrir "' + b.nome + '"',
-        onclick: () => abrirBoard(b.id),
-      },
-        b.thumb ? el('img', { src: b.thumb, alt: b.nome }) : el('span', { class: 'sem-thumb' }, '—'),
-        el('span', {}, b.nome),
-        b.publicado ? el('small', { class: 'pub' }, 'no feed') : null
-      ),
-      estrelaFavorito('colagem', b.id, renderLista)
-    ));
+  if (!visiveis.length) {
+    grade.append(el('div', { class: 'ms-vazio' },
+      el('p', {}, termo ? `Nenhuma colagem com "${$('#mc-busca').value.trim()}".`
+        : mcFiltro === 'fav' ? 'Nenhuma favorita. Toque na ☆ de uma colagem para ela ir para o seu perfil.'
+        : 'Nenhuma colagem publicada no feed ainda.')));
+    return;
   }
+  for (const b of visiveis) grade.append(cartaoDaColagem(b));
+
+  const campo = grade.querySelector('.ms-renomear');
+  if (campo) { campo.focus(); campo.select(); }
+}
+
+// A miniatura do save pode ter sido descartada (quota cheia: ver db.salvar);
+// aí desenha uma agora e guarda só na memória.
+function imagemDoCartao(b) {
+  const pronta = b.thumb || miniaturas.get(b.id);
+  if (pronta) return el('img', { src: pronta, alt: b.nome, loading: 'lazy' });
+  const vaga = el('span', { class: 'sem-thumb' }, '—');
+  if (b.itens?.length) {
+    miniaturaBoard(b).then((url) => {
+      miniaturas.set(b.id, url);
+      if (vaga.isConnected) vaga.replaceWith(el('img', { src: url, alt: b.nome }));
+    }, () => {});
+  }
+  return vaga;
+}
+
+function cartaoDaColagem(b) {
+  const aberta = b.id === board.id;
+  const nPecas = b.itens?.filter(i => i.tipo !== 'texto').length || 0;
+
+  const nome = mcRenomeando === b.id
+    ? el('input', {
+      class: 'ms-renomear', type: 'text', value: b.nome, maxlength: '46',
+      'aria-label': 'Novo nome da colagem',
+      onkeydown: (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
+        // Esc aqui só desiste do nome: não pode subir e fechar o painel.
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); mcRenomeando = null; renderMinhas(); }
+      },
+      onblur: (e) => { if (mcRenomeando === b.id) renomearColagem(b.id, e.currentTarget.value); },
+    })
+    : el('button', {
+      type: 'button', class: 'ms-nome', title: 'Renomear',
+      onclick: () => { mcRenomeando = b.id; mcMenuAberto = null; renderMinhas(); },
+    }, b.nome);
+
+  const menu = mcMenuAberto === b.id ? el('div', { class: 'ms-menu', role: 'menu' },
+    el('button', { type: 'button', role: 'menuitem', onclick: () => abrirDoPainel(b.id) }, ico('editar'), ' Abrir e editar'),
+    el('button', {
+      type: 'button', role: 'menuitem',
+      onclick: () => { mcRenomeando = b.id; mcMenuAberto = null; renderMinhas(); },
+    }, 'Aa Renomear'),
+    el('button', { type: 'button', role: 'menuitem', onclick: () => duplicarColagem(b.id) }, ico('duplicar'), ' Duplicar'),
+    el('button', { type: 'button', role: 'menuitem', class: 'perigo', onclick: () => apagarColagem(b.id) }, ico('lixo'), ' Excluir'),
+  ) : null;
+
+  return el('article', { class: 'ms-card' + (aberta ? ' aberto' : '') + (menu ? ' com-menu' : '') },
+    el('button', {
+      type: 'button', class: 'ms-thumb',
+      title: `Abrir "${b.nome}" na mesa para editar`,
+      onclick: () => abrirDoPainel(b.id),
+    },
+      imagemDoCartao(b),
+      el('span', { class: 'ms-editar' }, ico('editar'), ' Editar'),
+      aberta ? el('span', { class: 'ms-selo' }, 'na mesa') : null,
+      b.publicado ? el('span', { class: 'ms-selo feed' }, 'no feed') : null,
+    ),
+    el('div', { class: 'ms-fav' }, estrelaFavorito('colagem', b.id, renderLista)),
+    el('div', { class: 'ms-info' },
+      el('div', { class: 'ms-linha' },
+        nome,
+        el('button', {
+          type: 'button', class: 'ms-apagar', title: `Apagar "${b.nome}"`,
+          'aria-label': `Apagar "${b.nome}"`,
+          onclick: () => apagarColagem(b.id),
+        }, ico('lixo')),
+        el('button', {
+          type: 'button', class: 'ms-mais', title: 'Mais opções',
+          'aria-haspopup': 'menu', 'aria-expanded': menu ? 'true' : 'false',
+          onclick: () => { mcMenuAberto = mcMenuAberto === b.id ? null : b.id; renderMinhas(); },
+        }, ico('mais'))),
+      el('small', {}, [dataCurta(quandoDaColagem(b)),
+        nPecas === 1 ? '1 peça' : `${nPecas} peças`].filter(Boolean).join(' · '))),
+    menu);
+}
+
+function abrirDoPainel(id) {
+  abrirBoard(id);
+  fecharMinhas();
+  const salvo = db.state.boards.find(b => b.id === id);
+  if (salvo) toast(`"${salvo.nome}" na mesa. Mexa e toque em "salvar".`);
+}
+
+function renomearColagem(id, valor) {
+  mcRenomeando = null;
+  const salvo = db.state.boards.find(b => b.id === id);
+  const nome = String(valor || '').trim().slice(0, 46);
+  if (salvo && nome && nome !== salvo.nome) {
+    salvo.nome = nome;
+    if (id === board.id) { board.nome = nome; $('#board-nome').value = nome; }
+    db.salvar();
+    toast(`Renomeada para "${nome}".`);
+  }
+  renderLista();
+  renderMinhas();
+}
+
+function duplicarColagem(id) {
+  const orig = db.state.boards.find(b => b.id === id);
+  if (!orig) return;
+  const agora = new Date().toISOString();
+  // A cópia é uma colagem nova: não herda a estrela nem o "no feed".
+  const copia = {
+    ...structuredClone(orig),
+    id: 'bd' + Date.now(),
+    nome: `${orig.nome} (cópia)`.slice(0, 46),
+    criadoEm: agora,
+    editadoEm: agora,
+    publicado: false,
+    favorito: false,
+  };
+  db.state.boards.push(copia);
+  mcMenuAberto = null;
+  db.salvar();
+  renderLista();
+  renderMinhas();
+  toast(`"${copia.nome}" criada.`);
+}
+
+function apagarColagem(id) {
+  const salvo = db.state.boards.find(b => b.id === id);
+  if (!salvo) return;
+  mcMenuAberto = null;
+  const aviso = `Excluir "${salvo.nome}"? Não dá para desfazer.` +
+    (jaPublicado('boardId', id) || salvo.publicado ? '\nO post dela sai do feed também.' : '');
+  if (!confirm(aviso)) { renderLista(); return; }
+  db.state.boards.splice(db.state.boards.indexOf(salvo), 1);
+  miniaturas.delete(id);
+  // A mesa fica como está, só deixa de ser aquela colagem: salvar de novo cria outra.
+  if (id === board.id) board.id = null;
+  db.salvar();
+  renderLista();
+  toast(`"${salvo.nome}" excluída.`);
+  apagarDoFeedPorOrigem('board', id).then(ok => {
+    db.salvar();
+    if (!ok) toast('Não consegui tirar o post do feed agora. Apague por lá.', 'aviso');
+  });
 }
 
 export function abrirBoard(id) {

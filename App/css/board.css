@@ -20,7 +20,13 @@
 #bd-ferramentas { display: none; }
 
 /* --------------------------------- Mesa --------------------------------- */
-.board-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.board-main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+
+/* Minhas colagens: o mesmo botão do Meus stylists (stylist.css), no canto de
+   cima da mesa, logo abaixo da barra. A mesa ganha um pouco mais de folga em
+   cima (padding do .board-scroll) para o botão não cobrir a régua. */
+.view-board .btn-meus { top: 56px; }
+.view-board .btn-meus small { background: var(--board); }
 
 .board-bar {
   flex: none; height: 46px;
@@ -49,7 +55,7 @@
 
 .board-scroll {
   flex: 1; min-height: 0; overflow: auto;
-  display: grid; place-items: center; padding: 52px 46px;
+  display: grid; place-items: center; padding: 60px 46px 52px;
 }
 
 .board-rodape {
@@ -210,7 +216,6 @@
 .dobra > summary:hover { color: var(--tinta); }
 .dobra > *:not(summary) { margin-top: 8px; }
 .dobra[open] { padding-bottom: 6px; border-bottom: 1px solid var(--linha); }
-#bd-qtd-boards { color: #b9b1a5; font-weight: 600; }
 
 .board-tools .saved-list { max-height: 210px; overflow-y: auto; }
 
@@ -247,5 +252,5 @@
 
 @media (max-width: 1240px) {
   .view-board .board-tools { width: 226px; }
-  .board-scroll { padding: 46px 34px; }
+  .board-scroll { padding: 60px 34px 46px; }
 }

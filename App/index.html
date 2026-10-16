@@ -369,6 +369,10 @@
     </aside>
 
     <div class="board-main">
+      <button type="button" class="btn-meus" id="btn-minhas-colagens"
+              title="Ver, abrir, renomear e favoritar as suas colagens">
+        <i data-i="grade"></i> Minhas colagens <small id="mc-qtd"></small>
+      </button>
       <div class="board-bar">
         <div class="bar-grupo">
           <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)"><i data-i="desfazer"></i></button>
@@ -509,13 +513,37 @@
         </div>
         <button class="btn-ghost" id="bd-salvar-assinatura">Usar como minha assinatura</button>
       </details>
-
-      <details class="tool-block dobra" id="bd-bloco-lista">
-        <summary class="tool-label">Minhas colagens <span id="bd-qtd-boards"></span></summary>
-        <div class="saved-list" id="bd-lista"></div>
-      </details>
     </aside>
   </section>
+
+  <!-- Minhas colagens: o mesmo painel do Meus stylists (classes ms-*), com as
+       colagens salvas para abrir, renomear, favoritar, duplicar e apagar
+       (js/board.js). No celular ocupa a tela inteira. -->
+  <div class="modal" id="modal-colagens" hidden>
+    <div class="modal-caixa ms-caixa" role="dialog" aria-modal="true" aria-labelledby="mc-titulo">
+      <header class="modal-topo">
+        <div class="ms-titulos">
+          <h2 id="mc-titulo">Minhas colagens</h2>
+          <p class="ms-sub" id="mc-sub"></p>
+        </div>
+        <button class="modal-x" id="mc-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="ms-barra">
+        <input type="search" id="mc-busca" placeholder="Buscar pelo nome" maxlength="46">
+        <div class="ms-filtros" id="mc-filtros"></div>
+        <select id="mc-ordem" title="Ordem">
+          <option value="recentes">Recentes</option>
+          <option value="antigos">Antigos</option>
+          <option value="nome">Nome A–Z</option>
+        </select>
+      </div>
+      <div class="ms-grade" id="mc-grade"></div>
+      <footer class="modal-rodape">
+        <span class="mp-aviso"><i data-i="estrela-cheia"></i> escolhe até 3 colagens para aparecer no seu perfil.</span>
+        <button class="btn-dark" id="mc-novo">+ Nova colagem</button>
+      </footer>
+    </div>
+  </div>
 
   <!-- ====================== PERSONAGEM ====================== -->
   <section class="view view-personagem" data-view="personagem" hidden>
