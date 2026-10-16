@@ -3,7 +3,8 @@
 //
 // A tela é uma lista limpa: nível e fichas numa fileira, as abas Hoje e
 // Semana, um bloco por pedido (fica verde quando fecha) e a trilha dos
-// carimbos até o baú. A explicação de cada coisa só aparece num toque. O
+// carimbos até o baú. A explicação de cada coisa só aparece num toque. Os
+// baús ganhos vão fechados para a tela de Baús (js/baus.js). O
 // formato das missões segue o Pokémon TCG Pocket (lista fixa, cumprir parte já
 // paga); os prêmios dos marcos esperam um toque para sair.
 
@@ -53,6 +54,7 @@ export function renderTarefas() {
   renderAbas();
   if (aba === 'hoje') renderDia(); else renderSemana();
   renderCartaoColecoes();
+  renderCartaoBaus();
   renderPontinho();
 }
 
@@ -95,6 +97,22 @@ function renderPontinho() {
   for (const botao of document.querySelectorAll('[data-goto="tarefas"]')) {
     botao.classList.toggle('tem-premio', tem);
   }
+}
+
+// --------------------------------- Baús -----------------------------------
+// O botão da tela de Baús: quantos esperam abrir, com o pontinho vermelho
+// enquanto houver algum.
+function renderCartaoBaus() {
+  const n = db.bausGuardados().length;
+  const botao = $('#tarefas-baus');
+  botao.classList.toggle('escolha', n > 0);
+  botao.classList.toggle('ponto-novo', n > 0);
+  botao.onclick = () => irPara('baus');
+  botao.replaceChildren(
+    el('span', { class: 'tf-col-ico' }, ico('presente')),
+    el('strong', {}, 'Baús'),
+    el('small', {}, n ? String(n) : ''),
+    el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
 }
 
 // ---------------------------------- Topo ----------------------------------
@@ -245,7 +263,7 @@ function trilha(selos, { nome, bau, icone, dourado, pronto, abrir, aberto }) {
     type: 'button', 'aria-label': nome,
     class: 'tf-bau' + (dourado ? ' ouro' : '') + (pronto ? ' pronto' : '') + (aberto ? ' aberto' : ''),
     title: aberto ? `${nome} aberto` : dica,
-    onclick: () => pronto ? abrir() : toast(aberto ? `${nome} aberto. Semana que vem tem outro.` : dica),
+    onclick: () => pronto ? abrir() : toast(aberto ? `Você já pegou o ${nome} desta semana.` : dica),
   }, ico(aberto ? 'ok' : pronto ? 'presente' : icone));
   $('#tf-trilha').className = 'tf-trilha' + (selos.length < 5 ? ' curta' : '');
   $('#tf-trilha').replaceChildren(...selos, botaoBau);
@@ -305,24 +323,25 @@ export function sortearPecas(bauId) {
   return sorteadas;
 }
 
-function abrirUmBau(nome, bau, abrir) {
-  const tipo = premioDoBau(bau, db.nivel()).atual.bau;
-  const r = abrir(sortearPecas(tipo));
+// Pegar o baú da trilha: o XP entra na hora e o baú vai fechado para a tela
+// de Baús, que abre em seguida para ele ser aberto lá.
+function pegarUmBau(pegar) {
+  const r = pegar();
   if (!r) return;
-  entregarPecas(r.pecas);
-  mostrarBau(nome, r.pecas, { xp: r.xp, bau: tipo });
+  toast(`${BAUS[r.bau].nome} guardado em Baús. +${r.xp} XP`, 'rare');
+  irPara('baus');
 }
 
 // As peças que saíram de um baú: tiram do estoque da loja e ganham número.
-function entregarPecas(pecas) {
+export function entregarPecas(pecas) {
   if (!pecas.length) return;
   const doGuardaRoupa = pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean);
   estoque.levar(doGuardaRoupa)
     .then(() => { estoque.numerar(doGuardaRoupa); db.salvar(); });
 }
 
-const abrirBau = () => abrirUmBau('Baú dos dias', PREMIO_SEMANA, db.abrirPremioDaSemana);
-const abrirEspecial = () => abrirUmBau('Baú semanal', BAU_ESPECIAL, db.abrirBauEspecial);
+const abrirBau = () => pegarUmBau(db.abrirPremioDaSemana);
+const abrirEspecial = () => pegarUmBau(db.abrirBauEspecial);
 
 // ---------------------------- Trilha de níveis ------------------------------
 // Tocar no nível abre a trilha: um prêmio por nível, do 2 ao último. Os que
@@ -376,13 +395,11 @@ function renderTrilha() {
 // Pega um prêmio (ou vários, com `quieto` para juntar num toast só) e devolve
 // o que saiu.
 function pegarPremio(n, { quieto = false } = {}) {
-  const p = PREMIOS_DE_NIVEL.find(x => x.nivel === n);
-  const r = db.pegarPremioDoNivel(n, p?.tipo === 'bau' ? sortearPecas(p.bau) : []);
+  const r = db.pegarPremioDoNivel(n);
   if (!r) return null;
-  entregarPecas(r.pecas);
-  if (!quieto && r.tipo === 'bau') mostrarBau(BAUS[r.bau].nome, r.pecas, { bau: r.bau });
-  else if (!quieto) {
-    toast(r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor a loja. Use na Loja.`
+  if (!quieto) {
+    toast(r.tipo === 'bau' ? `${BAUS[r.bau].nome} guardado em Baús.`
+      : r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor a loja. Use na Loja.`
       : `+${r.qtd} fichas.`, 'rare');
   }
   renderTrilha();
@@ -394,23 +411,19 @@ function pegarTodos() {
   if (!saiu.length) return;
   const fichas = saiu.filter(r => r.tipo === 'fichas').reduce((t, r) => t + r.qtd, 0);
   const repor = saiu.filter(r => r.tipo === 'repor').reduce((t, r) => t + r.qtd, 0);
-  const pecas = saiu.flatMap(r => r.pecas);
+  const baus = saiu.filter(r => r.tipo === 'bau').length;
   const partes = [
-    fichas && `${fichas} fichas`,
-    repor && `${repor} ${repor === 1 ? 'ficha' : 'fichas'} de repor a loja`,
-    pecas.length && `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`,
+    fichas && `+${fichas} fichas`,
+    repor && `+${repor} ${repor === 1 ? 'ficha' : 'fichas'} de repor a loja`,
+    baus && `${baus} ${baus === 1 ? 'baú guardado' : 'baús guardados'} em Baús`,
   ].filter(Boolean);
-  if (pecas.length) {
-    mostrarBau('Prêmios dos níveis', pecas, {
-      extra: partes.filter(t => !t.endsWith('peça') && !t.endsWith('peças')).map(t => '+' + t).join(' · '),
-    });
-  } else toast(`+${partes.join(', ')}`, 'rare');
+  toast(partes.join(', ') + '.', 'rare');
 }
 
 // ------------------------------ Baú abrindo --------------------------------
 // O baú treme, abre e as peças pulam uma a uma, com o brilho da raridade.
 // Tocar numa peça fecha o baú e abre a ficha dela.
-function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {}) {
+export function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {}) {
   const lista = pecas.map(p => ({ ...p, peca: pecaDoCatalogo(p.id) })).filter(p => p.peca);
   const modal = $('#modal-bau');
   const caixa = $('#bau-caixa');

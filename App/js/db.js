@@ -91,6 +91,7 @@ function estadoInicial() {
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
     fichas: 0,                 // ganhas nos marcos das missões, trocadas por resgate
     fichasDeRepor: 0,          // prêmio da trilha de níveis: trocam a arara do dia
+    baus: [],                  // baús ganhos esperando abrir (tela de Baús)
     semanasFechadas: 0,        // semanas carimbadas desde o último baú semanal
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0, semanasCompletas: 0 },
@@ -754,7 +755,7 @@ export function adicionarPeca(item, { origem = 'vitrine', raridade = null } = {}
 // de missão que caiu no sino. Voltar a foto e tirar a peça deixa o save como se
 // o toque não tivesse acontecido; sem isso, pegar e desfazer em sequência
 // fechava a missão de resgates.
-const FOTO_DO_RESGATE = ['fichas', 'stats', 'missoes', 'semana', 'progresso', 'intro', 'avisos'];
+const FOTO_DO_RESGATE = ['fichas', 'stats', 'missoes', 'semana', 'progresso', 'intro', 'avisos', 'baus'];
 
 export function fotografarResgate() {
   const foto = { resgates: state.dia.resgates };
@@ -1108,9 +1109,9 @@ export function carimbarSemana() {
 }
 
 // --- Baús -----------------------------------------------------------------
-// Os dois abrem com as peças já sorteadas (quem sorteia é a tela, que conhece
-// o catálogo): uma lista de { item, raridade }. O XP vem do degrau do nível
-// de quem abre, lido antes de o próprio XP do baú subir o nível.
+// Pegar um baú paga o XP do degrau do nível (lido antes de o próprio XP subir
+// o nível) e guarda o baú fechado. Abrir chega com as peças já sorteadas pela
+// tela, que conhece o catálogo: uma lista de { item, raridade }.
 function guardarSorteadas(sorteadas, origem) {
   return sorteadas
     .map(({ item, raridade }) => item && adicionarPeca(item, { origem, raridade }))
@@ -1118,20 +1119,21 @@ function guardarSorteadas(sorteadas, origem) {
     .map(p => ({ id: p.id, raridade: p.raridade }));
 }
 
-// Baú dos dias: 5 dias carimbados na semana.
+// Baú dos dias: 5 dias carimbados na semana. Pegar paga o XP e manda o baú
+// para a tela de Baús, onde ele é aberto.
 export const bauDosDiasAberto = () => Boolean(state.semana.premio);
 export const bauDosDiasPronto = () =>
   !bauDosDiasAberto() && carimbosDaSemana().length >= PREMIO_SEMANA.carimbos;
 
-export function abrirPremioDaSemana(sorteadas = []) {
+export function abrirPremioDaSemana() {
   virarASemanaSeNecessario();
   if (!bauDosDiasPronto()) return null;
-  const { xp } = premioDoBau(PREMIO_SEMANA, nivel()).atual;
-  const pecas = guardarSorteadas(sorteadas, 'semana');
-  state.semana.premio = { pecas, xp, em: new Date().toISOString() };
+  const { xp, bau } = premioDoBau(PREMIO_SEMANA, nivel()).atual;
+  guardarBau(bau, 'semana', 'Baú dos dias');
+  state.semana.premio = { pecas: [], xp, bau, em: new Date().toISOString() };
   ganharXP(xp, 'baú dos dias');
   salvar();
-  return { pecas, xp };
+  return { xp, bau };
 }
 
 // As peças do baú dos dias desta semana (aceita o formato antigo, de uma peça).
@@ -1145,14 +1147,36 @@ export function pecasDoBauDosDias() {
 export const semanasFechadas = () => state.semanasFechadas ?? 0;
 export const bauEspecialPronto = () => semanasFechadas() >= BAU_ESPECIAL.semanas;
 
-export function abrirBauEspecial(sorteadas = []) {
+export function abrirBauEspecial() {
   if (!bauEspecialPronto()) return null;
-  const { xp } = premioDoBau(BAU_ESPECIAL, nivel()).atual;
-  const pecas = guardarSorteadas(sorteadas, 'bau-especial');
+  const { xp, bau } = premioDoBau(BAU_ESPECIAL, nivel()).atual;
+  guardarBau(bau, 'bau-especial', 'Baú semanal');
   state.semanasFechadas = semanasFechadas() - BAU_ESPECIAL.semanas;
   ganharXP(xp, 'baú semanal');
   salvar();
-  return { pecas, xp };
+  return { xp, bau };
+}
+
+// --- Baús guardados --------------------------------------------------------
+// Todo baú ganho (dias, semanal, trilha de níveis, missões do tutorial) vem
+// para cá fechado: { id, tipo (de BAUS), origem (a das peças), de, em }. As
+// peças só são sorteadas na hora de abrir, pela tela, que conhece o catálogo.
+export const bausGuardados = () => state.baus ?? [];
+
+export function guardarBau(tipo, origem, de) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  state.baus = [...bausGuardados(), { id, tipo, origem, de, em: new Date().toISOString() }];
+  salvar();
+}
+
+export function abrirBauGuardado(id, sorteadas = []) {
+  const bau = bausGuardados().find(b => b.id === id);
+  if (!bau) return null;
+  state.baus = bausGuardados().filter(b => b !== bau);
+  const pecas = guardarSorteadas(sorteadas, bau.origem);
+  progredirMissao('abrir-bau');
+  salvar();
+  return { ...bau, pecas };
 }
 
 // --- Trilha de níveis ------------------------------------------------------
@@ -1163,17 +1187,16 @@ export const premioDoNivelPego = (n) => premiosPegos().includes(n);
 export const premioDoNivelPronto = (n) => n >= 2 && n <= nivel() && !premioDoNivelPego(n);
 export const premiosDoNivelProntos = () => PREMIOS_DE_NIVEL.filter(p => premioDoNivelPronto(p.nivel));
 
-// Entrega o prêmio do nível n. Baú chega com as peças já sorteadas pela tela.
-export function pegarPremioDoNivel(n, sorteadas = []) {
+// Entrega o prêmio do nível n. Baú vai fechado para a tela de Baús.
+export function pegarPremioDoNivel(n) {
   if (!premioDoNivelPronto(n)) return null;
   const premio = premioDoNivel(n);
   state.progresso.premios = [...premiosPegos(), n];
-  let pecas = [];
   if (premio.tipo === 'fichas') state.fichas = fichas() + premio.qtd;
   else if (premio.tipo === 'repor') state.fichasDeRepor = fichasDeRepor() + premio.qtd;
-  else pecas = guardarSorteadas(sorteadas, 'nivel');
+  else guardarBau(premio.bau, 'nivel', `Nível ${n}`);
   salvar();
-  return { ...premio, pecas };
+  return premio;
 }
 
 // A primeira versão da trilha foi toda pega em teste, e o João pediu para
@@ -1208,7 +1231,7 @@ export function gastarFichaDeRepor() {
 export const temPremioParaResgatar = () =>
   Boolean(marcoDoDiaPronto()) || fichasDaSemanaProntas() || carimboDaSemanaPronto() ||
   bauDosDiasPronto() || bauEspecialPronto() || podeTrocarFichas() ||
-  premiosDoNivelProntos().length > 0;
+  premiosDoNivelProntos().length > 0 || bausGuardados().length > 0;
 
 // --- Nível e XP -----------------------------------------------------------
 // Quem quiser reagir ao XP (badge da sidebar, toast de nível novo) escuta aqui:
