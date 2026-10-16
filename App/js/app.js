@@ -129,7 +129,7 @@ async function iniciar() {
   // é o que diz quais existem e de que raridade são hoje. Aqui e não depois: as
   // telas ainda não foram montadas, então a vitrine já nasce sem as peças que
   // acabaram de virar suas — o sorteio do dia exclui o que você tem.
-  const presente = nova ? darPresente() : [];
+  const presente = nova ? darPresente({ semTrio: true }) : [];
 
   // Modo administrador: sem o servidor local não há onde gravar a peça, e o
   // "+ Adicionar peça" só falharia na hora de salvar. Avisa logo na entrada.

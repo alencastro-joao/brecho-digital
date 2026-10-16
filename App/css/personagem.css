@@ -72,3 +72,17 @@
 @media (max-width: 1120px) {
   .view-personagem .pg-painel { width: 280px; }
 }
+
+/* Cor favorita: bolinhas grandes com o nome embaixo, no jeito dos botões
+   perolados; a escolhida ganha o anel da paleta. */
+.pg-fav-sub { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--tinta); }
+.pg-favoritas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pg-fav {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 4px 7px;
+  background: var(--perola); border: 2px solid var(--wii-borda); border-radius: 16px;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau); color: var(--tinta);
+}
+.pg-fav-cor { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, .12);
+  box-shadow: inset 0 3px 4px rgba(255, 255, 255, .45), inset 0 -3px 4px rgba(0, 0, 0, .12); }
+.pg-fav small { font-size: 11.5px; font-weight: 700; }
+.pg-fav.ativa { border-color: var(--wii); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho); }

@@ -894,7 +894,8 @@
   .view-personagem .pg-painel[data-aba="pele"] .pg-bloco[data-aba="pele"],
   .view-personagem .pg-painel[data-aba="cabelo"] .pg-bloco[data-aba="cabelo"],
   .view-personagem .pg-painel[data-aba="cor"] .pg-bloco[data-aba="cor"],
-  .view-personagem .pg-painel[data-aba="nariz"] .pg-bloco[data-aba="nariz"] { display: block; }
+  .view-personagem .pg-painel[data-aba="nariz"] .pg-bloco[data-aba="nariz"],
+  .view-personagem .pg-painel[data-aba="favorita"] .pg-bloco[data-aba="favorita"] { display: block; }
 
   .view-personagem .pg-cortes { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
   .view-personagem .pg-corte {

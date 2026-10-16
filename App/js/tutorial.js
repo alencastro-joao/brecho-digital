@@ -26,7 +26,6 @@ import * as estoque from './estoque.js';
 import { irPara } from './router.js';
 import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
-import { darTrioDaCor } from './presente.js';
 import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
 
@@ -92,8 +91,6 @@ export function comecar() {
   // Tira o ?tutorial do endereço: recarregar não recomeça de novo.
   if (pediuTutorialNaUrl()) history.replaceState(null, '', location.pathname + location.hash);
   modo = 'boasvindas';
-  // Recomeçar numa conta de antes do trio da cor: ele entra agora.
-  if (!db.state.presenteCor) darTrioDaCor();
   db.comecarIntro();
   // O que já está feito de uma vez por todas conta logo (recomeçar em Testes
   // não pode travar numa escolha que já foi feita, nem no carimbo de hoje).
@@ -159,6 +156,9 @@ function concluirProntas() {
       const ultima = passo === INTRO.length - 1;
       db.avancarIntro();
       anunciar(m, r, ultima);
+      // Salvou o personagem com a cor favorita: abre o presente por começar,
+      // com as três peças dela (darTrioDaCor, no Personagem) na frente.
+      if (m.evento === 'personagem') anunciarPresente();
       alguma = true;
     }
   } finally {
@@ -192,8 +192,9 @@ function anunciar(m, r, ultima) {
   }
 }
 
-// O presente por começar o tutorial: as peças da conta nova, com as três da
-// mesma cor na frente, dentro de um baú para abrir.
+// O presente por começar o tutorial, logo depois do personagem: as peças da
+// conta nova, com as três da cor favorita na frente, dentro de um baú para
+// abrir. É o primeiro baú aberto.
 function anunciarPresente() {
   const cor = db.state.presenteCor;
   const daCor = (it) => cor && (it.cor || '').toLowerCase() === cor.toLowerCase();
@@ -207,7 +208,7 @@ function anunciarPresente() {
   enfileirar({
     sobre: 'Presente', titulo: 'Um presente por começar!', pecas, bau: 'presente', tempo: 6000,
     texto: nDaCor >= 3
-      ? `As ${nDaCor} peças ${cor.toLowerCase()} já começam a sua coleção ${cor}. Elas ficam no seu closet.`
+      ? `${nDaCor} peças na cor ${cor}, a sua cor favorita! Com elas você liberou um item do avatar na coleção ${cor}: daqui a pouco você resgata.`
       : 'Elas ficam no seu closet.',
     marcar: daCor,
   });
@@ -532,7 +533,7 @@ function clique(e) {
   if (acabouDeArrastar) { acabouDeArrastar = false; return; }
   const acao = e.target.closest('[data-acao]')?.dataset.acao;
   if (!acao) { if (digitando && e.target.closest('[data-digitar]')) digitando.terminar(); return; }
-  if (acao === 'comecar') { passoNovo(); desenhar(); anunciarPresente(); }
+  if (acao === 'comecar') { passoNovo(); desenhar(); }
   else if (acao === 'entendi') entendi();
   else if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
   else if (acao === 'barra') { modo = 'barra'; desenhar(); }
