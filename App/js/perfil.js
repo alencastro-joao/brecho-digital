@@ -80,7 +80,7 @@ function montarAtalho() {
   const pintar = () => {
     const u = db.state.usuario;
     const roupas = db.roupasEquipadas();
-    const tamanho = pc.matches ? 62 : 72;
+    const tamanho = pc.matches ? 68 : 80;   // o mesmo da caixa em avisos.css
     const chave = JSON.stringify([u.avatar, roupas, u.nome, tamanho]);
     if (chave === ultimo) return;
     ultimo = chave;

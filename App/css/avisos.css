@@ -15,8 +15,10 @@
    canto, sem moldura, com o sino logo à esquerda (no celular, mais embaixo). */
 .app > .sidebar .sidebar-btn.perfil { display: none; }
 .perfil-atalho {
-  position: fixed; top: 18px; right: calc(90px + 14px);
-  width: 52px; height: 52px; padding: 0;
+  /* A caixa é a da cabeça (perfil.js desenha no mesmo tamanho) e o centro dela
+     fica na altura do centro do sino. */
+  position: fixed; top: calc(22px + 22px - 34px); right: calc(90px + 2px);
+  width: 68px; height: 68px; padding: 0;
   border: 0; background: none; box-shadow: none;
   display: grid; place-items: center;
   z-index: 700; cursor: pointer;
@@ -146,8 +148,8 @@
   .avisos-btn svg { width: 23px; height: 23px; }
 
   .perfil-atalho {
-    top: calc(6px + env(safe-area-inset-top)); right: 10px;
-    width: 60px; height: 60px; box-shadow: none;
+    top: calc(14px + 22px - 40px + env(safe-area-inset-top)); right: 0;
+    width: 80px; height: 80px; box-shadow: none;
   }
   .perfil-atalho:hover { transform: none; }
   .perfil-atalho-inicial { font-size: 22px; }
