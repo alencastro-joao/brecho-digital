@@ -9,7 +9,7 @@
 
 import {
   MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
-  RARIDADE, RARIDADES, escalaGrade, BAUS, PREMIOS_DE_NIVEL,
+  RARIDADE, escalaGrade, BAUS, PREMIOS_DE_NIVEL,
 } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
@@ -20,6 +20,7 @@ import {
 import { ico } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { todasAsColecoes, abrirColecao } from './colecoes.js';
+import { abrirFichaDePeca } from './usuario.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -29,6 +30,7 @@ export function montarTarefas() {
     if (viewAtual() === 'tarefas') renderTarefas();
     else renderPontinho();
   });
+  $('#bau-ok').addEventListener('click', fecharBau);
   const modal = $('#modal-trilha');
   $('#tn-fechar').addEventListener('click', fecharTrilha);
   $('#tn-todos').addEventListener('click', pegarTodos);
@@ -37,7 +39,14 @@ export function montarTarefas() {
   renderTarefas();
 }
 
+// Uma vez por save: a trilha volta a zero e as peças dela voltam para a loja.
+function zerarTrilha() {
+  const tiradas = db.zerarTrilhaDeNiveis();
+  if (tiradas.length) estoque.devolver(tiradas);
+}
+
 export function renderTarefas() {
+  zerarTrilha();
   db.virarODiaSeNecessario();   // o dia e a semana podem ter virado com a aba aberta
   if (!aba) aba = premioNaSemana() && !premioNoDia() ? 'semana' : 'hoje';
   renderTopo();
@@ -71,6 +80,7 @@ function renderCartaoColecoes() {
   const comEscolha = todas.find(c => c.livres > 0);
   const completas = todas.filter(c => c.completa).length;
   botao.classList.toggle('escolha', !!comEscolha);
+  botao.classList.toggle('ponto-novo', !!comEscolha);
   botao.title = comEscolha ? `${comEscolha.marca}: escolha um item do avatar` : '';
   botao.onclick = () => comEscolha ? abrirColecao(comEscolha.id) : irPara('colecoes');
   botao.replaceChildren(
@@ -290,10 +300,7 @@ function abrirUmBau(nome, bau, abrir) {
   const r = abrir(sortearPremio(bau));
   if (!r) return;
   entregarPecas(r.pecas);
-  const nomes = r.pecas.map(p => `${nomeDaPeca(pecaDoCatalogo(p.id))} (${RARIDADE[p.raridade]?.nome})`);
-  toast(nomes.length
-    ? `${nome}: ${nomes.join(', ')} no seu guarda-roupa. +${r.xp} XP.`
-    : `${nome} aberto: +${r.xp} XP.`, melhorFaixa(r.pecas));
+  mostrarBau(nome, r.pecas, { xp: r.xp, bau: bau === BAU_ESPECIAL ? 'lendario' : 'epico' });
 }
 
 // As peças que saíram de um baú: tiram do estoque da loja e ganham número.
@@ -303,10 +310,6 @@ function entregarPecas(pecas) {
     .then(() => { estoque.numerar(pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean)); db.salvar(); });
 }
 
-const melhorFaixa = (pecas) => pecas.map(p => p.raridade)
-  .sort((a, b) => ordemDaFaixa(b) - ordemDaFaixa(a))[0];
-
-const ordemDaFaixa = (f) => RARIDADES.findIndex(r => r.id === f);
 const abrirBau = () => abrirUmBau('Baú dos dias', PREMIO_SEMANA, db.abrirPremioDaSemana);
 const abrirEspecial = () => abrirUmBau('Baú semanal', BAU_ESPECIAL, db.abrirBauEspecial);
 
@@ -366,12 +369,10 @@ function pegarPremio(n, { quieto = false } = {}) {
   const r = db.pegarPremioDoNivel(n, p?.tipo === 'bau' ? sortearPecas(BAUS[p.bau].pecas) : []);
   if (!r) return null;
   entregarPecas(r.pecas);
-  if (!quieto) {
-    const nomes = r.pecas.map(x => nomeDaPeca(pecaDoCatalogo(x.id)));
-    toast(r.tipo === 'bau'
-      ? `${BAUS[r.bau].nome}: ${nomes.length ? nomes.join(', ') : 'vazio desta vez'}.`
-      : r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor a loja. Use na Loja.`
-      : `+${r.qtd} fichas.`, r.tipo === 'bau' ? melhorFaixa(r.pecas) : 'rare');
+  if (!quieto && r.tipo === 'bau') mostrarBau(BAUS[r.bau].nome, r.pecas, { bau: r.bau });
+  else if (!quieto) {
+    toast(r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor a loja. Use na Loja.`
+      : `+${r.qtd} fichas.`, 'rare');
   }
   renderTrilha();
   return r;
@@ -388,7 +389,47 @@ function pegarTodos() {
     repor && `${repor} ${repor === 1 ? 'ficha' : 'fichas'} de repor a loja`,
     pecas.length && `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`,
   ].filter(Boolean);
-  toast(`+${partes.join(', ')}`, melhorFaixa(pecas) ?? 'rare');
+  if (pecas.length) {
+    mostrarBau('Prêmios dos níveis', pecas, {
+      extra: partes.filter(t => !t.endsWith('peça') && !t.endsWith('peças')).map(t => '+' + t).join(' · '),
+    });
+  } else toast(`+${partes.join(', ')}`, 'rare');
+}
+
+// ------------------------------ Baú abrindo --------------------------------
+// O baú treme, abre e as peças pulam uma a uma, com o brilho da raridade.
+// Tocar numa peça fecha o baú e abre a ficha dela.
+function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {}) {
+  const lista = pecas.map(p => ({ ...p, peca: pecaDoCatalogo(p.id) })).filter(p => p.peca);
+  const modal = $('#modal-bau');
+  const caixa = $('#bau-caixa');
+  caixa.className = 'bau-caixa' + (bau ? ' bau-' + bau : '');
+  caixa.replaceChildren(ico('presente'));
+  $('#bau-nome').textContent = nome;
+  $('#bau-extra').textContent = [xp ? `+${xp} XP` : '', extra].filter(Boolean).join(' · ');
+  $('#bau-saiu').replaceChildren(...(lista.length ? lista.map(({ peca, raridade }, i) => {
+    const r = RARIDADE[raridade];
+    const cor = r?.aura && r.aura !== 'arco-iris' ? r.aura : '#8a96a0';
+    return el('button', {
+      type: 'button', class: 'bau-item', title: nomeDaPeca(peca),
+      style: { '--atraso': `${0.8 + i * 0.2}s`, '--aura': cor },
+      onclick: () => { fecharBau(); abrirFichaDePeca(lista.map(x => x.peca), i, { minha: true }); },
+    },
+      el('div', { class: 'bau-item-img' },
+        el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
+          el('img', { src: peca.src, alt: nomeDaPeca(peca) }))),
+      el('small', {}, r?.nome ?? ''));
+  }) : [el('p', { class: 'bau-vazio' }, 'Vazio desta vez.')]));
+  modal.classList.remove('abrindo');
+  modal.hidden = false;
+  document.body.classList.add('com-modal');
+  void modal.offsetWidth;            // reinicia a animação se abrir dois seguidos
+  modal.classList.add('abrindo');
+}
+
+function fecharBau() {
+  $('#modal-bau').hidden = true;
+  if (!document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
 }
 
 export const aoEntrarNasTarefas = renderTarefas;

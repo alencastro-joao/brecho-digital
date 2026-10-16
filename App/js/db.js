@@ -1148,6 +1148,24 @@ export function pegarPremioDoNivel(n, sorteadas = []) {
   return { ...premio, pecas };
 }
 
+// A primeira versão da trilha foi toda pega em teste, e o João pediu para
+// zerar (2026-10-16): os níveis voltam a esperar o toque, e o que saiu deles
+// (fichas, fichas de repor e as peças dos baús) volta. Roda uma vez por save,
+// e devolve as peças tiradas para a loja recontar o estoque.
+export function zerarTrilhaDeNiveis() {
+  if (state.progresso.trilhaZerada) return [];
+  state.progresso.trilhaZerada = true;
+  const dadas = premiosPegos().map(premioDoNivel)
+    .filter(p => p.tipo === 'fichas').reduce((t, p) => t + p.qtd, 0);
+  state.fichas = Math.max(0, fichas() - dadas);
+  state.fichasDeRepor = 0;
+  state.progresso.premios = [];
+  const tiradas = state.inventario.filter(p => p.origem === 'nivel');
+  state.inventario = state.inventario.filter(p => p.origem !== 'nivel');
+  salvar();
+  return tiradas.map(p => ({ id: p.id, raridade: p.raridade }));
+}
+
 // Ficha de repor a loja: gastar uma troca a arara do dia por outra (a troca
 // em si é da vitrine, que conhece o sorteio).
 export const fichasDeRepor = () => state.fichasDeRepor ?? 0;

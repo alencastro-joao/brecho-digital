@@ -185,7 +185,9 @@ export function renderColecoes() {
 
   $('#col-grupos').replaceChildren(...GRUPOS.map(([id, rotulo]) =>
     el('button', {
-      class: 'col-grupo' + (grupo === id ? ' ativo' : ''),
+      // Pontinho vermelho: o caminho até o item novo para escolher.
+      class: 'col-grupo' + (grupo === id ? ' ativo' : '') +
+        (COLECOES_DO_GRUPO[id]().some(x => x.livres > 0) ? ' ponto-novo' : ''),
       onclick: () => { grupo = id; renderColecoes(); },
     }, rotulo)));
   $('#col-sub').textContent = EXPLICACAO[grupo];
@@ -270,7 +272,8 @@ function cartaoDaColecao(c) {
     : el('small', {}, !c.total ? 'Em breve' : c.completa ? ico('ok') : `${c.tem}/${c.total}`);
 
   return el('button', {
-    type: 'button', class: 'col-tile' + (c.completa ? ' completa' : '') + (aberto ? ' selecionado' : ''),
+    type: 'button', class: 'col-tile' + (c.completa ? ' completa' : '') + (aberto ? ' selecionado' : '') +
+      (c.livres > 0 ? ' ponto-novo' : ''),
     onclick: abrir, title: c.marca,
   }, emblema, el('strong', {}, c.marca), status);
 }
@@ -296,7 +299,7 @@ function painelDaColecao(c) {
       ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
       resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null)
       : el('p', { class: 'col-vazio' }, 'As peças deste tema chegam em breve.'),
-    el('button', { type: 'button', class: 'col-ver', onclick: abrir }, 'Ver coleção ›'));
+    el('button', { type: 'button', class: 'col-ver' + (c.livres > 0 ? ' ponto-novo' : ''), onclick: abrir }, 'Ver coleção ›'));
 }
 
 // O que vai dentro do disco: o logo da marca, a cor pintada ou uma peça.
@@ -385,7 +388,7 @@ function blocoDeEscolha(c) {
       const arte = el('span', { class: 'col-escolha-arte' });
       arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
       return el('button', {
-        type: 'button', class: 'col-escolha-item',
+        type: 'button', class: 'col-escolha-item ponto-novo',
         onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} foi para o seu inventário`, 'rare'); },
       }, arte, el('strong', {}, r.nome));
     })));
