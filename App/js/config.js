@@ -1194,7 +1194,7 @@ export const INTRO = [
   // Logo depois do primeiro baú: a tela onde ele (e todo baú) fica guardado.
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
     dica: 'Todo baú que você ganha vem fechado para cá, a tela de Baús, que fica em Tarefas. ' +
-      'Quando chega um novo, a bolinha vermelha mostra o caminho. Toque no baú para abrir.',
+      'Toque no baú para abrir.',
     premio: { xp: 20 } },
   { ir: 'closet', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica guardado aqui. A cor da borda é a raridade: comum, incomum, ' +
