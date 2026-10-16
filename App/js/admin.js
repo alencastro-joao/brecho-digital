@@ -6,7 +6,7 @@
 // (painel.js), a esteira, as contas (perfil.js › montarLimpeza) e os testes da
 // própria conta (perfil.js › montarTestes), mais fichas e baús de teste.
 
-import { ADMIN, BAUS } from './config.js';
+import { ADMIN, BAUS, SERVICOS } from './config.js';
 import * as db from './db.js';
 import { renderPainel } from './painel.js';
 import { irPara } from './router.js';
@@ -31,4 +31,53 @@ export function montarAdmin() {
 export function aoEntrarNoAdmin() {
   if (!ADMIN) { irPara('vitrine'); return; }
   renderPainel();
+  renderRedes();
+}
+
+// ------------------------- Instagram e Pinterest ---------------------------
+// As chaves dos apps criados no Meta for Developers e no Pinterest Developers.
+// O segredo vai para o servidor e nunca volta: o campo só diz se já existe.
+// O endereço de retorno é o que se cadastra no app de cada rede.
+async function renderRedes() {
+  const caixa = $('#adm-redes');
+  let cfg;
+  try {
+    const r = await fetch('/api/admin/redes', { credentials: 'include' });
+    cfg = await r.json();
+    if (!r.ok) throw new Error(cfg.erro || 'HTTP ' + r.status);
+  } catch (e) {
+    caixa.replaceChildren(el('p', { class: 'tool-hint' }, 'Não consegui ler: ' + e.message));
+    return;
+  }
+  caixa.replaceChildren(...Object.entries(SERVICOS).map(([id, s]) => {
+    const c = cfg[id] || {};
+    const appId = el('input', { type: 'text', value: c.appId || '', placeholder: 'App ID', autocomplete: 'off' });
+    const segredo = el('input', {
+      type: 'password', autocomplete: 'off',
+      placeholder: c.temSegredo ? 'segredo guardado (deixe vazio para manter)' : 'App secret',
+    });
+    const salvar = el('button', { class: 'btn-dark', onclick: async () => {
+      salvar.disabled = true;
+      try {
+        const r = await fetch('/api/admin/redes', {
+          method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ servico: id, appId: appId.value, segredo: segredo.value }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.erro || 'HTTP ' + r.status);
+        toast(`${s.nome} pronto para conectar.`);
+        renderRedes();
+      } catch (e) {
+        toast(e.message, 'aviso');
+        salvar.disabled = false;
+      }
+    } }, 'Salvar');
+    return el('div', { class: 'adm-rede' },
+      el('strong', {}, s.nome + (c.appId && c.temSegredo ? ' · pronto' : '')),
+      el('label', { class: 'tool-campo' }, 'App ID', appId),
+      el('label', { class: 'tool-campo' }, 'Segredo', segredo),
+      el('label', { class: 'tool-campo' }, 'Endereço de retorno (cadastre no app)',
+        el('input', { type: 'text', value: c.volta || '', readonly: true, onclick: (e) => e.target.select() })),
+      el('div', { class: 'tool-row' }, salvar));
+  }));
 }

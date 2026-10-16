@@ -61,6 +61,7 @@ import estado as save
 import estoque
 import feed
 import pessoas
+import redes
 
 SEGREDO = os.environ.get('BD_SEGREDO_ORIGEM') or ''
 CABECALHO_SEGREDO = 'x-origem-brecho'
@@ -76,6 +77,7 @@ ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
 ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$')
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil',
                     '/api/perfil/miniatura')
+ROTA_REDE = re.compile(r'^/api/redes/(instagram|pinterest)/(entrar|volta|sair)$')
 ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 
 
@@ -138,6 +140,13 @@ def responder(codigo, dados, cookies=None):
     if cookies:
         r['cookies'] = cookies
     return r
+
+
+def mandar_para(endereco):
+    """302: a navegação segue para outro endereço (o login de uma rede, ou
+    a volta para o app)."""
+    return {'statusCode': 302, 'headers': {'Location': endereco, 'Cache-Control': 'no-store'},
+            'body': ''}
 
 
 def biscoito_de_sessao(token, expira):
@@ -402,8 +411,53 @@ def rotas_de_limpeza(pedido):
     return None
 
 
+def rotas_de_redes(pedido):
+    """Instagram e Pinterest ligados de verdade (ver redes.py)."""
+    rota, metodo = pedido.rota, pedido.metodo
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if rota == '/api/admin/redes':
+        if not usuario or usuario['papel'] != 'admin':
+            return responder(403, {'erro': 'só o administrador configura as redes'})
+        if metodo == 'GET':
+            return responder(200, redes.ver_config())
+        if metodo == 'PUT':
+            c = pedido.corpo(LIMITE_LOGIN)
+            return responder(200, redes.gravar_config(c.get('servico'), c.get('appId'), c.get('segredo')))
+        return None
+    if rota == '/api/redes' and metodo == 'GET':
+        if not usuario:
+            return responder(401, {'erro': 'entre na sua conta para continuar'})
+        return responder(200, redes.minhas(usuario))
+
+    m = ROTA_REDE.match(rota)
+    servico, acao = m.group(1), m.group(2)
+    app = redes.SITE + '/?rede=' + servico
+    if acao == 'entrar' and metodo == 'GET':
+        if not usuario:
+            return mandar_para(app + '&erro=sessao#/perfil')
+        destino = redes.endereco_de_entrada(usuario, servico)
+        return mandar_para(destino or app + '&erro=config#/perfil')
+    if acao == 'volta' and metodo == 'GET':
+        q = pedido.consulta
+        if q.get('error') or not q.get('code'):
+            return mandar_para(app + '&erro=recusou#/perfil')
+        try:
+            redes.concluir(servico, q.get('code'), q.get('state'))
+        except (ValueError, KeyError) as e:
+            print('redes: volta de %s falhou: %r' % (servico, e))
+            return mandar_para(app + '&erro=falhou#/perfil')
+        return mandar_para(app + '&ok=1#/perfil')
+    if acao == 'sair' and metodo == 'POST':
+        if not usuario:
+            return responder(401, {'erro': 'entre na sua conta para continuar'})
+        return responder(200, redes.desligar(usuario, servico))
+    return None
+
+
 def despachar(pedido):
     rota = pedido.rota
+    if rota == '/api/redes' or rota == '/api/admin/redes' or ROTA_REDE.match(rota):
+        return rotas_de_redes(pedido)
     if rota.startswith('/api/admin/contas') or rota == '/api/admin/painel':
         return rotas_de_limpeza(pedido)
 
