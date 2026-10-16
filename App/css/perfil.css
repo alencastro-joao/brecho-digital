@@ -245,6 +245,7 @@ button.pf-stat:hover small { text-decoration: underline; }
    cartão branco com a foto (na cor da raridade) e os dados embaixo; as pontas
    das fichas vizinhas aparecem dos lados. */
 .pp-modal {
+  z-index: 950;   /* por cima da trilha de níveis e do baú, de onde ela também abre */
   --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
 }
 .pp-ficha {
