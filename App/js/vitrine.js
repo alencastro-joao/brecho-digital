@@ -86,7 +86,28 @@ function levadaHoje(id, iso) {
   return p?.origem === 'vitrine' && !!p.obtidoEm && hojeISO(new Date(p.obtidoEm)) === iso;
 }
 
+// As peças do dia são sorteadas uma vez e ficam no save (`dia.vitrine`). O
+// sorteio embaralha o acervo inteiro, e o acervo cresce várias vezes por dia
+// pela esteira: uma peça nova cadastrada mudava a loja toda no próximo login.
+// Agora a lista do dia vale até a meia-noite (ou até o admin repor a loja);
+// peça tirada do acervo só some dela.
 export function poolDoDia(iso = hojeISO()) {
+  const dia = db.state.dia;
+  const marca = sementeEstoque() ?? 'dia';
+  const doDia = dia.data === iso;
+  if (doDia && dia.vitrine?.marca === marca) {
+    const lista = dia.vitrine.ids.map(pecaDoCatalogo).filter(Boolean);
+    if (lista.length) return lista;
+  }
+  const lista = sortearArara(iso);
+  if (doDia && lista.length) {
+    dia.vitrine = { marca, ids: lista.map(i => i.id) };
+    db.salvar();
+  }
+  return lista;
+}
+
+function sortearArara(iso) {
   const rnd = mulberry32(sementeEstoque() ?? db.sementeDaLoja(iso));
   const { naLoja } = db.modificadoresDaLoja();
   const raridade = (i) => {
