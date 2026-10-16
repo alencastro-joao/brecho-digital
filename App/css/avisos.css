@@ -97,6 +97,7 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
 .aviso-icone.missao { background: var(--tarefas); color: #9a5a00; }
 .aviso-icone.nivel { background: #fff1c2; color: #9a7b13; }
 .aviso-icone.loja { background: var(--loja); color: #2f6b34; }
+.aviso-icone.wishlist { background: var(--board); color: #b0285a; }
 
 .avisos-vazio {
   padding: 6px 22px 24px; font-size: 13px; line-height: 1.5; color: var(--tinta-suave);

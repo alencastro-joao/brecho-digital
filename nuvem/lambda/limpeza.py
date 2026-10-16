@@ -102,6 +102,31 @@ def inventario(eu):
     }
 
 
+def painel():
+    """GET /api/admin/painel — uma varredura da tabela vira os números do dia
+    (a conta mora em painel.py, que o servidor local também usa)."""
+    import estoque
+    import painel as conta
+    _, itens = _ler_tudo()
+    contas = [i for i in itens if i['pk'].startswith('USER#')]
+    ids = {c['id'] for c in contas}
+    uso = {}
+    for s in itens:
+        if s['pk'].startswith('SESSAO#'):
+            u = conta.ultimo_uso_da_sessao(s.get('expira_em'))
+            if u and u > uso.get(s.get('uid'), ''):
+                uso[s.get('uid')] = u
+    lista = [{'id': c['id'], 'criado_em': c.get('criado_em'),
+              'ultimo_uso': max(filter(None, [c.get('ultimo_acesso'), uso.get(c['id'])]), default=None)}
+             for c in contas]
+    posts = [p for p in itens if p['pk'].startswith('POST#') and p.get('autor') in ids]
+    levadas = next((i.get('levadas') or {} for i in itens if i['pk'] == estoque.PK), {})
+    copias = {i['pk'][len('COPIA#'):].replace('#', '|'): i.get('donos') or []
+              for i in itens if i['pk'].startswith('COPIA#')}
+    return conta.resumir(lista, posts, {k: int(v) for k, v in levadas.items()},
+                         estoque.LIMITES, copias)
+
+
 def _backup(pasta, brutos, saem):
     corpo = gzip.compress(json.dumps({'tabela': TABELA, 'itens': brutos},
                                      ensure_ascii=False).encode('utf-8'))

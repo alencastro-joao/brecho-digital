@@ -142,3 +142,25 @@ export async function historico(peca) {
     return null;
   }
 }
+
+// Desfazer o resgate: a cópia volta para a loja e você sai do histórico dela.
+// Devolve false só quando o servidor recusa (passou do tempo, outra pessoa já
+// é dona); sem número ou sem servidor, não há o que acertar e vale desfazer.
+export async function desfazer(peca) {
+  if (!peca?.numero || !RARIDADE[peca.raridade]) return true;
+  let r;
+  try {
+    r = await fetch('/api/estoque/desfazer', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peca: { id: peca.id, raridade: peca.raridade, numero: peca.numero } }),
+    });
+  } catch {
+    return true;
+  }
+  const dados = await r.json().catch(() => ({}));
+  if (!r.ok) return false;
+  mapa = dados.mapa || mapa;
+  historicos.delete(`${chave(peca.id, peca.raridade)}|${peca.numero}`);
+  return true;
+}

@@ -829,6 +829,7 @@
               <button type="button" data-ajuste="conexoes"><i data-i="publicar"></i> Contas conectadas</button>
               <button type="button" data-ajuste="conta"><i data-i="usuario"></i> Sua conta</button>
               <button type="button" data-ajuste="testes"><i data-i="dado"></i> Testes</button>
+              <button type="button" data-ajuste="painel" id="pf-menu-painel" hidden><i data-i="trofeu"></i> Painel</button>
             </nav>
           </div>
         </div>
@@ -908,6 +909,11 @@
             <ul class="limpeza-lista" id="limpeza-lista"></ul>
             <p class="tool-hint" id="limpeza-resumo"></p>
           </div>
+        </section>
+
+        <!-- Só o administrador: os números do dia (js/painel.js) -->
+        <section class="painel-admin" data-ajuste="painel">
+          <div id="painel-corpo"></div>
         </section>
 
         <section class="perfil-dev" data-ajuste="testes">

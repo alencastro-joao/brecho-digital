@@ -745,6 +745,31 @@ export function adicionarPeca(item, { origem = 'vitrine', raridade = null } = {}
   return peca;
 }
 
+// Desfazer o resgate (a loja dá 10 segundos): a foto é tirada antes de pegar,
+// com tudo que pegar mexe — o resgate do dia, as fichas, as estatísticas, as
+// missões (do dia, da semana e da introdução), o XP que elas pagaram e o aviso
+// de missão que caiu no sino. Voltar a foto e tirar a peça deixa o save como se
+// o toque não tivesse acontecido; sem isso, pegar e desfazer em sequência
+// fechava a missão de resgates.
+const FOTO_DO_RESGATE = ['fichas', 'stats', 'missoes', 'semana', 'progresso', 'intro', 'avisos'];
+
+export function fotografarResgate() {
+  const foto = { resgates: state.dia.resgates };
+  for (const k of FOTO_DO_RESGATE) foto[k] = structuredClone(state[k]);
+  return foto;
+}
+
+export function desfazerResgate(id, foto) {
+  const peca = pecaDoInventario(id);
+  if (!peca) return null;
+  state.inventario = state.inventario.filter(p => p !== peca);
+  state.dia.resgates = foto.resgates;
+  for (const k of FOTO_DO_RESGATE) state[k] = foto[k];
+  salvar();
+  avisarIntro();
+  return peca;
+}
+
 export function reordenarInventario(idA, idB) {
   const a = pecaDoInventario(idA), b = pecaDoInventario(idB);
   if (!a || !b) return;

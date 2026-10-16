@@ -218,3 +218,61 @@ def historico(copias, usuario):
              'voce': bool(usuario) and d['M']['uid']['S'] == usuario['id']}
             for d in donos or []]
     return {'historico': resposta}
+
+
+# Quanto tempo depois de levar ainda dá para desfazer (a tela dá 10 s; a folga
+# cobre a ida e a volta da rede).
+DESFAZER_SEG = 60
+
+
+def desfazer(peca, usuario):
+    """POST /api/estoque/desfazer — {id, raridade, numero}: devolve uma cópia
+    que você acabou de levar da loja.
+
+    Só vale se o último dono da cópia é você, foi pela loja e faz menos de um
+    minuto. Você sai do histórico (o resgate não aconteceu). O contador só
+    desce se ninguém levou outra cópia depois: senão o próximo a levar
+    receberia um número que já tem dono, e a cópia fica sem ninguém."""
+    peca = peca or {}
+    (pid, rar), = _validar([peca])
+    try:
+        numero = int(peca.get('numero'))
+    except (TypeError, ValueError):
+        raise ValueError('número da cópia inválido')
+    k = chave(pid, rar)
+    pk = _pk_copia(k, numero)
+    item = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': pk}},
+                            ConsistentRead=True).get('Item') or {}
+    donos = item.get('donos', {}).get('L', [])
+    ultimo = donos[-1]['M'] if donos else {}
+    if (ultimo.get('uid', {}).get('S') != usuario['id']
+            or ultimo.get('como', {}).get('S') != 'vitrine'):
+        raise ValueError('essa cópia não é sua para desfazer')
+    try:
+        levou = datetime.strptime(ultimo['em']['S'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+    except (KeyError, ValueError):
+        raise ValueError('essa cópia não é sua para desfazer')
+    if (datetime.now(timezone.utc) - levou).total_seconds() > DESFAZER_SEG:
+        raise ValueError('passou o tempo de desfazer')
+
+    try:
+        _dynamo.update_item(
+            TableName=TABELA, Key={'pk': {'S': pk}},
+            UpdateExpression='REMOVE donos[%d]' % (len(donos) - 1),
+            ConditionExpression='size(donos) = :n',
+            ExpressionAttributeValues={':n': {'N': str(len(donos))}})
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
+        raise ValueError('essa cópia mudou de dono')
+    try:
+        _dynamo.update_item(
+            TableName=TABELA, Key={'pk': {'S': PK}},
+            UpdateExpression='SET levadas.#k = levadas.#k - :um',
+            ConditionExpression='levadas.#k = :n',
+            ExpressionAttributeNames={'#k': k},
+            ExpressionAttributeValues={':um': {'N': '1'}, ':n': {'N': str(numero)}})
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
+    return {'mapa': mapa()}

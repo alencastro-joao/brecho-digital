@@ -27,7 +27,7 @@ import { instalarPassThrough, precarregarAlpha } from './alpha.js';
 import { criarAura } from './aura.js';
 import { abrirEditar } from './editar.js';
 import { avisarColecaoDaPeca, colecoesDaPeca, chipDaColecao, rendeEscolha } from './colecoes.js';
-import { avisarLojaReposta } from './avisos.js';
+import { avisarLojaReposta, conferirWishlist } from './avisos.js';
 import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
   msAteMeiaNoite, formatarContagem, toast,
@@ -517,6 +517,7 @@ export function montarVitrine() {
   }
 
   atualizarBadge();
+  conferirWishlist();
 }
 
 // Arrastar para reorganizar o mural; clique simples abre a ficha. A diferença
@@ -713,6 +714,7 @@ async function pegar(id, noDOM) {
   }
   if (db.temPeca(id)) return;
 
+  const foto = db.fotografarResgate();
   const nova = db.adicionarPeca(peca, { origem: 'vitrine', raridade });
   if (nova) estoque.numerar([nova]);
   const gratis = ef.gratis && Math.random() < ef.gratis / 100;
@@ -732,12 +734,52 @@ async function pegar(id, noDOM) {
   else if (nova.raridade === 'epic' || nova.raridade === 'rare') falarDe('raro');
   else falarDe('pegou');
 
-  toast(`${nomeDaPeca(peca)} — ${r.nome} · foi para o guarda-roupa`, nova.raridade);
+  avisoComDesfazer(`${nomeDaPeca(peca)} — ${r.nome} · foi para o guarda-roupa`, nova.raridade,
+    () => desfazerResgate(nova, foto));
   avisarColecaoDaPeca(id);
   if (subiu) toast(`Efeito ${marcaDoEfeito('raridade-acima')}: a peça veio ${r.nome.toLowerCase()}, uma raridade acima.`, nova.raridade);
   if (gratis) toast(`Efeito ${marcaDoEfeito('resgate-gratis')}: este resgate não gastou o limite do dia.`, 'rare');
   if (ficha) toast(`Efeito ${marcaDoEfeito('fichas')}: +1 ficha.`, 'rare');
   atualizarBadge();
+}
+
+// Pegou sem querer: 10 segundos para devolver. O aviso do resgate ganha o
+// botão e uma barrinha que esvazia; tocar devolve a cópia para a loja (no
+// servidor, ver estoque.desfazer) e volta o save à foto de antes do toque.
+const TEMPO_DE_DESFAZER = 10e3;
+
+function avisoComDesfazer(texto, tipo, desfazer) {
+  const stack = document.getElementById('toasts');
+  if (!stack) return;
+  let feito = false;
+  const sair = () => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); };
+  const t = el('div', { class: `toast desfazer ${tipo}`, style: { '--tempo': TEMPO_DE_DESFAZER + 'ms' } },
+    el('span', {}, texto),
+    el('button', {
+      type: 'button', class: 'desfazer-btn',
+      onclick: async (e) => {
+        if (feito) return;
+        feito = true;
+        e.currentTarget.disabled = true;
+        await desfazer();
+        sair();
+      },
+    }, 'Desfazer'),
+    el('i', { class: 'desfazer-barra', 'aria-hidden': 'true' }));
+  stack.append(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { feito = true; sair(); }, TEMPO_DE_DESFAZER);
+}
+
+async function desfazerResgate(peca, foto) {
+  if (!await estoque.desfazer(peca)) {
+    toast('Não deu para desfazer: o tempo acabou.', 'aviso');
+    return;
+  }
+  if (!db.desfazerResgate(peca.id, foto)) return;
+  montarVitrine();
+  atualizarBadge();
+  toast(`${nomeDaPeca(pecaDoCatalogo(peca.id))} voltou para a loja.`);
 }
 
 // O nome da marca no aviso do efeito ("Efeito Puma: ...").
