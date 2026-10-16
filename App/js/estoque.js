@@ -52,14 +52,16 @@ export async function carregarEstoque() {
 }
 
 /**
- * Reserva uma cópia de cada peça ({ id, raridade }). Devolve o conjunto das
- * que conseguiu; as esgotadas ficam de fora. Offline, todas passam.
+ * Reserva uma cópia de cada peça ({ id, raridade, origem }). Devolve o conjunto
+ * das que conseguiu; as esgotadas ficam de fora. Offline, todas passam.
+ * A origem (vitrine, presente, semana...) vai para o histórico da cópia.
  */
 export async function levar(pecas) {
   const todas = new Set(pecas.map(p => chave(p.id, p.raridade)));
   if (!pecas.length) return todas;
   try {
-    const feito = await chamar('/api/estoque/levar', { pecas });
+    const feito = await chamar('/api/estoque/levar',
+      { pecas: pecas.map(({ id, raridade, origem }) => ({ id, raridade, origem })) });
     mapa = feito.mapa || mapa;
     numeros = { ...numeros, ...(feito.numeros || {}) };
     online = true;
@@ -92,7 +94,7 @@ export async function numerarAntigas(inventario) {
     let feito;
     try {
       feito = await chamar('/api/estoque/levar',
-        { pecas: lote.map(p => ({ id: p.id, raridade: p.raridade })) });
+        { pecas: lote.map(p => ({ id: p.id, raridade: p.raridade, origem: p.origem })) });
     } catch { return mudou; }
     mapa = feito.mapa || mapa;
     const levou = new Set(feito.levadas || []);
@@ -113,4 +115,30 @@ export async function devolver(pecas) {
   try {
     mapa = (await chamar('/api/estoque/devolver', { pecas })).mapa || mapa;
   } catch { /* sem servidor, nada a acertar */ }
+}
+
+// Por quem a cópia já passou: [{ handle, como, em, voce }], do primeiro dono ao
+// atual. Só cópia numerada tem histórico no servidor; sem número ou sem
+// servidor, devolve null e a ficha mostra só o que o save sabe.
+//
+// A peça vai com a origem e a data dela: cópia numerada antes de o histórico
+// existir ainda não tem registro, e o servidor anota você como primeiro dono.
+const historicos = new Map();
+
+export async function historico(peca) {
+  if (!peca?.numero || !RARIDADE[peca.raridade]) return null;
+  const k = `${chave(peca.id, peca.raridade)}|${peca.numero}`;
+  if (historicos.has(k)) return historicos.get(k);
+  try {
+    const feito = await chamar('/api/estoque/historico', { copias: [{
+      id: peca.id, raridade: peca.raridade, numero: peca.numero,
+      origem: peca.origem || 'vitrine', desde: peca.obtidoEm,
+    }] });
+    const donos = feito.historico?.[k];
+    if (!donos?.length) return null;
+    historicos.set(k, donos);
+    return donos;
+  } catch {
+    return null;
+  }
 }

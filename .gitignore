@@ -30,3 +30,6 @@ desktop.ini
 
 # Miniaturas do feed no servidor local (na nuvem moram no bucket do site)
 App/assets/posts/
+
+# Histórico das cópias no servidor local (gerado ao jogar)
+App/dados/copias.json

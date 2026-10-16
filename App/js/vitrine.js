@@ -704,7 +704,7 @@ async function pegar(id, noDOM) {
   // A cópia é reservada no servidor antes de entrar no guarda-roupa: a última
   // lendária disputada por duas pessoas vai para uma só.
   pegando.add(id);
-  const reserva = await estoque.levar([{ id, raridade }]);
+  const reserva = await estoque.levar([{ id, raridade, origem: 'vitrine' }]);
   pegando.delete(id);
   if (!estoque.conseguiu(reserva, id, raridade)) {
     toast(`${nomeDaPeca(peca)} esgotou — as ${RARIDADE[raridade].tiragem} cópias já têm dona.`, 'aviso');

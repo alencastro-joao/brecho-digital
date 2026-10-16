@@ -28,6 +28,7 @@ esta função só responde `/api/*`.
     GET  /api/estoque          quantas cópias de cada peça já saíram (ver estoque.py)
     POST /api/estoque/levar    reserva uma cópia (409 se esgotou)
     POST /api/estoque/devolver admin: a cópia volta para a loja
+    POST /api/estoque/historico por quem cada cópia já passou
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
     GET  /api/admin/contas     admin: todas as contas e o que cada uma tem
@@ -369,13 +370,15 @@ def rotas_de_estoque(pedido):
     if rota == '/api/estoque' and metodo == 'GET':
         return responder(200, {'limites': estoque.LIMITES, 'mapa': estoque.mapa()})
     if rota == '/api/estoque/levar' and metodo == 'POST':
-        feito = estoque.levar(pedido.corpo(LIMITE_LOGIN).get('pecas'))
+        feito = estoque.levar(pedido.corpo(LIMITE_LOGIN).get('pecas'), usuario)
         return responder(409 if feito['esgotadas'] and not feito['levadas'] else 200, feito)
     if rota == '/api/estoque/devolver' and metodo == 'POST':
         # Devolver solta cópia para todo mundo: só a ferramenta do admin faz isso.
         if usuario['papel'] != 'admin':
             return responder(403, {'erro': 'só o administrador devolve peças'})
         return responder(200, estoque.devolver(pedido.corpo(LIMITE_LOGIN).get('pecas')))
+    if rota == '/api/estoque/historico' and metodo == 'POST':
+        return responder(200, estoque.historico(pedido.corpo(LIMITE_LOGIN).get('copias'), usuario))
     return None
 
 

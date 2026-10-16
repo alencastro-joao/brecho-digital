@@ -306,8 +306,9 @@ function abrirUmBau(nome, bau, abrir) {
 // As peças que saíram de um baú: tiram do estoque da loja e ganham número.
 function entregarPecas(pecas) {
   if (!pecas.length) return;
-  estoque.levar(pecas.map(p => ({ id: p.id, raridade: p.raridade })))
-    .then(() => { estoque.numerar(pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean)); db.salvar(); });
+  const doGuardaRoupa = pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean);
+  estoque.levar(doGuardaRoupa)
+    .then(() => { estoque.numerar(doGuardaRoupa); db.salvar(); });
 }
 
 const abrirBau = () => abrirUmBau('Baú dos dias', PREMIO_SEMANA, db.abrirPremioDaSemana);
