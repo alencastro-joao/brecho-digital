@@ -368,14 +368,13 @@ button.pf-stat:hover small { text-decoration: underline; }
 }
 .pf-obra:hover .pf-obra-resumo { opacity: 1; }
 
-/* Amigos e pessoas: retratos redondos com o primeiro nome. */
+/* Amigos e pessoas: a cabeça de cada um, sem moldura, com o primeiro nome. */
 .pf-grade-pessoas { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 18px 10px; padding: 6px 0; }
 .pf-amigo {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   border: 0; background: none; padding: 0; min-width: 0;
 }
-.pf-amigo .retrato { border-radius: 50%; transition: transform .15s; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wii-borda); }
-.pf-amigo:hover .retrato, .pf-amigo:hover .pf-mais { transform: translateY(-2px); }
+.pf-amigo:hover .cabecinha, .pf-amigo:hover .pf-mais { transform: translateY(-2px); }
 .pf-amigo small { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pf-mais {
   width: 64px; height: 64px; border-radius: 50%;

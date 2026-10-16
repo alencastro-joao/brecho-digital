@@ -129,12 +129,12 @@ html body .pergunta-botoes .btn-dark.perigo:hover { background-color: #a52f23; }
 .rj-total { margin: 0; font-size: 14px; color: var(--tinta-suave); }
 
 /* ------------------------------- Sino e painel --------------------------- */
-html body :is(.avisos-btn, .perfil-atalho) {
+html body .avisos-btn {
   border: 2px solid var(--wii-borda);
   box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), var(--sombra);
 }
 html body .avisos-btn { background: var(--perola); }
-html body :is(.avisos-btn, .perfil-atalho):hover { border-color: var(--wii); }
+html body .avisos-btn:hover { border-color: var(--wii); }
 html body .avisos-btn[aria-expanded="true"] {
   border-color: var(--wii);
   box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho);
@@ -146,7 +146,6 @@ html body .avisos-contador {
 }
 @media (max-width: 900px) {
   html body .avisos-btn { border-color: transparent; background: none; box-shadow: none; }
-  html body .perfil-atalho { box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau); }
 }
 
 html body .avisos-painel {

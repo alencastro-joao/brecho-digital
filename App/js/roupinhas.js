@@ -1368,7 +1368,8 @@ const desenhar = (arte, m, cor, k = 1) => `
 // que vai na frente dele (por camada) e o que vai depois do rosto.
 //
 // `roupas` é um mapa de lugar do corpo para id da peça — { torso: 'camiseta' }.
-export function partesDasRoupas(roupas, corpo) {
+// `soCabeca` fica só com o que se veste na cabeça (chapéu, óculos, bandana).
+export function partesDasRoupas(roupas, corpo, soCabeca = false) {
   const m = medidasDoCorpo(corpo);
   const atras = [], frente = [], rosto = [];
   // Peça de cabeça que cobre o cabelo diz a partir de que altura ele ainda
@@ -1389,6 +1390,7 @@ export function partesDasRoupas(roupas, corpo) {
     // desenhada no molde, sai do tamanho da cabeça ou do tronco de agora.
     const z = r.z ?? SLOTS[slot].z;
     const regiao = regiaoDaRoupinha(r, z);
+    if (soCabeca && regiao !== 'cabeca') continue;
     const k = escalaDe(regiao);
 
     if (r.atras) atras.push(naRegiao(regiao, desenhar(r.atras, m, cor, k) + (r.arte ? '' : detalhe)));

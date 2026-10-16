@@ -20,7 +20,7 @@ import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { ico, emo } from './icones.js';
-import { aparenciaDoPerfil, aparenciaAtual, retrato } from './avatar.js';
+import { aparenciaDoPerfil, aparenciaAtual, cabeca } from './avatar.js';
 import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.js';
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
@@ -47,13 +47,13 @@ const autorDe = (id) => sou(id)
   ? { nome: db.state.usuario.nome, handle: db.state.usuario.handle, cor: COR_PROPRIA }
   : perfilDe(id) || { id, nome: 'alguém', handle: '@?', cor: '#eee' };
 
-// O personagem de quem assina o post — e a roupinha dele. O retrato é um
-// recorte da cabeça, então o que aparece aqui é chapéu e óculos.
+// O personagem de quem assina o post — e a roupinha dele. O retrato é só a
+// cabeça, sem moldura, então o que aparece aqui é chapéu e óculos.
 const aparenciaDe = (id) => sou(id) ? aparenciaAtual() : aparenciaDoPerfil(autorDe(id));
 const roupasDe = (id) => sou(id) ? db.roupasEquipadas() : roupasDoPerfil(autorDe(id));
 
 export const retratoDe = (id, tamanho = 34) =>
-  retrato(aparenciaDe(id), tamanho, autorDe(id).cor, roupasDe(id));
+  cabeca(aparenciaDe(id), tamanho, roupasDe(id));
 
 // Clicar em quem assina abre o perfil: o seu é a tela de perfil de sempre,
 // o dos outros é a página pública.

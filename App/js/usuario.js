@@ -20,7 +20,7 @@ import { PERFIS_MOCK, CATEGORIAS, RARIDADE, escalaGrade, CORES_FAVORITAS } from 
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
-import { aparenciaDoPerfil, retrato } from './avatar.js';
+import { aparenciaDoPerfil, retrato, cabeca } from './avatar.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
@@ -638,7 +638,7 @@ export function cartaoDeObra({ id = null, nome, thumb, tipo, solto = false, selo
   }, foto);
 }
 
-// Um atalho para a página de alguém: o retrato redondo e o primeiro nome.
+// Um atalho para a página de alguém: a cabeça do avatar e o primeiro nome.
 // É a aba de amigos do seu perfil e a de pessoas daqui.
 export const botaoDePerfil = (p) =>
   el('button', {
@@ -646,7 +646,7 @@ export const botaoDePerfil = (p) =>
     title: p.bio,
     onclick: () => abrirPerfilDe(p.id),
   },
-    retrato(aparenciaDoPerfil(p), 64, p.cor, roupasDoPerfil(p)),
+    cabeca(aparenciaDoPerfil(p), 64, roupasDoPerfil(p)),
     el('small', {}, p.nome.split(' ')[0])
   );
 
@@ -660,10 +660,11 @@ export const botaoProcurar = (aoFechar) =>
 export const botoesDeOutrosPerfis = (exceto = null, quantos = 6) =>
   PERFIS_MOCK.filter(o => o.id !== exceto).slice(0, quantos).map(botaoDePerfil);
 
-// O retrato grande do topo: o busto dentro do anel na cor da paleta. Nasce em
-// 150px; no celular o CSS o encolhe (zoom), sem redesenhar.
+// O retrato grande do topo: o busto dentro do anel na cor da paleta, aberto
+// o bastante para caber o cabelo inteiro (afro, coque e espetado incluídos).
+// Nasce em 150px; no celular o CSS o encolhe (zoom), sem redesenhar.
 export const retratoDoPerfil = (aparencia, cor, roupas) =>
-  retrato(aparencia, 150, cor, roupas, 1.75);
+  retrato(aparencia, 150, cor, roupas, 1.9, 0.1);
 
 // O retrato do topo com o nível em volta dele: o anel enche com o XP do
 // nível (`pct`, de 0 a 1; sem ele, o anel vem cheio) e a moeda embaixo diz o
