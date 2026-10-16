@@ -123,14 +123,14 @@ const corpo = (id, cor, extra) => {
 let corpoDesenhado = null;
 export function usarCorpoDesenhado(imagens) { corpoDesenhado = imagens; }
 
-const corpoDaArtista = (id, pele, traco) => {
+const corpoDaArtista = (id, pele, traco, imagens) => {
   const { STAGE_W: W, STAGE_H: H } = CONFIG;
   const camada = (nome, src, cor) => `
   <mask id="${id}-${nome}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
     <image href="${src}" x="0" y="0" width="${W}" height="${H}"/>
   </mask>
   <rect x="0" y="0" width="${W}" height="${H}" fill="${cor}" mask="url(#${id}-${nome})"/>`;
-  return camada('pele', corpoDesenhado.pele, pele) + camada('linha', corpoDesenhado.linha, traco);
+  return camada('pele', imagens.pele, pele) + camada('linha', imagens.linha, traco);
 };
 
 // O cabelo engorda o mesmo tanto que o corpo. A silhueta ganhou CONTORNO/2 de
@@ -204,7 +204,7 @@ export function svgAvatar({
   <!-- roupinha que fica atrás do corpo: capa, mochila, asas, capuz caído -->
   ${veste.atras}
 
-  ${corpoDesenhado ? corpoDaArtista(idCorte, ap.pele, escurecerTraco(ap.traco)) : `
+  ${corpoDesenhado || CORPOS[ap.corpo]?.arte ? corpoDaArtista(idCorte, ap.pele, escurecerTraco(ap.traco), corpoDesenhado || CORPOS[ap.corpo].arte) : `
   ${corpo(ap.corpo, ap.traco, CONTORNO)}
   ${corpo(ap.corpo, ap.pele, 0)}`}
 

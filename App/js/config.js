@@ -476,6 +476,30 @@ export const CORPOS = {
     }),
   },
 };
+// Corpos desenhados pela artista: a silhueta vem de duas máscaras de 600×1200
+// (assets/corpos) — a pele e o traço —, pintadas na cor de quem veste. As
+// medidas e as partes são as do corpo de código de mesma família, então as
+// roupinhas seguem o mesmo molde até a silhueta ser recalibrada.
+CORPOS.masculinoArte = {
+  nome: 'Masculino (arte)',
+  medidas: CORPOS.masculino.medidas,
+  partes: CORPOS.masculino.partes,
+  arte: {
+    pele: 'assets/corpos/masculino-arte-pele.png',
+    linha: 'assets/corpos/masculino-arte-linha.png',
+  },
+};
+
+CORPOS.femininoArte = {
+  nome: 'Feminino (arte)',
+  medidas: CORPOS.feminino.medidas,
+  partes: CORPOS.feminino.partes,
+  arte: {
+    pele: 'assets/corpos/feminino-arte-pele.png',
+    linha: 'assets/corpos/feminino-arte-linha.png',
+  },
+};
+
 export const ORDEM_CORPOS = Object.keys(CORPOS);
 
 // Tom de pele: a cor do corpo e o traço que a acompanha. As humanas vêm
