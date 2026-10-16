@@ -9,7 +9,7 @@
 
 import {
   MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
-  RARIDADE, escalaGrade, BAUS, PREMIOS_DE_NIVEL,
+  RARIDADE, escalaGrade, BAUS, CHANCE_NO_BAU, PREMIOS_DE_NIVEL,
 } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
@@ -240,7 +240,7 @@ function renderSemana() {
 // brilha e o toque abre; aberto, a peça que saiu aparece embaixo.
 function trilha(selos, { nome, bau, icone, dourado, pronto, abrir, aberto }) {
   const { atual } = premioDoBau(bau, db.nivel());
-  const dica = `${nome}: ${descreverPremio(atual)}.`;
+  const dica = `${nome} · ${descreverPremio(atual)}.`;
   const botaoBau = el('button', {
     type: 'button', 'aria-label': nome,
     class: 'tf-bau' + (dourado ? ' ouro' : '') + (pronto ? ' pronto' : '') + (aberto ? ' aberto' : ''),
@@ -260,11 +260,10 @@ function trilha(selos, { nome, bau, icone, dourado, pronto, abrir, aberto }) {
   ] : []));
 }
 
-// "2 peças (rara e incomum) + 250 XP"
-function descreverPremio({ pecas, xp }) {
-  const nomes = pecas.map(f => RARIDADE[f]?.nome.toLowerCase());
-  const lista = nomes.length > 1 ? `${nomes.slice(0, -1).join(', ')} e ${nomes.at(-1)}` : nomes[0];
-  return `${pecas.length === 1 ? '1 peça' : `${pecas.length} peças`} (${lista}) + ${xp} XP`;
+// "Baú raro: 3 a 5 peças + 300 XP"
+function descreverPremio({ bau, xp }) {
+  const b = BAUS[bau];
+  return `${b.nome}: ${b.min} a ${b.max} peças + ${xp} XP`;
 }
 
 function miniPeca(peca) {
@@ -272,17 +271,27 @@ function miniPeca(peca) {
     el('div', { class: 'peca-caixa' }, el('img', { src: peca.src, alt: nomeDaPeca(peca) })));
 }
 
-// As peças de um baú: uma por faixa do degrau do seu nível. Cada uma é uma
-// peça que você ainda não tem e que não esgotou; sem nenhuma na faixa, tenta a
-// de baixo (e só sobe se não houver nada abaixo). Nunca repete no mesmo baú.
-function sortearPremio(bau) {
-  return sortearPecas(premioDoBau(bau, db.nivel()).atual.pecas);
+// As peças de um baú: a quantidade sai da faixa do baú (BAUS) e a raridade de
+// cada uma de CHANCE_NO_BAU. Cada peça é uma que você ainda não tem e que não
+// esgotou; sem nenhuma na raridade sorteada, tenta a de baixo (e só sobe se
+// não houver nada abaixo). Nunca repete no mesmo baú.
+function sortearRaridadeDoBau() {
+  const opcoes = Object.entries(CHANCE_NO_BAU);
+  let x = Math.random() * opcoes.reduce((t, [, pct]) => t + pct, 0);
+  for (const [id, pct] of opcoes) {
+    if (x < pct) return id;
+    x -= pct;
+  }
+  return opcoes[0][0];
 }
 
-function sortearPecas(faixas) {
+function sortearPecas(bauId) {
+  const { min, max } = BAUS[bauId];
+  const qtd = min + Math.floor(Math.random() * (max - min + 1));
   const escolhidas = new Set();
   const sorteadas = [];
-  for (const pedida of faixas) {
+  for (let i = 0; i < qtd; i++) {
+    const pedida = sortearRaridadeDoBau();
     for (const faixa of faixasDeTroca(pedida)) {
       const lista = catalogo.itens.filter(it => !escolhidas.has(it.id) &&
         !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
@@ -297,10 +306,11 @@ function sortearPecas(faixas) {
 }
 
 function abrirUmBau(nome, bau, abrir) {
-  const r = abrir(sortearPremio(bau));
+  const tipo = premioDoBau(bau, db.nivel()).atual.bau;
+  const r = abrir(sortearPecas(tipo));
   if (!r) return;
   entregarPecas(r.pecas);
-  mostrarBau(nome, r.pecas, { xp: r.xp, bau: bau === BAU_ESPECIAL ? 'lendario' : 'epico' });
+  mostrarBau(nome, r.pecas, { xp: r.xp, bau: tipo });
 }
 
 // As peças que saíram de um baú: tiram do estoque da loja e ganham número.
@@ -367,7 +377,7 @@ function renderTrilha() {
 // o que saiu.
 function pegarPremio(n, { quieto = false } = {}) {
   const p = PREMIOS_DE_NIVEL.find(x => x.nivel === n);
-  const r = db.pegarPremioDoNivel(n, p?.tipo === 'bau' ? sortearPecas(BAUS[p.bau].pecas) : []);
+  const r = db.pegarPremioDoNivel(n, p?.tipo === 'bau' ? sortearPecas(p.bau) : []);
   if (!r) return null;
   entregarPecas(r.pecas);
   if (!quieto && r.tipo === 'bau') mostrarBau(BAUS[r.bau].nome, r.pecas, { bau: r.bau });
@@ -408,12 +418,16 @@ function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {}) {
   caixa.replaceChildren(ico('presente'));
   $('#bau-nome').textContent = nome;
   $('#bau-extra').textContent = [xp ? `+${xp} XP` : '', extra].filter(Boolean).join(' · ');
+  const passo = Math.min(0.2, 1.8 / Math.max(1, lista.length));
+  $('#bau-saiu').className = 'bau-saiu' + (lista.length > 6 ? ' muitas' : '');
+  // As mais raras primeiro: é o que a pessoa quer ver.
+  lista.sort((a, b) => ordem(b.raridade) - ordem(a.raridade));
   $('#bau-saiu').replaceChildren(...(lista.length ? lista.map(({ peca, raridade }, i) => {
     const r = RARIDADE[raridade];
     const cor = r?.aura && r.aura !== 'arco-iris' ? r.aura : '#8a96a0';
     return el('button', {
       type: 'button', class: 'bau-item', title: nomeDaPeca(peca),
-      style: { '--atraso': `${0.8 + i * 0.2}s`, '--aura': cor },
+      style: { '--atraso': `${0.8 + i * passo}s`, '--aura': cor },
       onclick: () => { fecharBau(); abrirFichaDePeca(lista.map(x => x.peca), i, { minha: true }); },
     },
       el('div', { class: 'bau-item-img' },
@@ -427,6 +441,8 @@ function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {}) {
   void modal.offsetWidth;            // reinicia a animação se abrir dois seguidos
   modal.classList.add('abrindo');
 }
+
+const ordem = (f) => Object.keys(CHANCE_NO_BAU).indexOf(f);
 
 function fecharBau() {
   $('#modal-bau').hidden = true;

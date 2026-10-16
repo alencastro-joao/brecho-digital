@@ -845,20 +845,15 @@ export const MISSOES_SEMANA = [
 // semana, e 3 semanas carimbadas abrem o baú semanal (BAU_ESPECIAL).
 export const MARCOS_SEMANA = { fichas: { missoes: 3, fichas: 6 } };
 
-// Os baús crescem com o nível: quanto mais alto, mais peças e mais raras.
-// `pecas` é uma faixa por peça sorteada. Se a faixa não tem peça que você
-// ainda não tem (ou esgotou), o sorteio desce uma faixa, e só sobe se não
-// houver nada abaixo.
+// Os baús crescem com o nível: quanto mais alto, maior o baú (ver BAUS).
 //
 // Baú dos dias: 5 dias carimbados na mesma semana.
 export const PREMIO_SEMANA = {
   carimbos: 5,
   porNivel: [
-    { desde: 1,  xp: 200, pecas: ['rare'] },
-    { desde: 5,  xp: 250, pecas: ['rare', 'uncommon'] },
-    { desde: 10, xp: 300, pecas: ['rare', 'rare'] },
-    { desde: 20, xp: 400, pecas: ['epic', 'rare', 'rare'] },
-    { desde: 30, xp: 500, pecas: ['epic', 'epic', 'rare'] },
+    { desde: 1,  xp: 200, bau: 'incomum' },
+    { desde: 10, xp: 300, bau: 'raro' },
+    { desde: 30, xp: 500, bau: 'epico' },
   ],
 };
 
@@ -866,11 +861,9 @@ export const PREMIO_SEMANA = {
 export const BAU_ESPECIAL = {
   semanas: 3,
   porNivel: [
-    { desde: 1,  xp: 300, pecas: ['epic', 'rare'] },
-    { desde: 5,  xp: 400, pecas: ['epic', 'rare', 'rare'] },
-    { desde: 10, xp: 500, pecas: ['epic', 'epic', 'rare'] },
-    { desde: 20, xp: 650, pecas: ['legendary', 'epic', 'rare'] },
-    { desde: 30, xp: 800, pecas: ['legendary', 'epic', 'epic', 'rare'] },
+    { desde: 1,  xp: 300, bau: 'raro' },
+    { desde: 10, xp: 500, bau: 'epico' },
+    { desde: 30, xp: 800, bau: 'lendario' },
   ],
 };
 
@@ -939,14 +932,22 @@ export function progressoDoNivel(total) {
 // (Tarefas → tocar no nível). Três tipos:
 //   fichas: `qtd` fichas (FICHAS.porResgate viram um resgate)
 //   repor:  `qtd` fichas de repor a loja — usar uma troca a arara do dia
-//   bau:    um baú de BAUS, com peças sorteadas na faixa de cada uma
+//   bau:    um baú de BAUS, com peças sorteadas por CHANCE_NO_BAU
 // A cada 5 níveis um baú épico; a cada 10, o lendário.
 export const BAUS = {
-  comum:    { nome: 'Baú comum',    pecas: ['uncommon', 'common'] },
-  raro:     { nome: 'Baú raro',     pecas: ['rare', 'uncommon'] },
-  epico:    { nome: 'Baú épico',    pecas: ['epic', 'rare'] },
-  lendario: { nome: 'Baú lendário', pecas: ['legendary', 'epic', 'rare'] },
+  comum:    { nome: 'Baú comum',    min: 1,  max: 2 },
+  incomum:  { nome: 'Baú incomum',  min: 2,  max: 3 },
+  raro:     { nome: 'Baú raro',     min: 3,  max: 5 },
+  epico:    { nome: 'Baú épico',    min: 5,  max: 8 },
+  lendario: { nome: 'Baú lendário', min: 10, max: 15 },
 };
+
+// A raridade de cada peça de baú, em %: a mesma para os cinco baús (o que
+// muda entre eles é a quantidade). Diferente da loja, que tem a cota fixa da
+// arara. Comum e incomum são o normal; épica é um "oooh"; lendária é festa.
+// Por peça: num baú lendário (10 a 15 peças) sai uma lendária ~6% das vezes
+// e pelo menos uma épica ~30%.
+export const CHANCE_NO_BAU = { common: 55, uncommon: 30, rare: 11.5, epic: 3, legendary: 0.5 };
 
 export function premioDoNivel(n) {
   if (n % 10 === 0) return { nivel: n, tipo: 'bau', bau: 'lendario' };
@@ -954,7 +955,7 @@ export function premioDoNivel(n) {
   switch (n % 5) {
     case 1: return { nivel: n, tipo: 'fichas', qtd: 3 + Math.floor(n / 10) * 2 };
     case 2: return { nivel: n, tipo: 'repor', qtd: n >= 20 ? 2 : 1 };
-    case 3: return { nivel: n, tipo: 'bau', bau: n >= 20 ? 'raro' : 'comum' };
+    case 3: return { nivel: n, tipo: 'bau', bau: n >= 20 ? 'raro' : n >= 10 ? 'incomum' : 'comum' };
     default: return { nivel: n, tipo: 'fichas', qtd: FICHAS.porResgate };
   }
 }

@@ -211,6 +211,7 @@
   background-image: var(--brilho-topo); box-shadow: inset 0 -3px 0 rgba(60, 80, 95, .16);
 }
 /* Os baús na cor da raridade de cima. */
+.tn-nivel.bau-incomum .tn-ico { color: #2fbf63; border-color: #9ae0b5; }
 .tn-nivel.bau-raro .tn-ico { color: #2f7ff0; border-color: #b9d6f2; }
 .tn-nivel.bau-epico .tn-ico { color: #9b46f0; border-color: #c3a6f2; }
 .tn-nivel.bau-lendario .tn-ico { color: #b8860b; border-color: #e3cf8f; background: #fbf1d0 var(--brilho-topo); }
@@ -241,10 +242,18 @@
   background: var(--perola); border: 3px solid var(--wii-borda); color: var(--tinta);
   box-shadow: inset 0 1px 0 #fff, inset 0 -5px 0 var(--perola-bloco);
 }
+.bau-caixa.bau-incomum { color: #2fbf63; border-color: #9ae0b5; }
 .bau-caixa.bau-raro { color: #2f7ff0; border-color: #b9d6f2; }
 .bau-caixa.bau-epico { color: #9b46f0; border-color: #c3a6f2; }
-.bau-caixa.bau-lendario { color: #b8860b; border-color: #e3cf8f; background: #fbf1d0 var(--brilho-topo); }
-.bau-saiu { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 0; }
+.bau-caixa.bau-lendario { color: #b8860b; border-color: #e3cf8f; background: #fbf1d0 var(--brilho-topo); box-shadow: 0 0 30px rgba(232, 196, 106, .7); }
+.bau-saiu {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 0;
+  max-height: 52vh; overflow-y: auto; padding: 6px;
+}
+.bau-saiu.muitas { gap: 8px; }
+.bau-saiu.muitas .bau-item-img { width: 66px; height: 66px; border-radius: 14px; border-width: 2px; }
+.bau-saiu.muitas .bau-item-img .peca-caixa { inset: 5px; }
+.bau-saiu.muitas .bau-item small { font-size: 9px; }
 .bau-item {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
 }
