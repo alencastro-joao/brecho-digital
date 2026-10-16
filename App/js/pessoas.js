@@ -136,6 +136,9 @@ export async function seguirNoServidor(id, segue) {
 // hora, sem pedir de novo ao servidor.
 const leitoresDeSeguidores = new Set();
 let ultimosSeguidores = null;
+// Quantas contas reais seguem você, pela última leitura do servidor.
+export const quantosMeSeguem = () => ultimosSeguidores?.length ?? 0;
+
 export function aoLerSeguidores(fn) {
   leitoresDeSeguidores.add(fn);
   if (ultimosSeguidores) fn(ultimosSeguidores);

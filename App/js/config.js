@@ -798,7 +798,7 @@ export const BOARD = {
 };
 
 export const ASSINATURA_PADRAO = {
-  texto: 'Alencastrk',
+  texto: '',   // vazio = o nome da conta (db.js põe no login)
   fonte: 'serif',
   tamanho: 52,
   cor: '#1a1a1a',
@@ -1374,10 +1374,3 @@ export const SERVICOS = {
     ],
   },
 };
-
-// Trilha sonora: o player procura estes arquivos em assets/audio/.
-// Sem os arquivos, o player aparece desabilitado com aviso (não quebra).
-export const TRILHAS = [
-  { id: 'base',      nome: 'Tema base',        sub: 'versão original da casa', src: 'assets/audio/base.mp3' },
-  { id: 'collab-01', nome: 'Versão do mês',    sub: 'produtor convidado #01',  src: 'assets/audio/collab-01.mp3' },
-];

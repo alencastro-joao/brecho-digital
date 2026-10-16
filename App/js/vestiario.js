@@ -434,13 +434,7 @@ function renderFicha() {
 
   if (!r) {
     ficha.replaceChildren(el('div', { class: 'vs-ficha-vazia' },
-      el('p', {}, el('strong', {}, 'Um clique'), ' abre a peça aqui. ',
-        el('strong', {}, 'Dois cliques'), ' vestem, e dois de novo tiram. ',
-        'Arrastando: do saco para o corpo veste, do corpo para o saco tira, e ',
-        'dentro do saco arruma as casas.'),
-      el('p', {}, 'O que você veste aqui aparece no seu perfil e no retrato do ' +
-        'feed. No Stylist o avatar continua pelado, para a roupa de verdade ' +
-        'cair no corpo.')));
+      el('p', {}, 'Toque para ver, dois toques para vestir.')));
     return;
   }
 

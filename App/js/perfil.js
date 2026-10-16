@@ -33,7 +33,7 @@ import { atualizarBadge, montarVitrine } from './vitrine.js';
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
-import { sincronizarSocial } from './pessoas.js';
+import { sincronizarSocial, quantosMeSeguem } from './pessoas.js';
 import { PALETAS, paletaAtual, escolherPaleta } from './paleta.js';
 import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao, CORES_FAVORITAS } from './config.js';
@@ -134,7 +134,7 @@ export function renderPerfil() {
   $('#perfil-stats').replaceChildren(
     numeroDoPerfil(db.state.inventario.length, 'peças',
       `${plural(db.state.looks.length, 'look', 'looks')} · ${plural(db.state.boards.length, 'colagem', 'colagens')}`),
-    numeroDoPerfil(u.seguidores, 'seguidores', `você segue ${plural(u.seguindo.length, 'pessoa', 'pessoas')}`),
+    numeroDoPerfil(quantosMeSeguem(), 'seguidores', `você segue ${plural(u.seguindo.length, 'pessoa', 'pessoas')}`),
     numeroDoPerfil(amigos.length, 'amigos', `${plural(curtidas, 'curtida', 'curtidas')} nos seus posts`,
       () => { abaAtual = 'amigos'; renderPerfil(); }));
 

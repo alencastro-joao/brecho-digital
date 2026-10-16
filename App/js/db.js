@@ -50,7 +50,6 @@ function estadoInicial() {
       bio: 'garimpando peça por peça.',   // o que os outros leem no seu perfil
       criadoEm: new Date().toISOString(),
       seguindo: [],
-      seguidores: 12,
       assinatura: { ...ASSINATURA_PADRAO },   // padrão de quem assina as colagens
       preferencias: {
         sombra: true,               // padrão da sombra nas peças da colagem
@@ -261,6 +260,12 @@ export function iniciarEstado(conta) {
   state.usuario.email = conta.email;
   state.usuario.papel = conta.papel;
   state.usuario.criadoEm = state.usuario.criadoEm || conta.criadoEm;
+  // Colagem assina com o nome de quem fez. "Alencastrk" foi o padrão de
+  // todo mundo por um tempo; só o admin escolheu isso de verdade.
+  const assinatura = state.usuario.assinatura;
+  if (!assinatura.texto || (assinatura.texto === 'Alencastrk' && conta.papel !== 'admin')) {
+    assinatura.texto = conta.nome || '';
+  }
 
   virarODiaSeNecessario();
   salvar();

@@ -827,9 +827,6 @@ export function alternarSeguir(id) {
   } else {
     lista.push(id);
     db.progredirMissao('seguir');
-    // O contador de seguidores do fictício é só um número do protótipo. O de uma
-    // conta real vem do servidor, então não há o que somar aqui.
-    if (ehFicticio(id)) db.state.usuario.seguidores += 1;
   }
   db.salvar();
   render();

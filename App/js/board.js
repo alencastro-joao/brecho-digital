@@ -64,7 +64,10 @@ function novaColagem() {
     nome: '',
     formato: BOARD.FORMATO_PADRAO,
     margem: BOARD.MARGEM_PADRAO,
-    assinatura: { ...db.state.usuario.assinatura },
+    assinatura: {
+      ...db.state.usuario.assinatura,
+      texto: db.state.usuario.assinatura.texto || db.state.usuario.nome || '',
+    },
     itens: [],
     guias: { h: [], v: [] },
   };
@@ -1377,6 +1380,9 @@ export function abrirBoard(id) {
 }
 
 export function aoEntrarNoBoard() {
+  // A mesa vazia nasceu antes do login (ou na conta anterior): refaz com a
+  // assinatura de quem está entrando agora.
+  if (!board.id && !board.itens.length) board = novaColagem();
   montarBoard();
   montarPaleta();
   encaixar();
