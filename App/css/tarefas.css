@@ -346,3 +346,13 @@
   .bs-head h1 { font-size: 21px; }
   .bs-grade { grid-template-columns: 1fr 1fr; }
 }
+
+/* O baú ganho voando até o botão de Tarefas (js/baus.js). */
+.bau-voando {
+  position: fixed; z-index: 2000; width: 64px; height: 64px; border-radius: 18px; font-size: 36px;
+  pointer-events: none; transform-origin: center; box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
+}
+.sidebar-btn.recebeu { animation: tarefas-recebe .55s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes tarefas-recebe {
+  0% { transform: scale(1); } 35% { transform: scale(1.22) rotate(-6deg); } 100% { transform: scale(1); }
+}

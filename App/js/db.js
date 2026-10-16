@@ -1162,11 +1162,16 @@ export function abrirBauEspecial() {
 // para cá fechado: { id, tipo (de BAUS), origem (a das peças), de, em }. As
 // peças só são sorteadas na hora de abrir, pela tela, que conhece o catálogo.
 export const bausGuardados = () => state.baus ?? [];
+// Quem quiser mostrar o baú chegando (a animação dele voando até Tarefas)
+// escuta aqui.
+const ouvintesBau = new Set();
+export const onBauGuardado = (fn) => { ouvintesBau.add(fn); return () => ouvintesBau.delete(fn); };
 
 export function guardarBau(tipo, origem, de) {
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   state.baus = [...bausGuardados(), { id, tipo, origem, de, em: new Date().toISOString() }];
   salvar();
+  ouvintesBau.forEach(fn => fn(tipo));
 }
 
 export function abrirBauGuardado(id, sorteadas = []) {

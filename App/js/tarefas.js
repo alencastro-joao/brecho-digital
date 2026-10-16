@@ -323,13 +323,12 @@ export function sortearPecas(bauId) {
   return sorteadas;
 }
 
-// Pegar o baú da trilha: o XP entra na hora e o baú vai fechado para a tela
-// de Baús, que abre em seguida para ele ser aberto lá.
+// Pegar o baú da trilha: o XP entra na hora e o baú voa fechado para Tarefas,
+// onde fica na tela de Baús até ser aberto.
 function pegarUmBau(pegar) {
   const r = pegar();
   if (!r) return;
   toast(`${BAUS[r.bau].nome} guardado em Baús. +${r.xp} XP`, 'rare');
-  irPara('baus');
 }
 
 // As peças que saíram de um baú: tiram do estoque da loja e ganham número.
