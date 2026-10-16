@@ -435,12 +435,21 @@
 .look-secao { margin-top: 18px; }
 .look-secao h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; }
 .look-secao h4 small { font-weight: 700; color: #2f9e5a; }
-.look-pecas { grid-template-columns: repeat(4, minmax(0, 1fr)); width: 90%; }
+/* As peças em cima da imagem: uma fileira só, que desliza para o lado quando
+   não cabe; cada uma com uns 70 px, 30% menor que a grade de antes. */
+.pf-grade.look-pecas {
+  display: flex; flex-wrap: nowrap; gap: 8px;
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.look-pecas::-webkit-scrollbar { display: none; }
+.look-secao .pf-grade.look-pecas button.up-peca { flex: 0 0 72px; width: 72px; border-radius: 12px; }
+.look-pecas .up-peca .peca-caixa { inset: 8px; }
 .look-secao-pecas { margin: 0 0 14px; }
 .look-pecas .up-peca.tenho::after {
-  content: '✓'; position: absolute; right: 6px; top: 6px; z-index: 2;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #2f9e5a; color: #fff; font-size: 11px; font-weight: 800;
+  content: '✓'; position: absolute; right: 4px; top: 4px; z-index: 2;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: #2f9e5a; color: #fff; font-size: 9px; font-weight: 800;
   display: grid; place-items: center;
 }
 .look-secao .post-thread.aberta { margin-top: 0; max-height: none; }
