@@ -36,6 +36,10 @@ PECAS_POR_OBRA = 40
 OBRAS_MAX = 40
 GUARDA_ROUPA_MAX = 600
 WISHLIST_MAX = 200
+# A cor favorita (Personagem › Cor favorita): uma das cores com coleção
+# (COLECOES_DE_COR em js/config.js). Fora da lista não entra.
+CORES_FAVORITAS = {'Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Rosa',
+                   'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo'}
 
 
 def preparar():
@@ -85,6 +89,7 @@ def _cartao(con, linha, eu_id=None):
         'bio': perfil.get('bio') or '',
         'avatar': perfil.get('avatar') or {},
         'equipado': perfil.get('equipado') or {},
+        'corFavorita': perfil.get('corFavorita') or '',
         'seguidores': conta('SELECT COUNT(*) FROM segue WHERE para=?', uid),
         'seguindo': conta('SELECT COUNT(*) FROM segue WHERE de=?', uid),
     }
@@ -262,6 +267,9 @@ def limpar_perfil(corpo, eu_id=None):
         'avatar': _mapa(corpo.get('avatar'), 8),
         'equipado': _mapa(corpo.get('equipado'), 12),
     }
+    cor = corpo.get('corFavorita')
+    if cor in CORES_FAVORITAS:
+        perfil['corFavorita'] = cor
     if 'favoritos' in corpo:
         perfil['favoritos'] = limpar_favoritos(corpo.get('favoritos'), eu_id)
     # Todos os looks e colagens, o guarda-roupa inteiro e a wishlist: o que a
