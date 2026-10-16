@@ -1,0 +1,159 @@
+/* Avisos e janelas no acabamento do jogo: o mesmo perolado dos botões e do
+   cartão das missões (icones.css, tutorial.css). Vale para os avisos que sobem
+   embaixo (toast), as janelas (.modal), o painel do sino, o menu de
+   compartilhar, a ficha da vitrine e as perguntas de js/janela.js.
+   Carrega por último e usa `html body` para ganhar das regras de cada tela;
+   só muda a pele, nenhum tamanho ou posição. */
+
+/* ------------------------------ Avisos (toast) --------------------------- */
+/* Uma pílula pérola com o degrau embaixo e uma bolinha na cor do aviso. Raro,
+   épico e lendário trocam a borda e a bolinha para a cor da raridade (a mesma
+   do cartão de prêmio) e mantêm o reflexo de animacoes.css por cima. */
+html body .toast {
+  --cor-aviso: var(--wii);
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--perola); color: var(--tinta);
+  border: 2px solid var(--wii-borda);
+  padding: 9px 18px 11px 12px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau),
+    0 10px 28px rgba(30, 50, 65, .22);
+}
+html body .toast::before {
+  content: ''; flex: none; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--brilho-topo), var(--cor-aviso);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .16), 0 0 0 3px var(--wii-brilho);
+}
+/* Repete o fundo: base.css pinta cada tipo com uma cor chapada. */
+html body .toast:is(.aviso, .uncommon, .rare, .epic, .legendary) { background-color: transparent; background: var(--perola); }
+html body .toast.aviso     { --cor-aviso: #eea52c; }
+html body .toast.uncommon  { --cor-aviso: #2fbf63; border-color: #2fbf63; }
+html body .toast.rare      { --cor-aviso: #2f7ff0; border-color: #2f7ff0; }
+html body .toast.epic      { --cor-aviso: #9b46f0; border-color: #9b46f0; }
+html body .toast.legendary { --cor-aviso: #d4a514; border-color: #d4a514; }
+html body .toast:is(.rare, .epic, .legendary) {
+  background-image: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .9) 50%, transparent 62%), var(--perola);
+  background-size: 260% 100%, 100% 100%;
+}
+/* O da coleção já traz a capa dela no lugar da bolinha. */
+html body .toast.col-toast { background: var(--perola); color: var(--tinta); border: 2px solid var(--wii-borda); }
+html body .toast.col-toast::before { display: none; }
+html body .toast.col-toast strong { color: #9a7b13; }
+html body .toast.col-toast .col-chip-disco { background: var(--perola-painel); }
+
+/* --------------------------------- Janelas ------------------------------- */
+/* O fundo escurece puxado para o azul da pérola, e a caixa vira o painel do
+   cartão das missões: borda azul-acinzentada, brilho em cima, degrau embaixo. */
+html body .modal { background: rgba(30, 50, 65, .38); }
+html body .modal-caixa {
+  background: var(--perola-painel);
+  border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau),
+    0 30px 70px rgba(30, 50, 65, .3);
+}
+html body .modal-topo {
+  background: var(--perola);
+  border-bottom: 2px solid var(--wii-borda);
+}
+html body .modal-rodape {
+  background: var(--perola-painel);
+  border-top: 2px solid var(--wii-borda);
+}
+/* A ficha de perfil e o baú também ganham a borda e o degrau. */
+html body .pp-ficha {
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau), 0 30px 70px rgba(30, 50, 65, .3);
+}
+html body .bau-palco {
+  background: var(--perola-painel); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau), 0 30px 70px rgba(30, 50, 65, .3);
+}
+
+/* Botões claros das janelas: pérola, como os de ícone. */
+html body :is(.modal-rodape, .pergunta-botoes, .bau-palco) .btn-ghost:not(.ativo, .destaque, .danger, .mp-apagar) {
+  background: var(--perola); border: 2px solid var(--wii-borda); color: var(--tinta);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+html body :is(.modal-rodape, .pergunta-botoes, .bau-palco) .btn-ghost:not(.ativo, .destaque, .danger, .mp-apagar):hover:not(:disabled) {
+  border-color: var(--wii);
+}
+html body :is(.modal-rodape, .pergunta-botoes, .bau-palco) .btn-dark {
+  border-width: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), inset 0 -3px 0 rgba(0, 0, 0, .35);
+}
+
+/* ------------------------- Perguntas (js/janela.js) ---------------------- */
+.pergunta { z-index: 1100; }
+html body .pergunta-caixa {
+  width: min(400px, 100%);
+  padding: 22px 22px 18px; border-radius: 24px; text-align: center;
+}
+.pergunta-titulo { margin: 0 0 8px; font-size: 18px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.pergunta-texto {
+  margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-suave);
+  white-space: pre-line; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto;
+}
+.pergunta-campo {
+  width: 100%; margin-top: 14px; padding: 10px 14px;
+  border: 2px solid var(--wii-borda); border-radius: 14px; background: #fff;
+  font: 700 15px var(--fonte); color: var(--tinta); text-align: center;
+  box-shadow: inset 0 2px 0 var(--perola-2);
+}
+.pergunta-campo:focus { outline: none; border-color: var(--wii); box-shadow: 0 0 0 3px var(--wii-brilho); }
+.pergunta-botoes { display: flex; gap: 10px; margin-top: 18px; }
+.pergunta-botoes > button { flex: 1; width: auto; margin: 0; padding: 11px 14px; }
+html body .pergunta-botoes .btn-dark.perigo { background-color: #c0392b; border-color: #a52f23; }
+html body .pergunta-botoes .btn-dark.perigo:hover { background-color: #a52f23; }
+
+/* ------------------------------- Sino e painel --------------------------- */
+html body :is(.avisos-btn, .perfil-atalho) {
+  border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), var(--sombra);
+}
+html body .avisos-btn { background: var(--perola); }
+html body :is(.avisos-btn, .perfil-atalho):hover { border-color: var(--wii); }
+html body .avisos-btn[aria-expanded="true"] {
+  border-color: var(--wii);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho);
+}
+html body .avisos-contador {
+  background: var(--brilho-topo), #e0453a;
+  border-color: #fff;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18), 0 2px 5px rgba(0, 0, 0, .2);
+}
+@media (max-width: 900px) {
+  html body .avisos-btn { border-color: transparent; background: none; box-shadow: none; }
+  html body .perfil-atalho { box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau); }
+}
+
+html body .avisos-painel {
+  background: var(--perola-painel);
+  border: 2px solid var(--wii-borda); border-radius: 22px;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau),
+    0 18px 50px rgba(30, 50, 65, .22);
+}
+html body .avisos-topo { background: var(--perola); border-bottom: 2px solid var(--wii-borda); padding-bottom: 12px; margin-bottom: 8px; }
+/* Cada aviso é um bloco do painel, e o novo acende na cor da paleta. */
+html body .avisos-lista { display: flex; flex-direction: column; gap: 6px; }
+html body .aviso {
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+}
+html body .aviso:hover { background: var(--perola); border-color: var(--wii); }
+html body .aviso.novo,
+html body .aviso.novo:hover { background: var(--perola); border-color: var(--wii); box-shadow: inset 0 -3px 0 var(--perola-bloco), 0 0 0 3px var(--wii-brilho); }
+html body .aviso.novo .aviso-texto small { color: var(--tinta); }
+html body .aviso-icone {
+  border: 2px solid rgba(255, 255, 255, .8);
+  background-image: var(--brilho-topo);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .1);
+}
+
+/* -------------------- Menu de compartilhar e ficha da vitrine ------------ */
+html body :is(.menu-compartilhar, #ficha-peca) {
+  background: var(--perola-painel);
+  border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau),
+    0 16px 40px rgba(30, 50, 65, .22);
+}
+html body .menu-item:hover { background: var(--perola); box-shadow: inset 0 0 0 2px var(--wii-borda); }
+html body .menu-item.perigo { border-top: 2px solid var(--wii-borda); }

@@ -17,6 +17,7 @@ import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from '.
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
+import { confirmar } from './janela.js';
 import { ico, emo } from './icones.js';
 import { aparenciaDoPerfil, aparenciaAtual, retrato } from './avatar.js';
 import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.js';
@@ -705,7 +706,8 @@ function fecharMenuUmaVez(e) {
 }
 
 async function apagarPost(post) {
-  if (!confirm(`Apagar "${post.nome}" do feed? Curtidas e comentários vão junto.`)) return;
+  if (!await confirmar('Curtidas e comentários vão junto.',
+    { titulo: `Apagar "${post.nome}" do feed?`, sim: 'Apagar', perigo: true })) return;
   if (post.real) {
     try { await apagarPublicacao(post); }
     catch (e) { return toast(e.message || 'Não consegui apagar agora.', 'aviso'); }

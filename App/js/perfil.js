@@ -22,6 +22,7 @@ import * as auth from './auth.js';
 import { retrato, aparenciaAtual } from './avatar.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
+import { confirmar, pedirTexto } from './janela.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
@@ -482,9 +483,10 @@ function montarLimpeza() {
   async function limpar() {
     if (!saem.length) return;
     const nomes = saem.map(c => c.email).join('\n');
-    const escrito = prompt(
-      `Apagar de vez ${saem.length} conta(s), com posts, comentários, curtidas e saves?\n\n` +
-      `${nomes}\n\nAntes é feito um backup. Escreva APAGAR para confirmar.`);
+    const escrito = await pedirTexto(
+      `${nomes}\n\nAntes é feito um backup. Escreva APAGAR para confirmar.`,
+      { titulo: `Apagar de vez ${saem.length} conta(s), com posts, comentários, curtidas e saves?`,
+        sim: 'Apagar', perigo: true });
     if (escrito !== 'APAGAR') return;
     botaoLimpar.disabled = true;
     resumo.textContent = 'Fazendo o backup e apagando…';
@@ -539,21 +541,21 @@ function montarTestes() {
 
   // Reset é do jogador, não do acervo: o que foi cadastrado (peças subidas,
   // marcas, cores) sobrevive, porque um dia vai migrar para a base do site.
-  $('#btn-reset').addEventListener('click', () => {
-    if (!confirm(
-      'Apagar inventário, looks, colagens, feed e XP deste navegador? ' +
-      'As peças que você adicionou e o registro de marcas e cores ficam.'
+  $('#btn-reset').addEventListener('click', async () => {
+    if (!await confirmar(
+      'As peças que você adicionou e o registro de marcas e cores ficam.',
+      { titulo: 'Apagar inventário, looks, colagens, feed e XP deste navegador?', sim: 'Apagar', perigo: true }
     )) return;
     db.resetar();
     location.reload();
   });
 
-  $('#btn-apagar-acervo').addEventListener('click', () => {
+  $('#btn-apagar-acervo').addEventListener('click', async () => {
     const quantas = db.state.pecasProprias.length;
     if (!quantas) return toast('Nenhuma peça guardada neste navegador — as do acervo vivem em assets/.');
-    if (!confirm(
-      `Apagar as ${quantas} peças guardadas neste navegador, mais marcas e cores? ` +
-      'Isso não volta. O acervo em assets/acervo.json não é tocado.'
+    if (!await confirmar(
+      'Isso não volta. O acervo em assets/acervo.json não é tocado.',
+      { titulo: `Apagar as ${quantas} peças guardadas neste navegador, mais marcas e cores?`, sim: 'Apagar', perigo: true }
     )) return;
     db.apagarAcervoLocal();
     location.reload();
