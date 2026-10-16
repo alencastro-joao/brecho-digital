@@ -128,6 +128,9 @@
                 title="Tira as peças do guarda-roupa e devolve para a arara (não apaga nada do acervo)"><i data-i="devolver"></i> Devolver roupas</button>
         <button class="btn-admin" id="btn-repor" hidden
                 title="Repor a loja: estoque novo e resgates liberados"><i data-i="atualizar"></i> Repor loja</button>
+        <!-- Ficha de repor a loja (prêmio da trilha de níveis): troca a arara. -->
+        <button type="button" class="btn-repor-ficha" id="btn-repor-ficha" hidden
+                title="Usar uma ficha de repor a loja" aria-label="Repor a loja"><i data-i="atualizar"></i><b></b></button>
         <div class="picks-badge" id="picks-badge" title="Resgates restantes hoje">
           <span id="picks-left">3</span><span class="picks-total">/3</span>
           <small></small>
@@ -699,6 +702,18 @@
       <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
     </div>
   </section>
+
+  <!-- Trilha de níveis: um prêmio por nível, aberta tocando no nível em Tarefas. -->
+  <div class="modal" id="modal-trilha" hidden>
+    <div class="modal-caixa tn-caixa">
+      <header class="modal-topo">
+        <h2 id="tn-titulo"></h2>
+        <button class="modal-x" id="tn-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="tn-lista" id="tn-lista"></div>
+      <div class="tn-rodape"><button type="button" class="btn-premio" id="tn-todos" hidden></button></div>
+    </div>
+  </div>
 
   <!-- ====================== COLEÇÕES ====================== -->
   <!-- Uma página por marca: as peças da loja que você tem, as que faltam e os

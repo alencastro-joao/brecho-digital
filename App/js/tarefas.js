@@ -9,7 +9,7 @@
 
 import {
   MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
-  RARIDADE, RARIDADES, escalaGrade,
+  RARIDADE, RARIDADES, escalaGrade, BAUS, PREMIOS_DE_NIVEL,
 } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
@@ -29,6 +29,11 @@ export function montarTarefas() {
     if (viewAtual() === 'tarefas') renderTarefas();
     else renderPontinho();
   });
+  const modal = $('#modal-trilha');
+  $('#tn-fechar').addEventListener('click', fecharTrilha);
+  $('#tn-todos').addEventListener('click', pegarTodos);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fecharTrilha(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) fecharTrilha(); });
   renderTarefas();
 }
 
@@ -93,10 +98,16 @@ function renderTopo() {
   const jaTrocou = (db.state.dia.extras ?? 0) >= FICHAS.extrasPorDia;
 
   $('#tarefas-faixa').replaceChildren(
-    el('div', { class: 'tf-nivel', title: p.maximo ? 'Nível máximo' : `Faltam ${p.xpFaltando} XP para o nível ${p.nivel + 1}` },
+    el('button', {
+      type: 'button', class: 'tf-nivel' + (db.premiosDoNivelProntos().length ? ' tem-premio' : ''),
+      title: 'Prêmios dos níveis', onclick: abrirTrilha,
+    },
       el('span', { class: 'tf-nv' }, 'NV', el('b', {}, String(p.nivel))),
       el('div', { class: 'tf-barra' }, el('span', { style: { width: p.pct + '%' } })),
       el('small', {}, p.maximo ? `${p.xpTotal} XP` : `${p.xpNoNivel}/${p.xpDoNivel}`)),
+    ...(db.fichasDeRepor() ? [el('button', {
+      type: 'button', class: 'tf-repor', title: 'Fichas de repor a loja', onclick: () => irPara('vitrine'),
+    }, ico('atualizar'), el('b', {}, String(db.fichasDeRepor())))] : []),
     el('button', {
       type: 'button', class: 'tf-fichas' + (pode ? ' pronto' : ''),
       title: `${troca} fichas = 1 resgate`,
@@ -255,10 +266,13 @@ function miniPeca(peca) {
 // peça que você ainda não tem e que não esgotou; sem nenhuma na faixa, tenta a
 // de baixo (e só sobe se não houver nada abaixo). Nunca repete no mesmo baú.
 function sortearPremio(bau) {
-  const { atual } = premioDoBau(bau, db.nivel());
+  return sortearPecas(premioDoBau(bau, db.nivel()).atual.pecas);
+}
+
+function sortearPecas(faixas) {
   const escolhidas = new Set();
   const sorteadas = [];
-  for (const pedida of atual.pecas) {
+  for (const pedida of faixas) {
     for (const faixa of faixasDeTroca(pedida)) {
       const lista = catalogo.itens.filter(it => !escolhidas.has(it.id) &&
         !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
@@ -275,20 +289,106 @@ function sortearPremio(bau) {
 function abrirUmBau(nome, bau, abrir) {
   const r = abrir(sortearPremio(bau));
   if (!r) return;
-  if (r.pecas.length) {
-    estoque.levar(r.pecas.map(p => ({ id: p.id, raridade: p.raridade })))
-      .then(() => { estoque.numerar(r.pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean)); db.salvar(); });
-  }
+  entregarPecas(r.pecas);
   const nomes = r.pecas.map(p => `${nomeDaPeca(pecaDoCatalogo(p.id))} (${RARIDADE[p.raridade]?.nome})`);
-  const melhor = r.pecas.map(p => p.raridade)
-    .sort((a, b) => ordemDaFaixa(b) - ordemDaFaixa(a))[0];
   toast(nomes.length
     ? `${nome}: ${nomes.join(', ')} no seu guarda-roupa. +${r.xp} XP.`
-    : `${nome} aberto: +${r.xp} XP.`, melhor);
+    : `${nome} aberto: +${r.xp} XP.`, melhorFaixa(r.pecas));
 }
+
+// As peças que saíram de um baú: tiram do estoque da loja e ganham número.
+function entregarPecas(pecas) {
+  if (!pecas.length) return;
+  estoque.levar(pecas.map(p => ({ id: p.id, raridade: p.raridade })))
+    .then(() => { estoque.numerar(pecas.map(p => db.pecaDoInventario(p.id)).filter(Boolean)); db.salvar(); });
+}
+
+const melhorFaixa = (pecas) => pecas.map(p => p.raridade)
+  .sort((a, b) => ordemDaFaixa(b) - ordemDaFaixa(a))[0];
 
 const ordemDaFaixa = (f) => RARIDADES.findIndex(r => r.id === f);
 const abrirBau = () => abrirUmBau('Baú dos dias', PREMIO_SEMANA, db.abrirPremioDaSemana);
 const abrirEspecial = () => abrirUmBau('Baú semanal', BAU_ESPECIAL, db.abrirBauEspecial);
+
+// ---------------------------- Trilha de níveis ------------------------------
+// Tocar no nível abre a trilha: um prêmio por nível, do 2 ao último. Os que
+// já chegaram esperam o toque; os de cima ficam com o cadeado.
+function rotuloDoPremio(p) {
+  if (p.tipo === 'fichas') return `${p.qtd} fichas`;
+  if (p.tipo === 'repor') return p.qtd > 1 ? `Repor a loja ×${p.qtd}` : 'Repor a loja';
+  return BAUS[p.bau].nome;
+}
+
+function iconeDoPremio(p) {
+  if (p.tipo === 'fichas') return el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' });
+  if (p.tipo === 'repor') return ico('atualizar');
+  return ico('presente');
+}
+
+function abrirTrilha() {
+  renderTrilha();
+  $('#modal-trilha').hidden = false;
+  document.body.classList.add('com-modal');
+  // Rola até o primeiro prêmio esperando, ou até o próximo nível.
+  const alvo = $('#tn-lista .pronto') || $('#tn-lista .proximo');
+  alvo?.scrollIntoView({ block: 'center' });
+}
+
+function fecharTrilha() {
+  $('#modal-trilha').hidden = true;
+  if (!document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
+}
+
+function renderTrilha() {
+  const nivel = db.nivel();
+  const prontos = db.premiosDoNivelProntos();
+  $('#tn-titulo').textContent = `Nível ${nivel}`;
+  $('#tn-lista').replaceChildren(...PREMIOS_DE_NIVEL.map(p => {
+    const pego = db.premioDoNivelPego(p.nivel);
+    const pronto = db.premioDoNivelPronto(p.nivel);
+    const estado = pego ? 'pego' : pronto ? 'pronto' : p.nivel === nivel + 1 ? 'travado proximo' : 'travado';
+    return el('div', { class: `tn-nivel ${estado} ${p.tipo}` + (p.bau ? ' bau-' + p.bau : '') },
+      el('span', { class: 'tn-num' }, String(p.nivel)),
+      el('span', { class: 'tn-ico' }, iconeDoPremio(p)),
+      el('strong', {}, rotuloDoPremio(p)),
+      pronto ? el('button', { type: 'button', class: 'btn-premio', onclick: () => pegarPremio(p.nivel) }, 'Pegar')
+        : el('span', { class: 'tn-fim' }, ico(pego ? 'ok' : 'cadeado')));
+  }));
+  const todos = $('#tn-todos');
+  todos.hidden = prontos.length < 2;
+  todos.textContent = `Pegar todos (${prontos.length})`;
+}
+
+// Pega um prêmio (ou vários, com `quieto` para juntar num toast só) e devolve
+// o que saiu.
+function pegarPremio(n, { quieto = false } = {}) {
+  const p = PREMIOS_DE_NIVEL.find(x => x.nivel === n);
+  const r = db.pegarPremioDoNivel(n, p?.tipo === 'bau' ? sortearPecas(BAUS[p.bau].pecas) : []);
+  if (!r) return null;
+  entregarPecas(r.pecas);
+  if (!quieto) {
+    const nomes = r.pecas.map(x => nomeDaPeca(pecaDoCatalogo(x.id)));
+    toast(r.tipo === 'bau'
+      ? `${BAUS[r.bau].nome}: ${nomes.length ? nomes.join(', ') : 'vazio desta vez'}.`
+      : r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor a loja. Use na Loja.`
+      : `+${r.qtd} fichas.`, r.tipo === 'bau' ? melhorFaixa(r.pecas) : 'rare');
+  }
+  renderTrilha();
+  return r;
+}
+
+function pegarTodos() {
+  const saiu = db.premiosDoNivelProntos().map(p => pegarPremio(p.nivel, { quieto: true })).filter(Boolean);
+  if (!saiu.length) return;
+  const fichas = saiu.filter(r => r.tipo === 'fichas').reduce((t, r) => t + r.qtd, 0);
+  const repor = saiu.filter(r => r.tipo === 'repor').reduce((t, r) => t + r.qtd, 0);
+  const pecas = saiu.flatMap(r => r.pecas);
+  const partes = [
+    fichas && `${fichas} fichas`,
+    repor && `${repor} ${repor === 1 ? 'ficha' : 'fichas'} de repor a loja`,
+    pecas.length && `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`,
+  ].filter(Boolean);
+  toast(`+${partes.join(', ')}`, melhorFaixa(pecas) ?? 'rare');
+}
 
 export const aoEntrarNasTarefas = renderTarefas;
