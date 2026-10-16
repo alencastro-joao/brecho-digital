@@ -117,6 +117,22 @@ const corpo = (id, cor, extra) => {
   </g>`;
 };
 
+// Corpo desenhado (proporção em teste com `corpo`): duas máscaras no palco,
+// pintadas na cor da pele e do traço. app.js entrega as imagens antes de
+// qualquer tela desenhar o avatar; sem elas o corpo de código continua.
+let corpoDesenhado = null;
+export function usarCorpoDesenhado(imagens) { corpoDesenhado = imagens; }
+
+const corpoDaArtista = (id, pele, traco) => {
+  const { STAGE_W: W, STAGE_H: H } = CONFIG;
+  const camada = (nome, src, cor) => `
+  <mask id="${id}-${nome}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
+    <image href="${src}" x="0" y="0" width="${W}" height="${H}"/>
+  </mask>
+  <rect x="0" y="0" width="${W}" height="${H}" fill="${cor}" mask="url(#${id}-${nome})"/>`;
+  return camada('pele', corpoDesenhado.pele, pele) + camada('linha', corpoDesenhado.linha, traco);
+};
+
 // O cabelo engorda o mesmo tanto que o corpo. A silhueta ganhou CONTORNO/2 de
 // borda para fora, e corte desenhado rente à cabeça antiga (quase todos vão de
 // x=244 a x=356, que era a largura exata dela) passou a deixar aparecer um
@@ -155,7 +171,9 @@ export function svgAvatar({
 
   const cabelo = (parte) => cortado(
     comVolume((corte[parte] || '').replaceAll('{cor}', ap.corCabelo), ap.corCabelo));
-  const nariz = (NARIZES[ap.nariz] || NARIZES.botao).arte.replaceAll('{traco}', ap.traco);
+  // O corpo desenhado já traz o nariz dele.
+  const nariz = corpoDesenhado ? ''
+    : (NARIZES[ap.nariz] || NARIZES.botao).arte.replaceAll('{traco}', ap.traco);
   const [vx, vy, vw, vh] = recorte || [0, 0, CONFIG.STAGE_W, CONFIG.STAGE_H];
 
   const pontos = guia ? Object.entries(CATEGORIAS).map(([cat, c]) => {
@@ -186,8 +204,9 @@ export function svgAvatar({
   <!-- roupinha que fica atrás do corpo: capa, mochila, asas, capuz caído -->
   ${veste.atras}
 
+  ${corpoDesenhado ? corpoDaArtista(idCorte, ap.pele, escurecerTraco(ap.traco)) : `
   ${corpo(ap.corpo, ap.traco, CONTORNO)}
-  ${corpo(ap.corpo, ap.pele, 0)}
+  ${corpo(ap.corpo, ap.pele, 0)}`}
 
   <!-- roupinha vestida, por camada: calça, calçado, torso, alça, luva -->
   ${veste.frente}
@@ -205,6 +224,14 @@ export function svgAvatar({
   ${veste.rosto}
   ${pontos}
 </svg>`.trim();
+}
+
+// O traço do desenho é fino: na cor exata do contorno de código ele some.
+function escurecerTraco(hex) {
+  const n = parseInt(String(hex).slice(1), 16);
+  const f = (c) => Math.round(c * 0.72);
+  return '#' + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)]
+    .map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
 export const avatarDataURL = (opts) =>
