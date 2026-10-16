@@ -29,9 +29,10 @@ export const PROPORCAO_PADRAO = {
   pernas: 1,       // 1 = pernas de antes
 };
 
-// Proporções em teste: abrir o site com ?proporcao=<nome> troca o boneco só
-// naquela aba, sem gravar nada — as âncoras continuam no molde, então a mesma
-// peça serve aos dois bonecos. Ex.: /?proporcao=chibi#/stylist
+// Outras proporções: abrir o site com ?proporcao=<nome> troca o boneco naquele
+// aparelho — as âncoras continuam no molde, então a mesma peça serve a todos
+// os bonecos. Ex.: /?proporcao=chibi#/stylist. A da artista é a que todo mundo
+// vê (NA_TELA, abaixo).
 export const PROPORCOES_TESTE = {
   // tronco bem menor, pernas mais compridas, cabeça bem maior
   chibi: { cabeca: 1.45, tronco: 0.65, pernas: 1.15 },
@@ -40,23 +41,30 @@ export const PROPORCOES_TESTE = {
   // crescem igual (tronco mais curto que largo, pernas mais grossas).
   artista: { cabeca: 1.32, tronco: [0.82, 0.718], pernas: [1.15, 1.09], corpo: 'artista' },
 };
-// A escolha fica guardada no aparelho: abrir uma vez com o link basta, e o app
-// instalado (que abre sem o parâmetro) continua no boneco de teste.
-// ?proporcao=padrao volta ao boneco de verdade e esquece a escolha.
+// O boneco de todo mundo é o da artista. PROPORCAO_PADRAO continua sendo o
+// boneco em que looks e âncoras são gravados (o "padrão" das conversões lá
+// embaixo), então nada salvo precisa mudar: quem mostra converte, como já
+// fazia no teste.
+const NA_TELA = 'artista';
+
+// Abrir com ?proporcao=<nome> troca o boneco naquele aparelho e a escolha
+// fica guardada (o app instalado abre sem o parâmetro). ?proporcao=padrao é o
+// boneco antigo; ?proporcao=artista volta ao de todo mundo e esquece a escolha.
 const GUARDADA = 'bd:proporcao';
 const pedida = (() => {
   try {
     const daUrl = new URLSearchParams(globalThis.location?.search || '').get('proporcao');
-    if (daUrl != null) {
-      if (PROPORCOES_TESTE[daUrl]) localStorage.setItem(GUARDADA, daUrl);
-      else localStorage.removeItem(GUARDADA);
-      return daUrl;
-    }
-    return localStorage.getItem(GUARDADA);
+    if (daUrl == null) return localStorage.getItem(GUARDADA);
+    if (daUrl !== NA_TELA && (daUrl === 'padrao' || PROPORCOES_TESTE[daUrl])) localStorage.setItem(GUARDADA, daUrl);
+    else localStorage.removeItem(GUARDADA);
+    return daUrl;
   } catch { return null; }
 })();
-export const PROPORCAO_EM_TESTE = PROPORCOES_TESTE[pedida] ? pedida : null;
-export const PROPORCAO = PROPORCOES_TESTE[pedida] || PROPORCAO_PADRAO;
+const escolhida = pedida === 'padrao' ? null
+  : PROPORCOES_TESTE[pedida] ? pedida : NA_TELA;
+// O nome do boneco quando não é o de todo mundo (a etiqueta de teste).
+export const PROPORCAO_EM_TESTE = escolhida === NA_TELA ? null : (escolhida || 'antigo');
+export const PROPORCAO = escolhida ? PROPORCOES_TESTE[escolhida] : PROPORCAO_PADRAO;
 
 const CHAO = { x: 300, y: 1144 };     // sola do pé: as pernas crescem daqui para cima
 const COS = { x: 300, y: 572 };       // o tronco encolhe na direção daqui

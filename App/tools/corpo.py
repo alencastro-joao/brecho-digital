@@ -99,7 +99,7 @@ def main(args):
         '// de pele e uma de traço (em tons de cinza), recortadas na `caixa`\n'
         '// [x, y, w, h] do palco; o avatar pinta as duas com as cores de quem veste.\n'
         '//\n'
-        '// Só é carregado com ?proporcao=artista (ver js/proporcao.js e js/app.js).\n'
+        '// É o corpo de todo mundo (NA_TELA em js/proporcao.js; carregado em js/app.js).\n'
         'export default {\n'
         + js('corpos', corpos, NOMES_CORPOS) + '\n'
         + js('narizes', narizes, NOMES_NARIZES) + '\n'
