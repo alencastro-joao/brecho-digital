@@ -19,6 +19,7 @@ import { publicarOuGuardar, pacoteDaColagem, jaPublicado } from './publicacoes.j
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
+import { confirmar } from './janela.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
 
@@ -830,8 +831,9 @@ function ligarControles() {
   on('#bd-salvar', 'click', () => salvarBoard());
   on('#bd-publicar', 'click', publicarBoard);
   on('#bd-sortear', 'click', gerarColagem);
-  on('#bd-nova', 'click', () => {
-    if (board.itens.length && !confirm('Começar uma colagem nova? O que não foi salvo se perde.')) return;
+  on('#bd-nova', 'click', async () => {
+    if (board.itens.length && !await confirmar('O que não foi salvo nesta colagem se perde.',
+      { titulo: 'Começar uma colagem nova?', sim: 'Começar' })) return;
     board = novaColagem();
     selecao.clear(); historico = []; futuro = [];
     encaixar(); render();

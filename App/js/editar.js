@@ -25,6 +25,7 @@ import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde, ancoraNoCorpo } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
+import { confirmar } from './janela.js';
 import { alcaMover } from './alcamover.js';
 
 const MAX_LADO = 512;          // maior lado da miniatura (= MAX_PREVIA da esteira)
@@ -639,11 +640,10 @@ async function salvar() {
 async function apagar() {
   const alvo = peca;
   const nome = nomeDaPeca(alvo);
-  const ok = confirm(`Apagar "${nome}" de vez?
-
-`
-    + 'Ela some do acervo, da vitrine e do guarda-roupa de quem já tem — '
-    + 'inclusive dos looks e colagens. Não dá para desfazer.');
+  const ok = await confirmar(
+    'Ela some do acervo, da vitrine e do guarda-roupa de quem já tem, '
+    + 'inclusive dos looks e colagens. Não dá para desfazer.',
+    { titulo: `Apagar "${nome}" de vez?`, sim: 'Apagar', perigo: true });
   if (!ok) return;
 
   const botao = $('#mp-apagar');
