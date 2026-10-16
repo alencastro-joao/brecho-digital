@@ -46,8 +46,8 @@ export function montarTutorial() {
   // Fora da pilha de quem fez a ação: o prêmio remonta a vitrine, e fazer isso
   // no meio do resgate dela atropelaria o próprio resgate.
   db.onIntro(() => setTimeout(() => {
-    if (concluirProntas()) passoNovo();
-    desenhar();
+    if (concluirProntas()) passoEsperando = true;
+    seguir();
   }));
   // Tocar em qualquer coisa fora do cartão, numa missão, é ir fazer a missão:
   // ele se recolhe. Em captura e sem impedir nada, então o toque segue para
@@ -64,6 +64,14 @@ export function montarTutorial() {
 
 const passoAtual = () => (db.introAtiva() ? INTRO[db.state.intro.passo] : null);
 
+// O próximo passo só entra depois que o último prêmio saiu da tela: enquanto
+// há cartão de prêmio, o balão fica guardado e o app não muda de tela.
+let passoEsperando = false;
+function seguir() {
+  if (!premioNaTela && passoEsperando) { passoEsperando = false; passoNovo(); }
+  desenhar();
+}
+
 // O passo da vez acabou de mudar: o cartão abre inteiro e o app vai para a
 // tela de que ele fala.
 function passoNovo() {
@@ -78,8 +86,8 @@ function passoNovo() {
 function entendi() {
   db.avancarIntro();
   concluirProntas();
-  passoNovo();
-  desenhar();
+  passoEsperando = true;
+  seguir();
 }
 
 // ?tutorial no endereço: o jeito de testar de qualquer aparelho.
@@ -204,13 +212,9 @@ function anunciarPresente() {
     .filter(p => p.item)
     .sort((a, b) => daCor(b.item) - daCor(a.item));
   if (!pecas.length) return;
-  const nDaCor = pecas.filter(p => daCor(p.item)).length;
   enfileirar({
-    sobre: 'Presente', titulo: 'Um presente por começar!', pecas, bau: 'presente', tempo: 6000,
-    texto: nDaCor >= 3
-      ? `${nDaCor} peças na cor ${cor}, a sua cor favorita! Com elas você liberou um item do avatar na coleção ${cor}: daqui a pouco você resgata.`
-      : 'Elas ficam no seu closet.',
-    marcar: daCor,
+    sobre: 'Presente', titulo: 'Presente de boas-vindas!', pecas, bau: 'presente', tempo: 6000,
+    texto: 'Um presente para você começar. Já está no seu closet.',
   });
 }
 
@@ -221,7 +225,7 @@ function enfileirar(cartao) {
 
 function proximoPremio() {
   const vez = filaDePremios.shift();
-  if (!vez) { premioNaTela = null; return; }
+  if (!vez) { premioNaTela = null; seguir(); return; }
   const { sobre, titulo, pecas = [], xp = 0, fichas = 0, bau = null, texto = '', tempo = 0, marcar = null } = vez;
   const melhor = pecas.map(p => p.peca.raridade)
     .sort((a, b) => ordem(b) - ordem(a))[0] || 'nenhuma';
@@ -375,7 +379,7 @@ function htmlBolha(passo) {
 }
 
 function desenhar() {
-  if (!db.introAtiva()) { fechar(); return; }
+  if (!db.introAtiva() || premioNaTela) { fechar(); return; }
 
   if (!caixa) {
     caixa = el('div', { class: 'intro', role: 'region', 'aria-label': 'Missões de introdução' });
