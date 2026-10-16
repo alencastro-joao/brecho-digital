@@ -104,6 +104,29 @@ html body .pergunta-caixa {
 html body .pergunta-botoes .btn-dark.perigo { background-color: #c0392b; border-color: #a52f23; }
 html body .pergunta-botoes .btn-dark.perigo:hover { background-color: #a52f23; }
 
+/* ------------------- Janela dos resgates (contador da loja) --------------- */
+.picks-badge[role="button"] { cursor: pointer; }
+.resgates-janela { display: flex; flex-direction: column; gap: 12px; }
+.rj-relogio {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 12px 14px 14px; border-radius: 18px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.rj-relogio small { font-size: 12.5px; font-weight: 700; color: var(--tinta-suave); }
+.rj-relogio strong { font-size: 30px; font-weight: 800; line-height: 1.1; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.rj-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rj-linha {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 10px 8px 12px; border-radius: 16px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+}
+.rj-rotulo { font-size: 12.5px; font-weight: 700; color: var(--tinta-suave); }
+.rj-valor { font-size: 24px; font-weight: 800; color: var(--tinta); }
+.rj-linha small { font-size: 11px; line-height: 1.3; color: var(--tinta-suave); }
+.rj-total { margin: 0; font-size: 14px; color: var(--tinta-suave); }
+
 /* ------------------------------- Sino e painel --------------------------- */
 html body :is(.avisos-btn, .perfil-atalho) {
   border: 2px solid var(--wii-borda);

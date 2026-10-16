@@ -594,6 +594,9 @@ function extrasQueSobraram() {
 export const resgatesRestantes = (limite) =>
   Math.max(0, limite + extrasDoDia() - state.dia.resgates);
 
+// Quantos dos resgates que sobraram vieram das fichas (os do dia saem antes).
+export const resgatesDeFichas = () => extrasQueSobraram();
+
 // --- Fichas ---------------------------------------------------------------
 export const fichas = () => state.fichas ?? 0;
 

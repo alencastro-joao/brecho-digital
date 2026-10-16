@@ -2,6 +2,7 @@
 // navegador, que abriam a caixa cinza do sistema). Devolvem uma Promise:
 //   if (!await confirmar('Apagar?', { sim: 'Apagar', perigo: true })) return;
 //   const texto = await pedirTexto('Escreva APAGAR'); // null se cancelou
+//   await mostrar(conteudo, { titulo: 'Resgates', sim: 'Entendi' });  // só um botão
 // O visual fica em css/janelas.css.
 
 import { el } from './util.js';
@@ -9,11 +10,11 @@ import { el } from './util.js';
 function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', perigo = false, campo = false } = {}) {
   return new Promise((resolve) => {
     const entrada = campo ? el('input', { class: 'pergunta-campo', type: 'text', autocomplete: 'off' }) : null;
-    const botaoNao = el('button', { class: 'btn-ghost', type: 'button' }, nao);
+    const botaoNao = nao === null ? null : el('button', { class: 'btn-ghost', type: 'button' }, nao);
     const botaoSim = el('button', { class: `btn-dark${perigo ? ' perigo' : ''}`, type: 'button' }, sim);
     const caixa = el('div', { class: 'modal-caixa pergunta-caixa', role: 'alertdialog', 'aria-modal': 'true' },
       titulo ? el('h2', { class: 'pergunta-titulo' }, titulo) : null,
-      el('p', { class: 'pergunta-texto' }, mensagem),
+      typeof mensagem === 'string' ? el('p', { class: 'pergunta-texto' }, mensagem) : mensagem,
       entrada,
       el('div', { class: 'pergunta-botoes' }, botaoNao, botaoSim));
     const fundo = el('div', { class: 'modal pergunta' }, caixa);
@@ -46,10 +47,12 @@ function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', per
     }
     document.addEventListener('keydown', tecla, true);
     botaoSim.addEventListener('click', responder);
-    botaoNao.addEventListener('click', cancelar);
+    botaoNao?.addEventListener('click', cancelar);
     fundo.addEventListener('click', (e) => { if (e.target === fundo) cancelar(); });
   });
 }
 
 export const confirmar = (mensagem, opcoes) => abrir(mensagem, opcoes);
 export const pedirTexto = (mensagem, opcoes) => abrir(mensagem, { ...opcoes, campo: true });
+// Janela só para ler: um botão, e o conteúdo pode ser um elemento montado.
+export const mostrar = (conteudo, opcoes) => abrir(conteudo, { sim: 'Entendi', ...opcoes, nao: null });
