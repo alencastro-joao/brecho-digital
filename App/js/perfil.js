@@ -321,6 +321,9 @@ const fecharEdicao = () => {
 
 // -------------------------------- Ajustes ---------------------------------
 // A engrenagem abre o menu; cada linha abre o modal com uma seção só.
+// Quanto o botão Sair espera o save subir antes de sair mesmo assim.
+const PRAZO_PARA_SALVAR_AO_SAIR = 4000;
+
 const TITULOS_DE_AJUSTE = {
   cores: 'Cores do site',
   conexoes: 'Contas conectadas',
@@ -424,9 +427,29 @@ function montarConta() {
   // Recarregar depois de sair não é preguiça: meia dúzia de telas já montadas
   // seguram peças, looks e feed da conta que saiu. Zerar isso à mão seria uma
   // função de desmontar por tela — e um bug novo a cada tela nova.
-  $('#btn-sair').addEventListener('click', async () => {
-    await db.descarregar();   // antes de sair: sem sessão a nuvem recusa o save
-    await auth.sair();
+  //
+  // O save sobe antes de sair (sem sessão a nuvem recusa), mas com prazo: no
+  // celular o envio pode ficar preso (rede lenta, save grande, o app voltando
+  // do segundo plano com o envio congelado) e o botão parecia não fazer nada.
+  // Se o prazo vence, o save continua pendente no aparelho e sobe no próximo
+  // login desta conta.
+  const botao = $('#btn-sair');
+  botao.addEventListener('click', async () => {
+    if (botao.disabled) return;
+    botao.disabled = true;
+    botao.textContent = 'Saindo…';
+    await Promise.race([
+      db.descarregar().catch(() => {}),
+      new Promise(r => setTimeout(r, PRAZO_PARA_SALVAR_AO_SAIR)),
+    ]);
+    try {
+      await auth.sair();
+    } catch (erro) {
+      botao.disabled = false;
+      botao.textContent = 'Sair da conta';
+      toast(`Não consegui sair: ${erro.message}`, 'aviso');
+      return;
+    }
     db.encerrarEstado();
     location.reload();
   });
