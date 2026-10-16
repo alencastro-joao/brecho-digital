@@ -4,8 +4,8 @@
 // e os das missões do tutorial. Os do mesmo tipo ficam num cartão só, com a
 // quantidade, do mais raro para o mais comum. Tocar abre um (as peças são
 // sorteadas na hora, pela regra de BAUS e CHANCE_NO_BAU) com a mesma animação
-// de Tarefas. Enquanto houver baú fechado, o pontinho vermelho mostra o
-// caminho: o botão de Tarefas, o botão Baús e o próprio baú.
+// de Tarefas. Baú novo acende o pontinho vermelho no caminho (o botão de
+// Tarefas, o botão Baús e o próprio baú) só até a pessoa chegar nesta tela.
 //
 // Baú ganho em qualquer lugar é "jogado": sai de onde foi ganho (o cartão de
 // prêmio do tutorial, o botão tocado ou o meio da tela) e voa num arco até o
@@ -87,6 +87,10 @@ function receber(alvo) {
   setTimeout(() => alvo.classList.remove('recebeu'), 600);
 }
 
+// Os baús que chegaram desde a última visita: o pontinho fica neles enquanto
+// a tela está aberta, e não volta mais.
+let novosNaVisita = new Set();
+
 export function renderBaus() {
   const baus = db.bausGuardados();
   $('#bs-resumo').textContent = baus.length ? `${baus.length} para abrir` : '';
@@ -95,7 +99,8 @@ export function renderBaus() {
     const deste = baus.filter(b => b.tipo === tipo);
     const { nome, min, max } = BAUS[tipo];
     return el('button', {
-      type: 'button', class: `bs-bau bau-${tipo} ponto-novo`, title: `Abrir ${nome.toLowerCase()}`,
+      type: 'button', title: `Abrir ${nome.toLowerCase()}`,
+      class: `bs-bau bau-${tipo}` + (deste.some(b => novosNaVisita.has(`bau:${b.id}`)) ? ' ponto-novo' : ''),
       onclick: () => abrir(deste[0]),
     },
       el('div', { class: `bau-caixa bau-${tipo}` }, ico('presente')),
@@ -128,4 +133,8 @@ function abrirTodos() {
   mostrarBau(`${baus.length} baús`, pecas, { bau: melhor });
 }
 
-export const aoEntrarNosBaus = renderBaus;
+export function aoEntrarNosBaus() {
+  novosNaVisita = new Set(db.naoVistas(db.novidadesDosBaus()));
+  renderBaus();
+  if (novosNaVisita.size) setTimeout(() => db.marcarVistas([...novosNaVisita]));
+}

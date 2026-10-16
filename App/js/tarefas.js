@@ -50,6 +50,10 @@ export function renderTarefas() {
   zerarTrilha();
   db.virarODiaSeNecessario();   // o dia e a semana podem ter virado com a aba aberta
   if (!aba) aba = premioNaSemana() && !premioNoDia() ? 'semana' : 'hoje';
+  // Chegou: as fichas e a aba aberta já foram vistas (fora desta pintura,
+  // porque marcar grava e repinta).
+  const vistas = [...db.novidadesDoTopo(), ...(aba === 'hoje' ? db.novidadesDoDia() : db.novidadesDaSemana())];
+  if (db.naoVistas(vistas).length) setTimeout(() => db.marcarVistas(vistas));
   renderTopo();
   renderAbas();
   if (aba === 'hoje') renderDia(); else renderSemana();
@@ -82,7 +86,7 @@ function renderCartaoColecoes() {
   const comEscolha = todas.find(c => c.livres > 0);
   const completas = todas.filter(c => c.completa).length;
   botao.classList.toggle('escolha', !!comEscolha);
-  botao.classList.toggle('ponto-novo', !!comEscolha);
+  botao.classList.toggle('ponto-novo', db.naoVistas(db.novidadesDasColecoes()).length > 0);
   botao.title = comEscolha ? `${comEscolha.marca}: escolha um item do avatar` : '';
   botao.onclick = () => comEscolha ? abrirColecao(comEscolha.id) : irPara('colecoes');
   botao.replaceChildren(
@@ -93,7 +97,7 @@ function renderCartaoColecoes() {
 }
 
 function renderPontinho() {
-  const tem = db.temPremioParaResgatar() || db.escolhasLivres() > 0;
+  const tem = db.temNovidade();
   for (const botao of document.querySelectorAll('[data-goto="tarefas"]')) {
     botao.classList.toggle('tem-premio', tem);
   }
@@ -106,7 +110,7 @@ function renderCartaoBaus() {
   const n = db.bausGuardados().length;
   const botao = $('#tarefas-baus');
   botao.classList.toggle('escolha', n > 0);
-  botao.classList.toggle('ponto-novo', n > 0);
+  botao.classList.toggle('ponto-novo', db.naoVistas(db.novidadesDosBaus()).length > 0);
   botao.onclick = () => irPara('baus');
   botao.replaceChildren(
     el('span', { class: 'tf-col-ico' }, ico('presente')),
@@ -127,7 +131,7 @@ function renderTopo() {
 
   $('#tarefas-faixa').replaceChildren(
     el('button', {
-      type: 'button', class: 'tf-nivel' + (db.premiosDoNivelProntos().length ? ' tem-premio' : ''),
+      type: 'button', class: 'tf-nivel' + (db.naoVistas(db.novidadesDosNiveis()).length ? ' tem-premio' : ''),
       title: 'Prêmios dos níveis', onclick: abrirTrilha,
     },
       el('span', { class: 'tf-nv' }, 'NV', el('b', {}, String(p.nivel))),
@@ -154,14 +158,14 @@ function renderTopo() {
 // ---------------------------------- Abas -----------------------------------
 function renderAbas() {
   const botao = (id, nome, feitas, total, premio, prazo) => el('button', {
-    type: 'button', role: 'tab', class: (aba === id ? 'on' : '') + (premio ? ' tem-premio' : ''),
+    type: 'button', role: 'tab', class: (aba === id ? 'on' : '') + (premio && aba !== id ? ' tem-premio' : ''),
     'aria-selected': String(aba === id), title: prazo,
     onclick: () => { if (aba !== id) { aba = id; renderTarefas(); } },
   }, nome, el('small', {}, `${feitas}/${total}`));
   $('#tf-abas').replaceChildren(
-    botao('hoje', 'Hoje', db.missoesFeitas(), MISSOES.length, premioNoDia(),
+    botao('hoje', 'Hoje', db.missoesFeitas(), MISSOES.length, db.naoVistas(db.novidadesDoDia()).length > 0,
       `Zeram em ${formatarContagem(msAteMeiaNoite())}`),
-    botao('semana', 'Semana', db.semanaisFeitas(), MISSOES_SEMANA.length, premioNaSemana(),
+    botao('semana', 'Semana', db.semanaisFeitas(), MISSOES_SEMANA.length, db.naoVistas(db.novidadesDaSemana()).length > 0,
       `Zeram em ${formatarDias(msAteSegunda())}`));
 }
 
@@ -358,6 +362,7 @@ function iconeDoPremio(p) {
 }
 
 function abrirTrilha() {
+  db.marcarVistas(db.novidadesDosNiveis());
   renderTrilha();
   $('#modal-trilha').hidden = false;
   document.body.classList.add('com-modal');
