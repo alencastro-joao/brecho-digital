@@ -27,7 +27,6 @@ import { irPara } from './router.js';
 import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { darTrioDaCor } from './presente.js';
-import { sortearPecas as sortearPecasDoBau } from './tarefas.js';
 import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
 
@@ -123,12 +122,13 @@ function sortearPecas(faixas) {
   return out;
 }
 
-function entregar(premio) {
+function entregar(m) {
+  const { premio } = m;
   const r = { xp: premio.xp || 0, fichas: premio.fichas || 0, pecas: [], bau: premio.bau || null };
-  // Baú: quantidade e raridades pela regra dos baús de Tarefas (BAUS e
-  // CHANCE_NO_BAU); `pecas` pede uma peça de cada faixa.
-  const sorteadas = premio.bau ? sortearPecasDoBau(premio.bau) : sortearPecas(premio.pecas || []);
-  for (const { item, raridade } of sorteadas) {
+  // Baú vai fechado para a tela de Baús, como todos os outros (o sorteio é na
+  // hora de abrir); `pecas` pede uma peça de cada faixa, entregue na hora.
+  if (premio.bau) db.guardarBau(premio.bau, 'missao', `Missão: ${m.nome}`);
+  for (const { item, raridade } of sortearPecas(premio.pecas || [])) {
     const peca = db.adicionarPeca(item, { origem: 'missao', raridade });
     if (peca) r.pecas.push({ item, peca });
   }
@@ -155,7 +155,7 @@ function concluirProntas() {
     while (db.introPronta()) {
       const passo = db.state.intro.passo;
       const m = INTRO[passo];
-      const r = entregar(m.premio);
+      const r = entregar(m);
       const ultima = passo === INTRO.length - 1;
       db.avancarIntro();
       anunciar(m, r, ultima);
@@ -168,7 +168,8 @@ function concluirProntas() {
 }
 
 // Um aviso só por missão, com tudo o que ela pagou: um cartão de prêmio no meio
-// da tela. Peça vem dentro de um baú da raridade dela, que só mostra o que tem
+// da tela. Baú aparece fechado, com o aviso de que foi para a tela de Baús.
+// Peça solta vem dentro de um baú da raridade dela, que só mostra o que tem
 // depois do toque em "Abrir" (com a mesma animação dos baús de Tarefas). XP e
 // fichas aparecem em destaque. Depois de aberto, o cartão some sozinho (ou num
 // toque) e, se várias missões fecharem juntas, os cartões entram em fila.
@@ -240,7 +241,9 @@ function proximoPremio() {
 
   // Com peça: o baú fechado e o botão de abrir; o conteúdo entra depois.
   const fechado = Boolean(bau && fotos.length);
-  const caixaDoBau = fechado
+  // Baú ganho sem peça à mostra: foi guardado fechado na tela de Baús.
+  const guardado = Boolean(bau && bau !== 'presente' && !fotos.length);
+  const caixaDoBau = fechado || guardado
     ? el('div', { class: `bau-caixa premio-bau bau-${bau}` }, ico('presente'))
     : null;
   const nomeDoBau = bau === 'presente' ? 'Presente' : BAUS[bau]?.nome;
@@ -250,7 +253,8 @@ function proximoPremio() {
   const conteudo = el('div', { class: 'premio-conteudo' },
     fotos.length ? el('div', { class: 'premio-pecas' + (fotos.length > 3 ? ' muitas' : '') }, fotos) : null,
     bonus.length ? el('div', { class: 'premio-bonus-linha' }, bonus) : null,
-    texto ? el('p', { class: 'premio-fim' }, texto) : null);
+    texto ? el('p', { class: 'premio-fim' }, texto) : null,
+    guardado ? el('p', { class: 'premio-fim' }, 'Guardado na tela de Baús, em Tarefas.') : null);
   const toque = el('p', { class: 'premio-toque' }, fechado ? '' : 'toque para fechar');
 
   // O presente fica na cor da paleta; o baú, na cor dele; peça solta, na da raridade.
@@ -260,7 +264,7 @@ function proximoPremio() {
     el('div', { class: 'premio-brilho' }),
     el('p', { class: 'premio-sobre' }, sobre),
     el('h2', {}, titulo),
-    caixaDoBau, fechado ? el('p', { class: 'premio-bau-nome' }, nomeDoBau) : null,
+    caixaDoBau, fechado || guardado ? el('p', { class: 'premio-bau-nome' }, nomeDoBau) : null,
     conteudo, btnAbrir, toque);
 
   let timer = 0;

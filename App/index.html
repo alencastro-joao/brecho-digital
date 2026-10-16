@@ -713,8 +713,11 @@
         <div class="tf-trilha" id="tf-trilha"></div>
         <div class="tf-bau-aberto" id="tf-bau-aberto" hidden></div>
       </section>
-      <!-- A porta para as coleções. -->
-      <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
+      <!-- As portas para os baús guardados e para as coleções. -->
+      <div class="tf-portas">
+        <button type="button" class="tf-colecoes tf-baus" id="tarefas-baus"></button>
+        <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
+      </div>
     </div>
   </section>
 
@@ -751,6 +754,17 @@
       <div class="hp-lista" id="hp-lista"></div>
     </div>
   </div>
+
+  <!-- ====================== BAÚS ====================== -->
+  <!-- Os baús ganhos, fechados, esperando o toque (js/baus.js). Abre por Tarefas. -->
+  <section class="view view-baus" data-view="baus" hidden>
+    <div class="bs-wrapper">
+      <button type="button" class="bs-voltar" id="bs-voltar">‹ Tarefas</button>
+      <header class="bs-head"><h1>Baús</h1><small id="bs-resumo"></small></header>
+      <div class="bs-grade" id="bs-grade"></div>
+      <button type="button" class="btn-premio" id="bs-todos" hidden></button>
+    </div>
+  </section>
 
   <!-- ====================== COLEÇÕES ====================== -->
   <!-- Uma página por marca: as peças da loja que você tem, as que faltam e os

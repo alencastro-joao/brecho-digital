@@ -16,10 +16,10 @@ const ganchos = new Map();
 export const onEnter = (view, fn) => ganchos.set(view, fn);
 
 export const VIEWS = ['vitrine', 'closet', 'stylist', 'board', 'social', 'tarefas',
-  'vestiario', 'perfil', 'personagem', 'usuario', 'colecoes'];
+  'vestiario', 'perfil', 'personagem', 'usuario', 'colecoes', 'baus'];
 
 // Telas sem botão próprio na barra: acendem o botão de onde vieram.
-const BOTAO_DA_VIEW = { usuario: 'social', personagem: 'perfil', colecoes: 'tarefas' };
+const BOTAO_DA_VIEW = { usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas' };
 
 export function rotaAtual() {
   const [alvo, param] = (location.hash || '').replace('#/', '').split('/');
