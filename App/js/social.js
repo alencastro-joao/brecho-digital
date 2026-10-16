@@ -13,7 +13,7 @@
 // tem a altura da própria imagem, e passar o mouse mostra as peças usadas.
 // Um toque abre o look grande (abrirPostGrande); dois toques curtem.
 
-import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, SERVICOS, RARIDADE } from './config.js';
+import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, RARIDADE } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
@@ -735,7 +735,7 @@ async function alternarCurtida(post, botao) {
 
 // ============================ O menu do post ==============================
 // Tudo o que não é curtir e comentar mora aqui: editar e apagar (os seus),
-// publicar fora (Instagram e Pinterest, quando ligados) e baixar a imagem.
+// e baixar a imagem.
 function menuDoPost(post, botao) {
   fecharMenu();
   const meu = sou(post.autor);
@@ -752,12 +752,6 @@ function menuDoPost(post, botao) {
     }));
   }
 
-  for (const [id, s] of Object.entries(SERVICOS)) {
-    if (!db.estaLigado(id)) continue;
-    const quem = db.state.conexoes[id].usuario;
-    itens.push(item(`Publicar no ${s.nome}`, s.cor, () =>
-      toast(`Publicaria "${post.nome}" no ${s.nome} de @${quem}. Com o backend ligado, vai direto.`)));
-  }
   itens.push(item('Baixar imagem', '#1a1a1a', () => baixarPost(post)));
 
   if (meu) {

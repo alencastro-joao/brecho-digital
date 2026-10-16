@@ -80,7 +80,7 @@ CORES_FAVORITAS = {'Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Ro
 
 # Só o que o cartão usa. A varredura nunca traz a senha para a memória.
 _CAMPOS = {'#id': 'id', '#h': 'handle', '#n': 'nome', '#c': 'criado_em',
-           '#p': 'perfil', '#sg': 'seguindo', '#sd': 'seguidores'}
+           '#p': 'perfil', '#sg': 'seguindo', '#sd': 'seguidores', '#r': 'redes'}
 _PROJECAO = ', '.join(_CAMPOS)
 
 
@@ -107,6 +107,8 @@ def _cartao(item, eu=None):
         'avatar': dict(perfil.get('avatar') or {}),
         'equipado': dict(perfil.get('equipado') or {}),
         'corFavorita': perfil.get('corFavorita') or '',
+        # Só o @ das contas ligadas de verdade (redes.py); o token fica lá.
+        'redes': [{'id': k, 'usuario': v} for k, v in sorted((item.get('redes') or {}).items())],
         'seguidores': len(item.get('seguidores') or ()),
         'seguindo': len(item.get('seguindo') or ()),
     }

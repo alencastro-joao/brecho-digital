@@ -510,3 +510,7 @@ button.pf-stat:hover small { text-decoration: underline; }
 @media (min-width: 761px) {
   .view-admin .pa-numeros { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+.adm-rede { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; }
+.adm-rede + .adm-rede { border-top: 1px solid var(--wii-borda); }
+.adm-rede .tool-campo { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.adm-rede input { font: inherit; font-size: 13px; padding: 8px 10px; border: 1.5px solid var(--wii-borda); border-radius: 10px; background: #fff; color: var(--tinta); }

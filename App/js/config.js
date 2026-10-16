@@ -1354,23 +1354,13 @@ export const SERVICOS = {
   instagram: {
     nome: 'Instagram',
     cor: '#e1306c',
-    papel: 'Publicar',
-    resumo: 'Leva suas colagens para fora.',
-    beneficios: [
-      'Publicar a colagem direto no feed ou nos stories, sem baixar o PNG',
-      'Trazer seu @ e sua foto para o perfil do brechó',
-      'Marcar o brechó e o ilustrador do mês na publicação',
-    ],
+    papel: 'Seu @ no perfil',
+    resumo: 'Mostra o seu @ do Instagram no perfil. Precisa ser conta profissional (Criador ou Comercial).',
   },
   pinterest: {
     nome: 'Pinterest',
     cor: '#bd081c',
-    papel: 'Publicar e importar',
-    resumo: 'Vai e volta: publica suas colagens e traz peça de fora.',
-    beneficios: [
-      'Salvar a colagem como pin num board seu, com link de volta para o brechó',
-      'Importar os pins de um board e virar peça no guarda-roupa',
-      'Recorte, compressão e catalogação automáticos no que for importado',
-    ],
+    papel: 'Seu @ no perfil',
+    resumo: 'Mostra o seu @ do Pinterest no perfil.',
   },
 };

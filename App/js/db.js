@@ -900,8 +900,8 @@ export function guardarOrdemDoPerfil(aba, ids) {
 }
 
 // --- Conexões -------------------------------------------------------------
-// Sem backend não há OAuth: aqui a ligação é simulada e guarda só o @ digitado.
-// Quando virar real, é este registro que passa a guardar o token.
+// A ligação de verdade (OAuth) e o token moram no servidor (lambda/redes.py);
+// aqui fica só o espelho do @ que ele confirmou, para o perfil desenhar.
 export function conectar(servico, usuario) {
   state.conexoes[servico] = {
     ligado: true,

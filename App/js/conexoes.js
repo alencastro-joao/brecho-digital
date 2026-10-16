@@ -1,19 +1,16 @@
-// Contas conectadas: Instagram e Pinterest.
+// Contas conectadas: Instagram e Pinterest, ligados de verdade por OAuth.
 //
-// Os dois publicam a colagem para fora; o Pinterest ainda faz o caminho de
-// volta, trazendo pin para virar peça no acervo — que é de onde a curadoria do
-// brechó sai hoje.
-//
-// Sem conta de usuário não há OAuth: aqui a ligação é simulada e guarda só o @
-// digitado. Nenhuma senha é pedida e nada sai do navegador. Quando o backend
-// existir, é este registro que passa a guardar o token — o resto da interface
-// não muda.
+// Conectar é navegar para /api/redes/<rede>/entrar: o servidor manda para o
+// login da rede e, na volta, troca o código por um token, lê o @ verdadeiro e
+// devolve a pessoa para /?rede=<rede>#/perfil (ver nuvem/lambda/redes.py). O
+// token nunca chega aqui; o save guarda só o espelho do @ (db.conectar), e é o
+// servidor quem diz o que está ligado (GET /api/redes).
 
-import { ADMIN, SERVICOS } from './config.js';
+import { SERVICOS } from './config.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 
-let servicoAtual = null;
+let doServidor = null;     // GET /api/redes: { instagram: { pronto, ligado, usuario, em } }
 let aoMudar = null;
 
 // ============================ Redes no perfil =============================
@@ -27,7 +24,7 @@ export const chipsDeRedes = (redes) => redes
   .map(r => el('span', {
     class: 'rede-chip',
     style: { '--servico': SERVICOS[r.id].cor },
-    title: `${SERVICOS[r.id].nome} · ${SERVICOS[r.id].papel.toLowerCase()}`,
+    title: SERVICOS[r.id].nome,
   },
     el('span', { class: 'conexao-ponto' }),
     el('strong', {}, SERVICOS[r.id].nome),
@@ -48,6 +45,7 @@ export function renderConexoes(callback) {
 
   for (const [id, s] of Object.entries(SERVICOS)) {
     const c = db.state.conexoes[id] || { ligado: false };
+    const pronto = doServidor?.[id]?.pronto !== false;
     const cartao = el('div', {
       class: 'conexao' + (c.ligado ? ' ligada' : ''),
       style: { '--servico': s.cor },
@@ -58,98 +56,79 @@ export function renderConexoes(callback) {
           el('strong', {}, s.nome),
           el('small', {}, s.papel)
         ),
-        c.ligado
-          ? el('span', { class: 'conexao-selo' }, 'ligado')
-          : null
+        c.ligado ? el('span', { class: 'conexao-selo' }, 'ligado') : null
       ),
 
       el('p', { class: 'conexao-resumo' },
         c.ligado
           ? `como @${c.usuario} · desde ${new Date(c.em).toLocaleDateString('pt-BR')}`
-          : s.resumo),
+          : pronto ? s.resumo : 'Em breve.'),
 
       el('div', { class: 'conexao-acoes' },
         c.ligado
           ? el('button', { class: 'btn-ghost', onclick: () => desligar(id) }, 'Desconectar')
-          : el('button', { class: 'btn-dark', onclick: () => abrirConexao(id) }, `Conectar ${s.nome}`),
-
-        // O caminho de volta do Pinterest: trazer pin para virar peça.
-        c.ligado && id === 'pinterest'
-          ? el('button', { class: 'btn-ghost', onclick: importarPins }, 'Importar pins')
-          : null
-      )
+          : el('button', { class: 'btn-dark', disabled: !pronto, onclick: () => entrar(id) }, `Conectar ${s.nome}`))
     );
     lista.append(cartao);
   }
 }
 
-function importarPins() {
-  if (!ADMIN) {
-    return toast('Com o backend ligado, os pins do board viriam sozinhos.');
-  }
-  toast('Com o backend ligado, os pins do board viriam sozinhos. Por ora, suba a peça pela esteira.');
-  location.href = 'esteira.html';
+// O login acontece na página da rede: sai do app e volta depois.
+function entrar(id) {
+  location.href = `/api/redes/${id}/entrar`;
 }
 
-function desligar(id) {
+async function desligar(id) {
+  try {
+    const r = await fetch(`/api/redes/${id}/sair`, { method: 'POST', credentials: 'include' });
+    if (r.ok) doServidor = await r.json();
+  } catch { /* sem rede: desliga aqui e o servidor acerta na próxima leitura */ }
   db.desconectar(id);
   renderConexoes();
   aoMudar?.();
   toast(`${SERVICOS[id].nome} desconectado.`);
 }
 
-// ================================= Modal ==================================
-function abrirConexao(id) {
-  servicoAtual = id;
-  const s = SERVICOS[id];
-
-  $('#cx-titulo').textContent = `Conectar ${s.nome}`;
-  $('#cx-resumo').textContent = s.resumo;
-  $('#modal-conexao').style.setProperty('--servico', s.cor);
-
-  const lista = $('#cx-beneficios');
-  lista.innerHTML = '';
-  for (const b of s.beneficios) lista.append(el('li', {}, b));
-
-  const campo = $('#cx-usuario');
-  campo.value = db.state.conexoes[id]?.usuario || '';
-  campo.placeholder = '@seuusuario';
-
-  $('#modal-conexao').hidden = false;
-  document.body.classList.add('com-modal');
-  setTimeout(() => campo.focus(), 60);
-}
-
-function fechar() {
-  $('#modal-conexao').hidden = true;
-  document.body.classList.remove('com-modal');
-  servicoAtual = null;
-}
-
-function confirmar() {
-  const usuario = $('#cx-usuario').value.trim();
-  if (!usuario) {
-    return toast('Escreva o seu @ para simular a ligação.', 'aviso');
+// O servidor é quem sabe o que está ligado: o espelho do save segue ele.
+async function sincronizar() {
+  try {
+    const r = await fetch('/api/redes', { credentials: 'include' });
+    if (!r.ok) return;
+    doServidor = await r.json();
+  } catch { return; }
+  let mudou = false;
+  for (const id of Object.keys(SERVICOS)) {
+    const srv = doServidor[id];
+    if (!srv) continue;
+    const local = db.state.conexoes[id] || {};
+    if (srv.ligado && (local.usuario !== srv.usuario || !local.ligado)) {
+      db.conectar(id, srv.usuario);
+      if (srv.em) db.state.conexoes[id].em = srv.em;
+      mudou = true;
+    } else if (!srv.ligado && local.ligado) {
+      db.desconectar(id);
+      mudou = true;
+    }
   }
-  db.conectar(servicoAtual, usuario);
-  const nome = SERVICOS[servicoAtual].nome;
-  fechar();
   renderConexoes();
-  aoMudar?.();
-  toast(`${nome} conectado como @${usuario.replace(/^@/, '')}.`);
+  if (mudou) aoMudar?.();
 }
 
-export function montarConexoes() {
-  $('#cx-fechar').addEventListener('click', fechar);
-  $('#cx-cancelar').addEventListener('click', fechar);
-  $('#cx-confirmar').addEventListener('click', confirmar);
-  $('#cx-usuario').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') confirmar();
-  });
-  $('#modal-conexao').addEventListener('pointerdown', (e) => {
-    if (e.target.id === 'modal-conexao') fechar();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !$('#modal-conexao').hidden) fechar();
-  });
+const ERROS = {
+  config: 'ainda não está pronto para conectar',
+  recusou: 'não foi autorizado',
+  falhou: 'não conseguiu confirmar a conta. Lembre que o Instagram só liga conta profissional',
+  sessao: 'precisa que você entre na sua conta antes',
+};
+
+export async function montarConexoes() {
+  // A volta do login da rede: /?rede=instagram&ok=1#/perfil
+  const q = new URLSearchParams(location.search);
+  const rede = q.get('rede');
+  if (rede) history.replaceState(null, '', location.pathname + location.hash);
+  await sincronizar();
+  if (!SERVICOS[rede]) return;
+  const nome = SERVICOS[rede].nome;
+  if (q.get('ok')) toast(`${nome} conectado como @${db.state.conexoes[rede]?.usuario || ''}.`);
+  else toast(`O ${nome} ${ERROS[q.get('erro')] || ERROS.falhou}.`, 'aviso');
 }

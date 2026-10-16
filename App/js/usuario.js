@@ -83,7 +83,7 @@ function numerosDe(p) {
 // que faz a informação valer alguma coisa quando ela aparece. A semente é um
 // fio próprio (o id + um sufixo) para não deslocar os números de numerosDe.
 export function redesDoPerfil(p) {
-  if (p.real) return [];      // ligar contas de fora ainda é do save de cada um
+  if (p.real) return p.redes || [];   // só as ligadas de verdade (lambda/redes.py)
   const rnd = mulberry32(sementeDoTexto(p.id + ':redes'));
   const arroba = p.handle.replace(/^@+/, '');
   const redes = [];
