@@ -108,10 +108,6 @@ async function iniciar() {
   } catch {}
   if (conflito === 'perdeu' || sync.perdeu) {
     toast('Seu guarda-roupa mudou em outro aparelho e veio de lá. O que foi feito aqui depois disso não foi guardado.', 'aviso');
-  } else if (conflito === 'trouxe') {
-    toast('Guarda-roupa atualizado com o que você fez em outro aparelho.');
-  } else if (sync.estado === 'veio da nuvem') {
-    toast('Guarda-roupa trazido da sua conta.');
   } else if (sync.estado === 'offline') {
     toast('Sem conexão com o servidor: jogando no save deste navegador.', 'aviso');
   }
@@ -193,8 +189,7 @@ async function iniciar() {
   // O dia pode virar com a aba aberta.
   setInterval(() => {
     if (db.virarODiaSeNecessario()) {
-      montarVitrine();
-      toast('Vitrine nova! O dono repôs as peças.');
+      montarVitrine();   // o sino já avisa do dia novo
     } else {
       atualizarBadge();
     }
