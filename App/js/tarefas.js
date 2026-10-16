@@ -285,7 +285,7 @@ function sortearRaridadeDoBau() {
   return opcoes[0][0];
 }
 
-function sortearPecas(bauId) {
+export function sortearPecas(bauId) {
   const { min, max } = BAUS[bauId];
   const qtd = min + Math.floor(Math.random() * (max - min + 1));
   const escolhidas = new Set();

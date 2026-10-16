@@ -27,6 +27,7 @@ import { irPara } from './router.js';
 import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { darTrioDaCor } from './presente.js';
+import { sortearPecas as sortearPecasDoBau } from './tarefas.js';
 import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
 
@@ -123,8 +124,11 @@ function sortearPecas(faixas) {
 }
 
 function entregar(premio) {
-  const r = { xp: premio.xp || 0, fichas: premio.fichas || 0, pecas: [] };
-  for (const { item, raridade } of sortearPecas(premio.pecas || [])) {
+  const r = { xp: premio.xp || 0, fichas: premio.fichas || 0, pecas: [], bau: premio.bau || null };
+  // Baú: quantidade e raridades pela regra dos baús de Tarefas (BAUS e
+  // CHANCE_NO_BAU); `pecas` pede uma peça de cada faixa.
+  const sorteadas = premio.bau ? sortearPecasDoBau(premio.bau) : sortearPecas(premio.pecas || []);
+  for (const { item, raridade } of sorteadas) {
     const peca = db.adicionarPeca(item, { origem: 'missao', raridade });
     if (peca) r.pecas.push({ item, peca });
   }
@@ -177,7 +181,7 @@ function anunciar(m, r, ultima) {
   const melhor = r.pecas.map(p => p.peca.raridade).sort((a, b) => ordem(b) - ordem(a))[0];
   enfileirar({
     sobre: 'Missão completa', titulo: m.nome, pecas: r.pecas, xp: r.xp, fichas: r.fichas,
-    bau: melhor && BAU_DA_RARIDADE[melhor],
+    bau: r.bau || (melhor && BAU_DA_RARIDADE[melhor]),
   });
   if (ultima) {
     enfileirar({
@@ -249,8 +253,9 @@ function proximoPremio() {
     texto ? el('p', { class: 'premio-fim' }, texto) : null);
   const toque = el('p', { class: 'premio-toque' }, fechado ? '' : 'toque para fechar');
 
-  // O presente fica na cor da paleta; baú e peça soltos, na da melhor raridade.
-  const tom = bau === 'presente' ? 'nenhuma' : melhor;
+  // O presente fica na cor da paleta; o baú, na cor dele; peça solta, na da raridade.
+  const tom = bau === 'presente' ? 'nenhuma'
+    : Object.keys(BAU_DA_RARIDADE).find(f => BAU_DA_RARIDADE[f] === bau) || melhor;
   const cartao = el('div', { class: `premio r-${tom}` + (fechado ? ' fechado' : ''), role: 'status' },
     el('div', { class: 'premio-brilho' }),
     el('p', { class: 'premio-sobre' }, sobre),
@@ -292,6 +297,7 @@ const nomeFaixa = (f) => RARIDADE[f]?.nome?.toLowerCase() ?? f;
 
 function rotuloDoPremio(p) {
   const partes = [];
+  if (p.bau) partes.push(BAUS[p.bau].nome.toLowerCase());
   for (const f of p.pecas || []) partes.push(`peça ${nomeFaixa(f)}`);
   if (p.fichas) partes.push(p.fichas === 1 ? '1 ficha' : `${p.fichas} fichas`);
   if (p.xp) partes.push(`${p.xp} XP`);
@@ -322,7 +328,7 @@ function htmlBoasVindas() {
       <div class="intro-balao" data-digitar>
         <p class="intro-dica">Vamos começar um tutorial rápido. Você vai criar o seu personagem,
           pegar a sua primeira roupa e conhecer tudo o que dá pra fazer aqui.</p>
-        <p class="intro-dica">Cada missão dá um prêmio, e a última é uma <b>peça épica</b>.</p>
+        <p class="intro-dica">Cada missão dá um prêmio, e a última é um <b>baú épico</b>.</p>
       </div>
       <button class="btn-dark" data-acao="comecar" type="button">Começar o tutorial</button>
       <button class="link-btn" data-acao="pular" type="button">Pular tutorial</button>
