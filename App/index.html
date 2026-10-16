@@ -680,48 +680,23 @@
   <!-- As missões do dia, a trilha de níveis e a cápsula: o que o app pede de
        você. Quem você é fica no perfil. -->
   <section class="view view-tarefas" data-view="tarefas" hidden>
-    <!-- Cartão de fidelidade do brechó: os pedidos são etiquetas com barra de
-         progresso; dia e semana fechados viram carimbos. No computador, o dia
-         fica à esquerda e a semana à direita; no celular, um embaixo do outro. -->
+    <!-- Lista limpa: nível e fichas numa fileira, as abas Hoje e Semana, um
+         bloco por pedido e a trilha dos carimbos até o baú. Explicação só
+         aparece se a pessoa tocar (no baú, nas fichas). -->
     <div class="tarefas-wrapper">
       <header class="tarefas-head">
         <h1>Tarefas</h1>
-        <div class="tarefas-faixa" id="tarefas-faixa"></div>
+        <div class="tf-topo" id="tarefas-faixa"></div>
       </header>
-
-      <div class="tarefas-cartoes">
-        <div class="tarefas-col">
-          <section class="cartao-fid">
-            <header class="cartao-topo"><h2 id="dia-titulo">Pedidos de hoje</h2><small id="dia-prazo"></small></header>
-            <div class="etiquetas" id="dia-lista"></div>
-            <div class="cartao-rodape" id="dia-rodape"></div>
-          </section>
-          <section class="cartao-fid">
-            <header class="cartao-topo"><h2 id="carimbos-titulo">Carimbos da semana</h2></header>
-            <div class="cartela" id="carimbos-cartela"></div>
-            <p class="cartao-nota">Fechar 3 pedidos do dia carimba o dia.</p>
-            <div class="bau" id="carimbos-bau"></div>
-          </section>
-        </div>
-
-        <div class="tarefas-col">
-          <section class="cartao-fid">
-            <header class="cartao-topo"><h2 id="semana-titulo">Pedidos da semana</h2><small id="semana-prazo"></small></header>
-            <div class="etiquetas" id="semana-lista"></div>
-            <div class="cartao-rodape" id="semana-rodape"></div>
-          </section>
-          <section class="cartao-fid">
-            <header class="cartao-topo"><h2 id="semanas-titulo">Carimbos das semanas</h2></header>
-            <div class="cartela cartela-semanas" id="semanas-cartela"></div>
-            <p class="cartao-nota">Fechar os 5 pedidos da semana carimba a semana. Não precisam ser seguidas.</p>
-            <div class="bau" id="semanas-bau"></div>
-          </section>
-        </div>
-      </div>
-
-      <!-- A porta para as coleções: mostra a mais perto de fechar. -->
+      <div class="tf-abas" id="tf-abas" role="tablist"></div>
+      <section class="tf-painel">
+        <div class="tf-lista" id="tf-lista"></div>
+        <div class="tf-rodape" id="tf-rodape"></div>
+        <div class="tf-trilha" id="tf-trilha"></div>
+        <div class="tf-bau-aberto" id="tf-bau-aberto" hidden></div>
+      </section>
+      <!-- A porta para as coleções. -->
       <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
-
     </div>
   </section>
 

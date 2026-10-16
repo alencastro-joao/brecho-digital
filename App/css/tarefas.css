@@ -1,6 +1,5 @@
-/* Tarefas (#/tarefas): cartão de fidelidade do brechó — os pedidos do dia e da
-   semana como etiquetas com barra de progresso, os carimbos, as fichas e a
-   trilha de níveis. Reaproveita o .missoes-sub definido em social.css. */
+/* Tarefas (#/tarefas): a lista limpa — nível e fichas, as abas Hoje e
+   Semana, um bloco por pedido e a trilha dos carimbos até o baú. */
 
 .view-tarefas { background: var(--papel); overflow-y: auto; }
 .tarefas-wrapper {
@@ -11,75 +10,110 @@
 .tarefas-head h1 { font-size: 24px; letter-spacing: -.5px; }
 .ferramentas h2 { font-size: 16px; margin-bottom: 4px; }
 
-/* Faixa do topo: nível de um lado, fichas e a troca do outro. */
-.tarefas-faixa {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 18px 28px;
-  background: #fff; border: 1px solid var(--linha); border-radius: var(--raio); padding: 16px 20px;
+/* Lista limpa: uma coluna só, em painéis pérola e blocos com o degrau
+   embaixo, como o Closet e o Stylist. A cor de destaque é a da paleta. */
+.view-tarefas { --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco); }
+.view-tarefas .tarefas-wrapper { max-width: 560px; gap: 10px; }
+.tf-barra { height: 6px; border-radius: 4px; background: #e1e8ed; overflow: hidden; }
+.tf-barra span { display: block; height: 100%; background: var(--wii); border-radius: 4px; transition: width .4s; }
+
+/* Topo: nível e fichas numa fileira. */
+.tf-topo { display: flex; gap: 8px; }
+.tf-nivel, .tf-fichas {
+  display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 12px;
+  border: 2px solid var(--bb); border-radius: 14px; background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--pb); color: var(--tinta);
 }
-.faixa-nivel { flex: 1 1 280px; min-width: 0; }
-.faixa-nivel .nivel-box { margin: 0; max-width: none; }
-.faixa-fichas {
-  flex: 1 1 260px; min-width: 0; max-width: 380px;
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 14px;
+.tf-nivel { flex: 1; min-width: 0; }
+.tf-nivel .tf-barra { flex: 1; }
+.tf-nivel small { font-size: 11px; font-weight: 700; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
+.tf-nv { font-size: 10px; font-weight: 800; color: var(--tinta-suave); display: flex; align-items: baseline; gap: 2px; }
+.tf-nv b { font-size: 17px; color: var(--tinta); }
+.tf-fichas { flex: none; font-size: 14px; }
+.tf-fichas b { font-variant-numeric: tabular-nums; }
+.tf-fichas.pronto { background: #fbf1d0 var(--brilho-topo); border-color: #e3cf8f; animation: premio 1.8s ease-in-out infinite; }
+
+/* Abas Hoje e Semana. */
+.tf-abas { display: flex; gap: 6px; padding: 6px; border: 2px solid var(--bb); border-radius: 18px; background: var(--pn); }
+.tf-abas button {
+  position: relative; flex: 1; height: 42px; border: 2px solid var(--bb); border-radius: 12px; background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--pb); font-size: 14px; font-weight: 700; color: var(--tinta);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.fichas-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.fichas-topo strong { font-size: 14px; }
-.fichas-topo small, .fichas-nota { font-size: 11px; color: var(--tinta-suave); }
-.faixa-fichas .barra { grid-column: 1; }
-.fichas-nota { grid-column: 1; }
-.btn-trocar { grid-column: 2; grid-row: 1 / span 3; width: auto; padding: 9px 16px; font-size: 12.5px; }
-.btn-trocar:disabled { opacity: .35; cursor: default; transform: none; }
+.tf-abas button small { font-size: 11px; color: var(--tinta-suave); font-weight: 700; }
+.tf-abas button.on {
+  background: var(--tarefas) var(--brilho-topo); border-color: var(--tinta);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+}
+.tf-abas button.tem-premio::after {
+  content: ''; position: absolute; top: 5px; right: 6px;
+  width: 9px; height: 9px; border-radius: 50%; background: #e0533a; border: 2px solid #fff;
+}
+
+/* O painel: os pedidos, o prêmio pronto e a trilha. */
+.tf-painel {
+  border: 2px solid var(--bb); border-radius: 20px; background: var(--pn);
+  padding: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.tf-lista { display: flex; flex-direction: column; gap: 7px; }
+.tf-item {
+  display: flex; align-items: center; gap: 12px; padding: 9px 12px 11px; background: #fff;
+  border: 2px solid var(--bb); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--pb);
+}
+.tf-ico {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px;
+  background: var(--perola); border: 2px solid var(--bb); font-size: 19px; color: var(--tinta);
+}
+.tf-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.tf-info strong { font-size: 14px; font-weight: 700; }
+.tf-item > small {
+  font-size: 12px; font-weight: 700; color: var(--tinta-suave); min-width: 30px;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.tf-item.ok { background: #eef6e6; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
+.tf-item.ok .tf-ico { background: #6b8f4e; border-color: #5a7c40; color: #fff; }
+.tf-item.ok strong { color: var(--tinta-suave); }
+.tf-rodape:empty { display: none; }
+
+/* Trilha: os carimbos ligados por uma linha até o baú. */
+.tf-trilha { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 6px 4px 2px; }
+.tf-trilha::before {
+  content: ''; position: absolute; left: 18px; right: 30px; top: 50%; height: 3px; margin-top: 2px;
+  background: var(--bb); border-radius: 2px;
+}
+.tf-trilha.curta { justify-content: flex-start; gap: 22px; }
+.tf-trilha.curta .tf-bau { margin-left: auto; }
+.tf-selo {
+  position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: #fff; border: 2px solid var(--bb); font-size: 11px; font-weight: 800; color: var(--tinta-suave);
+}
+.tf-selo.hoje { border-color: var(--tinta); color: var(--tinta); }
+.tf-selo.on { background: var(--wii); border-color: var(--wii); color: #fff; font-size: 15px; }
+.tf-bau {
+  position: relative; width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; font-size: 22px;
+  background: var(--perola); border: 2px solid var(--bb); box-shadow: inset 0 -3px 0 var(--pb); color: var(--tinta);
+}
+.tf-bau.ouro { background: #fbf1d0 var(--brilho-topo); border-color: #e3cf8f; color: #8a6d24; }
+.tf-bau.pronto {
+  background: #e8c46a var(--brilho-topo); border-color: #c9a443; color: #3d300c;
+  animation: premio 1.8s ease-in-out infinite;
+}
+.tf-bau.aberto { background: #6b8f4e; border-color: #5a7c40; color: #fff; }
+.tf-bau-aberto {
+  display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #fff;
+  border: 2px solid #c6dcb2; border-radius: 14px;
+}
+.tf-bau-aberto[hidden] { display: none; }
+.tf-bau-aberto small { flex: 1; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.tf-bau-aberto .btn-ghost { width: auto; flex: none; padding-left: 18px; padding-right: 18px; }
+
+/* Barra genérica (também na tela de Coleções) e a moeda das fichas. */
+.barra { height: 5px; background: #f1ece4; border-radius: 4px; overflow: hidden; }
+.barra span { display: block; height: 100%; background: var(--tinta); transition: width .4s; }
 .ficha-moeda {
   width: 18px; height: 18px; border-radius: 50%; flex: none;
   background: #e8c46a; border: 2px solid #c9a443; box-shadow: inset 0 0 0 2px #f3d98f;
 }
-
-/* Duas colunas no computador: o dia à esquerda, a semana à direita. */
-.tarefas-cartoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
-.tarefas-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-@media (max-width: 900px) { .tarefas-cartoes { grid-template-columns: minmax(0, 1fr); } }
-
-/* O cartão: papel branco com o furo de pendurar no canto. */
-.cartao-fid {
-  position: relative; background: #fff; border: 1px solid #e6dccd;
-  border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
-}
-.cartao-fid::after {
-  content: ''; position: absolute; right: 14px; top: 14px;
-  width: 11px; height: 11px; border-radius: 50%;
-  background: #fbf8f4; border: 1px solid #e6dccd;
-}
-.cartao-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-right: 22px; }
-.cartao-topo h2 {
-  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--tinta-suave); margin: 0;
-}
-.cartao-topo small { font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
-.cartao-nota { font-size: 11.5px; color: var(--tinta-suave); margin: 0; }
-.cartao-nota.ok { color: #557a3a; font-weight: 600; }
-.cartao-rodape:empty { display: none; }
-
-/* Etiqueta de preço: o furinho à esquerda, a barra que anda a cada ação. */
-.etiquetas { display: flex; flex-direction: column; gap: 7px; }
-.etiqueta {
-  position: relative; display: flex; flex-direction: column; gap: 6px;
-  background: #fdf3e2; border-radius: 4px 12px 12px 4px; padding: 9px 12px 10px 22px;
-}
-.etiqueta::before {
-  content: ''; position: absolute; left: 8px; top: 50%; margin-top: -3.5px;
-  width: 7px; height: 7px; border-radius: 50%; background: #fbf8f4;
-}
-.etiqueta-linha { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.etiqueta-linha strong { font-size: 13px; font-weight: 600; }
-.etiqueta-linha small { font-size: 11px; color: var(--tinta-suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.etiqueta .barra { background: #f3e4c8; }
-.etiqueta.ok { background: #e9f3df; }
-.etiqueta.ok strong { text-decoration: line-through; color: var(--tinta-suave); }
-.etiqueta.ok .barra { background: #d6e9c6; }
-.etiqueta.ok .barra span { background: #6b8f4e; }
-
-.barra { height: 5px; background: #f1ece4; border-radius: 4px; overflow: hidden; }
-.barra span { display: block; height: 100%; background: var(--tinta); transition: width .4s; }
 
 /* Botão de prêmio: o toque que faz o prêmio sair. */
 .btn-premio {
@@ -89,18 +123,10 @@
 }
 .btn-premio:hover { background: #e2b94f; }
 @keyframes premio { 50% { box-shadow: 0 0 0 6px rgba(232, 196, 106, .18); } }
-@media (prefers-reduced-motion: reduce) { .btn-premio { animation: none; } }
-
-/* Carimbos: círculo tracejado vazio; carimbado, tinta vermelha e torto. */
-.cartela { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; max-width: 380px; }
-.selo {
-  aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed #d8cfc2;
-  display: grid; place-items: center; font-size: 10px; color: var(--tinta-suave);
-}
-.selo.hoje { border-color: var(--tinta-suave); }
-.selo.on {
-  border: 2px solid #b5523b; color: #b5523b; font-weight: 800; background: #fff4ef;
-  transform: rotate(-12deg);
+@media (prefers-reduced-motion: reduce) { :is(.btn-premio, .tf-bau.pronto, .tf-fichas.pronto) { animation: none; } }
+.tf-painel .btn-premio {
+  border: 2px solid #c9a443; border-radius: 14px; background-image: var(--brilho-topo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -3px 0 rgba(60, 80, 95, .16);
 }
 
 /* Pontinho no botão de Tarefas quando há prêmio esperando o toque. */
@@ -137,25 +163,8 @@
 .ferramenta-info strong { display: block; font-size: 13px; font-weight: 600; }
 .ferramenta-info small { font-size: 11px; color: var(--tinta-suave); }
 
-/* -------------------------------- Baús ---------------------------------- */
-.cartela-semanas { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 162px; }
-.bau {
-  display: flex; align-items: center; gap: 14px; margin-top: 12px;
-  background: #fff; border: 1px dashed var(--linha); border-radius: 14px; padding: 12px 16px;
-}
-.bau.dourado { background: #fbf6e8; border-color: #e3d3a5; }
-.bau.dourado .bau-info strong { color: #8a6d24; }
-.bau.pronto { border: 1.5px solid #e8c46a; background: #fff6d6; }
-.bau.aberto { border: 1px solid #cfe3c0; background: #fbfdf9; }
-.bau-icone { font-size: 26px; width: 44px; text-align: center; flex: none; }
-.bau-peca { position: relative; width: 56px; height: 56px; flex: none; }
-.bau-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.bau-info strong { font-size: 13px; font-weight: 700; }
-.bau-info small { font-size: 11.5px; color: var(--tinta-suave); }
-.bau-info .barra { margin-top: 3px; }
-.bau-info .bau-conta { font-size: 11px; }
-.bau-info .bau-proximo { font-size: 11px; color: #8a6d24; }
+/* As peças que saíram do baú (também no cartão de Coleções). */
+.bau-peca { position: relative; width: 48px; height: 48px; flex: none; }
+.bau-peca .peca-caixa { inset: 0; }
 .bau-pecas { display: flex; flex: none; }
 .bau-pecas .bau-peca + .bau-peca { margin-left: -14px; }
-.bau .btn-ghost, .bau .btn-premio { width: auto; flex: none; padding-left: 18px; padding-right: 18px; }
-.bau-peca .peca-caixa { inset: 0; }

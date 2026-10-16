@@ -1,11 +1,11 @@
 // Tarefas: o que o app pede de você — os pedidos do dia e da semana, os
 // carimbos, as fichas e a trilha de níveis.
 //
-// A tela é um cartão de fidelidade de brechó: cada missão é uma etiqueta com a
-// sua barra de progresso, que fica verde e riscada quando fecha, e os dias e as
-// semanas fechados viram carimbos. O formato das missões segue o Pokémon TCG
-// Pocket (lista fixa, cumprir parte já paga); os prêmios dos marcos esperam um
-// toque para sair — é o momento bom do dia.
+// A tela é uma lista limpa: nível e fichas numa fileira, as abas Hoje e
+// Semana, um bloco por pedido (fica verde quando fecha) e a trilha dos
+// carimbos até o baú. A explicação de cada coisa só aparece num toque. O
+// formato das missões segue o Pokémon TCG Pocket (lista fixa, cumprir parte já
+// paga); os prêmios dos marcos esperam um toque para sair.
 
 import {
   MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
@@ -17,10 +17,9 @@ import * as estoque from './estoque.js';
 import {
   el, $, toast, hojeISO, msAteMeiaNoite, msAteSegunda, formatarContagem, formatarDias,
 } from './util.js';
-import { ico, emo } from './icones.js';
-import { barraDeNivel } from './nivel.js';
+import { ico } from './icones.js';
 import { irPara, viewAtual } from './router.js';
-import { colecaoMaisPerto, todasAsColecoes, abrirColecao } from './colecoes.js';
+import { todasAsColecoes, abrirColecao } from './colecoes.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -35,46 +34,44 @@ export function montarTarefas() {
 
 export function renderTarefas() {
   db.virarODiaSeNecessario();   // o dia e a semana podem ter virado com a aba aberta
-  renderFaixa();
-  renderDia();
-  renderCarimbos();
-  renderSemana();
-  renderSemanas();
+  if (!aba) aba = premioNaSemana() && !premioNoDia() ? 'semana' : 'hoje';
+  renderTopo();
+  renderAbas();
+  if (aba === 'hoje') renderDia(); else renderSemana();
   renderCartaoColecoes();
   renderPontinho();
 }
 
+// A aba aberta (Hoje ou Semana). Começa no Hoje, a não ser que só a semana
+// tenha prêmio esperando.
+let aba = null;
+const premioNoDia = () => !!db.marcoDoDiaPronto() || db.bauDosDiasPronto();
+const premioNaSemana = () =>
+  db.carimboDaSemanaPronto() || db.fichasDaSemanaProntas() || db.bauEspecialPronto();
+
+// O ícone de cada pedido, pelo evento que ele conta.
+const ICONE = {
+  entrar: 'abrir', resgates: 'sacola', raras: 'brilho', looks: 'varinha',
+  publicar: 'camera', curtir: 'coracao',
+};
+
 // ------------------------------- Coleções ---------------------------------
-// O cartão que leva à tela de Coleções: puxa pela que está mais perto de
-// fechar, com as peças que você já tem dela empilhadas.
+// O botão que leva à tela de Coleções. Com item do avatar esperando escolha,
+// ele vira o presente e abre direto a coleção.
 function renderCartaoColecoes() {
   const botao = $('#tarefas-colecoes');
   const todas = todasAsColecoes();
   botao.hidden = !todas.length;
   if (!todas.length) return;
-  // Escolha esperando vem antes de tudo: é item de graça parado.
   const comEscolha = todas.find(c => c.livres > 0);
-  const perto = comEscolha || colecaoMaisPerto();
   const completas = todas.filter(c => c.completa).length;
-  const faltam = perto ? perto.total - perto.tem : 0;
-  const ids = perto ? perto.ids : todas[0].ids;
-  const pilha = [...ids.filter(id => db.temPeca(id)), ...ids.filter(id => !db.temPeca(id))]
-    .slice(0, 3).map(id => pecaDoCatalogo(id)).filter(Boolean);
-
+  botao.classList.toggle('escolha', !!comEscolha);
+  botao.title = comEscolha ? `${comEscolha.marca}: escolha um item do avatar` : '';
   botao.onclick = () => comEscolha ? abrirColecao(comEscolha.id) : irPara('colecoes');
   botao.replaceChildren(
-    el('span', { class: 'tf-col-pilha' }, ...pilha.map(miniPeca)),
-    el('span', { class: 'tf-col-info' },
-      el('strong', {}, 'Coleções'),
-      el('small', {}, comEscolha
-        ? [emo('🎁'), ` ${comEscolha.marca}: escolha um item do avatar`]
-        : perto
-        ? (perto.tem
-          ? `${perto.marca}: ${faltam === 1 ? 'falta 1 peça' : `faltam ${faltam} peças`} para fechar`
-          : `Garimpe peças ${perto.tipo === 'cor' ? 'da cor ' : perto.tipo === 'estilo' ? 'de ' : 'da '}${perto.marca} para abrir o primeiro item`)
-        : 'Todas completas!'),
-      el('small', { class: 'tf-col-conta' },
-        `${completas} de ${todas.length} ${todas.length === 1 ? 'completa' : 'completas'}`)),
+    el('span', { class: 'tf-col-ico' }, ico(comEscolha ? 'presente' : 'trofeu')),
+    el('strong', {}, 'Coleções'),
+    el('small', {}, `${completas}/${todas.length}`),
     el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
 }
 
@@ -85,77 +82,96 @@ function renderPontinho() {
   }
 }
 
-// ------------------------------ Faixa do topo ------------------------------
-// Nível, fichas e a troca de fichas por resgate, num lugar só.
-function renderFaixa() {
+// ---------------------------------- Topo ----------------------------------
+// Nível e fichas numa fileira. Tocar nas fichas troca por um resgate quando
+// dá; quando não dá, diz quanto falta.
+function renderTopo() {
+  const p = db.progresso();
   const n = db.fichas();
   const troca = FICHAS.porResgate;
-  const usadas = db.state.dia.extras ?? 0;
   const pode = db.podeTrocarFichas();
-  const nota = usadas >= FICHAS.extrasPorDia
-    ? 'Você já trocou fichas hoje. Amanhã dá de novo.'
-    : pode ? 'Dá para trocar por mais um resgate.'
-      : `Faltam ${troca - n} ${troca - n === 1 ? 'ficha' : 'fichas'} para um resgate.`;
+  const jaTrocou = (db.state.dia.extras ?? 0) >= FICHAS.extrasPorDia;
 
   $('#tarefas-faixa').replaceChildren(
-    el('div', { class: 'faixa-nivel' }, barraDeNivel()),
-    el('div', { class: 'faixa-fichas' },
-      el('div', { class: 'fichas-topo' },
-        el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }),
-        el('strong', {}, `${n} ${n === 1 ? 'ficha' : 'fichas'}`),
-        el('small', {}, `${troca} fichas = 1 resgate`)),
-      el('div', { class: 'barra' },
-        el('span', { style: { width: Math.min(100, n / troca * 100) + '%' } })),
-      el('small', { class: 'fichas-nota' }, nota),
-      el('button', {
-        class: 'btn-dark btn-trocar', disabled: !pode,
-        onclick: () => {
-          if (!db.trocarFichasPorResgate()) return;
-          toast('+1 resgate. Ele fica guardado até você usar.', 'rare');
-        },
-      }, 'Trocar por resgate')),
-  );
+    el('div', { class: 'tf-nivel', title: p.maximo ? 'Nível máximo' : `Faltam ${p.xpFaltando} XP para o nível ${p.nivel + 1}` },
+      el('span', { class: 'tf-nv' }, 'NV', el('b', {}, String(p.nivel))),
+      el('div', { class: 'tf-barra' }, el('span', { style: { width: p.pct + '%' } })),
+      el('small', {}, p.maximo ? `${p.xpTotal} XP` : `${p.xpNoNivel}/${p.xpDoNivel}`)),
+    el('button', {
+      type: 'button', class: 'tf-fichas' + (pode ? ' pronto' : ''),
+      title: `${troca} fichas = 1 resgate`,
+      onclick: () => {
+        if (pode) {
+          if (db.trocarFichasPorResgate()) toast('+1 resgate. Ele fica guardado até você usar.', 'rare');
+          return;
+        }
+        toast(jaTrocou ? 'Você já trocou fichas hoje. Amanhã dá de novo.'
+          : `${troca} fichas = 1 resgate. Faltam ${troca - n}.`);
+      },
+    }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }),
+      el('b', {}, pode ? 'Trocar' : `${Math.min(n, troca)}/${troca}`)));
 }
 
-// ------------------------------- Etiquetas ---------------------------------
-function etiqueta(m, atual) {
+// ---------------------------------- Abas -----------------------------------
+function renderAbas() {
+  const botao = (id, nome, feitas, total, premio, prazo) => el('button', {
+    type: 'button', role: 'tab', class: (aba === id ? 'on' : '') + (premio ? ' tem-premio' : ''),
+    'aria-selected': String(aba === id), title: prazo,
+    onclick: () => { if (aba !== id) { aba = id; renderTarefas(); } },
+  }, nome, el('small', {}, `${feitas}/${total}`));
+  $('#tf-abas').replaceChildren(
+    botao('hoje', 'Hoje', db.missoesFeitas(), MISSOES.length, premioNoDia(),
+      `Zeram em ${formatarContagem(msAteMeiaNoite())}`),
+    botao('semana', 'Semana', db.semanaisFeitas(), MISSOES_SEMANA.length, premioNaSemana(),
+      `Zeram em ${formatarDias(msAteSegunda())}`));
+}
+
+// ------------------------------- Pedidos ----------------------------------
+function pedido(m, atual) {
   const feito = Math.min(atual, m.meta);
   const ok = feito >= m.meta;
-  return el('div', { class: 'etiqueta' + (ok ? ' ok' : '') },
-    el('div', { class: 'etiqueta-linha' },
+  return el('div', { class: 'tf-item' + (ok ? ' ok' : '') },
+    el('span', { class: 'tf-ico' }, ico(ok ? 'ok' : (ICONE[m.evento] || 'estrela'))),
+    el('div', { class: 'tf-info' },
       el('strong', {}, m.nome),
-      el('small', {}, `${feito}/${m.meta}`, ok ? [' ', ico('ok')] : null)),
-    el('div', { class: 'barra' },
-      el('span', { style: { width: (feito / m.meta * 100) + '%' } })));
+      ok ? null : el('div', { class: 'tf-barra' },
+        el('span', { style: { width: (feito / m.meta * 100) + '%' } }))),
+    el('small', {}, ok ? '' : `${feito}/${m.meta}`));
 }
 
-function botaoPremio(texto, acao, { dourado = true } = {}) {
-  return el('button', { class: dourado ? 'btn-premio' : 'btn-dark', onclick: acao }, texto);
+function botaoPremio(texto, acao) {
+  return el('button', { type: 'button', class: 'btn-premio', onclick: acao }, texto);
 }
 
 // ---------------------------------- Dia -----------------------------------
+const DIAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
+
 function renderDia() {
-  const feitas = db.missoesFeitas();
-  $('#dia-titulo').textContent = `Pedidos de hoje · ${feitas} de ${MISSOES.length}`;
-  $('#dia-prazo').textContent = `zeram em ${formatarContagem(msAteMeiaNoite())}`;
-  $('#dia-lista').replaceChildren(...MISSOES.map(m => etiqueta(m, db.progressoMissao(m.id))));
+  $('#tf-lista').replaceChildren(...MISSOES.map(m => pedido(m, db.progressoMissao(m.id))));
 
   const pronto = db.marcoDoDiaPronto();
-  const { ficha, carimbo } = MARCOS_DIA;
-  let rodape;
-  if (pronto === 'carimbo') {
-    rodape = botaoPremio('Carimbar o dia', resgatarDia);
-  } else if (pronto === 'ficha') {
-    rodape = botaoPremio(`Pegar ${ficha.fichas} ficha`, resgatarDia);
-  } else if (db.diaCarimbado()) {
-    rodape = el('p', { class: 'cartao-nota ok' }, 'Dia carimbado. Amanhã tem pedido novo.');
-  } else {
-    const faltam = (feitas < ficha.missoes ? ficha.missoes : carimbo.missoes) - feitas;
-    rodape = el('p', { class: 'cartao-nota' }, feitas < ficha.missoes
-      ? `Mais ${faltam} ${faltam === 1 ? 'pedido' : 'pedidos'}: ${ficha.fichas} ficha.`
-      : `Mais ${faltam} ${faltam === 1 ? 'pedido' : 'pedidos'}: carimbo do dia e +${carimbo.fichas} fichas.`);
-  }
-  $('#dia-rodape').replaceChildren(rodape);
+  $('#tf-rodape').replaceChildren(...(pronto === 'carimbo'
+    ? [botaoPremio('Carimbar o dia', resgatarDia)]
+    : pronto === 'ficha' ? [botaoPremio(`Pegar ${MARCOS_DIA.ficha.fichas} ficha`, resgatarDia)] : []));
+
+  // A trilha: os 7 dias da semana e o Baú dos dias na ponta.
+  const carimbados = db.carimbosDaSemana();
+  const [a, m, d] = db.state.semana.data.split('-').map(Number);
+  const hoje = hojeISO();
+  const selos = DIAS.map((nome, i) => {
+    const iso = hojeISO(new Date(a, m - 1, d + i));
+    const on = carimbados.includes(iso);
+    return el('span', {
+      class: 'tf-selo' + (on ? ' on' : '') + (iso === hoje ? ' hoje' : ''),
+      title: on ? `${nome}: dia carimbado` : nome,
+    }, on ? ico('ok') : nome[0].toUpperCase());
+  });
+  const premio = db.state.semana.premio;
+  trilha(selos, {
+    nome: 'Baú dos dias', bau: PREMIO_SEMANA, icone: 'presente',
+    pronto: db.bauDosDiasPronto(), abrir: abrirBau,
+    aberto: premio && { pecas: db.pecasDoBauDosDias(), xp: premio.xp ?? premioDoBau(PREMIO_SEMANA, 1).atual.xp },
+  });
 }
 
 function resgatarDia() {
@@ -166,105 +182,61 @@ function resgatarDia() {
     : `+${r.fichas} ficha.`, r.marco === 'carimbo' ? 'rare' : undefined);
 }
 
-// ------------------------------- Carimbos ---------------------------------
-const DIAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
-
-function renderCarimbos() {
-  const carimbados = db.carimbosDaSemana();
-  const [a, m, d] = db.state.semana.data.split('-').map(Number);
-  const hoje = hojeISO();
-  $('#carimbos-titulo').textContent = `Carimbos da semana · ${carimbados.length} de 7`;
-  $('#carimbos-cartela').replaceChildren(...DIAS.map((nome, i) => {
-    const iso = hojeISO(new Date(a, m - 1, d + i));
-    const on = carimbados.includes(iso);
-    return el('span', {
-      class: 'selo' + (on ? ' on' : '') + (iso === hoje ? ' hoje' : ''),
-      title: on ? `${nome}: dia carimbado` : nome,
-    }, nome);
-  }));
-
-  const premio = db.state.semana.premio;
-  linhaDeBau($('#carimbos-bau'), {
-    nome: 'Baú dos dias', bau: PREMIO_SEMANA,
-    feitos: carimbados.length, meta: PREMIO_SEMANA.carimbos, unidade: 'dias carimbados',
-    pronto: db.bauDosDiasPronto(), abrir: abrirBau,
-    aberto: premio && { pecas: db.pecasDoBauDosDias(), xp: premio.xp ?? premioDoBau(PREMIO_SEMANA, 1).atual.xp },
-  });
-}
-
 // -------------------------------- Semana ----------------------------------
 function renderSemana() {
-  const feitas = db.semanaisFeitas();
-  $('#semana-titulo').textContent = `Pedidos da semana · ${feitas} de ${MISSOES_SEMANA.length}`;
-  $('#semana-prazo').textContent = `zeram em ${formatarDias(msAteSegunda())}`;
-  $('#semana-lista').replaceChildren(
-    ...MISSOES_SEMANA.map(m => etiqueta(m, db.progressoSemanal(m.id))));
+  $('#tf-lista').replaceChildren(
+    ...MISSOES_SEMANA.map(m => pedido(m, db.progressoSemanal(m.id))));
 
   const { fichas } = MARCOS_SEMANA;
-  let rodape;
+  let rodape = [];
   if (db.carimboDaSemanaPronto()) {
-    rodape = botaoPremio('Carimbar a semana', () => {
+    rodape = [botaoPremio('Carimbar a semana', () => {
       const r = db.carimbarSemana();
       if (r) toast(`Semana carimbada!${r.fichas ? ` +${r.fichas} fichas.` : ''}`, 'rare');
-    });
+    })];
   } else if (db.fichasDaSemanaProntas()) {
-    rodape = botaoPremio(`Pegar ${fichas.fichas} fichas`, () => {
+    rodape = [botaoPremio(`Pegar ${fichas.fichas} fichas`, () => {
       const n = db.resgatarFichasDaSemana();
       if (n) toast(`+${n} fichas da semana.`, 'rare');
-    });
-  } else if (db.semanaCarimbada()) {
-    rodape = el('p', { class: 'cartao-nota ok' }, 'Semana carimbada. Segunda tem pedido novo.');
-  } else {
-    rodape = el('p', { class: 'cartao-nota' },
-      `Com ${fichas.missoes} pedidos: ${fichas.fichas} fichas. Com os ${MISSOES_SEMANA.length}: carimbo da semana.`);
+    })];
   }
-  $('#semana-rodape').replaceChildren(rodape);
-}
+  $('#tf-rodape').replaceChildren(...rodape);
 
-// --------------------------- Carimbos das semanas --------------------------
-function renderSemanas() {
+  // A trilha: as semanas carimbadas e o Baú semanal na ponta.
   const total = BAU_ESPECIAL.semanas;
   const n = Math.min(db.semanasFechadas(), total);
-  $('#semanas-titulo').textContent = `Carimbos das semanas · ${n} de ${total}`;
-  $('#semanas-cartela').replaceChildren(...Array.from({ length: total }, (_, i) =>
-    el('span', { class: 'selo' + (i < n ? ' on' : '') }, `S${i + 1}`)));
-  linhaDeBau($('#semanas-bau'), {
-    nome: 'Baú semanal', bau: BAU_ESPECIAL,
-    feitos: n, meta: total, unidade: 'semanas carimbadas',
-    pronto: db.bauEspecialPronto(), abrir: abrirEspecial, dourado: true,
+  const selos = Array.from({ length: total }, (_, i) =>
+    el('span', { class: 'tf-selo' + (i < n ? ' on' : ''), title: `Semana ${i + 1}` },
+      i < n ? ico('ok') : String(i + 1)));
+  trilha(selos, {
+    nome: 'Baú semanal', bau: BAU_ESPECIAL, icone: 'coroa', dourado: true,
+    pronto: db.bauEspecialPronto(), abrir: abrirEspecial,
   });
 }
 
 // ---------------------------------- Baús -----------------------------------
-// Os dois baús usam a mesma linha: fechado com a barra dos carimbos, pronto
-// com o botão, ou aberto com a peça que saiu.
-function linhaDeBau(box, { nome, bau, feitos, meta, unidade, pronto, abrir, aberto, dourado }) {
-  if (aberto) {
-    const pecas = aberto.pecas.map(p => pecaDoCatalogo(p.id)).filter(Boolean);
-    box.className = 'bau aberto';
-    box.replaceChildren(
-      pecas.length ? el('div', { class: 'bau-pecas' }, ...pecas.slice(0, 3).map(miniPeca))
-                   : el('span', { class: 'bau-icone' }, emo('🎁')),
-      el('div', { class: 'bau-info' },
-        el('strong', {}, `${nome} aberto`),
-        el('small', {}, [...pecas.map(nomeDaPeca), `${aberto.xp} XP`].join(' + '))),
-      ...(pecas.length ? [el('button', { class: 'btn-ghost', onclick: () => irPara('closet') }, 'Ver')] : []));
-    return;
-  }
-  const nivel = db.nivel();
-  const { atual, proximo } = premioDoBau(bau, nivel);
-  box.className = 'bau' + (pronto ? ' pronto' : '') + (dourado ? ' dourado' : '');
-  box.replaceChildren(
-    el('span', { class: 'bau-icone' }, emo(pronto ? '🎁' : dourado ? '👑' : '🔒')),
-    el('div', { class: 'bau-info' },
-      el('strong', {}, nome),
-      el('small', {}, `${descreverPremio(atual)}.`),
-      ...(pronto ? [] : [
-        el('div', { class: 'barra' }, el('span', { style: { width: Math.min(100, feitos / meta * 100) + '%' } })),
-        el('small', { class: 'bau-conta' }, `${feitos} de ${meta} ${unidade}`)]),
-      ...(proximo ? [el('small', { class: 'bau-proximo' },
-        `No nível ${proximo.desde}: ${descreverPremio(proximo)}.`)] : [])),
-    ...(pronto ? [botaoPremio('Abrir', abrir)] : []));
+// A trilha termina no baú. Fechado, um toque diz o que tem dentro; pronto, ele
+// brilha e o toque abre; aberto, a peça que saiu aparece embaixo.
+function trilha(selos, { nome, bau, icone, dourado, pronto, abrir, aberto }) {
+  const { atual } = premioDoBau(bau, db.nivel());
+  const dica = `${nome}: ${descreverPremio(atual)}.`;
+  const botaoBau = el('button', {
+    type: 'button', 'aria-label': nome,
+    class: 'tf-bau' + (dourado ? ' ouro' : '') + (pronto ? ' pronto' : '') + (aberto ? ' aberto' : ''),
+    title: aberto ? `${nome} aberto` : dica,
+    onclick: () => pronto ? abrir() : toast(aberto ? `${nome} aberto. Semana que vem tem outro.` : dica),
+  }, ico(aberto ? 'ok' : pronto ? 'presente' : icone));
+  $('#tf-trilha').className = 'tf-trilha' + (selos.length < 5 ? ' curta' : '');
+  $('#tf-trilha').replaceChildren(...selos, botaoBau);
+
+  const box = $('#tf-bau-aberto');
+  const pecas = aberto ? aberto.pecas.map(p => pecaDoCatalogo(p.id)).filter(Boolean) : [];
+  box.hidden = !pecas.length;
+  box.replaceChildren(...(pecas.length ? [
+    el('div', { class: 'bau-pecas' }, ...pecas.slice(0, 3).map(miniPeca)),
+    el('small', {}, `+${aberto.xp} XP`),
+    el('button', { type: 'button', class: 'btn-ghost', onclick: () => irPara('closet') }, 'Ver'),
+  ] : []));
 }
 
 // "2 peças (rara e incomum) + 250 XP"
