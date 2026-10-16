@@ -18,8 +18,8 @@
 // roupinhas é quem mostra a pessoa: perfil, retrato e página pública.
 
 import {
-  CONFIG, CATEGORIAS, CORPOS, ORDEM_CORPOS, PELES, CABELOS, ORDEM_CABELOS,
-  CORES_CABELO, NARIZES, ORDEM_NARIZES,
+  CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS, ORDEM_CABELOS,
+  CORES_CABELO, NARIZES,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -29,16 +29,31 @@ import { el, mulberry32, escolher, sementeDoTexto } from './util.js';
 // Cabeça: elipse em (300, 112), raios 56 × 70 → topo em y=42, base em y=182 —
 // no molde. No palco ela sai na escala de js/proporcao.js, como o tronco.
 
+// Corpo desenhado (proporção em teste com `corpo`): os corpos e os narizes da
+// artista, cada um uma máscara de pele e uma de traço (js/corpo-artista.js),
+// pintadas na cor da pele de quem veste. app.js entrega o desenho antes de
+// qualquer tela desenhar o avatar; sem ele o corpo de código continua.
+let corpoDesenhado = null;
+export function usarCorpoDesenhado(desenho) { corpoDesenhado = desenho; }
+
+// Os corpos e narizes que dá para escolher: os da artista quando ela está no
+// palco, senão os de código (config.js). Os dois têm `nome`, e o id padrão
+// (masculino, botao) existe nos dois.
+export const catalogoCorpos = () => corpoDesenhado?.corpos || CORPOS;
+export const catalogoNarizes = () => (corpoDesenhado
+  ? { nenhum: NARIZES.nenhum, ...corpoDesenhado.narizes }
+  : NARIZES);
+
 // De ids (pele: 'clara') para cores prontas de desenhar.
 export function resolverAparencia(cfg = {}) {
   const pele = PELES.find(p => p.id === cfg.pele) || PELES[1];
   return {
     pele: pele.cor,
     traco: pele.traco,
-    corpo: CORPOS[cfg.corpo] ? cfg.corpo : 'masculino',
+    corpo: catalogoCorpos()[cfg.corpo] ? cfg.corpo : 'masculino',
     cabelo: CABELOS[cfg.cabelo] ? cfg.cabelo : 'curto',
     corCabelo: cfg.corCabelo || '#3d2519',
-    nariz: NARIZES[cfg.nariz] ? cfg.nariz : 'botao',
+    nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
   };
 }
 
@@ -56,11 +71,11 @@ export function aparenciaSorteada(chave) {
   const rnd = mulberry32(sementeDoTexto(chave));
   const grupo = rnd() < 0.8 ? 'humana' : 'fantasia';
   return {
-    corpo: escolher(ORDEM_CORPOS, rnd),
+    corpo: escolher(Object.keys(catalogoCorpos()), rnd),
     pele: escolher(PELES.filter(p => p.grupo === grupo), rnd).id,
     cabelo: escolher(ORDEM_CABELOS.filter(c => c !== 'nenhum'), rnd),
     corCabelo: escolher(CORES_CABELO, rnd),
-    nariz: escolher(ORDEM_NARIZES.filter(n => n !== 'nenhum' && n !== 'focinho'), rnd),
+    nariz: escolher(Object.keys(catalogoNarizes()).filter(n => n !== 'nenhum' && n !== 'focinho'), rnd),
   };
 }
 
@@ -117,20 +132,20 @@ const corpo = (id, cor, extra) => {
   </g>`;
 };
 
-// Corpo desenhado (proporção em teste com `corpo`): duas máscaras no palco,
-// pintadas na cor da pele e do traço. app.js entrega as imagens antes de
-// qualquer tela desenhar o avatar; sem elas o corpo de código continua.
-let corpoDesenhado = null;
-export function usarCorpoDesenhado(imagens) { corpoDesenhado = imagens; }
-
-const corpoDaArtista = (id, pele, traco) => {
-  const { STAGE_W: W, STAGE_H: H } = CONFIG;
-  const camada = (nome, src, cor) => `
-  <mask id="${id}-${nome}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
-    <image href="${src}" x="0" y="0" width="${W}" height="${H}"/>
+// Um desenho da artista (corpo ou nariz): a pele pintada embaixo e o traço por
+// cima, cada um num retângulo do tamanho da `caixa` dele no palco. `id` tem de
+// ser único no SVG: a página desenha vários avatares, e máscara com id
+// repetido pinta um com o desenho do outro.
+const daArtista = (id, desenho, pele, traco) => {
+  if (!desenho) return '';
+  const [x, y, w, h] = desenho.caixa;
+  const camada = (nome, cor) => (desenho[nome] ? `
+  <mask id="${id}-${nome}" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}">
+    <image href="${desenho[nome]}" x="${x}" y="${y}" width="${w}" height="${h}"
+           preserveAspectRatio="none"/>
   </mask>
-  <rect x="0" y="0" width="${W}" height="${H}" fill="${cor}" mask="url(#${id}-${nome})"/>`;
-  return camada('pele', corpoDesenhado.pele, pele) + camada('linha', corpoDesenhado.linha, traco);
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${cor}" mask="url(#${id}-${nome})"/>` : '');
+  return camada('pele', pele) + camada('linha', traco);
 };
 
 // O cabelo engorda o mesmo tanto que o corpo. A silhueta ganhou CONTORNO/2 de
@@ -171,7 +186,7 @@ export function svgAvatar({
 
   const cabelo = (parte) => cortado(
     comVolume((corte[parte] || '').replaceAll('{cor}', ap.corCabelo), ap.corCabelo));
-  // O corpo desenhado já traz o nariz dele.
+  // O nariz da artista é desenhado com o corpo dela, mais abaixo.
   const nariz = corpoDesenhado ? ''
     : (NARIZES[ap.nariz] || NARIZES.botao).arte.replaceAll('{traco}', ap.traco);
   const [vx, vy, vw, vh] = recorte || [0, 0, CONFIG.STAGE_W, CONFIG.STAGE_H];
@@ -204,7 +219,7 @@ export function svgAvatar({
   <!-- roupinha que fica atrás do corpo: capa, mochila, asas, capuz caído -->
   ${veste.atras}
 
-  ${corpoDesenhado ? corpoDaArtista(idCorte, ap.pele, escurecerTraco(ap.traco)) : `
+  ${corpoDesenhado ? daArtista(idCorte, corpoDesenhado.corpos[ap.corpo], ap.pele, escurecerTraco(ap.traco)) : `
   ${corpo(ap.corpo, ap.traco, CONTORNO)}
   ${corpo(ap.corpo, ap.pele, 0)}`}
 
@@ -219,6 +234,9 @@ export function svgAvatar({
   ${nariz ? naRegiao('cabeca', `<g fill="none" stroke="${ap.traco}"
        stroke-width="${(3.2 / escalaDe('cabeca')).toFixed(2)}"
        stroke-linecap="round" stroke-linejoin="round" opacity=".78">${nariz}</g>`) : ''}
+
+  ${corpoDesenhado ? daArtista(idCorte + 'n', corpoDesenhado.narizes[ap.nariz], ap.pele,
+    escurecerTraco(ap.traco)) : ''}
 
   <!-- o que vem depois do rosto: óculos e chapéu, por cima do cabelo -->
   ${veste.rosto}

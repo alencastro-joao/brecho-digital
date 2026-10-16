@@ -7,12 +7,11 @@
 // silhueta, e uma pele verde ou um focinho não viram uma careta.
 
 import {
-  CORPOS, ORDEM_CORPOS, PELES, CABELOS, ORDEM_CABELOS, NARIZES, ORDEM_NARIZES,
-  CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
+  PELES, CABELOS, ORDEM_CABELOS, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import * as db from './db.js';
-import { svgAvatar } from './avatar.js';
+import { svgAvatar, catalogoCorpos, catalogoNarizes } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
 import { irPara } from './router.js';
@@ -43,10 +42,10 @@ const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
 function renderPrevia() {
   $('#pg-previa').innerHTML = svgAvatar({ aparencia: aparenciaDoRascunho() });
   $('#pg-resumo').textContent =
-    `${CORPOS[rascunho.corpo]?.nome ?? '—'} · ` +
+    `${catalogoCorpos()[rascunho.corpo]?.nome ?? '—'} · ` +
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${CABELOS[rascunho.cabelo]?.nome ?? '—'} · ` +
-    `nariz ${(NARIZES[rascunho.nariz]?.nome ?? '—').toLowerCase()}`;
+    `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}`;
 }
 
 // Humana e fantasia na mesma grade: quem edita está escolhendo uma cor, não
@@ -109,11 +108,12 @@ function renderFavoritas() {
 function renderTudo() {
   renderFavoritas();
   renderPrevia();
-  renderMiniaturas('#pg-corpos', ORDEM_CORPOS, CORPOS, 'corpo', CROP_CORPO);
+  const corpos = catalogoCorpos(), narizes = catalogoNarizes();
+  renderMiniaturas('#pg-corpos', Object.keys(corpos), corpos, 'corpo', CROP_CORPO);
   renderPeles();
   renderCores();
   renderMiniaturas('#pg-cortes', ORDEM_CABELOS, CABELOS, 'cabelo', CROP_CABELO);
-  renderMiniaturas('#pg-narizes', ORDEM_NARIZES, NARIZES, 'nariz', CROP_NARIZ);
+  renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
 }
 
 function abrirAba(aba) {
