@@ -623,8 +623,8 @@ function pecaMini(p) {
 // ============================== Comentários ===============================
 // Fechada, a conversa é só o contador no rodapé do card. Aberta, é a lista
 // inteira e o campo, logo abaixo — a coluna do mural alonga, as outras não.
-function thread(post, sempre = false) {
-  if (!sempre && !expandidos.has(post.id)) return null;
+function thread(post) {
+  if (!expandidos.has(post.id)) return null;
   const caixa = el('div', { class: 'post-thread aberta' });
 
   for (const c of post.comentarios) {
@@ -921,6 +921,13 @@ function renderLook() {
 
   // replaceChildren escreveria "null" no lugar das seções que não existem.
   corpo.replaceChildren(...[
+    // As peças vêm antes da imagem: é o que se procura num brechó.
+    pecas.length
+      ? el('section', { class: 'look-secao look-secao-pecas' },
+        el('h4', {}, `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`,
+          tenho ? el('small', {}, ` · você tem ${tenho}`) : null),
+        el('div', { class: 'pf-grade look-pecas' }, ...grade))
+      : null,
     el('div', {
       class: 'look-foto post-thumb' + (post.tipo === 'board' ? ' colagem' : ''),
       // Aqui um toque não tem o que abrir: dois curtem, como no card.
@@ -930,15 +937,7 @@ function renderLook() {
       botaoCurtir(post)),
     el('h3', { class: 'look-nome' }, post.nome),
     quemCurtiu(post, { completo: true }),
-    pecas.length
-      ? el('section', { class: 'look-secao' },
-        el('h4', {}, `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`,
-          tenho ? el('small', {}, ` · você tem ${tenho}`) : null),
-        el('div', { class: 'pf-grade look-pecas' }, ...grade))
-      : null,
-    el('section', { class: 'look-secao' },
-      el('h4', {}, post.comentarios.length ? `Comentários (${post.comentarios.length})` : 'Comentários'),
-      thread(post, true)),
+    conversaDoLook(post),
     parecidos.length
       ? el('section', { class: 'look-secao' },
         el('h4', {}, 'Mais como este'),
@@ -949,6 +948,42 @@ function renderLook() {
       : null,
   ].filter(Boolean));
   corpo.scrollTop = rolagem;
+}
+
+// Os comentários do look aberto, no jeito do Instagram: soltos na tela, cada
+// um com o retrato de quem escreveu, o nome e o texto juntos e o tempo
+// embaixo; o campo é uma linha com o seu retrato e "Publicar".
+function conversaDoLook(post) {
+  const lista = post.comentarios.map(c => {
+    const podeApagar = sou(c.autor) || (post.real && sou(post.autor));
+    return el('div', { class: 'ig-comentario' },
+      el('button', { class: 'autor-link', onclick: () => abrirAutor(c.autor) }, retratoDe(c.autor, 30)),
+      el('div', { class: 'ig-comentario-texto' },
+        el('p', {},
+          el('button', { class: 'autor-link nome forte', onclick: () => abrirAutor(c.autor) }, autorDe(c.autor).nome),
+          ' ', c.texto),
+        el('small', {}, tempoRelativo(c.em))),
+      podeApagar
+        ? el('button', { class: 'apagar-com', title: 'Apagar', onclick: () => apagarComentario(post, c) }, ico('x'))
+        : null);
+  });
+
+  const campo = el('input', {
+    type: 'text', class: 'campo-comentario',
+    dataset: { post: post.id },
+    placeholder: 'Adicione um comentário…', maxlength: '140',
+    value: rascunhos.get(post.id) || '',
+    oninput: (e) => rascunhos.set(post.id, e.target.value),
+    onkeydown: (e) => { if (e.key === 'Enter') comentar(post, campo); },
+  });
+  if (post.id === focarEm) { focarEm = null; requestAnimationFrame(() => campo.focus()); }
+
+  return el('section', { class: 'look-secao ig-conversa' },
+    ...(lista.length ? lista : [el('p', { class: 'ig-vazio' }, 'Ninguém comentou ainda.')]),
+    el('div', { class: 'ig-campo' },
+      retratoDe(db.state.usuario.id, 30),
+      campo,
+      el('button', { class: 'ig-publicar', onclick: () => comentar(post, campo) }, 'Publicar')));
 }
 
 // Parecido é quem divide peças com este look (vale mais), depois marca e

@@ -435,7 +435,8 @@
 .look-secao { margin-top: 18px; }
 .look-secao h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; }
 .look-secao h4 small { font-weight: 700; color: #2f9e5a; }
-.look-pecas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.look-pecas { grid-template-columns: repeat(4, minmax(0, 1fr)); width: 90%; }
+.look-secao-pecas { margin: 0 0 14px; }
 .look-pecas .up-peca.tenho::after {
   content: '✓'; position: absolute; right: 6px; top: 6px; z-index: 2;
   width: 18px; height: 18px; border-radius: 50%;
@@ -458,3 +459,28 @@
   position: absolute; left: 9px; top: 9px; z-index: 2;
   border-radius: 50%; box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0, 0, 0, .12);
 }
+
+/* Comentários do look aberto, como no Instagram: parte da tela, sem caixa. */
+.ig-conversa { display: flex; flex-direction: column; gap: 12px; }
+.ig-comentario { display: flex; align-items: flex-start; gap: 10px; position: relative; padding-right: 18px; }
+.ig-comentario > .autor-link { flex: none; }
+.ig-comentario-texto { min-width: 0; }
+.ig-comentario-texto p { margin: 0; font-size: 13.5px; line-height: 1.4; color: var(--tinta); overflow-wrap: anywhere; }
+.ig-comentario-texto .nome { font-weight: 800; margin-right: 2px; }
+.ig-comentario-texto small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--tinta-suave); }
+.ig-comentario .apagar-com { top: 4px; }
+.ig-vazio { margin: 0; font-size: 13px; color: var(--tinta-suave); }
+.ig-campo {
+  display: flex; align-items: center; gap: 10px;
+  padding-top: 12px; border-top: 1px solid var(--linha);
+}
+.ig-campo .campo-comentario {
+  flex: 1; min-width: 0; border: 0; background: none; padding: 6px 0;
+  font-size: 14px; border-radius: 0;
+}
+.ig-campo .campo-comentario:focus { background: none; }
+.ig-publicar {
+  border: 0; background: none; padding: 4px 2px;
+  font-size: 14px; font-weight: 800; color: #3d7fd9;
+}
+.ig-publicar:hover { color: #245fb0; }
