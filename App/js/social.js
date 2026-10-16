@@ -385,11 +385,12 @@ function mensagemVazia() {
 // ================================ O card ==================================
 // A imagem manda: o card tem a altura dela. Por cima, o coração (curtir) e,
 // passando o mouse, as peças usadas. Embaixo, quem postou, comentários e o menu.
-// O card: quem postou em cima (assim não parece o rodapé do card de cima no
-// mural), a imagem com o coração e, embaixo, quem curtiu. Número zero não
-// aparece: um mural cheio de "0" parece vazio. Um toque na imagem abre o look
-// grande (abrirPostGrande); dois toques curtem, como no Instagram. `abrivel`
-// desliga o toque onde o card já está aberto num modal (perfil de alguém).
+// O card no mural é só o look: o retrato de quem postou no canto de cima à
+// esquerda da imagem, o coração no da direita e, embaixo, quem curtiu. O
+// resto (nome, tempo, comentários, o menu) fica no look aberto: um toque na
+// imagem abre (abrirPostGrande), dois curtem, como no Instagram. Número zero
+// não aparece: um mural cheio de "0" parece vazio. `abrivel: false` é o card
+// já aberto num modal (perfil de alguém): aí ele vem inteiro, com o topo.
 export function cardDoPost(post, { abrivel = true } = {}) {
   const meu = sou(post.autor);
   post.comentarios ??= [];
@@ -397,7 +398,7 @@ export function cardDoPost(post, { abrivel = true } = {}) {
   const pecas = pecasDoPost(post);
 
   return el('article', { class: 'post' + (meu ? ' meu' : '') },
-    topoDoPost(post),
+    abrivel ? null : topoDoPost(post),
     el('div', {
       class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') + (abrivel ? ' abrivel' : ''),
       onclick: abrivel ? (e) => tocarNaImagem(post, e) : null,
@@ -405,12 +406,22 @@ export function cardDoPost(post, { abrivel = true } = {}) {
       post.thumb || post.gerado
         ? imagemDoPost(post)
         : el('div', { class: 'sem-thumb' }, 'sem prévia'),
+      abrivel ? retratoNaImagem(post) : null,
       botaoCurtir(post),
       pecasPorCima(post, pecas)
     ),
     quemCurtiu(post),
-    thread(post)
+    abrivel ? null : thread(post)
   );
+}
+
+function retratoNaImagem(post) {
+  const autor = autorDe(post.autor);
+  return el('button', {
+    class: 'autor-link post-retrato post-retrato-img', title: `Ver o perfil de ${autor.nome}`,
+    onclick: () => abrirAutor(post.autor),
+  }, retratoDe(post.autor, 30),
+    sou(post.autor) ? el('span', { class: 'post-nivel', title: `Nível ${db.nivel()}` }, String(db.nivel())) : null);
 }
 
 // "8h" no lugar de "há 8 h": no card de 160px do celular o "há" quebrava a
@@ -858,6 +869,8 @@ function montarLook() {
     // A ficha da peça abre por cima e fecha primeiro (usuario.js).
     if (e.key === 'Escape' && !modal.hidden && $('#modal-pp').hidden) fecharPostGrande();
   });
+  // Editar pelo menu leva a outra tela: o look aberto sai da frente.
+  window.addEventListener('hashchange', fecharPostGrande);
   // Curtir ou comentar aqui repinta o feed; o look aberto repinta junto.
   aoAtualizarFeed(() => { if (lookAberto) renderLook(); });
 }
@@ -895,7 +908,11 @@ function renderLook() {
       retratoDe(post.autor, 34)),
     el('div', { class: 'post-autor' },
       el('strong', {}, el('button', { class: 'autor-link nome', onclick: ir(() => abrirAutor(post.autor)) }, autor.nome)),
-      el('small', {}, tempoRelativo(post.criadoEm))));
+      el('small', {}, tempoRelativo(post.criadoEm))),
+    el('button', {
+      class: 'post-mais', title: 'Mais opções',
+      onclick: (e) => menuDoPost(post, e.currentTarget),
+    }, ico('mais')));
 
   const tenho = pecas.filter(p => db.temPeca(p.id)).length;
   const grade = gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i) });

@@ -192,7 +192,7 @@
 
 /* ---------------------------- Menu compartilhar -------------------------- */
 .menu-compartilhar {
-  position: fixed; z-index: 700;
+  position: fixed; z-index: 850;
   background: var(--branco); border: 1px solid var(--linha);
   border-radius: 14px; box-shadow: 0 14px 34px rgba(0, 0, 0, .16);
   padding: 6px; min-width: 176px;
@@ -425,6 +425,7 @@
 .modal-caixa.look-caixa { width: min(520px, 100%); }
 .look-topo { gap: 12px; }
 .look-autor { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.look-autor .post-autor { flex: 1; min-width: 0; }
 .look-autor .post-autor strong { font-size: 15px; }
 .look-autor .post-autor small { font-size: 12px; }
 .look-corpo { overflow-y: auto; padding: 16px 20px 22px; }
@@ -450,3 +451,10 @@
 .look-parecido.colagem { background: #fff; }
 .look-parecido img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .look-parecido:hover { border-color: var(--tinta); }
+
+/* No mural, o retrato de quem postou mora no canto de cima à esquerda da
+   imagem, como o coração no da direita. */
+.post-retrato-img {
+  position: absolute; left: 9px; top: 9px; z-index: 2;
+  border-radius: 50%; box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0, 0, 0, .12);
+}
