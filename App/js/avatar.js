@@ -294,10 +294,17 @@ function esmaecerEmbaixo(id, fim) {
 // usar o naRegiao.)
 function cortadoNaCabeca(id, soCabeca, svg) {
   if (!soCabeca || !svg) return svg;
-  const [x, y, w, h] = recorteNaRegiao('cabeca', [220, 43, 160, 138]);
+  // Duas ovais no molde, em volta do centro da cabeça (300, 112): uma larga e
+  // baixa que pega as orelhas, e uma rente ao rosto (a cabeça de código é
+  // 56 × 70) que fecha no queixo sem deixar o pescoço aparecer embaixo dele.
+  const oval = (rx, ry) => {
+    const [x, y, w, h] = recorteNaRegiao('cabeca', [300 - rx, 112 - ry, rx * 2, ry * 2]);
+    return `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}"/>`;
+  };
+  const [, meio] = recorteNaRegiao('cabeca', [0, 112, 0, 0]);
   return `<clipPath id="${id}-cabeca">
-    <ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}"/>
-    <rect x="0" y="-${CONFIG.STAGE_H}" width="${CONFIG.STAGE_W}" height="${CONFIG.STAGE_H + y + h / 2}"/>
+    ${oval(80, 50)}${oval(54, 68)}
+    <rect x="0" y="-${CONFIG.STAGE_H}" width="${CONFIG.STAGE_W}" height="${CONFIG.STAGE_H + meio}"/>
   </clipPath>
   <g clip-path="url(#${id}-cabeca)">${svg}</g>`;
 }
