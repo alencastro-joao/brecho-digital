@@ -1232,6 +1232,45 @@ export function gastarFichaDeRepor() {
   return true;
 }
 
+// --- Pontinhos vermelhos ----------------------------------------------------
+// Eles só mostram o caminho até uma coisa nova. Cada coisa nova tem uma chave;
+// quando a pessoa chega nela (abre a aba, a trilha, a tela de Baús, a coleção),
+// a chave entra em `state.vistos` e o caminho apaga, mesmo que a coisa continue
+// lá esperando (um baú fechado, um prêmio não pego).
+const vistos = () => state.vistos ?? [];
+export const naoVistas = (chaves) => chaves.filter(c => !vistos().includes(c));
+export function marcarVistas(chaves) {
+  const novas = naoVistas(chaves);
+  if (!novas.length) return;
+  state.vistos = [...vistos(), ...novas].slice(-400);
+  salvar();
+}
+
+export const novidadesDoTopo = () => (podeTrocarFichas() ? [`troca:${hojeISO()}`] : []);
+export const novidadesDoDia = () => [
+  marcoDoDiaPronto() && `dia:${hojeISO()}:${marcoDoDiaPronto()}`,
+  bauDosDiasPronto() && `bau-dias:${state.semana.data}`,
+].filter(Boolean);
+export const novidadesDaSemana = () => [
+  carimboDaSemanaPronto() && `carimbo-semana:${state.semana.data}`,
+  fichasDaSemanaProntas() && `fichas-semana:${state.semana.data}`,
+  bauEspecialPronto() && `bau-semanal:${state.stats.semanasCompletas ?? 0}`,
+].filter(Boolean);
+export const novidadesDosNiveis = () => premiosDoNivelProntos().map(p => `nivel:${p.nivel}`);
+export const novidadesDosBaus = () => bausGuardados().map(b => `bau:${b.id}`);
+// Coleção: a chave muda a cada item novo ganho para escolher.
+export function novidadeDaColecao(id, c = progressoDasColecoes()[id]) {
+  return c?.livres > 0 ? `col:${id}:${c.ganhas}` : null;
+}
+export const novidadesDasColecoes = () =>
+  Object.entries(progressoDasColecoes()).map(([id, c]) => novidadeDaColecao(id, c)).filter(Boolean);
+
+// Ainda há caminho a mostrar? Acende o pontinho do botão de Tarefas.
+export const temNovidade = () => naoVistas([
+  ...novidadesDoTopo(), ...novidadesDoDia(), ...novidadesDaSemana(),
+  ...novidadesDosNiveis(), ...novidadesDosBaus(), ...novidadesDasColecoes(),
+]).length > 0;
+
 // Tem prêmio esperando o toque? Acende o pontinho do botão de Tarefas.
 export const temPremioParaResgatar = () =>
   Boolean(marcoDoDiaPronto()) || fichasDaSemanaProntas() || carimboDaSemanaPronto() ||

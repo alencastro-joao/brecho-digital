@@ -182,12 +182,13 @@ export function renderColecoes() {
   $('#col-lista').hidden = Boolean(c);
   $('#col-detalhe').hidden = !c;
   if (c) { renderDetalhe(c); return; }
+  novaNaVisita = null;   // saiu da coleção: a visita acabou
 
   $('#col-grupos').replaceChildren(...GRUPOS.map(([id, rotulo]) =>
     el('button', {
       // Pontinho vermelho: o caminho até o item novo para escolher.
       class: 'col-grupo' + (grupo === id ? ' ativo' : '') +
-        (COLECOES_DO_GRUPO[id]().some(x => x.livres > 0) ? ' ponto-novo' : ''),
+        (COLECOES_DO_GRUPO[id]().some(novaParaVer) ? ' ponto-novo' : ''),
       onclick: () => { grupo = id; renderColecoes(); },
     }, rotulo)));
   $('#col-sub').textContent = EXPLICACAO[grupo];
@@ -273,7 +274,7 @@ function cartaoDaColecao(c) {
 
   return el('button', {
     type: 'button', class: 'col-tile' + (c.completa ? ' completa' : '') + (aberto ? ' selecionado' : '') +
-      (c.livres > 0 ? ' ponto-novo' : ''),
+      (novaParaVer(c) ? ' ponto-novo' : ''),
     onclick: abrir, title: c.marca,
   }, emblema, el('strong', {}, c.marca), status);
 }
@@ -299,7 +300,7 @@ function painelDaColecao(c) {
       ...ids.slice(0, cabem).map(id => casaDaPeca(id)),
       resto > 0 ? el('div', { class: 'col-peca col-mais' }, `+${resto}`) : null)
       : el('p', { class: 'col-vazio' }, 'As peças deste tema chegam em breve.'),
-    el('button', { type: 'button', class: 'col-ver' + (c.livres > 0 ? ' ponto-novo' : ''), onclick: abrir }, 'Ver coleção ›'));
+    el('button', { type: 'button', class: 'col-ver' + (novaParaVer(c) ? ' ponto-novo' : ''), onclick: abrir }, 'Ver coleção ›'));
 }
 
 // O que vai dentro do disco: o logo da marca, a cor pintada ou uma peça.
@@ -326,7 +327,20 @@ function miniItem(id) {
 // embaixo a trilha de recompensas (cada marco é um item do avatar); a
 // escolha, só quando há uma esperando; depois o álbum de peças, com as que
 // faltam em silhueta; e o efeito numa linha no fim.
+// Pontinho vermelho: o caminho até o item novo para escolher, só até a pessoa
+// abrir a coleção. Lá dentro ele fica nos itens durante essa visita.
+const novaParaVer = (c) => {
+  const chave = db.novidadeDaColecao(c.id);
+  return Boolean(chave && db.naoVistas([chave]).length);
+};
+let novaNaVisita = null;
+
 function renderDetalhe(c) {
+  const chave = db.novidadeDaColecao(c.id);
+  if (chave && db.naoVistas([chave]).length) {
+    novaNaVisita = c.id;
+    setTimeout(() => db.marcarVistas([chave]));
+  } else if (novaNaVisita !== c.id) novaNaVisita = null;
   const faltam = c.total - c.tem;
   $('#col-detalhe').replaceChildren(...[
     el('header', { class: 'col-hero' + (c.completa ? ' completa' : '') },
@@ -388,7 +402,7 @@ function blocoDeEscolha(c) {
       const arte = el('span', { class: 'col-escolha-arte' });
       arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
       return el('button', {
-        type: 'button', class: 'col-escolha-item ponto-novo',
+        type: 'button', class: 'col-escolha-item' + (novaNaVisita === c.id ? ' ponto-novo' : ''),
         onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} foi para o seu inventário`, 'rare'); },
       }, arte, el('strong', {}, r.nome));
     })));
@@ -452,6 +466,7 @@ function itemDaColecao(id, c) {
 
 // Entrar pela navegação abre a lista; pelo emblema, a coleção dele.
 export function aoEntrarNasColecoes() {
+  novaNaVisita = null;
   aberta = pedida;
   pedida = null;
   renderColecoes();
