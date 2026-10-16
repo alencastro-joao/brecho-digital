@@ -133,7 +133,7 @@ function entregar(premio) {
   db.salvar();
   if (r.pecas.length) {
     const pecas = r.pecas.map(({ peca }) => peca);
-    estoque.levar(pecas.map(p => ({ id: p.id, raridade: p.raridade })))
+    estoque.levar(pecas)
       .then(() => { estoque.numerar(pecas); db.salvar(); });
     montarVitrine();   // a peça ganha sai do mural, se estava nele
   }

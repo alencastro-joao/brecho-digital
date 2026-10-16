@@ -215,6 +215,7 @@
         <h3 id="preview-nome"></h3>
         <p id="preview-info"></p>
         <div class="col-chips" id="preview-colecoes"></div>
+        <button class="btn-ghost btn-historico" id="btn-historico-peca" title="De onde veio e por quem passou" aria-label="Histórico da peça"><i data-i="relogio"></i><span class="so-pc"> Histórico</span></button>
         <button class="btn-ghost fav-estrela" id="btn-favorita-peca"></button>
         <button class="btn-dark" id="btn-para-stylist"><span class="so-pc">Levar para o </span>Stylist</button>
         <button class="btn-ghost" id="btn-para-board"><span class="so-pc">Levar para a </span>Colagem</button>
@@ -723,6 +724,17 @@
       <div class="bau-saiu" id="bau-saiu"></div>
       <small class="bau-extra" id="bau-extra"></small>
       <button type="button" class="btn-premio" id="bau-ok">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Histórico da peça: de onde veio e por quem a cópia passou (js/historico.js) -->
+  <div class="modal" id="modal-historico" hidden>
+    <div class="modal-caixa hp-caixa">
+      <header class="modal-topo">
+        <div class="hp-cabeca"><h2 id="hp-titulo"></h2><small id="hp-nome"></small></div>
+        <button class="modal-x" id="hp-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="hp-lista" id="hp-lista"></div>
     </div>
   </div>
 

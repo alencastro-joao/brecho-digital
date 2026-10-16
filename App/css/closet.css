@@ -144,3 +144,38 @@
 }
 .item-slot.achada { animation: slot-achada 1.2s ease-in-out 2; }
 @keyframes slot-achada { 50% { box-shadow: 0 0 0 4px #d9b453; transform: scale(1.06); } }
+
+/* --------------------------- Histórico da peça --------------------------- */
+/* De onde veio e por quem passou (js/historico.js): uma linha do tempo
+   vertical, do acervo do brechó ao dono de agora, no padrão da trilha. */
+.preview-numero { cursor: pointer; }
+.hp-caixa { width: min(420px, 100%); background: var(--papel); }
+.hp-cabeca { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hp-cabeca small { font-size: 12px; font-weight: 600; color: var(--tinta-suave); }
+.hp-lista {
+  position: relative; flex: 1; min-height: 0; overflow-y: auto;
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.hp-lista::before {
+  content: ''; position: absolute; left: 35px; top: 30px; bottom: 30px; width: 3px;
+  background: var(--wii-borda); border-radius: 2px;
+}
+.hp-linha {
+  position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px 12px 10px;
+  background: #fff; border: 2px solid var(--wii-borda); border-radius: 14px;
+  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+}
+.hp-ico {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px;
+  background: var(--perola); border: 2px solid var(--wii-borda); font-size: 19px; color: var(--tinta);
+}
+.hp-texto { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hp-texto strong { font-size: 14.5px; font-weight: 800; overflow-wrap: anywhere; }
+.hp-texto small { font-size: 12px; color: var(--tinta-suave); }
+.hp-voce {
+  margin-left: 6px; padding: 1px 7px; border-radius: 8px; font-style: normal;
+  font-size: 10.5px; font-weight: 800; color: #fff; background: var(--wii); vertical-align: 1px;
+}
+.hp-linha.origem { background: var(--bloco, #fff); }
+.hp-linha.atual { border-color: var(--wii); }
+.hp-linha.atual .hp-ico { background: var(--wii) var(--brilho-topo); border-color: var(--wii); color: #fff; }

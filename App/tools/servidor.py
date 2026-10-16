@@ -313,7 +313,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 corpo = self.ler_corpo(LIMITE_LOGIN)
                 if corpo is None:
                     return True
-                feito = estoque.levar(corpo.get('pecas'))
+                feito = estoque.levar(corpo.get('pecas'), usuario)
                 self.responder(409 if feito['esgotadas'] and not feito['levadas'] else 200, feito)
             elif rota == '/api/estoque/devolver' and metodo == 'POST':
                 if usuario['papel'] != 'admin':
@@ -323,6 +323,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if corpo is None:
                     return True
                 self.responder(200, estoque.devolver(corpo.get('pecas')))
+            elif rota == '/api/estoque/historico' and metodo == 'POST':
+                corpo = self.ler_corpo(LIMITE_LOGIN)
+                if corpo is None:
+                    return True
+                self.responder(200, estoque.historico(corpo.get('copias'), usuario))
             else:
                 self.responder(404, {'erro': 'rota desconhecida'})
         except ValueError as e:

@@ -375,9 +375,11 @@
   }
   .view-closet .preview-meta .col-chip.presente .col-chip-disco { box-shadow: 0 0 0 2px #c9a443; }
   .view-closet .preview-meta button.fav-estrela { order: 6; }
+  .view-closet .preview-meta button.btn-historico { order: 6; }
   .view-closet .preview-meta button.btn-editar { order: 7; }
   .view-closet #btn-para-stylist, .view-closet #btn-para-board { display: none; }
   .view-closet .preview-meta button.fav-estrela,
+  .view-closet .preview-meta button.btn-historico,
   .view-closet .preview-meta button.btn-editar {
     width: 40px; height: 38px; padding: 0; margin: 12px 0 0; flex: none;
     font-size: 17px; border-radius: 11px; color: var(--tinta);
@@ -385,6 +387,9 @@
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
   }
   .view-closet .preview-meta button.fav-estrela { margin-left: auto; }
+  /* O relógio (histórico) vai junto da estrela, na ponta direita. */
+  .view-closet .preview-meta button.btn-historico { margin-left: auto; }
+  .view-closet .preview-meta button.btn-historico + button.fav-estrela { margin-left: 0; }
   .view-closet .preview-meta button.fav-estrela.on {
     background: var(--inventario); border-color: var(--tinta);
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);

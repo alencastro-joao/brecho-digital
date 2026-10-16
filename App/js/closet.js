@@ -21,6 +21,7 @@ import { festejar } from './animacoes.js';
 import { vestirPeca } from './stylist.js';
 import { adicionar as soltarNaColagem } from './board.js';
 import { colecoesDaPeca, chipDaColecao, abrirColecao } from './colecoes.js';
+import { abrirHistorico, montarHistorico } from './historico.js';
 
 let categoriaAtual = 'todas';   // o grupo aberto no trilho; abre mostrando tudo
 let arrastando = null;
@@ -107,6 +108,12 @@ export function montarCloset() {
     irPara('board');
     soltarNaColagem(selecionada);
   });
+
+  // De onde a peça veio e por quem a cópia passou; o nº da tiragem abre também.
+  montarHistorico();
+  const verHistorico = () => selecionada && abrirHistorico(db.pecaDoInventario(selecionada));
+  $('#btn-historico-peca').addEventListener('click', verHistorico);
+  $('#preview-numero').addEventListener('click', verHistorico);
 
   // Favoritar é o que escolhe as roupas que aparecem no seu perfil.
   $('#btn-favorita-peca').addEventListener('click', (e) => {
