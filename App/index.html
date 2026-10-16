@@ -664,6 +664,19 @@
     </div>
   </div>
 
+  <!-- O look aberto do feed (social.js): quem postou, a imagem, as peças,
+       os comentários e "mais como este". Vem antes da ficha da peça, que
+       abre por cima dele. -->
+  <div class="modal" id="modal-look" hidden>
+    <div class="modal-caixa look-caixa">
+      <header class="modal-topo look-topo">
+        <div class="look-autor" id="look-autor"></div>
+        <button class="modal-x" id="look-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="look-corpo" id="look-corpo"></div>
+    </div>
+  </div>
+
   <!-- A ficha de uma peça do perfil, como a do guarda-roupa (ver usuario.js):
        arrastar para o lado passa para a vizinha; o ♡ da wishlist mora aqui. -->
   <div class="modal pp-modal" id="modal-pp" hidden>

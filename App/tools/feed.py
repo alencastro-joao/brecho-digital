@@ -188,6 +188,8 @@ def _publico(con, linha, eu_id):
         'camadas': json.loads(linha['camadas'] or '[]'),
         'curtidas': len(curtidas),
         'curtido': eu_id in curtidas,
+        # Quem curtiu, para o "♥ Rafa e mais 2" do card: só os dois primeiros.
+        'curtiram': sorted(c for c in curtidas if c != eu_id)[:2],
         'comentarios': comentarios,
         'real': True,
     }
@@ -202,6 +204,7 @@ def _com_autores(con, linhas, eu_id):
     for p in posts:
         ids.add(p['autor'])
         ids.update(c['autor'] for c in p['comentarios'])
+        ids.update(p['curtiram'])
     autores = {}
     for uid in ids:
         linha = _linha(con, uid)

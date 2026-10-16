@@ -580,7 +580,7 @@ function renderPostAberto() {
   const post = postsDe(idAtual).find(x => x.id === postAberto);
   if (!post) return fecharPost();
   $('#up-post-titulo').textContent = post.nome;
-  $('#up-post-corpo').replaceChildren(cardDoPost(post));
+  $('#up-post-corpo').replaceChildren(cardDoPost(post, { abrivel: false }));
 }
 
 function fecharPost() {

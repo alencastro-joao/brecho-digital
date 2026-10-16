@@ -942,6 +942,9 @@
   .aj-corpo .conexao-lista { grid-template-columns: minmax(0, 1fr); }
   .conexao-lista { grid-template-columns: minmax(0, 1fr); }
   .up-post-corpo { padding: 12px 14px 16px; }
+  .look-corpo { padding: 12px 14px 18px; }
+  .look-pecas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .look-foto img { max-height: 56dvh; }
 
   /* Ficha de peça e menus ficam por cima da barra de telas. */
   .menu-compartilhar { max-width: calc(100vw - 24px); }
