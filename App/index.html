@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brechó Digital</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#fdfaf6">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/app/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/app/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brechó">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/vitrine.css">
 <link rel="stylesheet" href="css/closet.css">
@@ -1173,6 +1179,10 @@
   // a vitrine antes disso seria mostrar o guarda-roupa de ninguem.
   if (location.protocol === 'file:') {
     document.getElementById('file-warning').hidden = false;
+  }
+  // Deixa o app instalável ("Instalar" do Chrome). O sw.js não guarda cache.
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 </script>
 </body>
