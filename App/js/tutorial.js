@@ -19,7 +19,7 @@
 // Começa sozinho na conta nova. Para testar de novo: Perfil › Testes ›
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
-import { INTRO, RARIDADE, RARIDADES, faixasDeTroca, idDaCor } from './config.js';
+import { INTRO, RARIDADE, RARIDADES, BAUS, faixasDeTroca, idDaCor } from './config.js';
 import { catalogo, nomeDaPeca, imagemDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
@@ -28,7 +28,7 @@ import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { darTrioDaCor } from './presente.js';
 import { el, $ } from './util.js';
-import { emoHtml } from './icones.js';
+import { emoHtml, ico } from './icones.js';
 
 let caixa = null;
 let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'bolha'
@@ -164,57 +164,124 @@ function concluirProntas() {
 }
 
 // Um aviso só por missão, com tudo o que ela pagou: um cartão de prêmio no meio
-// da tela, com a foto de cada peça na moldura da raridade e os bônus em
-// destaque. Não pede clique: some sozinho (ou num toque) e, se várias missões
-// fecharem juntas, os prêmios entram um depois do outro.
+// da tela. Peça vem dentro de um baú da raridade dela, que só mostra o que tem
+// depois do toque em "Abrir" (com a mesma animação dos baús de Tarefas). XP e
+// fichas aparecem em destaque. Depois de aberto, o cartão some sozinho (ou num
+// toque) e, se várias missões fecharem juntas, os cartões entram em fila.
 const filaDePremios = [];
 let premioNaTela = null;
+const TEMPO_NA_TELA = 4600;   // ms com o prêmio à mostra, mais 700 por peça
+const BAU_DA_RARIDADE = { common: 'comum', uncommon: 'incomum', rare: 'raro', epic: 'epico', legendary: 'lendario' };
 
 function anunciar(m, r, ultima) {
-  filaDePremios.push({ m, r, ultima });
+  const melhor = r.pecas.map(p => p.peca.raridade).sort((a, b) => ordem(b) - ordem(a))[0];
+  enfileirar({
+    sobre: 'Missão completa', titulo: m.nome, pecas: r.pecas, xp: r.xp, fichas: r.fichas,
+    bau: melhor && BAU_DA_RARIDADE[melhor],
+  });
+  if (ultima) {
+    enfileirar({
+      sobre: 'Fim', titulo: 'O tutorial acabou!', tempo: 7000,
+      texto: 'Você já sabe tudo o que dá pra fazer aqui. Agora as missões do dia, em Tarefas, continuam dando prêmio. Boas garimpadas!',
+    });
+  }
+}
+
+// O presente por começar o tutorial: as peças da conta nova, com as três da
+// mesma cor na frente, dentro de um baú para abrir.
+function anunciarPresente() {
+  const cor = db.state.presenteCor;
+  const daCor = (it) => cor && (it.cor || '').toLowerCase() === cor.toLowerCase();
+  const pecas = db.state.inventario
+    .filter(p => p.origem === 'presente')
+    .map(peca => ({ peca, item: catalogo.porId.get(peca.id) }))
+    .filter(p => p.item)
+    .sort((a, b) => daCor(b.item) - daCor(a.item));
+  if (!pecas.length) return;
+  const nDaCor = pecas.filter(p => daCor(p.item)).length;
+  enfileirar({
+    sobre: 'Presente', titulo: 'Um presente por começar!', pecas, bau: 'presente', tempo: 6000,
+    texto: nDaCor >= 3
+      ? `As ${nDaCor} peças ${cor.toLowerCase()} já começam a sua coleção ${cor}. Elas ficam no seu closet.`
+      : 'Elas ficam no seu closet.',
+    marcar: daCor,
+  });
+}
+
+function enfileirar(cartao) {
+  filaDePremios.push(cartao);
   if (!premioNaTela) proximoPremio();
 }
 
 function proximoPremio() {
   const vez = filaDePremios.shift();
   if (!vez) { premioNaTela = null; return; }
-  const { m, r, ultima } = vez;
-  const melhor = r.pecas.map(p => p.peca.raridade)
+  const { sobre, titulo, pecas = [], xp = 0, fichas = 0, bau = null, texto = '', tempo = 0, marcar = null } = vez;
+  const melhor = pecas.map(p => p.peca.raridade)
     .sort((a, b) => ordem(b) - ordem(a))[0] || 'nenhuma';
 
-  const pecas = r.pecas.map(({ item, peca }, i) => {
+  const fotos = pecas.map(({ item, peca }, i) => {
     const rar = RARIDADE[peca.raridade] || RARIDADE.common;
-    return el('div', { class: `premio-peca r-${peca.raridade}`,
-        style: { '--cor': rar.cor, '--bg': rar.bg, animationDelay: `${.25 + i * .15}s` } },
+    return el('div', { class: 'premio-peca' + (marcar?.(item) ? ' da-cor' : ''),
+        style: { '--cor': rar.cor, '--bg': rar.bg, animationDelay: `${.15 + i * .12}s` } },
       el('div', { class: 'premio-foto' },
         el('img', { ...imagemDaPeca(item, 120), alt: nomeDaPeca(item), decoding: 'async' })),
       el('span', { class: 'premio-rar' }, rar.nome),
       el('span', { class: 'premio-nome' }, nomeDaPeca(item)));
   });
   const bonus = [
-    r.fichas && el('span', { class: 'premio-bonus ficha' }, `+${r.fichas} ${r.fichas === 1 ? 'ficha' : 'fichas'}`),
-    r.xp && el('span', { class: 'premio-bonus xp' }, `+${r.xp} XP`),
+    fichas && el('span', { class: 'premio-bonus ficha' }, `+${fichas} ${fichas === 1 ? 'ficha' : 'fichas'}`),
+    xp && el('span', { class: 'premio-bonus xp' }, `+${xp} XP`),
   ].filter(Boolean);
 
-  const cartao = el('div', { class: `premio r-${melhor}`, role: 'status' },
-    el('div', { class: 'premio-brilho' }),
-    el('p', { class: 'premio-sobre' }, ultima ? 'Tutorial completo!' : 'Missão completa'),
-    el('h2', {}, m.nome),
-    pecas.length ? el('div', { class: 'premio-pecas' }, pecas) : null,
+  // Com peça: o baú fechado e o botão de abrir; o conteúdo entra depois.
+  const fechado = Boolean(bau && fotos.length);
+  const caixaDoBau = fechado
+    ? el('div', { class: `bau-caixa premio-bau bau-${bau}` }, ico('presente'))
+    : null;
+  const nomeDoBau = bau === 'presente' ? 'Presente' : BAUS[bau]?.nome;
+  const btnAbrir = fechado
+    ? el('button', { type: 'button', class: 'btn-dark premio-abrir' }, `Abrir ${nomeDoBau?.toLowerCase() ?? 'baú'}`)
+    : null;
+  const conteudo = el('div', { class: 'premio-conteudo' },
+    fotos.length ? el('div', { class: 'premio-pecas' + (fotos.length > 3 ? ' muitas' : '') }, fotos) : null,
     bonus.length ? el('div', { class: 'premio-bonus-linha' }, bonus) : null,
-    ultima ? el('p', { class: 'premio-fim' }, 'Agora as missões do dia, em Tarefas, continuam dando prêmio.') : null,
-    el('p', { class: 'premio-toque' }, 'toque para fechar'));
+    texto ? el('p', { class: 'premio-fim' }, texto) : null);
+  const toque = el('p', { class: 'premio-toque' }, fechado ? '' : 'toque para fechar');
 
-  let fechado = false;
+  // O presente fica na cor da paleta; baú e peça soltos, na da melhor raridade.
+  const tom = bau === 'presente' ? 'nenhuma' : melhor;
+  const cartao = el('div', { class: `premio r-${tom}` + (fechado ? ' fechado' : ''), role: 'status' },
+    el('div', { class: 'premio-brilho' }),
+    el('p', { class: 'premio-sobre' }, sobre),
+    el('h2', {}, titulo),
+    caixaDoBau, fechado ? el('p', { class: 'premio-bau-nome' }, nomeDoBau) : null,
+    conteudo, btnAbrir, toque);
+
+  let timer = 0;
+  let saindo = false;
   const fechar = () => {
-    if (fechado) return;
-    fechado = true;
+    if (saindo) return;
+    saindo = true;
     clearTimeout(timer);
     cartao.classList.add('saindo');
     setTimeout(() => { cartao.remove(); proximoPremio(); }, 250);
   };
-  cartao.addEventListener('click', fechar);
-  const timer = setTimeout(fechar, (ultima ? 5200 : 2600) + pecas.length * 700);
+  const contar = () => { timer = setTimeout(fechar, (tempo || TEMPO_NA_TELA) + fotos.length * 700); };
+  const abrir = () => {
+    if (!cartao.classList.contains('fechado') || cartao.classList.contains('abrindo')) return;
+    cartao.classList.add('abrindo');
+    btnAbrir.remove();
+    // O baú treme e salta; as peças pulam para fora quando ele some.
+    setTimeout(() => {
+      cartao.classList.remove('fechado', 'abrindo');
+      cartao.classList.add('aberto');
+      toque.textContent = 'toque para fechar';
+      contar();
+    }, 800);
+  };
+  cartao.addEventListener('click', () => (cartao.classList.contains('fechado') ? abrir() : fechar()));
+  if (!fechado) contar();
   premioNaTela = cartao;
   document.body.append(cartao);
 }
@@ -455,7 +522,7 @@ function clique(e) {
   if (acabouDeArrastar) { acabouDeArrastar = false; return; }
   const acao = e.target.closest('[data-acao]')?.dataset.acao;
   if (!acao) { if (digitando && e.target.closest('[data-digitar]')) digitando.terminar(); return; }
-  if (acao === 'comecar') { passoNovo(); desenhar(); }
+  if (acao === 'comecar') { passoNovo(); desenhar(); anunciarPresente(); }
   else if (acao === 'entendi') entendi();
   else if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
   else if (acao === 'barra') { modo = 'barra'; desenhar(); }
