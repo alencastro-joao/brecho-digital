@@ -29,7 +29,7 @@ para a loja e foi parar em outro guarda-roupa, que é o que aconteceu.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import boto3
 from botocore.exceptions import ClientError
@@ -43,6 +43,66 @@ LIMITES = {'common': 1000, 'uncommon': 500, 'rare': 300, 'epic': 100, 'legendary
 # Como a cópia chegou ao dono: as mesmas origens do inventário (js/db.js).
 COMO = {'vitrine', 'presente', 'missao', 'semana', 'bau-especial', 'nivel',
         'collab', 'propria', 'teste'}
+
+
+# Quantas cópias uma conta leva por dia (dia de Brasília), contando no
+# servidor: o limite de 3 resgates da loja mora no save, que é o navegador quem
+# escreve, então sem isto bastava chamar /api/estoque/levar em loop para
+# esvaziar uma tiragem. A loja tem folga para os resgates comprados com fichas
+# (que se acumulam) e o efeito de resgate grátis; o total cobre baús abertos de
+# uma vez. O administrador não tem cota (numera o acervo antigo, testa).
+COTA_VITRINE = 10
+COTA_TOTAL = 60
+BRASILIA = timezone(timedelta(hours=-3))
+
+
+def _pk_cota(usuario):
+    return 'COTA#%s#%s' % (usuario['id'], datetime.now(BRASILIA).date().isoformat())
+
+
+def _gastar_cota(usuario, como):
+    """Conta uma cópia na cota do dia. False se a cota acabou."""
+    if not usuario or usuario.get('papel') == 'admin':
+        return True
+    loja = como == 'vitrine'
+    nomes = {'#t': 'total', '#ttl': 'ttl'}
+    cond = 'attribute_not_exists(#t) OR #t < :tt'
+    vals = {':um': {'N': '1'}, ':zero': {'N': '0'}, ':tt': {'N': str(COTA_TOTAL)},
+            ':ttl': {'N': str(int((datetime.now(timezone.utc) + timedelta(days=3)).timestamp()))}}
+    upd = 'SET #t = if_not_exists(#t, :zero) + :um, #ttl = :ttl'
+    if loja:
+        nomes['#l'] = 'loja'
+        cond = '(%s) AND (attribute_not_exists(#l) OR #l < :tl)' % cond
+        vals[':tl'] = {'N': str(COTA_VITRINE)}
+        upd += ', #l = if_not_exists(#l, :zero) + :um'
+    try:
+        _dynamo.update_item(TableName=TABELA, Key={'pk': {'S': _pk_cota(usuario)}},
+                            UpdateExpression=upd, ConditionExpression=cond,
+                            ExpressionAttributeNames=nomes,
+                            ExpressionAttributeValues=vals)
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
+        return False
+
+
+def _devolver_cota(usuario, como):
+    """A cópia não saiu (esgotou) ou foi desfeita: a cota volta."""
+    if not usuario or usuario.get('papel') == 'admin':
+        return
+    loja = como == 'vitrine'
+    nomes = {'#t': 'total', **({'#l': 'loja'} if loja else {})}
+    upd = 'SET #t = #t - :um' + (', #l = #l - :um' if loja else '')
+    cond = '#t > :zero' + (' AND #l > :zero' if loja else '')
+    try:
+        _dynamo.update_item(TableName=TABELA, Key={'pk': {'S': _pk_cota(usuario)}},
+                            UpdateExpression=upd, ConditionExpression=cond,
+                            ExpressionAttributeNames=nomes,
+                            ExpressionAttributeValues={':um': {'N': '1'}, ':zero': {'N': '0'}})
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
 
 
 def chave(peca_id, raridade):
@@ -115,12 +175,16 @@ def _garantir_item():
 def levar(pecas, usuario=None):
     """Reserva uma cópia de cada peça. Devolve as que conseguiu e as esgotadas.
 
-    Com `usuario`, a cópia reservada já entra no histórico com ele de dono."""
+    Com `usuario`, a cópia reservada já entra no histórico com ele de dono e
+    conta na cota do dia dele; passada a cota, a peça volta em `limite`."""
     _garantir_item()
-    ok, esgotadas, numeros = [], [], {}
+    ok, esgotadas, limite, numeros = [], [], [], {}
     comos = [_como((p or {}).get('origem')) for p in pecas or []]
     for i, (pid, rar) in enumerate(_validar(pecas)):
         k = chave(pid, rar)
+        if not _gastar_cota(usuario, comos[i]):
+            limite.append(k)
+            continue
         try:
             # O valor novo do contador é o número da cópia: "nº 12 de 1000".
             feito = _dynamo.update_item(
@@ -141,7 +205,9 @@ def levar(pecas, usuario=None):
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise
             esgotadas.append(k)
-    return {'levadas': ok, 'esgotadas': esgotadas, 'numeros': numeros, 'mapa': mapa()}
+            _devolver_cota(usuario, comos[i])
+    return {'levadas': ok, 'esgotadas': esgotadas, 'limite': limite, 'numeros': numeros,
+            'mapa': mapa()}
 
 
 def devolver(pecas):
@@ -265,6 +331,7 @@ def desfazer(peca, usuario):
         if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
             raise
         raise ValueError('essa cópia mudou de dono')
+    _devolver_cota(usuario, 'vitrine')
     try:
         _dynamo.update_item(
             TableName=TABELA, Key={'pk': {'S': PK}},

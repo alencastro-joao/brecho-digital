@@ -71,7 +71,6 @@ function estadoInicial() {
     // ids por aba — roupas, looks, colagens. O que não está aqui vem depois,
     // na ordem de sempre.
     ordemDoPerfil: {},
-    pecasProprias: [],         // peças que você mesmo subiu: { id, cat, marca, nome, src, w, h, ancora }
     marcas: [],                // marcas já usadas: { nome, usos, em }
     cores: [],                 // cores já usadas: { nome, usos, em }
     dia: { data: hojeISO(), resgates: 0, extras: 0, guardados: 0, posicoes: {} },   // posicoes: peça arrastada no mural
@@ -189,11 +188,15 @@ function carregar() {
     // Óculos e 'rings' virou Pulseiras (ver migrarCategoria em config.js). Toda
     // cópia de `cat` que o save guarda passa por aqui.
     const pecasComCat = [
-      ...(estado.inventario || []), ...(estado.pecasProprias || []),
+      ...(estado.inventario || []),
       ...(estado.looks || []).flatMap(l => l?.camadas || []),
       ...(estado.boards || []).flatMap(b => b?.itens || []),
     ];
     for (const p of pecasComCat) if (p?.cat) p.cat = migrarCategoria(p.cat);
+    // As peças subidas pelo navegador (as "locais", só deste aparelho) saíram
+    // do jogo: peça nova entra pela esteira, no acervo de todo mundo.
+    delete estado.pecasProprias;
+    estado.inventario = (estado.inventario || []).filter(p => p?.origem !== 'propria');
     return estado;
   } catch {
     return estadoInicial();
@@ -729,10 +732,6 @@ export function raridadeDoDia(id, iso = hojeISO()) {
   // catálogo preenche esse mapa ao carregar (evita db importar catalog.js).
   if (raridadesFixas.has(id)) return raridadesFixas.get(id);
 
-  // Peça que você subiu já tem raridade escolhida na ficha.
-  const propria = state.pecasProprias.find(p => p.id === id);
-  if (propria?.raridade) return propria.raridade;
-
   return sortearRaridade(mulberry32(sementeDaLoja(iso) + numeroDe(id) * 7919),
     modificadoresDaLoja().peso);
 }
@@ -801,26 +800,6 @@ export function devolverTudoParaALoja() {
   salvar();
   return devolvidas;
 }
-
-// --- Peças próprias -------------------------------------------------------
-// A imagem vem comprimida em WebP e mora no próprio registro (data URL). Para
-// um acervo grande o caminho é o pipeline; aqui é para subir peça avulsa.
-export function guardarPecaPropria(peca) {
-  const antes = state.pecasProprias.findIndex(p => p.id === peca.id);
-  if (antes >= 0) state.pecasProprias[antes] = peca;
-  else state.pecasProprias.push(peca);
-  return peca;
-}
-
-export function removerPecaPropria(id) {
-  state.pecasProprias = state.pecasProprias.filter(p => p.id !== id);
-  state.inventario = state.inventario.filter(p => p.id !== id);
-  salvar();
-}
-
-// Espaço que as peças próprias ocupam no navegador, em KB.
-export const pesoDasPecas = () =>
-  Math.round(state.pecasProprias.reduce((t, p) => t + (p.src?.length ?? 0), 0) / 1024);
 
 // --- Marcas ---------------------------------------------------------------
 // Toda marca digitada ao subir uma peça fica registrada. Hoje serve para
@@ -1543,7 +1522,7 @@ export function marcarVista(id) {
 // migrar para a base oficial do site, e perder isso num botão de teste seria
 // perder trabalho de verdade. (As peças gravadas em assets/acervo.json já
 // vivem em disco; aqui ficam as de save antigo, guardadas no próprio estado.)
-const ACERVO_DO_ADMIN = ['pecasProprias', 'marcas', 'cores'];
+const ACERVO_DO_ADMIN = ['marcas', 'cores'];
 
 export function resetar({ manterAcervo = true } = {}) {
   const guardado = manterAcervo
@@ -1559,11 +1538,3 @@ export function resetar({ manterAcervo = true } = {}) {
   salvar();
 }
 
-// O contrapeso do de cima: apagar também o cadastro. Fica separado porque nada
-// aqui volta — nem a peça nem a lista de marcas.
-export function apagarAcervoLocal() {
-  state.pecasProprias = [];
-  state.marcas = [];
-  state.cores = [];
-  salvar();
-}

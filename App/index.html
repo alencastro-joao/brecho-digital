@@ -885,8 +885,7 @@
               <button type="button" data-ajuste="cores"><i data-i="paleta"></i> Cores do site</button>
               <button type="button" data-ajuste="conexoes"><i data-i="publicar"></i> Contas conectadas</button>
               <button type="button" data-ajuste="conta"><i data-i="usuario"></i> Sua conta</button>
-              <button type="button" data-ajuste="testes"><i data-i="dado"></i> Testes</button>
-              <button type="button" data-ajuste="painel" id="pf-menu-painel" hidden><i data-i="trofeu"></i> Painel</button>
+              <button type="button" id="pf-menu-admin" hidden><i data-i="trofeu"></i> Administração</button>
             </nav>
           </div>
         </div>
@@ -913,6 +912,58 @@
       <div class="pf-conteudo" id="perfil-conteudo"></div>
     </div>
   </section>
+  <!-- ====================== ADMINISTRAÇÃO ====================== -->
+  <!-- Só a conta do dono da loja (o servidor decide quem é admin; js/admin.js
+       devolve qualquer outra conta para a loja). -->
+  <section class="view view-admin" data-view="admin" hidden>
+    <div class="adm-pagina">
+      <header class="adm-topo">
+        <button type="button" class="bs-voltar" id="adm-voltar">‹ Perfil</button>
+        <h1>Administração</h1>
+      </header>
+
+      <section class="adm-bloco">
+        <h2>Hoje</h2>
+        <div id="painel-corpo"></div>
+      </section>
+
+      <section class="adm-bloco">
+        <h2>Acervo</h2>
+        <div class="tool-row">
+          <button class="btn-ghost" id="btn-add-peca">Abrir a esteira</button>
+        </div>
+      </section>
+
+      <section class="adm-bloco">
+        <h2>Contas</h2>
+        <div class="limpeza-contas" id="limpeza-contas">
+          <div class="tool-row">
+            <button class="btn-ghost" id="btn-ver-contas">Ver todas as contas</button>
+            <button class="btn-ghost danger" id="btn-limpar-contas" hidden>Apagar as outras contas</button>
+          </div>
+          <ul class="limpeza-lista" id="limpeza-lista"></ul>
+          <p class="tool-hint" id="limpeza-resumo"></p>
+        </div>
+      </section>
+
+      <section class="adm-bloco">
+        <h2>Sua conta de teste</h2>
+        <div class="tool-row">
+          <button class="btn-ghost destaque" id="btn-tutorial">Recomeçar o tutorial</button>
+          <button class="btn-ghost" id="btn-reset-dia">Liberar resgates de hoje</button>
+          <button class="btn-ghost" id="btn-dar-pecas">+10 peças</button>
+          <button class="btn-ghost" id="adm-fichas">+5 fichas</button>
+          <button class="btn-ghost" id="btn-xp">+50 XP</button>
+          <button class="btn-ghost" id="btn-posts">+3 posts no feed</button>
+        </div>
+        <div class="tool-row adm-baus" id="adm-baus"></div>
+        <div class="tool-row">
+          <button class="btn-ghost danger" id="btn-reset">Apagar meus dados</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
   <!-- ====================== AJUSTES DO PERFIL ====================== -->
   <!-- Aberto pelo menu do cartão do perfil (js/perfil.js): uma seção por vez. -->
   <div class="modal" id="modal-ajustes" hidden>
@@ -955,39 +1006,8 @@
           <p class="tool-hint">Trocar a senha encerra as outras sessões: quem
             estiver logado como você em outro computador cai fora.</p>
 
-          <!-- Só o administrador: todas as contas do app, e apagar as outras -->
-          <div class="limpeza-contas" id="limpeza-contas" hidden>
-            <div class="tool-row">
-              <!-- Peça nova entra pela esteira (esteira.html); o botão saiu do closet -->
-              <button class="btn-ghost" id="btn-add-peca">+ Adicionar peça</button>
-              <button class="btn-ghost" id="btn-ver-contas">Ver todas as contas</button>
-              <button class="btn-ghost danger" id="btn-limpar-contas" hidden>Apagar as outras contas</button>
-            </div>
-            <ul class="limpeza-lista" id="limpeza-lista"></ul>
-            <p class="tool-hint" id="limpeza-resumo"></p>
-          </div>
         </section>
 
-        <!-- Só o administrador: os números do dia (js/painel.js) -->
-        <section class="painel-admin" data-ajuste="painel">
-          <div id="painel-corpo"></div>
-        </section>
-
-        <section class="perfil-dev" data-ajuste="testes">
-          <div class="tool-row">
-            <button class="btn-ghost destaque" id="btn-tutorial">Recomeçar missões de introdução</button>
-            <button class="btn-ghost" id="btn-reset-dia">Liberar resgates de hoje</button>
-            <button class="btn-ghost" id="btn-dar-pecas">+10 peças aleatórias</button>
-            <button class="btn-ghost" id="btn-posts">+3 posts fictícios</button>
-            <button class="btn-ghost" id="btn-xp">+50 XP</button>
-            <button class="btn-ghost danger" id="btn-reset">Apagar meus dados</button>
-            <button class="btn-ghost danger" id="btn-apagar-acervo">Apagar peças guardadas aqui</button>
-          </div>
-          <p class="tool-hint">Tudo é salvo no localStorage do navegador
-            (o lugar do DynamoDB no protótipo). “Apagar meus dados” zera a partida
-            (inventário, looks, feed, XP) e preserva o cadastro — peças adicionadas,
-            marcas e cores —, que vai migrar para a base oficial do site.</p>
-        </section>
       </div>
     </div>
   </div>

@@ -179,6 +179,15 @@ def limpar_nome(nome, handle):
 
 
 # --- Contas ---------------------------------------------------------------
+# Administrador é só a conta do dono da loja, pelo e-mail: a marca de "primeira
+# conta" sozinha não basta, porque apagar e recriar contas mudaria quem manda.
+DONO = (os.environ.get('DONO_EMAIL') or 'oliveijao@gmail.com').lower()
+
+
+def _papel(item):
+    return 'admin' if item.get('papel') == 'admin' and item.get('email_normal') == DONO else 'usuario'
+
+
 def _publico(item):
     """O que o navegador pode ver. Nunca inclui a senha."""
     return {
@@ -187,7 +196,7 @@ def _publico(item):
         'emailConfirmado': bool(item.get('email_confirmado')),
         'handle': '@' + item['handle'],
         'nome': item['nome'],
-        'papel': item['papel'],
+        'papel': _papel(item),
         'criadoEm': item['criado_em'],
     }
 

@@ -35,7 +35,7 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 |---|---|
 | **Entrar** | Primeira tela: entrar ou criar conta. Senha com `scrypt` no servidor, sessão em cookie `HttpOnly` de 30 dias — voltar amanhã não pede senha de novo |
 | **Vitrine** | Mural orgânico com 25 peças soltas (distribuição Poisson-disc), a rara por baixo de uma comum, sorteio diário diferente para cada conta (semente na data + id) e cota por raridade, peças flutuando no tamanho real medido, aura de raridade no hover, arrastar para reorganizar, clique abre a ficha, limite de 3 resgates por dia |
-| **Guarda-roupa** | Abre em **Todas as peças**; botão de adicionar peça própria; categorias com contador, raridade identificada pela cor do slot, arrastar para reordenar (persiste), destaque com ficha da peça |
+| **Guarda-roupa** | Abre em **Todas as peças**; categorias com contador, raridade identificada pela cor do slot, arrastar para reordenar (persiste), destaque com ficha da peça |
 | **Stylist** | Palco 600×1200 com o avatar base, paleta com aba "todas", uma peça por categoria (escolher outra troca), botão de sortear look com as suas peças, peça entra encaixada no ponto de ancoragem da categoria, mover/girar/redimensionar/espelhar/camada, salvar, publicar, exportar Story 1080×1920 e Post 1080×1350 |
 | **Colagem** | A colagem livre estilo board de moda, sempre em fundo branco: botão de sortear colagem, réguas e guias, ímã de alinhamento, assinatura, etiquetas de texto, seleção múltipla, undo/redo e exportação |
 | **Feed** | Abas Seguindo/Descobrir, 32 perfis fictícios publicando looks **e colagens** geradas na hora, com o retrato de quem postou no canto da imagem e o resto (nome, tempo, comentários, menu) no look aberto; curtir (ou dois toques na imagem), comentar, seguir, compartilhar; um toque abre o look grande com as peças (cada uma abre a ficha, com o ♡ da wishlist), os comentários e "mais como este". A coluna "Quem seguir" procura por nome, sobrenome, @ ou bio — **contas reais incluídas**, é assim que se acha um amigo |
@@ -407,7 +407,7 @@ Tudo fica em `localStorage`, na chave `bd:v1:estado`, num formato que já imita 
 do DynamoDB: usuário, inventário, estado do dia, looks, feed, missões, fichas, XP e cápsula.
 Trocar por uma API é substituir `carregar()` e `salvar()` em `js/db.js`.
 
-Em **Perfil → Testes** há como liberar os resgates do dia, ganhar 10 peças e apagar tudo.
+Em **Perfil → Administração** (só a conta do dono) há como liberar os resgates do dia, ganhar 10 peças e apagar tudo.
 As missões e o XP ficam na aba **Tarefas**.
 
 
@@ -991,7 +991,7 @@ Sem peça nenhuma, a vitrine avisa que a loja está sem estoque e os perfis fict
 postam quando houver roupa para vestir.
 
 Existiu outra fonte, o "acervo da pasta": `assets/catalog.json`, gerado a partir
-de `../Cloths` pelo `tools/pipeline.py`, com um botão em Perfil → Testes para ligá-lo e
+de `../Cloths` pelo `tools/pipeline.py`, com um botão em Perfil → Administração para ligá-lo e
 desligá-lo. Ela saiu do app — as 59 peças numeradas e o botão. A cápsula do mês
 (`COLLAB.itens`) ainda aponta para ids dessa fonte e mostra que as peças não estão no
 acervo até ser apontada para peças publicadas pela esteira.
@@ -1151,7 +1151,7 @@ Três atalhos evitam repetir trabalho:
 Salvando uma a uma (o **Salvar peça** do passo 2), a fila anda sozinha: grava, tira da
 fila e abre a próxima no passo 1. O modal só fecha quando a fila acaba.
 
-## Apagar dados (Perfil → Testes)
+## Apagar dados (Perfil → Administração)
 
 São dois botões, e a diferença importa:
 
@@ -1217,7 +1217,7 @@ guardada no post em `post.colagem`, que é o equivalente das camadas do look: é
 que o perfil da pessoa tira as peças que ela veste. No feed as duas se distinguem
 sozinhas, porque o look é vertical e a colagem é um post 4:5.
 
-Em **Perfil → Testes**,
+Em **Perfil → Administração** (só a conta do dono),
 o botão **+3 posts fictícios** gera mais e ainda faz alguém curtir e comentar no que
 você publicou — para ter o que testar sem depender de gente de verdade.
 

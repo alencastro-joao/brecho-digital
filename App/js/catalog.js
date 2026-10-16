@@ -28,11 +28,6 @@ export async function carregarCatalogo() {
   // marca, raridade) e a âncora medida no molde.
   catalogo.itens = await carregarAcervo();
 
-  // As peças subidas pelo navegador (legado) entram no mesmo catálogo: a partir
-  // daqui todo o resto do app (closet, Stylist, prancheta, render) as trata
-  // como qualquer outra peça.
-  catalogo.itens.push(...db.state.pecasProprias.map(p => ({ ...p, propria: true })));
-
   // O acervo.json ainda traz peça com categoria antiga.
   for (const it of catalogo.itens) it.cat = migrarCategoria(it.cat);
 

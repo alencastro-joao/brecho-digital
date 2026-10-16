@@ -708,6 +708,10 @@ async function pegar(id, noDOM) {
   pegando.add(id);
   const reserva = await estoque.levar([{ id, raridade, origem: 'vitrine' }]);
   pegando.delete(id);
+  if (estoque.barradaPelaCota(id, raridade)) {
+    toast('Você já pegou o máximo de peças de hoje.', 'aviso');
+    return;
+  }
   if (!estoque.conseguiu(reserva, id, raridade)) {
     toast(`${nomeDaPeca(peca)} esgotou — as ${RARIDADE[raridade].tiragem} cópias já têm dona.`, 'aviso');
     sairDaLoja(noDOM);
