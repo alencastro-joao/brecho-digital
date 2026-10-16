@@ -65,7 +65,7 @@ button.pf-foto:hover { transform: scale(1.02); }
   background: var(--perola-painel); border: 2px solid var(--wii-borda); border-radius: 18px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, .12);
 }
-.pf-menu[hidden] { display: none; }
+.pf-menu[hidden], .pf-menu button[hidden] { display: none; }
 .pf-menu button {
   display: flex; align-items: center; gap: 10px;
   padding: 11px 14px 13px; border-radius: 12px; text-align: left;
@@ -450,3 +450,32 @@ button.pf-stat:hover small { text-decoration: underline; }
 .aj-corpo .tool-row { margin: 12px 0; }
 .aj-corpo .tool-row .btn-ghost { width: auto; flex: 1 1 160px; margin: 0; }
 .aj-corpo .conta-senha { margin-bottom: 12px; }
+
+/* ---------------------------- Painel do admin ---------------------------- */
+/* Ajustes › Painel (js/painel.js): quatro números em blocos perolados e as
+   listas das peças, com a foto de cada uma. */
+.pa-numeros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.pa-numero {
+  display: flex; flex-direction: column; gap: 2px; padding: 12px 14px 14px;
+  background: #fff; border: 2px solid var(--wii-borda); border-radius: 14px;
+  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+}
+.pa-numero strong { font-size: 28px; font-weight: 800; line-height: 1.05; color: var(--tinta); }
+.pa-numero span { font-size: 13px; font-weight: 700; color: var(--tinta); }
+.pa-numero small { font-size: 11.5px; color: var(--tinta-suave); }
+.pa-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.pa-chips span {
+  font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 10px;
+  background: var(--perola); border: 2px solid var(--wii-borda); color: var(--tinta);
+}
+.pa-lista { margin-top: 16px; }
+.pa-lista h3 { font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--tinta-suave); margin: 0 0 6px; }
+.pa-lista ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pa-lista li {
+  display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px;
+  background: #fff; border: 2px solid var(--wii-borda); border-radius: 12px;
+}
+.pa-lista img, .pa-sem-foto { width: 38px; height: 38px; flex: none; object-fit: contain; border-radius: 8px; background: var(--perola); }
+.pa-nome { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pa-lista b { font-size: 14px; font-weight: 800; color: var(--tinta); }
+.pa-vazio { font-size: 13px; color: var(--tinta-suave); margin: 4px 0; }

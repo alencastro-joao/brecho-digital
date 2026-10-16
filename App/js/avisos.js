@@ -6,7 +6,8 @@
 //   * feed       curtidas e comentários de outras pessoas nos seus posts;
 //   * seguidores quem passou a seguir você;
 //   * missões    missão fechada, dia inteiro fechado, nível novo (db.onXP);
-//   * loja       a vitrine que virou o dia, ou que o admin repôs.
+//   * loja       a vitrine que virou o dia, ou que o admin repôs;
+//   * wishlist   peça da sua wishlist pendurada na sua loja hoje.
 //
 // A foto e a lista moram no save (`state.avisos`), então o que já foi visto no
 // computador chega visto no celular. A primeira olhada de cada fonte só tira a
@@ -18,6 +19,8 @@ import { publicacoes, aoMudarPublicacoes, carregarFeed, feedLidoEm } from './pub
 import { aoLerSeguidores, sincronizarSocial, perfilDe } from './pessoas.js';
 import { retratoDe } from './social.js';
 import { irPara } from './router.js';
+import { CONFIG } from './config.js';
+import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { el, $, hojeISO, tempoRelativo } from './util.js';
 import { ico } from './icones.js';
 
@@ -162,6 +165,27 @@ export function avisarLojaReposta() {
   avisar({ tipo: 'loja', ir: ['vitrine'], texto: 'A loja foi reposta: estoque novo na vitrine.' });
 }
 
+// Peça da wishlist na loja: só o sino, sem toast nem balão. Cada peça avisa
+// uma vez por dia; a arara de hoje (`dia.vitrine`) é a mesma que a loja
+// pendura, então quem chama é a própria loja ao montar (e a reposição do admin).
+export function conferirWishlist() {
+  const dia = db.state.dia;
+  const hoje = hojeISO();
+  const ids = dia.data === hoje ? (dia.vitrine?.ids || []).slice(0, CONFIG.PECAS_NA_VITRINE) : [];
+  if (!ids.length) return;
+  const a = avisos();
+  if (a.wishlist?.dia !== hoje) a.wishlist = { dia: hoje, ids: [] };
+  const novas = ids.filter(id => db.naWishlist(id) && !db.temPeca(id) && !a.wishlist.ids.includes(id));
+  if (!novas.length) return;
+  a.wishlist.ids.push(...novas);
+  for (const id of novas) {
+    const peca = pecaDoCatalogo(id);
+    if (!peca) continue;
+    avisar({ tipo: 'wishlist', ir: ['vitrine'],
+             texto: `${nomeDaPeca(peca)}, da sua wishlist, está na sua loja hoje.` });
+  }
+}
+
 // O feed e os seguidores só chegam relendo o servidor. Com a aba escondida não
 // há quem veja o sino, e não se gasta requisição.
 function reler() {
@@ -173,6 +197,7 @@ function reler() {
 // -------------------------------- Tela -------------------------------------
 const ICONE = {
   curtida: 'coracao-cheio', comentario: '“', seguidor: '+', missao: 'ok', nivel: 'estrela-cheia', loja: 'atualizar',
+  wishlist: 'coracao',
 };
 
 let botao, painel, contador, listaEl;
@@ -267,9 +292,10 @@ export function montarAvisos() {
 
   // Os seguidores o boot acabou de ler (sincronizarSocial); o feed, não.
   conferirDia();
+  conferirWishlist();
   conferirFeed();
   carregarFeed();
-  setInterval(() => { conferirDia(); reler(); }, INTERVALO);
+  setInterval(() => { conferirDia(); conferirWishlist(); reler(); }, INTERVALO);
   // A virada da meia-noite com a aba parada: não espera os três minutos.
   setInterval(conferirDia, 60e3);
   document.addEventListener('visibilitychange', () => {

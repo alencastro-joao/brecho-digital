@@ -223,6 +223,23 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .toast.rare { background: #3b6ea5; }
 .toast.epic { background: #6b4fa5; }
 .toast.legendary { background: #9a7b13; }
+/* O aviso do resgate com "Desfazer" (vitrine.js): a barrinha embaixo esvazia
+   nos 10 segundos em que o botão vale. */
+.toast.desfazer {
+  pointer-events: auto; position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 12px; padding-right: 8px;
+}
+.desfazer-btn {
+  flex: none; padding: 6px 12px; border-radius: 20px; border: 1.5px solid rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, .14); color: #fff; font: inherit; font-weight: 700; cursor: pointer;
+}
+.desfazer-btn:disabled { opacity: .5; }
+.desfazer-barra {
+  position: absolute; left: 0; bottom: 0; height: 3px; width: 100%;
+  background: rgba(255, 255, 255, .75); transform-origin: left;
+}
+.toast.show .desfazer-barra { animation: desfazer-tempo var(--tempo, 10s) linear forwards; }
+@keyframes desfazer-tempo { to { transform: scaleX(0); } }
 
 /* --------------------------- Aviso de file:// --------------------------- */
 #file-warning {

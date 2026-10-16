@@ -142,3 +142,41 @@ def historico(copias, usuario):
         if mudou:
             _gravar(registro, COPIAS)
         return {'historico': resposta}
+
+
+DESFAZER_SEG = 60
+
+
+def desfazer(peca, usuario):
+    """Mesmo contrato de nuvem/lambda/estoque.py: devolve a cópia que você
+    acabou de levar da loja (último dono, pela loja, há menos de um minuto)."""
+    peca = peca or {}
+    (pid, rar), = _validar([peca])
+    try:
+        numero = int(peca.get('numero'))
+    except (TypeError, ValueError):
+        raise ValueError('número da cópia inválido')
+    k = chave(pid, rar)
+    ck = '%s|%d' % (k, numero)
+    with _trava:
+        dados = _ler()
+        registro = _ler(COPIAS)
+        donos = registro.get(ck) or []
+        ultimo = donos[-1] if donos else {}
+        if ultimo.get('uid') != usuario['id'] or ultimo.get('como') != 'vitrine':
+            raise ValueError('essa cópia não é sua para desfazer')
+        levou = datetime.strptime(ultimo['em'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+        if (datetime.now(timezone.utc) - levou).total_seconds() > DESFAZER_SEG:
+            raise ValueError('passou o tempo de desfazer')
+        donos.pop()
+        registro[ck] = donos
+        if dados.get(k) == numero:
+            dados[k] = numero - 1
+        _gravar(dados)
+        _gravar(registro, COPIAS)
+        return {'mapa': dados}
+
+
+def copias():
+    with _trava:
+        return _ler(COPIAS)

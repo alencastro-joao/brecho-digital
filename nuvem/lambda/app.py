@@ -29,6 +29,8 @@ esta função só responde `/api/*`.
     POST /api/estoque/levar    reserva uma cópia (409 se esgotou)
     POST /api/estoque/devolver admin: a cópia volta para a loja
     POST /api/estoque/historico por quem cada cópia já passou
+    POST /api/estoque/desfazer  devolve a cópia que você acabou de levar
+    GET  /api/admin/painel     admin: os números do dia (ver painel.py)
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
     GET  /api/admin/contas     admin: todas as contas e o que cada uma tem
@@ -379,6 +381,8 @@ def rotas_de_estoque(pedido):
         return responder(200, estoque.devolver(pedido.corpo(LIMITE_LOGIN).get('pecas')))
     if rota == '/api/estoque/historico' and metodo == 'POST':
         return responder(200, estoque.historico(pedido.corpo(LIMITE_LOGIN).get('copias'), usuario))
+    if rota == '/api/estoque/desfazer' and metodo == 'POST':
+        return responder(200, estoque.desfazer(pedido.corpo(LIMITE_LOGIN).get('peca'), usuario))
     return None
 
 
@@ -389,6 +393,8 @@ def rotas_de_limpeza(pedido):
     if usuario['papel'] != 'admin':
         return responder(403, {'erro': 'só o administrador mexe nas contas'})
     import limpeza
+    if pedido.rota == '/api/admin/painel' and pedido.metodo == 'GET':
+        return responder(200, limpeza.painel())
     if pedido.rota == '/api/admin/contas' and pedido.metodo == 'GET':
         return responder(200, limpeza.inventario(usuario))
     if pedido.rota == '/api/admin/contas/limpar' and pedido.metodo == 'POST':
@@ -398,7 +404,7 @@ def rotas_de_limpeza(pedido):
 
 def despachar(pedido):
     rota = pedido.rota
-    if rota.startswith('/api/admin/contas'):
+    if rota.startswith('/api/admin/contas') or rota == '/api/admin/painel':
         return rotas_de_limpeza(pedido)
 
     if rota.startswith('/api/auth/'):

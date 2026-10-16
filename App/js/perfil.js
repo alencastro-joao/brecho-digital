@@ -43,6 +43,7 @@ import {
   retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
 } from './usuario.js';
 import { ico } from './icones.js';
+import { renderPainel } from './painel.js';
 import { pecasFavoritas, minhasRoupas, meusLooks, minhasColagens } from './minhavitrine.js';
 
 // Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
@@ -321,6 +322,7 @@ const TITULOS_DE_AJUSTE = {
   conexoes: 'Contas conectadas',
   conta: 'Sua conta',
   testes: 'Testes',
+  painel: 'Painel',
 };
 
 function montarAjustes() {
@@ -350,6 +352,7 @@ function montarAjustes() {
 
 function abrirAjustes(qual) {
   if (qual === 'cores') renderPaletas();
+  if (qual === 'painel') renderPainel();
   $('#modal-ajustes').classList.toggle('so-cores', qual === 'cores');
   $('#aj-titulo').textContent = TITULOS_DE_AJUSTE[qual];
   document.querySelectorAll('#modal-ajustes [data-ajuste]').forEach(s => {
@@ -431,6 +434,7 @@ function renderConta() {
   const papel = conta.papel === 'admin' ? ' · administrador' : '';
   $('#conta-resumo').textContent = `${conta.email} · ${conta.handle}${papel}`;
   $('#limpeza-contas').hidden = conta.papel !== 'admin';
+  $('#pf-menu-painel').hidden = conta.papel !== 'admin';
 }
 
 // ------------------------- Limpeza de contas (admin) -----------------------

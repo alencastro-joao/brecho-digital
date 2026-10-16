@@ -48,6 +48,10 @@ import contas          # noqa: E402  (precisa da linha de cima)
 import pessoas         # noqa: E402
 import feed            # noqa: E402
 import estoque         # noqa: E402
+# A conta do painel do admin é a mesma da Lambda (sem boto3 nela).
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))), 'nuvem', 'lambda'))
+import painel          # noqa: E402
 
 PASTA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _ARGS = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -328,6 +332,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if corpo is None:
                     return True
                 self.responder(200, estoque.historico(corpo.get('copias'), usuario))
+            elif rota == '/api/estoque/desfazer' and metodo == 'POST':
+                corpo = self.ler_corpo(LIMITE_LOGIN)
+                if corpo is None:
+                    return True
+                self.responder(200, estoque.desfazer(corpo.get('peca'), usuario))
             else:
                 self.responder(404, {'erro': 'rota desconhecida'})
         except ValueError as e:
@@ -349,8 +358,38 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return True
         return False
 
+    # Painel do admin (nuvem/lambda/painel.py), montado com o SQLite local.
+    def rota_de_painel(self):
+        if self.path.rstrip('/') != '/api/admin/painel':
+            return False
+        usuario = self.exigir_sessao()
+        if not usuario:
+            return True
+        if usuario['papel'] != 'admin':
+            self.responder(403, {'erro': 'só o administrador vê o painel'})
+            return True
+        with contas.banco() as con:
+            uso = {}
+            for s in con.execute('SELECT usuario_id, expira_em FROM sessoes'):
+                u = painel.ultimo_uso_da_sessao(s['expira_em'])
+                if u and u > uso.get(s['usuario_id'], ''):
+                    uso[s['usuario_id']] = u
+            lista = [{'id': c['id'], 'criado_em': c['criado_em'],
+                      'ultimo_uso': max(filter(None, [c['ultimo_acesso'], uso.get(c['id'])]),
+                                        default=None)}
+                     for c in con.execute('SELECT id, criado_em, ultimo_acesso FROM usuarios')]
+            try:
+                posts = [dict(p) for p in con.execute('SELECT criado_em FROM posts')]
+            except Exception:                   # noqa: BLE001 — banco sem feed ainda
+                posts = []
+        self.responder(200, painel.resumir(lista, posts, estoque.mapa(), estoque.LIMITES,
+                                           estoque.copias()))
+        return True
+
     def do_GET(self):
         if self.api_remota('GET'):
+            return None
+        if self.rota_de_painel():
             return None
         if self.rota_de_estoque('GET'):
             return None
