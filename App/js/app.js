@@ -37,7 +37,8 @@ import { montarNivel } from './nivel.js';
 import { montarAvisos } from './avisos.js';
 import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
 import { toast } from './util.js';
-import { PROPORCAO_EM_TESTE } from './proporcao.js';
+import { PROPORCAO_EM_TESTE, CORPO_EM_TESTE } from './proporcao.js';
+import { usarCorpoDesenhado } from './avatar.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
 
@@ -87,6 +88,10 @@ async function iniciar() {
     tag.textContent = `Proporção em teste: ${PROPORCAO_EM_TESTE}`;
     tag.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;padding:4px 12px;border-radius:999px;background:#1c2530;color:#fff;font:600 12px system-ui;pointer-events:none;opacity:.85';
     document.body.append(tag);
+  }
+  if (CORPO_EM_TESTE) {
+    try { usarCorpoDesenhado((await import(`./corpo-${CORPO_EM_TESTE}.js`)).default); }
+    catch (err) { console.warn('corpo de teste não carregou', err); }
   }
   const { conta, nova } = await entrar();
   montarPaleta();                 // a cor do site é a do save de quem entrou
