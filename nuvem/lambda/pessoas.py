@@ -73,6 +73,10 @@ PECAS_POR_OBRA = 40
 OBRAS_MAX = 40          # todos os looks e colagens da página (os mais novos)
 GUARDA_ROUPA_MAX = 600  # o guarda-roupa inteiro, que a página abre num botão
 WISHLIST_MAX = 200
+# A cor favorita (Personagem › Cor favorita): uma das cores com coleção
+# (COLECOES_DE_COR em js/config.js). Fora da lista não entra.
+CORES_FAVORITAS = {'Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Rosa',
+                   'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo'}
 
 # Só o que o cartão usa. A varredura nunca traz a senha para a memória.
 _CAMPOS = {'#id': 'id', '#h': 'handle', '#n': 'nome', '#c': 'criado_em',
@@ -102,6 +106,7 @@ def _cartao(item, eu=None):
         'bio': perfil.get('bio') or '',
         'avatar': dict(perfil.get('avatar') or {}),
         'equipado': dict(perfil.get('equipado') or {}),
+        'corFavorita': perfil.get('corFavorita') or '',
         'seguidores': len(item.get('seguidores') or ()),
         'seguindo': len(item.get('seguindo') or ()),
     }
@@ -325,6 +330,9 @@ def limpar_perfil(corpo, eu_id=None):
         'avatar': _mapa(corpo.get('avatar'), 8),
         'equipado': _mapa(corpo.get('equipado'), 12),
     }
+    cor = corpo.get('corFavorita')
+    if cor in CORES_FAVORITAS:
+        perfil['corFavorita'] = cor
     if 'favoritos' in corpo:
         perfil['favoritos'] = limpar_favoritos(corpo.get('favoritos'), eu_id)
     # Todos os looks e colagens, o guarda-roupa inteiro e a wishlist: o que a

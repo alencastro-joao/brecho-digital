@@ -16,7 +16,7 @@
 // mesmos seguidores e a mesma data de entrada, em qualquer navegador, sem
 // ninguém cadastrar nada. Quando existir backend, é essa função que some.
 
-import { PERFIS_MOCK, CATEGORIAS, RARIDADE, escalaGrade } from './config.js';
+import { PERFIS_MOCK, CATEGORIAS, RARIDADE, escalaGrade, CORES_FAVORITAS } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
@@ -218,7 +218,11 @@ function renderUsuario() {
   // ao contrário dos fictícios, onde mostrar o sorteio cedo estragaria a graça.
   $('#up-handle').replaceChildren(p.handle,
     ...(p.real && p.segueVoce ? [el('span', { class: 'pf-segue-voce' }, 'segue você')] : []));
-  $('#up-nome').textContent = p.nome;
+  // A cor favorita dela, discreta como no seu perfil: uma bolinha ao lado do nome.
+  const fav = CORES_FAVORITAS.find(c => c.nome === p.corFavorita);
+  $('#up-nome').replaceChildren(p.nome, fav
+    ? el('span', { class: 'pf-cor-fav', style: { background: fav.hex }, title: `Cor favorita: ${fav.nome}` })
+    : '');
   $('#up-bio').textContent = p.bio;
   $('#up-bio').hidden = !p.bio;
   $('#up-redes').replaceChildren(...chipsDeRedes(redesDoPerfil(p)));

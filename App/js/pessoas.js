@@ -63,6 +63,7 @@ function paraPerfil(c) {
     handle: c.handle,
     cor: corDe(c.id),
     bio: c.bio || '',
+    corFavorita: c.corFavorita || '',
     real: true,
     criadoEm: c.criadoEm,
     aparencia: enviou ? c.avatar : undefined,
@@ -225,6 +226,7 @@ const OBRAS_NO_PERFIL = 40;
 const fotoDoPerfil = () => ({
   bio: db.state.usuario.bio || '',
   avatar: { ...db.state.usuario.avatar },
+  corFavorita: db.state.usuario.corFavorita || '',
   equipado: db.roupasEquipadas(),
   favoritos: {
     pecas: db.favoritos('peca').map(p => p.id),
