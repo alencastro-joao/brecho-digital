@@ -209,6 +209,10 @@
 .st-hist-btn:disabled { opacity: .4; cursor: default; }
 
 /* --------------------------- Painel Meus stylists ----------------------- */
+/* O mesmo painel serve às Minhas colagens (#modal-colagens, js/board.js),
+   só trocando a cor da tela. */
+#modal-meus { --ms-cor: var(--stylist); }
+#modal-colagens { --ms-cor: var(--board); }
 .ms-caixa { width: min(1040px, 100%); height: min(88vh, 860px); }
 .ms-titulos { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
 .ms-sub { font-size: 12px; color: var(--tinta-suave); }
@@ -217,12 +221,12 @@
   flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 14px 26px; border-bottom: 1px solid var(--linha);
 }
-#ms-busca {
+:is(#ms-busca, #mc-busca) {
   flex: 1 1 200px; min-width: 0;
   border: 1px solid var(--linha); border-radius: 12px; background: #fff;
   font: inherit; font-size: 13px; padding: 9px 12px;
 }
-#ms-busca:focus { outline: none; border-color: var(--tinta); }
+:is(#ms-busca, #mc-busca):focus { outline: none; border-color: var(--tinta); }
 .ms-filtros { display: flex; gap: 6px; }
 .ms-filtro {
   display: inline-flex; align-items: center; gap: 5px;
@@ -233,7 +237,7 @@
 .ms-filtro small { font-size: 10px; color: var(--tinta-suave); font-weight: 700; }
 .ms-filtro.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
 .ms-filtro.ativo small { color: #d8d2c8; }
-#ms-ordem {
+:is(#ms-ordem, #mc-ordem) {
   border: 1px solid var(--linha); border-radius: 12px; background: #fff;
   font: inherit; font-size: 12.5px; padding: 8px 10px; color: var(--tinta);
 }
@@ -342,17 +346,17 @@
    Seletores com o id para ganhar do .modal/.modal-caixa do mobile.css. */
 @media (max-width: 900px) {
   .btn-meus { top: 8px; left: 8px; padding: 7px 12px; }
-  #modal-meus.modal { padding: 0; place-items: stretch; }
-  #modal-meus .modal-caixa {
+  :is(#modal-meus, #modal-colagens).modal { padding: 0; place-items: stretch; }
+  :is(#modal-meus, #modal-colagens) .modal-caixa {
     width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0;
   }
-  #modal-meus .modal-topo { padding: 12px 14px 10px; }
-  #modal-meus .modal-rodape { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
-  #modal-meus .modal-rodape .mp-aviso { display: none; }
+  :is(#modal-meus, #modal-colagens) .modal-topo { padding: 12px 14px 10px; }
+  :is(#modal-meus, #modal-colagens) .modal-rodape { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  :is(#modal-meus, #modal-colagens) .modal-rodape .mp-aviso { display: none; }
   .ms-barra { padding: 10px 14px; gap: 8px; }
   /* Busca e ordem dividem a primeira linha; os filtros ganham a segunda. */
-  #ms-busca { flex: 1 1 0; }
-  #ms-ordem { flex: none; width: 128px; padding: 8px 6px; }
+  :is(#ms-busca, #mc-busca) { flex: 1 1 0; }
+  :is(#ms-ordem, #mc-ordem) { flex: none; width: 128px; padding: 8px 6px; }
   .ms-filtros { order: 3; flex: 1 1 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .ms-filtros::-webkit-scrollbar { display: none; }
   .ms-grade {
@@ -371,71 +375,71 @@
   /* No padrão do closet: sem título, busca e filtros em blocos, os looks
      num painel, cartões em bloco só com o nome e o ⋯ (apagar, renomear e
      duplicar ficam no ⋯), e os selos viram ícones. */
-  #modal-meus {
+  :is(#modal-meus, #modal-colagens) {
     --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
     --painel: #f3eee6;
   }
-  #modal-meus .modal-caixa { position: relative; background: var(--papel); }
-  #modal-meus .modal-topo {
+  :is(#modal-meus, #modal-colagens) .modal-caixa { position: relative; background: var(--papel); }
+  :is(#modal-meus, #modal-colagens) .modal-topo {
     position: absolute; z-index: 3;
     top: calc(10px + env(safe-area-inset-top)); right: 14px;
     padding: 0; border: 0; background: none;
   }
-  #modal-meus .ms-titulos { display: none; }
-  #modal-meus :is(.modal-x, #ms-busca, #ms-ordem, .ms-filtro, .ms-mais, .fav-estrela.mini, #ms-novo) {
+  :is(#modal-meus, #modal-colagens) .ms-titulos { display: none; }
+  :is(#modal-meus, #modal-colagens) :is(.modal-x, #ms-busca, #mc-busca, #ms-ordem, #mc-ordem, .ms-filtro, .ms-mais, .fav-estrela.mini, #ms-novo, #mc-novo) {
     border: 2px solid var(--bloco-borda); border-radius: 11px;
     background: var(--bloco); color: var(--tinta);
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
   }
-  #modal-meus :is(#ms-busca, #ms-ordem) { box-shadow: none; height: 42px; font-size: 14px; }
-  #modal-meus .modal-x { width: 42px; height: 42px; font-size: 15px; font-weight: 700; }
-  #modal-meus .ms-barra {
+  :is(#modal-meus, #modal-colagens) :is(#ms-busca, #mc-busca, #ms-ordem, #mc-ordem) { box-shadow: none; height: 42px; font-size: 14px; }
+  :is(#modal-meus, #modal-colagens) .modal-x { width: 42px; height: 42px; font-size: 15px; font-weight: 700; }
+  :is(#modal-meus, #modal-colagens) .ms-barra {
     padding: calc(10px + env(safe-area-inset-top)) 14px 0; border: 0;
   }
-  #modal-meus #ms-busca { padding: 0 12px; }
-  #modal-meus #ms-ordem { width: 112px; margin-right: 50px; padding: 0 8px; font-weight: 600; }
-  #modal-meus .ms-filtros { gap: 6px; padding-bottom: 3px; }
-  #modal-meus .ms-filtro { height: 38px; padding: 0 12px; font-size: 13px; }
-  #modal-meus .ms-filtro.ativo {
-    background: var(--stylist); border-color: var(--tinta); color: var(--tinta);
+  :is(#modal-meus, #modal-colagens) :is(#ms-busca, #mc-busca) { padding: 0 12px; }
+  :is(#modal-meus, #modal-colagens) :is(#ms-ordem, #mc-ordem) { width: 112px; margin-right: 50px; padding: 0 8px; font-weight: 600; }
+  :is(#modal-meus, #modal-colagens) .ms-filtros { gap: 6px; padding-bottom: 3px; }
+  :is(#modal-meus, #modal-colagens) .ms-filtro { height: 38px; padding: 0 12px; font-size: 13px; }
+  :is(#modal-meus, #modal-colagens) .ms-filtro.ativo {
+    background: var(--ms-cor); border-color: var(--tinta); color: var(--tinta);
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
   }
-  #modal-meus .ms-filtro.ativo small { color: var(--tinta-suave); }
+  :is(#modal-meus, #modal-colagens) .ms-filtro.ativo small { color: var(--tinta-suave); }
 
-  #modal-meus .ms-grade {
+  :is(#modal-meus, #modal-colagens) .ms-grade {
     margin: 10px 14px 0; padding: 10px; gap: 8px;
     border: 2px solid var(--bloco-borda); border-radius: 20px;
     background: var(--painel);
   }
-  #modal-meus .ms-card {
+  :is(#modal-meus, #modal-colagens) .ms-card {
     border: 2px solid var(--bloco-borda); border-radius: 13px;
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
   }
-  #modal-meus .ms-card.aberto {
+  :is(#modal-meus, #modal-colagens) .ms-card.aberto {
     border-color: var(--tinta); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
   }
-  #modal-meus .ms-thumb {
+  :is(#modal-meus, #modal-colagens) .ms-thumb {
     border-radius: 11px 11px 0 0; padding: 6px;
     background: var(--bloco); background-image: none;
   }
-  #modal-meus .ms-selo {
+  :is(#modal-meus, #modal-colagens) .ms-selo {
     font-size: 0; width: 24px; height: 24px; padding: 0;
     display: grid; place-items: center; top: 8px; left: 8px;
   }
-  #modal-meus .ms-selo + .ms-selo { top: 36px; }
-  #modal-meus .ms-selo::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; font-size: 13px; }
-  #modal-meus .ms-selo.feed::before { -webkit-mask-image: url(../assets/icones/ph/publicar.svg); mask-image: url(../assets/icones/ph/publicar.svg); }
-  #modal-meus .ms-fav { top: 6px; right: 6px; }
-  #modal-meus .ms-fav .fav-estrela.mini { width: 32px; height: 30px; font-size: 15px; }
-  #modal-meus .ms-fav .fav-estrela.mini.on { background: var(--stylist); border-color: var(--tinta); }
-  #modal-meus .ms-info { padding: 4px 6px 8px 10px; }
-  #modal-meus .ms-info small, #modal-meus .ms-apagar { display: none; }
-  #modal-meus .ms-mais { width: 34px; height: 32px; font-size: 16px; }
+  :is(#modal-meus, #modal-colagens) .ms-selo + .ms-selo { top: 36px; }
+  :is(#modal-meus, #modal-colagens) .ms-selo::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/editar.svg) center / contain no-repeat; font-size: 13px; }
+  :is(#modal-meus, #modal-colagens) .ms-selo.feed::before { -webkit-mask-image: url(../assets/icones/ph/publicar.svg); mask-image: url(../assets/icones/ph/publicar.svg); }
+  :is(#modal-meus, #modal-colagens) .ms-fav { top: 6px; right: 6px; }
+  :is(#modal-meus, #modal-colagens) .ms-fav .fav-estrela.mini { width: 32px; height: 30px; font-size: 15px; }
+  :is(#modal-meus, #modal-colagens) .ms-fav .fav-estrela.mini.on { background: var(--ms-cor); border-color: var(--tinta); }
+  :is(#modal-meus, #modal-colagens) .ms-info { padding: 4px 6px 8px 10px; }
+  :is(#modal-meus, #modal-colagens) .ms-info small, :is(#modal-meus, #modal-colagens) .ms-apagar { display: none; }
+  :is(#modal-meus, #modal-colagens) .ms-mais { width: 34px; height: 32px; font-size: 16px; }
 
-  #modal-meus .modal-rodape { border: 0; background: none; }
-  #modal-meus #ms-novo {
+  :is(#modal-meus, #modal-colagens) .modal-rodape { border: 0; background: none; }
+  :is(#modal-meus, #modal-colagens) :is(#ms-novo, #mc-novo) {
     flex: 1; height: 46px; padding: 0; font-size: 15px; font-weight: 700;
-    background: var(--stylist); border-color: var(--tinta);
+    background: var(--ms-cor); border-color: var(--tinta);
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
   }
 }
