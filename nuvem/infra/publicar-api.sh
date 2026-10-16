@@ -25,8 +25,11 @@ cp "$AQUI/../App/tools/pipeline.py" "$AQUI/lambda/pipeline.py"
 import os, zipfile
 alvo = os.environ['ZIP']
 with zipfile.ZipFile(alvo, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-    for nome in ('app.py', 'contas.py', 'estado.py', 'pessoas.py', 'estoque.py', 'acervo.py', 'esteira.py', 'pinterest.py', 'feed.py', 'gerador.py', 'limpeza.py', 'painel.py', 'pipeline.py'):
-        z.write(nome)
+    # Todo .py da pasta entra: uma lista fixa esqueceu o redes.py e a Lambda
+    # inteira caiu no import (login fora do ar).
+    for nome in sorted(os.listdir('.')):
+        if nome.endswith('.py'):
+            z.write(nome)
 print('empacotado: %.1f KB' % (os.path.getsize(alvo) / 1024))
 " )
 
