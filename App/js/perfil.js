@@ -36,7 +36,7 @@ import { abrirBuscaDePessoas } from './busca.js';
 import { sincronizarSocial } from './pessoas.js';
 import { PALETAS, paletaAtual, escolherPaleta } from './paleta.js';
 import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
-import { escalaGrade, logoDaColecao } from './config.js';
+import { escalaGrade, logoDaColecao, CORES_FAVORITAS } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
   perfilPublico, gradeDaPrevia, abrirListaDePecas, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
@@ -118,7 +118,11 @@ export function renderPerfil() {
   });
 
   $('#perfil-handle').textContent = u.handle;
-  $('#perfil-nome').textContent = u.nome;
+  // A cor favorita, discreta: uma bolinha ao lado do nome.
+  const fav = CORES_FAVORITAS.find(c => c.nome === u.corFavorita);
+  $('#perfil-nome').replaceChildren(u.nome, fav
+    ? el('span', { class: 'pf-cor-fav', style: { background: fav.hex }, title: `Cor favorita: ${fav.nome}` })
+    : '');
   $('#perfil-bio').textContent = u.bio;
   $('#perfil-bio').hidden = !u.bio;
   renderConta();

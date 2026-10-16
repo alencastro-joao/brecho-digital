@@ -1138,6 +1138,10 @@ export const COLECOES_DE_COR = {
   Roxo:     [['sapatilha', 'Sapatilha roxa'], ['kimono', 'Kimono roxo'], ['relogio', 'Relógio roxo']],
 };
 export const idDaCor = (nome) => 'cor-' + semAcento(nome);
+// A cor favorita (aba do Personagem): uma das cores que têm coleção, com a
+// bolinha de CORES. Aparece no perfil e dá as três primeiras peças do tutorial.
+export const CORES_FAVORITAS = Object.keys(COLECOES_DE_COR)
+  .map(nome => ({ nome, hex: CORES.find(c => c.nome === nome)?.hex ?? '#999' }));
 export const idDoEstilo = (id) => 'estilo-' + id;
 
 // O nome que a regra de desbloqueio mostra ("Garimpe 1 peça da Puma").
@@ -1183,7 +1187,8 @@ export const FERRAMENTAS = [
 // a paleta, a ficha da peça — e embaixo quando está em cima.
 export const INTRO = [
   { evento: 'personagem', ir: 'personagem', lugar: 'cima', nome: 'Crie o seu personagem',
-    dica: 'Escolha corpo, pele e cabelo e toque em Salvar. É ele que veste os seus looks.',
+    dica: 'Escolha corpo, pele e cabelo, diga qual é a sua cor favorita (na última aba) e toque em Salvar. ' +
+      'É ele que veste os seus looks.',
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
     dica: 'Toda manhã o dono repõe o mural: a loja muda todos os dias. ' +
@@ -1199,10 +1204,10 @@ export const INTRO = [
   { ir: 'closet', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica guardado aqui. A cor da borda é a raridade: comum, incomum, ' +
       'rara, épica ou lendária. Toque numa peça para ver a ficha: cada uma pode ter marca, cor e estilo.' },
-  // {cor} é a cor do trio do presente (state.presenteCor, ver presente.js).
+  // {cor} é a cor do trio do presente, a favorita (state.presenteCor, ver presente.js).
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
     dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Juntar 3 libera um item do avatar, ' +
-      'e juntar mais libera mais. Suas primeiras roupas trouxeram 3 peças da cor {cor}: esta coleção já tem um item esperando.' },
+      'e juntar mais libera mais. O seu presente trouxe 3 peças {cor}, a sua cor favorita: esta coleção já tem um item esperando.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
     dica: 'Toque num dos itens da coleção da cor {cor} para levar para o seu inventário.',
     premio: { xp: 20 } },

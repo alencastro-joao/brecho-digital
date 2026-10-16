@@ -8,8 +8,9 @@
 
 import {
   CORPOS, ORDEM_CORPOS, PELES, CABELOS, ORDEM_CABELOS, NARIZES, ORDEM_NARIZES,
-  CORES_CABELO, APARENCIA_PADRAO,
+  CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
 } from './config.js';
+import { darTrioDaCor } from './presente.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
@@ -18,6 +19,7 @@ import { irPara } from './router.js';
 
 // Trabalha numa cópia: só vai para o perfil quando você salva.
 let rascunho = null;
+let corFavorita = null;   // fora do avatar: é da pessoa, não do boneco
 
 const aparenciaDoRascunho = () => {
   const pele = PELES.find(p => p.id === rascunho.pele) || PELES[1];
@@ -95,7 +97,17 @@ function renderCores() {
   }
 }
 
+// A cor favorita: as cores que têm coleção, em bolinhas com o nome embaixo.
+function renderFavoritas() {
+  $('#pg-favoritas').replaceChildren(...CORES_FAVORITAS.map(({ nome, hex }) =>
+    el('button', {
+      type: 'button', class: 'pg-fav' + (nome === corFavorita ? ' ativa' : ''), title: nome,
+      onclick: () => { corFavorita = nome; renderFavoritas(); },
+    }, el('span', { class: 'pg-fav-cor', style: { background: hex } }), el('small', {}, nome))));
+}
+
 function renderTudo() {
+  renderFavoritas();
   renderPrevia();
   renderMiniaturas('#pg-corpos', ORDEM_CORPOS, CORPOS, 'corpo', CROP_CORPO);
   renderPeles();
@@ -104,8 +116,28 @@ function renderTudo() {
   renderMiniaturas('#pg-narizes', ORDEM_NARIZES, NARIZES, 'nariz', CROP_NARIZ);
 }
 
+function abrirAba(aba) {
+  const painel = $('.pg-painel');
+  painel.dataset.aba = aba;
+  for (const x of $('#pg-abas').children) x.classList.toggle('ativa', x.dataset.aba === aba);
+}
+
 function salvar() {
+  // A cor favorita é obrigatória: é ela que dá as três primeiras peças.
+  if (!corFavorita) {
+    abrirAba('favorita');
+    $('.pg-bloco[data-aba="favorita"]').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    toast('Escolha a sua cor favorita antes de salvar.', 'aviso');
+    return;
+  }
   db.state.usuario.avatar = { ...rascunho };
+  db.state.usuario.corFavorita = corFavorita;
+  // As três peças da cor favorita (o primeiro marco da coleção dela). Na conta
+  // nova é aqui que elas entram; no tutorial recomeçado, entram de novo se a
+  // cor mudou, para a missão das coleções falar da cor favorita.
+  if (!db.state.presenteCor || (db.introAtiva() && db.state.presenteCor !== corFavorita)) {
+    darTrioDaCor({ cor: corFavorita });
+  }
   db.progredirMissao('personagem');
   db.salvar();
   toast('Personagem salvo.');
@@ -114,6 +146,7 @@ function salvar() {
 
 export function aoEntrarNoPersonagem() {
   rascunho = { ...APARENCIA_PADRAO, ...db.state.usuario.avatar };
+  corFavorita = db.state.usuario.corFavorita || null;
   renderTudo();
 }
 
@@ -124,9 +157,7 @@ export function montarPersonagem() {
   painel.dataset.aba = 'corpo';
   $('#pg-abas').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-aba]');
-    if (!b) return;
-    painel.dataset.aba = b.dataset.aba;
-    for (const x of $('#pg-abas').children) x.classList.toggle('ativa', x === b);
+    if (b) abrirAba(b.dataset.aba);
   });
   $('#pg-voltar').addEventListener('click', () => irPara('perfil'));
   $('#pg-padrao').addEventListener('click', () => {

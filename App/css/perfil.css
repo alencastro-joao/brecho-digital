@@ -479,3 +479,9 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pa-nome { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pa-lista b { font-size: 14px; font-weight: 800; color: var(--tinta); }
 .pa-vazio { font-size: 13px; color: var(--tinta-suave); margin: 4px 0; }
+
+/* A cor favorita (Personagem › Cor favorita): só uma bolinha ao lado do nome. */
+.pf-cor-fav {
+  display: inline-block; width: .5em; height: .5em; margin-left: .35em; vertical-align: .12em;
+  border-radius: 50%; border: 1px solid rgba(0, 0, 0, .15);
+}
