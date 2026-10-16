@@ -60,7 +60,7 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
 
 .avisos-painel {
   position: fixed; top: 76px; right: calc(90px + 18px + 54px);
-  width: 360px; max-height: calc(100vh - 100px);
+  width: 320px; max-height: min(440px, calc(100vh - 100px));
   display: flex; flex-direction: column;
   background: var(--branco); border: 1px solid var(--linha);
   border-radius: var(--raio); box-shadow: 0 18px 50px rgba(0, 0, 0, .14);
@@ -68,28 +68,32 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
 }
 .avisos-topo {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 18px 10px;
+  padding: 11px 14px 6px;
 }
-.avisos-topo h2 { font-size: 16px; font-weight: 800; }
+.avisos-topo h2 { font-size: 14px; font-weight: 800; }
 
-.avisos-lista { list-style: none; overflow-y: auto; padding: 0 8px 8px; }
+.avisos-lista { list-style: none; overflow-y: auto; padding: 0 6px 6px; }
 .aviso {
-  width: 100%; display: flex; align-items: flex-start; gap: 11px;
-  padding: 10px; border: 0; border-radius: 12px;
+  width: 100%; display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px; border: 0; border-radius: 10px;
   background: none; text-align: left; color: var(--tinta);
 }
 .aviso:hover { background: #f6f2ec; }
 .aviso.novo { background: #fbf3e6; }
 .aviso.novo:hover { background: #f6ead6; }
 .aviso > .retrato { flex: none; }
-.aviso-texto { font-size: 13px; line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
-.aviso-texto small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--tinta-suave); }
+/* Texto e hora numa linha só, cortados em duas: a lista cabe mais avisos. */
+.aviso-texto {
+  font-size: 12.5px; line-height: 1.35; min-width: 0; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.aviso-texto small { margin-left: 5px; font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
 .aviso.novo .aviso-texto small { color: #b5651d; font-weight: 700; }
 
 .aviso-icone {
-  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 15px; font-weight: 800; color: rgba(0, 0, 0, .6);
+  font-size: 12px; font-weight: 800; color: rgba(0, 0, 0, .6);
   background: #f1ece4;
 }
 .aviso-icone.curtida { background: var(--board); color: #b0285a; }
@@ -100,7 +104,7 @@ body:has(.view-personagem:not([hidden])) .perfil-atalho { border-color: var(--ti
 .aviso-icone.wishlist { background: var(--board); color: #b0285a; }
 
 .avisos-vazio {
-  padding: 6px 22px 24px; font-size: 13px; line-height: 1.5; color: var(--tinta-suave);
+  padding: 4px 16px 16px; font-size: 12.5px; line-height: 1.5; color: var(--tinta-suave);
 }
 
 /* Celular: a barra de telas foi para o rodapé, e o canto de cima de cada tela

@@ -14,15 +14,16 @@ html body .toast {
   display: inline-flex; align-items: center; gap: 9px;
   background: var(--perola); color: var(--tinta);
   border: 2px solid var(--wii-borda);
-  padding: 9px 18px 11px 12px;
-  font-weight: 700;
-  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau),
-    0 10px 28px rgba(30, 50, 65, .22);
+  padding: 5px 13px 7px 8px;
+  max-width: min(420px, 100%);
+  font-size: 12px; line-height: 1.3; font-weight: 700;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau),
+    0 6px 16px rgba(30, 50, 65, .18);
 }
 html body .toast::before {
-  content: ''; flex: none; width: 14px; height: 14px; border-radius: 50%;
+  content: ''; flex: none; width: 10px; height: 10px; border-radius: 50%;
   background: var(--brilho-topo), var(--cor-aviso);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .16), 0 0 0 3px var(--wii-brilho);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .16), 0 0 0 2px var(--wii-brilho);
 }
 /* Repete o fundo: base.css pinta cada tipo com uma cor chapada. */
 html body .toast:is(.aviso, .uncommon, .rare, .epic, .legendary) { background-color: transparent; background: var(--perola); }
@@ -120,7 +121,7 @@ html body .pergunta-botoes .btn-dark.perigo:hover { background-color: #a52f23; }
   display: flex; flex-direction: column; align-items: center; gap: 1px;
   padding: 10px 8px 12px; border-radius: 16px;
   background: var(--perola); border: 2px solid var(--wii-borda);
-  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+  box-shadow: inset 0 -2px 0 var(--perola-bloco);
 }
 .rj-rotulo { font-size: 12.5px; font-weight: 700; color: var(--tinta-suave); }
 .rj-valor { font-size: 24px; font-weight: 800; color: var(--tinta); }
@@ -154,16 +155,16 @@ html body .avisos-painel {
   box-shadow: inset 0 1px 0 #fff, inset 0 -4px 0 var(--perola-degrau),
     0 18px 50px rgba(30, 50, 65, .22);
 }
-html body .avisos-topo { background: var(--perola); border-bottom: 2px solid var(--wii-borda); padding-bottom: 12px; margin-bottom: 8px; }
+html body .avisos-topo { background: var(--perola); border-bottom: 2px solid var(--wii-borda); padding-bottom: 8px; margin-bottom: 6px; }
 /* Cada aviso é um bloco do painel, e o novo acende na cor da paleta. */
-html body .avisos-lista { display: flex; flex-direction: column; gap: 6px; }
+html body .avisos-lista { display: flex; flex-direction: column; gap: 4px; }
 html body .aviso {
   background: var(--perola); border: 2px solid var(--wii-borda);
-  box-shadow: inset 0 -3px 0 var(--perola-bloco);
+  box-shadow: inset 0 -2px 0 var(--perola-bloco);
 }
 html body .aviso:hover { background: var(--perola); border-color: var(--wii); }
 html body .aviso.novo,
-html body .aviso.novo:hover { background: var(--perola); border-color: var(--wii); box-shadow: inset 0 -3px 0 var(--perola-bloco), 0 0 0 3px var(--wii-brilho); }
+html body .aviso.novo:hover { background: var(--perola); border-color: var(--wii); box-shadow: inset 0 -2px 0 var(--perola-bloco), 0 0 0 2px var(--wii-brilho); }
 html body .aviso.novo .aviso-texto small { color: var(--tinta); }
 html body .aviso-icone {
   border: 2px solid rgba(255, 255, 255, .8);

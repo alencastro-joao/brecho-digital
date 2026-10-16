@@ -222,14 +222,28 @@ export function pontosPoisson(count, width, height, opts = {}) {
 }
 
 // --- Toasts ----------------------------------------------------------------
+// No máximo dois avisos de cada vez: o que chega empurra o mais velho para
+// fora, e o mesmo texto repetido não empilha. O do "Desfazer" (vitrine.js) e o
+// da coleção (colecoes.js) têm botão e ficam de fora da conta.
+const TOASTS_JUNTOS = 2;
+
+function tirarToast(t) {
+  if (t.saindo) return;
+  t.saindo = true;
+  t.classList.remove('show');
+  setTimeout(() => t.remove(), 300);
+}
+
 export function toast(msg, tipo = '') {
   const stack = document.getElementById('toasts');
   if (!stack) return;
+  const simples = [...stack.children].filter(t =>
+    !t.saindo && !t.matches('.desfazer, .col-toast'));
+  for (const t of simples) if (t.textContent === String(msg)) tirarToast(t);
+  const vivos = simples.filter(t => !t.saindo);
+  for (const t of vivos.slice(0, Math.max(0, vivos.length - TOASTS_JUNTOS + 1))) tirarToast(t);
   const t = el('div', { class: `toast ${tipo}` }, msg);
   stack.append(t);
   requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.remove(), 300);
-  }, 2800);
+  setTimeout(() => tirarToast(t), 2600);
 }
