@@ -905,6 +905,7 @@ function posicionar() {
   texto.textContent = `largura ${real.w} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
     + (fora ? ` — ${razao.toFixed(1).replace('.', ',')}× o padrão de ${CATEGORIAS[cat].nome}, confira` : '');
   texto.classList.toggle('alerta', fora);
+  $('#es-tam-barra').value = Math.round(medida.w);
   alcaMov?.colocar([no]);
 }
 
@@ -916,23 +917,14 @@ function ligarMolde() {
   const pegar = (e) => {
     e.preventDefault();
     const palco = $('#es-molde').getBoundingClientRect();
-    const alca = e.target.dataset?.alca;
     const base = { ...medida };
     const inicio = { x: e.clientX, y: e.clientY };
-    const centro = {
-      x: palco.left + (medida.x / CONFIG.STAGE_W) * palco.width,
-      y: palco.top + (medida.y / CONFIG.STAGE_H) * palco.height,
-    };
-    const raio0 = Math.hypot(e.clientX - centro.x, e.clientY - centro.y) || 1;
     no.setPointerCapture(e.pointerId);
 
+    // Arrastar só move: o tamanho é na barra ao lado do molde.
     const mover = (ev) => {
-      if (alca && alca !== 'mov') {
-        medida.w = clamp(base.w * (Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y) / raio0), 20, 600);
-      } else {
-        medida.x = clamp(base.x + (ev.clientX - inicio.x) / palco.width * CONFIG.STAGE_W, 0, CONFIG.STAGE_W);
-        medida.y = clamp(base.y + (ev.clientY - inicio.y) / palco.height * CONFIG.STAGE_H, 0, CONFIG.STAGE_H);
-      }
+      medida.x = clamp(base.x + (ev.clientX - inicio.x) / palco.width * CONFIG.STAGE_W, 0, CONFIG.STAGE_W);
+      medida.y = clamp(base.y + (ev.clientY - inicio.y) / palco.height * CONFIG.STAGE_H, 0, CONFIG.STAGE_H);
       posicionar();
     };
     const soltar = () => {
@@ -945,13 +937,18 @@ function ligarMolde() {
     no.addEventListener('pointercancel', soltar);
   };
   no.addEventListener('pointerdown', pegar);
-  alcaMov = alcaMover($('#es-molde'), pegar);
+  // A alça de mover sempre à direita da peça.
+  alcaMov = alcaMover($('#es-molde'), pegar, { fixo: 'dir' });
 
-  $('#es-molde').addEventListener('wheel', (e) => {
-    e.preventDefault();
-    medida.w = clamp(medida.w * (e.deltaY < 0 ? 1.06 : 0.94), 20, 600);
+  // O tamanho: a barra em pé, e + / − de 6% em 6% para ajustar sem arrastar.
+  $('#es-tam-barra').addEventListener('input', (e) => {
+    medida.w = clamp(Number(e.target.value), 20, 600);
     posicionar();
-  }, { passive: false });
+  });
+  $$('.es-tam-btn').forEach(b => b.addEventListener('click', () => {
+    medida.w = clamp(medida.w * (b.dataset.tam === '1' ? 1.06 : 0.94), 20, 600);
+    posicionar();
+  }));
 
   ligarCorte();
   $('#es-molde-ok').addEventListener('click', () => fecharMolde(true));
@@ -992,7 +989,7 @@ function abrirCorte() {
   if (!medindo) return;
   cortando = { ...corteDe(medindo) };
   $('#es-corte-img').src = medindo.previa;
-  for (const id of ['es-molde', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = true;
+  for (const id of ['es-molde-linha', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = true;
   $('#es-corte').hidden = false;
   desenharCorte();
 }
@@ -1000,7 +997,7 @@ function abrirCorte() {
 function fecharCorte() {
   cortando = null;
   $('#es-corte').hidden = true;
-  for (const id of ['es-molde', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = false;
+  for (const id of ['es-molde-linha', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = false;
 }
 
 function desenharCorte() {
