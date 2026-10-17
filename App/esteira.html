@@ -82,16 +82,20 @@
       <span class="es-molde-passo" id="es-molde-passo"></span>
       <select id="es-molde-cat" aria-label="Categoria da peça"></select>
     </div>
-    <p class="es-modal-dica" id="es-molde-dica">Arraste a peça sobre o corpo e use as quinas (ou a roda do mouse)
-      para o tamanho. É o tamanho real dela no jogo.</p>
-    <div class="es-molde" id="es-molde">
-      <div class="es-avatar" id="es-avatar"></div>
-      <div class="es-peca" id="es-peca">
-        <div class="es-peca-janela"><img id="es-peca-img" alt="" draggable="false"></div>
-        <span class="es-alca no" data-alca="1"></span>
-        <span class="es-alca ne" data-alca="1"></span>
-        <span class="es-alca so" data-alca="1"></span>
-        <span class="es-alca se" data-alca="1"></span>
+    <p class="es-modal-dica" id="es-molde-dica">Arraste a peça (ou a alça ao lado dela) sobre o corpo e use a
+      barra para o tamanho. É o tamanho real dela no jogo.</p>
+    <div class="es-molde-linha" id="es-molde-linha">
+      <div class="es-molde" id="es-molde">
+        <div class="es-avatar" id="es-avatar"></div>
+        <div class="es-peca" id="es-peca">
+          <div class="es-peca-janela"><img id="es-peca-img" alt="" draggable="false"></div>
+        </div>
+      </div>
+      <!-- Tamanho da peça numa barra em pé, como no Stylist: + em cima, − embaixo. -->
+      <div class="es-tamanho" id="es-tamanho">
+        <button type="button" class="es-tam-btn" data-tam="1" title="Aumentar" aria-label="Aumentar">+</button>
+        <input type="range" id="es-tam-barra" min="20" max="600" value="300" aria-label="Tamanho da peça">
+        <button type="button" class="es-tam-btn" data-tam="-1" title="Diminuir" aria-label="Diminuir">−</button>
       </div>
     </div>
     <p class="es-medida" id="es-medida"></p>

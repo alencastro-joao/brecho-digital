@@ -12,7 +12,9 @@ const TAM = 42, FOLGA = 26, BORDA = 4;
 
 // `aoPegar(e)` recebe o pointerdown do botão e começa o arrasto da peça como
 // se o dedo tivesse descido nela; `e.target.dataset.alca` chega como 'mov'.
-export function alcaMover(palco, aoPegar) {
+// `fixo: 'dir'` prende a alça num lado só (a esteira a quer sempre à
+// direita): se não couber, ela encosta na borda do palco em vez de pular.
+export function alcaMover(palco, aoPegar, { fixo = null } = {}) {
   const botao = el('button', {
     type: 'button', class: 'alca-mover', hidden: true,
     'aria-label': 'Mover peça', title: 'Arraste para mover',
@@ -67,6 +69,7 @@ export function alcaMover(palco, aoPegar) {
     const cabeX = ({ x }) => x >= BORDA && x + TAM <= p.width - BORDA;
     const cabeY = ({ y }) => y >= BORDA && y + TAM <= p.height - BORDA;
     // O lado só muda quando o atual deixa de caber: a alça não pula sozinha.
+    if (fixo) lado = fixo;
     const segue = lado && (pegando ||
       (['dir', 'esq'].includes(lado) ? cabeX(lugares[lado]) : cabeY(lugares[lado])));
     if (!segue) {

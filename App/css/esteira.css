@@ -257,6 +257,7 @@ kbd {
   border: 1px solid var(--linha); background: var(--papel); font-size: 13px; font-weight: 600;
 }
 .es-modal-dica { font-size: 12px; color: var(--tinta-suave); max-width: 380px; text-align: center; }
+.es-molde-linha { display: flex; gap: 8px; align-items: stretch; }
 .es-molde {
   position: relative;
   height: min(640px, calc(100vh - 280px)); aspect-ratio: 1 / 2;
@@ -282,6 +283,23 @@ kbd {
 .es-alca.ne { top: -10px; right: -10px; cursor: nesw-resize; }
 .es-alca.so { bottom: -10px; left: -10px; cursor: nesw-resize; }
 .es-alca.se { bottom: -10px; right: -10px; cursor: nwse-resize; }
+/* Barra em pé do tamanho, à direita do molde (a mesma do Stylist no celular). */
+.es-tamanho {
+  flex: none; width: 40px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 4px 0; border: 1px solid var(--linha); border-radius: 20px; background: var(--papel);
+}
+.es-tam-btn {
+  flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: none; cursor: pointer;
+  font: inherit; font-size: 20px; font-weight: 700; line-height: 1; color: var(--tinta);
+}
+.es-tam-btn:active { background: #f1ece5; }
+/* Em pé: o mínimo embaixo, o máximo em cima. */
+#es-tam-barra {
+  flex: 1 1 0; min-height: 0; width: 28px; margin: 0;
+  writing-mode: vertical-lr; direction: rtl;
+  accent-color: var(--tinta); touch-action: none;
+}
 .es-medida { font-size: 12px; color: var(--tinta-suave); }
 .es-medida.alerta { color: #8a6d1f; font-weight: 600; }
 .es-corte { display: grid; gap: 12px; justify-items: center; }
