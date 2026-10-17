@@ -1,8 +1,9 @@
 /* Alça de mover (js/alcamover.js): botão perolado de quatro setas ao lado da
    peça escolhida, para arrastar no celular sem o dedo tapar a peça. Só
-   aparece em tela de toque; no mouse a peça já é arrastada direto. */
+   aparece em tela de toque; no mouse a peça já é arrastada direto. O z-index
+   alto a deixa sempre por cima das peças (cada uma leva o z da sua camada). */
 .alca-mover {
-  position: absolute; z-index: 30;
+  position: absolute; z-index: 10000;
   width: 42px; height: 42px; padding: 0;
   display: none; place-items: center;
   border-radius: 50%;
