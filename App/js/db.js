@@ -609,8 +609,7 @@ export const resgatesDeFichas = () => extrasQueSobraram();
 // --- Fichas ---------------------------------------------------------------
 export const fichas = () => state.fichas ?? 0;
 
-export const podeTrocarFichas = () =>
-  fichas() >= FICHAS.porResgate && (state.dia.extras ?? 0) < FICHAS.extrasPorDia;
+export const podeTrocarFichas = () => fichas() >= FICHAS.porResgate;
 
 // Troca fichas por um resgate a mais, que fica guardado até ser usado. Devolve se deu certo.
 export function trocarFichasPorResgate() {

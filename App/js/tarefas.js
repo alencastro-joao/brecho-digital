@@ -127,7 +127,6 @@ function renderTopo() {
   const n = db.fichas();
   const troca = FICHAS.porResgate;
   const pode = db.podeTrocarFichas();
-  const jaTrocou = (db.state.dia.extras ?? 0) >= FICHAS.extrasPorDia;
 
   $('#tarefas-faixa').replaceChildren(
     el('button', {
@@ -148,11 +147,10 @@ function renderTopo() {
           if (db.trocarFichasPorResgate()) toast('+1 resgate. Ele fica guardado até você usar.', 'rare');
           return;
         }
-        toast(jaTrocou ? 'Você já trocou fichas hoje. Amanhã dá de novo.'
-          : `${troca} fichas = 1 resgate. Faltam ${troca - n}.`);
+        toast(`${troca} fichas = 1 resgate. Faltam ${troca - n}.`);
       },
     }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }),
-      el('b', {}, pode ? 'Trocar' : `${Math.min(n, troca)}/${troca}`)));
+      el('b', {}, pode ? `${n} · Trocar` : `${n}/${troca}`)));
 }
 
 // ---------------------------------- Abas -----------------------------------
