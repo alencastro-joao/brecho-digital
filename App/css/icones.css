@@ -137,6 +137,36 @@ html body :is(.tool-btn, .bar-btn, .modal-x, .ficha-x, .mp-ferr, .lb-btn, .acao-
   background-image: linear-gradient(180deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, .06) 48%, rgba(255, 255, 255, 0) 52%);
 }
 
+/* O menu do Criar (router.js põe a posição, colada no botão): o painel
+   pérola das cores do site e duas opções no acabamento dos botões perolados.
+   A cor da tela fica só no quadradinho do ícone, como no botão da barra. */
+.criar-menu {
+  position: fixed; z-index: 760;
+  display: flex; flex-direction: column; gap: 8px;
+  width: 240px; padding: 10px;
+  background: var(--perola-painel); border: 2px solid var(--wii-borda); border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .14);
+}
+.criar-opcao {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px 10px 8px; border-radius: 16px; text-align: left; color: var(--tinta);
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.criar-opcao:hover { border-color: var(--wii); }
+.criar-opcao:active { transform: translateY(1px); }
+.criar-opcao.ativa { border-color: var(--wii); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho); }
+.criar-opcao .ico {
+  flex: none; width: 42px; height: 42px; padding: 9px; border-radius: 12px;
+  color: rgba(0, 0, 0, .62); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(60, 80, 95, .14);
+}
+.criar-opcao.stylist .ico { background: var(--brilho-topo), var(--stylist); }
+.criar-opcao.board .ico { background: var(--brilho-topo), var(--board); }
+.criar-opcao span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.criar-opcao strong { font-size: 14px; font-weight: 800; }
+.criar-opcao small { font-size: 11.5px; color: var(--tinta-suave); line-height: 1.25; }
+
 /* Abas de categoria (closet, paleta do Stylist e da Colagem, vestiário). */
 .cat-icone .ico { width: 1.3em; height: 1.3em; vertical-align: middle; }
 .pal-cat .ico { width: 1.25em; height: 1.25em; }
