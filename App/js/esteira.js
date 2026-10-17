@@ -23,9 +23,9 @@ import {
   migrarCategoria, rotuloDeCadastro,
   ESTILOS,
 } from './config.js';
-import { ancoraNoCorpo, ancoraNoMolde } from './proporcao.js';
+import { ancoraNoCorpo, ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
 import { carregarSessao } from './auth.js';
-import { svgAvatar } from './avatar.js';
+import { svgAvatar, usarCorpoDesenhado } from './avatar.js';
 import { el, $, $$, clamp, toast } from './util.js';
 import { alcaMover } from './alcamover.js';
 
@@ -1126,6 +1126,12 @@ async function carregarAcervo() {
 }
 
 async function iniciar() {
+  // O mesmo boneco do jogo (o da artista): sem isso o molde desenhava o
+  // esboço antigo, com as âncoras já no corpo novo (ver app.js).
+  if (CORPO_EM_TESTE) {
+    try { usarCorpoDesenhado((await import(`./corpo-${CORPO_EM_TESTE}.js`)).default); }
+    catch (err) { console.warn('corpo desenhado não carregou', err); }
+  }
   let conta = null;
   try { conta = await carregarSessao(); } catch { /* cai no aviso abaixo */ }
   const aviso = $('#es-sem-acesso');
