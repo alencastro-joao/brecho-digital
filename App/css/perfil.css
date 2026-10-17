@@ -513,3 +513,8 @@ button.pf-stat:hover small { text-decoration: underline; }
 .adm-rede + .adm-rede { border-top: 1px solid var(--wii-borda); }
 .adm-rede .tool-campo { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
 .adm-rede input { font: inherit; font-size: 13px; padding: 8px 10px; border: 1.5px solid var(--wii-borda); border-radius: 10px; background: #fff; color: var(--tinta); }
+
+/* Vestir-se: o vestiário saiu da barra de baixo e entra pelo perfil. */
+.pf-acoes .pf-vestir { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.pf-acoes .pf-vestir .ico { width: 17px; height: 17px; flex: none; }
+.perfil-atalho.recebeu { animation: pulso .7s ease; }

@@ -224,8 +224,10 @@ function aceitarNoSaco(alvo, alvoId = null) {
   });
 }
 
+// As roupinhas moram no perfil (botão Vestir-se): quem pisca é a sua cabeça,
+// o atalho para o perfil.
 function piscarBotao() {
-  const botao = document.querySelector('.sidebar-btn.vestiario');
+  const botao = document.querySelector('#perfil-atalho');
   if (!botao) return;
   botao.classList.add('recebeu');
   setTimeout(() => botao.classList.remove('recebeu'), 700);

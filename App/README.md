@@ -31,6 +31,11 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 
 ## O que cada tela faz
 
+A barra de telas tem cinco botões: Loja, Closet, **Criar**, Feed e Tarefas. O
+Criar abre um menu pequeno com Stylist e Colagem (`router.js`). O Perfil é a
+cabeça do avatar no canto, e o Inventário (as roupinhas) entra pelo botão
+Vestir-se do perfil ou, depois do tutorial, pela aba 👕 do Personagem no celular.
+
 | Tela | O que já funciona |
 |---|---|
 | **Entrar** | Primeira tela: entrar ou criar conta. Senha com `scrypt` no servidor, sessão em cookie `HttpOnly` de 30 dias — voltar amanhã não pede senha de novo |
@@ -43,9 +48,9 @@ carregamento do catálogo e a exportação de imagem. A página avisa se isso ac
 | **Baús** | Todo baú ganho (dos dias, semanal, da trilha de níveis e das missões do tutorial) vem fechado para cá: um cartão por tipo, do lendário ao comum, com a quantidade. Tocar abre um (as peças são sorteadas na hora) e "Abrir todos" abre de uma vez. Baú novo acende o pontinho vermelho de Tarefas até ele, e o baú ganho voa até o botão de Tarefas. O tutorial apresenta a tela logo depois do primeiro baú |
 | **Coleções** | Uma página por marca da loja (Puma, Swear London, Borra, Adidas, Jnco, Ecko): as peças que você garimpou, as que faltam em cinza e os itens do avatar que a coleção libera (1ª peça, metade e coleção completa). Abre pelo cartão em Tarefas e pelos emblemas do perfil |
 | **Inventário** | O personagem no meio da metade da esquerda, com uma coluna de lugares do corpo de cada lado dele (Cabeça, Tronco, Pernas · Acessório, Cintura, Pés); à direita a mochila, uma página fixa de 5×5 casas com o passador embaixo. Um clique abre a peça, dois vestem; arrastar veste, tira e arruma o saco. As 66 peças aparecem soltas na casa, como item, e não recortadas do corpo. É o que o perfil veste |
-| **Perfil** | No jeito do Instagram: retrato redondo com o nível no anel em volta (o anel enche com o XP), nome, @, bio, peças/seguidores/amigos e os botões Editar perfil, Personagem e Inventário; a engrenagem abre cores do site, contas conectadas, conta e testes num modal. Os botões Guarda-roupa e Wishlist abrem a lista inteira; a wishlist só enche pelo ♡ de uma peça vista na Loja ou na ficha de uma peça de alguém. Embaixo, as abas Roupas (uma prévia, favoritas primeiro), Stylists e Colagens (todos, com ★ nos favoritos; os looks soltos, sem moldura), Coleções e Amigos. Tocar numa peça abre a ficha dela, como no guarda-roupa, e arrastar para o lado passa para a vizinha. No seu perfil, segurar e arrastar muda a ordem de Roupas, Stylists e Colagens, e os outros veem nessa ordem. O perfil dos outros usa o mesmo desenho |
+| **Perfil** | No jeito do Instagram: retrato redondo com o nível no anel em volta (o anel enche com o XP), nome, @, bio, peças/seguidores/amigos e os botões Editar perfil, Personagem e **Vestir-se** (o Inventário, que saiu da barra de telas); a engrenagem abre cores do site, contas conectadas, conta e testes num modal. Os botões Guarda-roupa e Wishlist abrem a lista inteira; a wishlist só enche pelo ♡ de uma peça vista na Loja ou na ficha de uma peça de alguém. Embaixo, as abas Roupas (uma prévia, favoritas primeiro), Stylists e Colagens (todos, com ★ nos favoritos; os looks soltos, sem moldura), Coleções e Amigos. Tocar numa peça abre a ficha dela, como no guarda-roupa, e arrastar para o lado passa para a vizinha. No seu perfil, segurar e arrastar muda a ordem de Roupas, Stylists e Colagens, e os outros veem nessa ordem. O perfil dos outros usa o mesmo desenho |
 | **Perfil de alguém** | A página pública de quem aparece no feed, no mesmo desenho do seu perfil: o cartão à esquerda (avatar, bio, redes ligadas, desde quando, publicações/seguidores/seguindo, seguir) e, à direita, outros perfis, as peças que ela veste e os looks (Stylists) e as colagens dela, em seções separadas, no mesmo cartão dos seus favoritos — o clique abre a publicação inteira num modal, com curtir e comentar |
-| **Personagem** | Tom de pele, corte e cor do cabelo do avatar que veste os seus looks |
+| **Personagem** | Tom de pele, corte e cor do cabelo do avatar que veste os seus looks. No celular, depois do tutorial, a última aba (👕) leva ao Inventário |
 
 ## Estrutura
 

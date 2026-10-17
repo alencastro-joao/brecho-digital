@@ -144,9 +144,21 @@ function salvar() {
   irPara('perfil');
 }
 
+// A aba Roupas leva ao vestiário. Só aparece depois do tutorial: durante ele,
+// esta tela é só o corpo, e a hora de vestir vem depois, na missão própria.
+// Com mudança não salva, pede para salvar antes, para não jogar fora.
+function irParaRoupas() {
+  const salvo = { ...APARENCIA_PADRAO, ...db.state.usuario.avatar };
+  const mudou = Object.keys(rascunho).some(k => rascunho[k] !== salvo[k]) ||
+    corFavorita !== (db.state.usuario.corFavorita || null);
+  if (mudou) { toast('Salve o personagem antes de se vestir.', 'aviso'); return; }
+  irPara('vestiario');
+}
+
 export function aoEntrarNoPersonagem() {
   rascunho = { ...APARENCIA_PADRAO, ...db.state.usuario.avatar };
   corFavorita = db.state.usuario.corFavorita || null;
+  $('#pg-abas [data-aba="roupas"]').hidden = db.introAtiva();
   renderTudo();
 }
 
@@ -157,7 +169,9 @@ export function montarPersonagem() {
   painel.dataset.aba = 'corpo';
   $('#pg-abas').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-aba]');
-    if (b) abrirAba(b.dataset.aba);
+    if (!b) return;
+    if (b.dataset.aba === 'roupas') { irParaRoupas(); return; }
+    abrirAba(b.dataset.aba);
   });
   $('#pg-voltar').addEventListener('click', () => irPara('perfil'));
   $('#pg-padrao').addEventListener('click', () => {

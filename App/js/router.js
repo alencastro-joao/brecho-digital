@@ -18,8 +18,12 @@ export const onEnter = (view, fn) => ganchos.set(view, fn);
 export const VIEWS = ['vitrine', 'closet', 'stylist', 'board', 'social', 'tarefas',
   'vestiario', 'perfil', 'personagem', 'usuario', 'colecoes', 'baus', 'admin'];
 
-// Telas sem botão próprio na barra: acendem o botão de onde vieram.
-const BOTAO_DA_VIEW = { usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas', admin: 'perfil' };
+// Telas sem botão próprio na barra: acendem o botão de onde vieram. Stylist e
+// Colagem dividem o Criar; as Roupas (vestiário) moram no perfil.
+const BOTAO_DA_VIEW = {
+  usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas', admin: 'perfil',
+  stylist: 'criar', board: 'criar', vestiario: 'perfil',
+};
 
 export function rotaAtual() {
   const [alvo, param] = (location.hash || '').replace('#/', '').split('/');
@@ -58,9 +62,47 @@ function aplicar(view) {
   ganchos.get(view)?.();
 }
 
+// O botão Criar não é uma tela: abre um menu pequeno colado nele, com o
+// Stylist e a Colagem. No celular a barra está embaixo e o menu sobe; no PC
+// ela está na direita e o menu abre para a esquerda.
+function montarMenuCriar() {
+  const botao = document.querySelector('.sidebar-btn[data-goto="criar"]');
+  const menu = document.getElementById('criar-menu');
+  if (!botao || !menu) return;
+  const fechar = () => { menu.hidden = true; botao.setAttribute('aria-expanded', 'false'); };
+  const abrir = () => {
+    menu.hidden = false;
+    botao.setAttribute('aria-expanded', 'true');
+    const r = botao.getBoundingClientRect();
+    const naBase = r.top > innerHeight / 2;
+    menu.classList.toggle('sobe', naBase);
+    if (naBase) {
+      const largura = menu.offsetWidth;
+      const centro = Math.min(Math.max(r.left + r.width / 2, largura / 2 + 10), innerWidth - largura / 2 - 10);
+      Object.assign(menu.style, { left: `${centro - largura / 2}px`, right: '', top: '', bottom: `${innerHeight - r.top + 10}px` });
+    } else {
+      Object.assign(menu.style, { left: '', right: `${innerWidth - r.left + 12}px`, top: `${r.top}px`, bottom: '' });
+    }
+    const atual = viewAtual();
+    for (const op of menu.querySelectorAll('.criar-opcao')) op.classList.toggle('ativa', op.dataset.goto === atual);
+  };
+  botao.addEventListener('click', (e) => { e.stopPropagation(); menu.hidden ? abrir() : fechar(); });
+  menu.addEventListener('click', (e) => {
+    const op = e.target.closest('.criar-opcao');
+    if (!op) return;
+    fechar();
+    irPara(op.dataset.goto);
+  });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target)) fechar(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fechar(); });
+  window.addEventListener('resize', fechar);
+  window.addEventListener('hashchange', fechar);
+}
+
 export function iniciarRouter() {
-  document.querySelectorAll('.sidebar-btn').forEach(b =>
+  document.querySelectorAll('.sidebar-btn:not([data-goto="criar"])').forEach(b =>
     b.addEventListener('click', () => irPara(b.dataset.goto)));
+  montarMenuCriar();
   document.querySelector('.logo-mini')?.addEventListener('click', () => irPara('vitrine'));
   window.addEventListener('hashchange', () => aplicar(viewAtual()));
   aplicar(viewAtual());
