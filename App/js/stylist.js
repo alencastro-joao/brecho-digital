@@ -400,13 +400,22 @@ function ligarFerramentas() {
     atualizarFerramentas();
   }));
 
-  $('#sld-escala').addEventListener('input', (e) => {
+  // O tamanho tem duas barras: a do painel (PC) e a em pé no palco (celular).
+  const mudarEscala = (valor) => {
     const c = camadas.find(c => c.uid === selecionado);
     if (!c) return;
     marcarJunto('escala');
-    c.escala = Number(e.target.value) / 100;
+    c.escala = clamp(valor / 100, 0.2, 2.2);
     posicionar(c);
-  });
+    atualizarFerramentas();
+  };
+  $('#sld-escala').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
+  $('#sld-escala-vert').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
+  // + e − dão um passo de 10% de cada vez, para ajustar sem arrastar.
+  $$('.st-tam-btn').forEach(b => b.addEventListener('click', () => {
+    const c = camadas.find(c => c.uid === selecionado);
+    if (c) mudarEscala(Math.round(c.escala * 100) + 10 * Number(b.dataset.tam));
+  }));
   $('#sld-rot').addEventListener('input', (e) => {
     const c = camadas.find(c => c.uid === selecionado);
     if (!c) return;
@@ -492,8 +501,9 @@ function atualizarFerramentas() {
   const temSelecao = Boolean(c);
   $('#tool-empty').hidden = temSelecao;
   $$('#layer-tools .tool-btn, #layer-tools input').forEach(n => { n.disabled = !temSelecao; });
+  $('#st-tamanho').hidden = !temSelecao;
   if (!c) return;
-  $('#sld-escala').value = Math.round(c.escala * 100);
+  $('#sld-escala').value = $('#sld-escala-vert').value = Math.round(c.escala * 100);
   $('#sld-rot').value = Math.round(c.rot);
 }
 

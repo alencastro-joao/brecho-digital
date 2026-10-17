@@ -259,6 +259,13 @@
           <button type="button" class="st-hist-btn" id="st-redo" title="Refazer (Ctrl+Y)"
                   aria-label="Refazer" disabled><i data-i="refazer"></i></button>
         </div>
+        <!-- Tamanho da peça selecionada numa barra em pé, na lateral direita
+             do palco: só no celular, onde as alças ficam apertadas no dedo. -->
+        <div class="st-tamanho" id="st-tamanho" hidden>
+          <button type="button" class="st-tam-btn" data-tam="1" title="Aumentar" aria-label="Aumentar">+</button>
+          <input type="range" id="sld-escala-vert" min="20" max="220" value="100" aria-label="Tamanho da peça">
+          <button type="button" class="st-tam-btn" data-tam="-1" title="Diminuir" aria-label="Diminuir">−</button>
+        </div>
         <div class="stage" id="stage">
           <div class="stage-avatar" id="stage-avatar"></div>
           <div class="stage-layers" id="stage-layers"></div>
