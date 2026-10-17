@@ -103,9 +103,8 @@ export function renderPerfil() {
   const u = db.state.usuario;
   const curtidas = meusPosts().reduce((soma, post) => soma + (post.curtidas || 0), 0);
 
-  // O busto com as roupinhas do vestiário, no fundo da cor que assina os seus
-  // posts no feed. No Stylist o avatar segue pelado, para a roupa fotografada
-  // cair no corpo sem duas roupas sobrepostas.
+  // O busto sem roupa (do vestiário, só chapéu e óculos), no fundo da cor que
+  // assina os seus posts no feed.
   // O nível mora em volta do retrato: o anel enche com o XP do nível.
   const foto = retratoDoPerfil(aparenciaAtual(), COR_PROPRIA, db.roupasEquipadas());
   foto.style.filter = brilhoDoEstilo(db.roupasEquipadas());

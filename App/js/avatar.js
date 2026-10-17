@@ -91,8 +91,8 @@ const [, RETRATO_Y, , RETRATO_H] = recorteNaRegiao('cabeca', [225, 43, 150, 150]
 // `quadro` abre o enquadramento: 1 é cabeça e ombros; mais que isso desce o
 // centro e pega mais do corpo, como um busto, com uma folga acima da cabeça.
 // `desce` é quanto do que abriu vai para baixo: menos que isso sobra mais
-// espaço em cima, para o cabelo alto.
-export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1, desce = 0.38) {
+// espaço em cima, para o cabelo alto. `semRoupa` deixa só chapéu e óculos.
+export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1, desce = 0.38, semRoupa = false) {
   const janela = RETRATO_H * quadro;
   const centro = RETRATO_Y + RETRATO_H / 2 + (janela - RETRATO_H) * desce;
   const k = tamanho / janela;
@@ -100,7 +100,7 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, qu
     class: 'retrato',
     style: { width: tamanho + 'px', height: tamanho + 'px', background: cor },
   });
-  caixa.innerHTML = svgAvatar({ aparencia, roupas });
+  caixa.innerHTML = svgAvatar({ aparencia, roupas, roupaSoNaCabeca: semRoupa });
   Object.assign(caixa.querySelector('svg').style, {
     position: 'absolute',
     width: (CONFIG.STAGE_W * k) + 'px',
@@ -116,6 +116,8 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, qu
 // feed, avisos, busca, amigos). O quadrado pega a cabeça com folga para o
 // cabelo dos lados e de cima, no molde, e acompanha a proporção.
 const CABECINHA = recorteNaRegiao('cabeca', [212, 21, 176, 176]);
+// O queixo, no palco: o de baixo da cabeça (y=182 no molde) e um respiro.
+const [, QUEIXO] = recorteNaRegiao('cabeca', [0, 186, 0, 0]);
 
 export function cabeca(aparencia, tamanho = 34, roupas = null) {
   const caixa = el('span', {
@@ -123,8 +125,29 @@ export function cabeca(aparencia, tamanho = 34, roupas = null) {
     style: { width: tamanho + 'px', height: tamanho + 'px' },
   });
   caixa.innerHTML = svgAvatar({ aparencia, roupas, recorte: CABECINHA, soCabeca: true });
-  Object.assign(caixa.querySelector('svg').style, { width: '100%', height: '100%' });
+  const svg = caixa.querySelector('svg');
+  Object.assign(svg.style, { width: '100%', height: '100%' });
+  centrarNaCaixa(svg);
   return caixa;
+}
+
+// Cada corte tem uma altura (espetado e afro sobem bem acima do raspado, um
+// chapéu sobe mais ainda), e com o quadrado fixo a cabeça ficava ora alta, ora
+// baixa na caixa. Quando ela já está na tela dá para medir: o quadrado desliza
+// para o meio entre o topo do desenho e o queixo, no mesmo tamanho (a cabeça
+// não muda de escala de um avatar para outro); só cresce se não couber.
+function centrarNaCaixa(svg, tentativas = 20) {
+  if (!svg.isConnected) {
+    if (tentativas > 0) requestAnimationFrame(() => centrarNaCaixa(svg, tentativas - 1));
+    return;
+  }
+  const desenho = svg.querySelector(':scope > g[mask]');
+  if (!desenho) return;
+  let topo;
+  try { topo = desenho.getBBox().y; } catch { return; }
+  const lado = Math.max(CABECINHA[3], QUEIXO - topo);
+  const y = (topo + QUEIXO) / 2 - lado / 2;
+  svg.setAttribute('viewBox', `${300 - lado / 2} ${y} ${lado} ${lado}`);
 }
 
 // O boneco é um monte de peça sobreposta (braço, tronco, pescoço, cabeça). Dar
@@ -186,12 +209,14 @@ const comVolume = (arte, cor) => (arte.trim()
 // sem existir um segundo desenho para manter em dia.
 // `soCabeca` desenha só a cabeça: cabelo, rosto, chapéu e óculos, sem pescoço,
 // corpo nem a roupa dele.
+// `roupaSoNaCabeca` desenha o corpo inteiro, mas só com chapéu e óculos: é a
+// foto do perfil, em que o corpo aparece sem roupa nenhuma.
 export function svgAvatar({
   guia = false, fundo = 'none', aparencia = null, recorte = null, roupas = null,
-  soCabeca = false,
+  soCabeca = false, roupaSoNaCabeca = false,
 } = {}) {
   const ap = aparencia || aparenciaAtual();
-  const veste = partesDasRoupas(roupas, ap.corpo, soCabeca);
+  const veste = partesDasRoupas(roupas, ap.corpo, soCabeca || roupaSoNaCabeca);
   const corte = CABELOS[ap.cabelo] || CABELOS.curto;
 
   // Chapéu na cabeça corta o cabelo na altura que ele mandar (roupinhas.js:

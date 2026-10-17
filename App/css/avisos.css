@@ -140,7 +140,7 @@
   .view-vitrine .picks-badge small { margin-top: 0; }
 
   .avisos-btn {
-    top: calc(14px + env(safe-area-inset-top)); right: 76px;
+    top: calc(14px + env(safe-area-inset-top)); right: 88px;
     width: 44px; height: 44px;
     border-color: transparent; box-shadow: none;
   }
@@ -148,7 +148,7 @@
   .avisos-btn svg { width: 23px; height: 23px; }
 
   .perfil-atalho {
-    top: calc(14px + 22px - 40px + env(safe-area-inset-top)); right: 0;
+    top: calc(14px + 22px - 40px + env(safe-area-inset-top)); right: 6px;
     width: 80px; height: 80px; box-shadow: none;
   }
   .perfil-atalho:hover { transform: none; }
