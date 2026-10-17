@@ -91,6 +91,11 @@ html body .sidebar .sidebar-btn {
   border: 2px solid var(--wii-borda);
   box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 rgba(60, 80, 95, .14);
 }
+/* O Criar junta o amarelo do Stylist e o rosa da Colagem, sob o mesmo brilho. */
+html body .sidebar .sidebar-btn.criar {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .75) 0%, rgba(255, 255, 255, .35) 48%, rgba(255, 255, 255, .1) 52%, rgba(255, 255, 255, .3) 100%),
+    linear-gradient(135deg, var(--stylist) 30%, var(--board) 80%);
+}
 .sidebar .sidebar-btn .ico { width: 24px; height: 24px; vertical-align: 0; color: rgba(0, 0, 0, .62); }
 html body .sidebar .sidebar-btn.ativa {
   border-color: var(--wii);

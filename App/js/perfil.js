@@ -135,10 +135,13 @@ export function renderPerfil() {
     numeroDoPerfil(amigos.length, 'amigos', `${plural(curtidas, 'curtida', 'curtidas')} nos seus posts`,
       () => { abaAtual = 'amigos'; renderPerfil(); }));
 
+  // Vestir-se é a casa das roupinhas (o vestiário): saiu da barra de baixo e
+  // mora aqui, em destaque, ao lado de quem você é.
   $('#perfil-acoes').replaceChildren(
     el('button', { class: 'btn-ghost', onclick: abrirEdicao }, 'Editar perfil'),
     el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') }, 'Personagem'),
-    el('button', { class: 'btn-ghost', onclick: () => irPara('vestiario') }, 'Inventário'));
+    el('button', { class: 'btn-dark pf-vestir', id: 'perfil-vestir', onclick: () => irPara('vestiario') },
+      ico('camiseta'), ' Vestir-se'));
 
   // O seu guarda-roupa inteiro e a sua wishlist, como os outros os veem.
   const roupas = minhasRoupas();
