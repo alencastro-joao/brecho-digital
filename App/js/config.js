@@ -882,10 +882,10 @@ export function faixasDeTroca(faixa) {
 }
 
 // Fichas: o prêmio que vira garimpo, como as ampulhetas do TCG Pocket. O nome
-// é provisório até a lore do jogo. O teto protege a raridade da vitrine.
+// é provisório até a lore do jogo. Acumulam sem teto, e dá para trocar
+// quantas vezes quiser no dia (pedido do João, 2026-10-17).
 export const FICHAS = {
   porResgate: 6,       // quantas fichas valem um resgate a mais
-  extrasPorDia: 1,     // resgates comprados com fichas, no máximo, por dia
 };
 
 // ------------------------------- Níveis -----------------------------------

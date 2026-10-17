@@ -48,11 +48,12 @@ COMO = {'vitrine', 'presente', 'missao', 'semana', 'bau-especial', 'nivel',
 # Quantas cópias uma conta leva por dia (dia de Brasília), contando no
 # servidor: o limite de 3 resgates da loja mora no save, que é o navegador quem
 # escreve, então sem isto bastava chamar /api/estoque/levar em loop para
-# esvaziar uma tiragem. A loja tem folga para os resgates comprados com fichas
-# (que se acumulam) e o efeito de resgate grátis; o total cobre baús abertos de
-# uma vez. O administrador não tem cota (numera o acervo antigo, testa).
-COTA_VITRINE = 10
-COTA_TOTAL = 60
+# esvaziar uma tiragem. As fichas acumulam sem teto e trocam por resgate
+# quantas vezes quiser no dia, então a loja cobre o mural inteiro mais uma
+# reposição (2 × 25 peças) e o total soma os baús abertos de uma vez. O
+# administrador não tem cota (numera o acervo antigo, testa).
+COTA_VITRINE = 50
+COTA_TOTAL = 100
 BRASILIA = timezone(timedelta(hours=-3))
 
 
