@@ -208,6 +208,9 @@
 .st-hist-btn:hover:not(:disabled) { border-color: var(--tinta); }
 .st-hist-btn:disabled { opacity: .4; cursor: default; }
 
+/* Barra em pé do tamanho da peça: só no celular (mobile.css a mostra). */
+.st-tamanho { display: none; }
+
 /* --------------------------- Painel Meus stylists ----------------------- */
 /* O mesmo painel serve às Minhas colagens (#modal-colagens, js/board.js),
    só trocando a cor da tela. */
