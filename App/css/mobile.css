@@ -632,6 +632,8 @@
     border: 0; background: none; overflow: visible;
   }
   .view-stylist .stylist-tools:has(.tool-btn:disabled) { display: none; }
+  /* Sem o pontilhado em volta da peça escolhida: as alças já mostram qual é. */
+  .view-stylist .camada.selecionada { outline: 0; }
   .view-stylist #layer-tools > :not(.tool-row) { display: none; }
   .view-stylist #layer-tools .tool-row { flex-direction: column; flex-wrap: nowrap; gap: 5px; }
   .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 34px; font-size: 15px; }

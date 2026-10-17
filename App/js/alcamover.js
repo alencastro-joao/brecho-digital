@@ -6,7 +6,9 @@
 import { ico } from './icones.js';
 import { el, clamp } from './util.js';
 
-const TAM = 42, FOLGA = 12, BORDA = 4;
+// FOLGA é a distância até a peça: longe o bastante para o dedo na alça não
+// tapar a roupa que se está encaixando.
+const TAM = 42, FOLGA = 26, BORDA = 4;
 
 // `aoPegar(e)` recebe o pointerdown do botão e começa o arrasto da peça como
 // se o dedo tivesse descido nela; `e.target.dataset.alca` chega como 'mov'.
@@ -56,7 +58,8 @@ export function alcaMover(palco, aoPegar) {
       dir:   { x: r + FOLGA,       y: (t + b) / 2 - TAM / 2 },
       esq:   { x: l - FOLGA - TAM, y: (t + b) / 2 - TAM / 2 },
       baixo: { x: (l + r) / 2 - TAM / 2, y: b + FOLGA },
-      cima:  { x: (l + r) / 2 - TAM / 2, y: t - FOLGA - TAM },
+      // Em cima fica a bolinha de girar: a alça sobe mais um tanto para não encostar.
+      cima:  { x: (l + r) / 2 - TAM / 2, y: t - FOLGA - TAM - 20 },
     };
     const cabe = ({ x, y }) => x >= BORDA && x + TAM <= p.width - BORDA &&
                                y >= BORDA && y + TAM <= p.height - BORDA;
