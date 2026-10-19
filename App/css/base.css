@@ -1,5 +1,13 @@
 /* Base: variáveis, layout geral, sidebar, botões, toasts. */
 
+/* Fontes da Colagem (etiqueta e assinatura; BOARD.FONTES em config.js).
+   Latin, peso 400, licença OFL (assets/fontes/LICENCAS.txt). */
+@font-face { font-family: 'BD Lora'; src: url(../assets/fontes/lora-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'BD Inter'; src: url(../assets/fontes/inter-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'BD Caveat'; src: url(../assets/fontes/caveat-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'BD Anton'; src: url(../assets/fontes/anton-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+@font-face { font-family: 'BD Courier Prime'; src: url(../assets/fontes/courier-prime-latin-400-normal.woff2) format('woff2'); font-display: swap; }
+
 :root {
   --papel: #fdfaf6;
   --tinta: #1a1a1a;

@@ -7,9 +7,9 @@
 
 import { el } from './util.js';
 
-function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', perigo = false, campo = false } = {}) {
+function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', perigo = false, campo = false, valor = '', max = null } = {}) {
   return new Promise((resolve) => {
-    const entrada = campo ? el('input', { class: 'pergunta-campo', type: 'text', autocomplete: 'off' }) : null;
+    const entrada = campo ? el('input', { class: 'pergunta-campo', type: 'text', autocomplete: 'off', value: valor, maxlength: max }) : null;
     const botaoNao = nao === null ? null : el('button', { class: 'btn-ghost', type: 'button' }, nao);
     const botaoSim = el('button', { class: `btn-dark${perigo ? ' perigo' : ''}`, type: 'button' }, sim);
     const caixa = el('div', { class: 'modal-caixa pergunta-caixa', role: 'alertdialog', 'aria-modal': 'true' },
@@ -24,6 +24,7 @@ function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', per
     document.body.append(fundo);
     document.body.classList.add('com-modal');
     (entrada || botaoSim).focus();
+    entrada?.select();
 
     function fechar(valor) {
       document.removeEventListener('keydown', tecla, true);

@@ -240,16 +240,20 @@
         <div id="palette-agrupar"></div>
       </div>
       <div class="pal-ordem" id="palette-ordem"></div>
+      <div class="pal-busca">
+        <input type="search" id="palette-busca" placeholder="buscar peça (nome, marca, cor, nº)"
+               aria-label="Buscar peça" maxlength="40">
+      </div>
       <div class="palette-cats" id="palette-cats"></div>
       <button type="button" class="palette-ajustes" id="palette-ajustes"
               title="Organizar" aria-label="Organizar" aria-expanded="false"></button>
       <div class="palette-grid" id="palette-grid"></div>
-      <p class="palette-hint">Clique para vestir. Arraste no palco para ajustar.</p>
+      <p class="palette-hint">Clique para vestir. Arraste no palco para ajustar; duplo clique na peça troca por outra.</p>
     </aside>
 
     <div class="stylist-stage-area">
       <div class="stage-frame">
-        <button type="button" class="btn-meus" id="btn-meus-stylists"
+        <button type="button" class="btn-meus" id="btn-meus-stylists" aria-label="Meus stylists"
                 title="Ver, editar, renomear e favoritar os seus looks">
           <i data-i="grade"></i> Meus stylists <small id="meus-qtd"></small>
         </button>
@@ -272,20 +276,19 @@
         </div>
       </div>
       <div class="stage-caption">
-        <input id="outfit-nome" type="text" placeholder="Nome do look" maxlength="40">
-        <span class="stage-sig">ASSINATURA</span>
+        <input id="outfit-nome" type="text" placeholder="Nome do look" maxlength="40" aria-label="Nome do look">
       </div>
       <!-- O que se faz com o look, numa barra só embaixo do palco: as ações
            frequentes à vista, exportar e o resto em menus (js/stylist.js). -->
       <div class="look-barra" id="look-barra">
-        <button class="lb-btn destaque" id="btn-sortear" title="Monta um look com as suas peças">
+        <button class="lb-btn destaque" id="btn-sortear" aria-label="Gerar look" title="Monta um look com as suas peças">
           <span class="lb-ico"><i data-e="🎲"></i></span><span class="lb-txt">Gerar</span></button>
-        <button class="lb-btn escuro" id="btn-salvar" title="Salvar look">
+        <button class="lb-btn escuro" id="btn-salvar" aria-label="Salvar look" title="Salvar look">
           <span class="lb-ico"><i data-i="ok"></i></span><span class="lb-txt">Salvar</span></button>
-        <button class="lb-btn" id="btn-publicar" title="Publicar no feed">
+        <button class="lb-btn" id="btn-publicar" aria-label="Publicar no feed" title="Publicar no feed">
           <span class="lb-ico"><i data-i="publicar"></i></span><span class="lb-txt">Publicar</span></button>
         <div class="lb-grupo">
-          <button class="lb-btn" data-menu="lb-exportar" title="Exportar PNG para o Instagram"
+          <button class="lb-btn" data-menu="lb-exportar" aria-label="Exportar" title="Exportar PNG para o Instagram"
                   aria-haspopup="menu" aria-expanded="false">
             <span class="lb-ico"><i data-i="baixar"></i></span><span class="lb-txt">Exportar</span></button>
           <div class="lb-menu" id="lb-exportar" role="menu" hidden>
@@ -295,11 +298,11 @@
           </div>
         </div>
         <div class="lb-grupo">
-          <button class="lb-btn so-icone" data-menu="lb-mais" title="Mais opções"
+          <button class="lb-btn so-icone" data-menu="lb-mais" aria-label="Mais opções" title="Mais opções"
                   aria-haspopup="menu" aria-expanded="false"><span class="lb-ico"><i data-i="mais"></i></span></button>
           <div class="lb-menu" id="lb-mais" role="menu" hidden>
             <button role="menuitem" id="btn-limpar">Limpar palco</button>
-            <button role="menuitem" id="btn-guia" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
+            <button role="menuitem" id="btn-guia" aria-pressed="false" title="Mostra os pontos de ancoragem do avatar">Guia do avatar</button>
             <button role="menuitem" id="btn-apagar-look" class="perigo" disabled
                     title="Apaga dos seus stylists o look aberto no palco">Apagar look salvo</button>
           </div>
@@ -311,12 +314,14 @@
       <h2>Ferramentas</h2>
       <div class="tool-block" id="layer-tools">
         <p class="tool-label">Camada selecionada</p>
-        <div class="tool-row">
-          <button class="tool-btn" data-act="up" title="Trazer para frente"><i data-i="seta-cima"></i></button>
-          <button class="tool-btn" data-act="down" title="Enviar para trás"><i data-i="seta-baixo"></i></button>
-          <button class="tool-btn" data-act="flip" title="Espelhar"><i data-i="espelhar"></i></button>
-          <button class="tool-btn" data-act="reset" title="Voltar ao encaixe padrão"><i data-i="girar-esq"></i></button>
-          <button class="tool-btn danger" data-act="del" title="Remover"><i data-i="x"></i></button>
+        <div class="tool-row tool-grade">
+          <button class="tool-btn" data-act="up" title="Trazer para frente" aria-label="Trazer para frente"><i data-i="seta-cima"></i><span class="tool-txt">frente</span></button>
+          <button class="tool-btn" data-act="down" title="Enviar para trás" aria-label="Enviar para trás"><i data-i="seta-baixo"></i><span class="tool-txt">trás</span></button>
+          <button class="tool-btn" data-act="flip" title="Espelhar" aria-label="Espelhar"><i data-i="espelhar"></i><span class="tool-txt">espelhar</span></button>
+          <button class="tool-btn" data-act="girar" title="Girar 15° (R)" aria-label="Girar 15 graus"><i data-i="atualizar"></i><span class="tool-txt">girar</span></button>
+          <button class="tool-btn" data-act="trocar" title="Trocar por outra peça da mesma categoria (duplo clique na peça)" aria-label="Trocar por outra peça"><i data-i="cabide"></i><span class="tool-txt">trocar</span></button>
+          <button class="tool-btn" data-act="reset" title="Voltar ao encaixe padrão" aria-label="Voltar ao encaixe padrão"><i data-i="encaixar"></i><span class="tool-txt">encaixar</span></button>
+          <button class="tool-btn danger" data-act="del" title="Remover (Delete)" aria-label="Remover peça"><i data-i="x"></i><span class="tool-txt">remover</span></button>
         </div>
         <label class="tool-slider">Tamanho
           <input type="range" id="sld-escala" min="20" max="220" value="100">
@@ -325,6 +330,7 @@
           <input type="range" id="sld-rot" min="-180" max="180" value="0">
         </label>
         <p class="tool-empty" id="tool-empty">Nenhuma peça selecionada.</p>
+        <p class="tool-dica">Setas movem · R gira · + − tamanho · Del tira · Ctrl+Z desfaz</p>
       </div>
     </aside>
   </section>
@@ -338,12 +344,12 @@
           <h2 id="ms-titulo">Meus stylists</h2>
           <p class="ms-sub" id="ms-sub"></p>
         </div>
-        <button class="modal-x" id="ms-fechar" title="Fechar"><i data-i="x"></i></button>
+        <button class="modal-x" id="ms-fechar" title="Fechar" aria-label="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="ms-barra">
-        <input type="search" id="ms-busca" placeholder="Buscar pelo nome" maxlength="40">
+        <input type="search" id="ms-busca" placeholder="Buscar pelo nome" maxlength="40" aria-label="Buscar look pelo nome">
         <div class="ms-filtros" id="ms-filtros"></div>
-        <select id="ms-ordem" title="Ordem">
+        <select id="ms-ordem" title="Ordem" aria-label="Ordem">
           <option value="recentes">Recentes</option>
           <option value="antigos">Antigos</option>
           <option value="nome">Nome A–Z</option>
@@ -366,7 +372,7 @@
       </div>
       <div class="pal-ordem" id="board-ordem"></div>
       <div class="pal-busca">
-        <input type="search" id="board-busca" placeholder="filtrar por nº">
+        <input type="search" id="board-busca" placeholder="buscar peça (nome, marca, cor, nº)" aria-label="Buscar peça" maxlength="40">
       </div>
       <div class="palette-cats" id="board-cats"></div>
       <button type="button" class="palette-ajustes" id="board-ajustes"
@@ -376,28 +382,28 @@
     </aside>
 
     <div class="board-main">
-      <button type="button" class="btn-meus" id="btn-minhas-colagens"
+      <button type="button" class="btn-meus" id="btn-minhas-colagens" aria-label="Minhas colagens"
               title="Ver, abrir, renomear e favoritar as suas colagens">
         <i data-i="grade"></i> Minhas colagens <small id="mc-qtd"></small>
       </button>
       <div class="board-bar">
         <div class="bar-grupo">
-          <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)"><i data-i="desfazer"></i></button>
-          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Y)"><i data-i="refazer"></i></button>
+          <button class="bar-btn" id="bd-undo" title="Desfazer (Ctrl+Z)" aria-label="Desfazer" disabled><i data-i="desfazer"></i></button>
+          <button class="bar-btn" id="bd-redo" title="Refazer (Ctrl+Y)" aria-label="Refazer" disabled><i data-i="refazer"></i></button>
         </div>
         <div class="bar-grupo">
-          <button class="bar-btn largo" id="bd-add-texto" title="Soltar uma etiqueta de texto">+ texto</button>
+          <button class="bar-btn largo" id="bd-add-texto" title="Soltar uma etiqueta de texto" aria-label="Pôr texto">+ texto</button>
         </div>
         <div class="bar-grupo">
-          <button class="bar-btn" data-zoom="-" title="Diminuir"><i data-i="menos"></i></button>
+          <button class="bar-btn zoom-txt" data-zoom="-" title="Diminuir o zoom" aria-label="Diminuir o zoom">−</button>
           <span class="bar-zoom" id="bd-zoom">100%</span>
-          <button class="bar-btn" data-zoom="+" title="Aumentar">+</button>
-          <button class="bar-btn" data-zoom="fit" title="Encaixar na tela"><i data-i="encaixar"></i></button>
+          <button class="bar-btn zoom-txt" data-zoom="+" title="Aumentar o zoom" aria-label="Aumentar o zoom">+</button>
+          <button class="bar-btn" data-zoom="fit" title="Encaixar na tela" aria-label="Encaixar na tela"><i data-i="encaixar"></i></button>
         </div>
         <div class="bar-grupo">
           <label class="bar-check"><input type="checkbox" id="bd-reguas" checked> réguas</label>
           <label class="bar-check"><input type="checkbox" id="bd-ima" checked> ímã</label>
-          <label class="bar-check"><input type="checkbox" id="bd-grade"> grade</label>
+          <label class="bar-check"><input type="checkbox" id="bd-grade"> quadriculado</label>
           <label class="bar-check"><input type="checkbox" id="bd-margem"> margem</label>
         </div>
         <div class="bar-grupo bar-dir">
@@ -424,16 +430,17 @@
 
       <!-- Ações da colagem: sempre à mão, sem precisar rolar o painel. -->
       <div class="board-rodape">
-        <input id="board-nome" type="text" placeholder="Nome da colagem" maxlength="46">
-        <span class="board-dica">Shift+clique soma à seleção · laço no vazio · setas movem · Del remove</span>
+        <input id="board-nome" type="text" placeholder="Nome da colagem" maxlength="46" aria-label="Nome da colagem">
+        <span class="board-dica">Shift+clique soma · laço no vazio · setas movem · R gira · Ctrl+D duplica · Ctrl+G agrupa · Del remove</span>
         <div class="rodape-acoes">
           <button class="acao-btn" id="bd-nova" title="Começar do zero">nova</button>
           <button class="acao-btn" id="bd-sortear"
                   title="Monta uma colagem com as suas peças (Ctrl+Z desfaz)"><i data-e="🎲"></i> gerar</button>
           <button class="acao-btn" id="bd-salvar">salvar</button>
           <button class="acao-btn forte" id="bd-publicar">publicar</button>
-          <button class="acao-btn" data-bd-export="formato" title="PNG 1080×1350">PNG</button>
-          <button class="acao-btn" data-bd-export="alta" title="PNG 2160×2700">2×</button>
+          <button class="acao-btn" data-bd-export="formato" title="PNG 1080×1350" aria-label="Exportar PNG">PNG</button>
+          <button class="acao-btn" data-bd-export="alta" title="PNG 2160×2700" aria-label="Exportar PNG em dobro">2×</button>
+          <button class="acao-btn" data-bd-export="story" title="Story 1080×1920" aria-label="Exportar para Story">story</button>
           <button class="acao-btn" id="bd-ferramentas" title="Ferramentas"
                   aria-label="Ferramentas" aria-expanded="false"></button>
         </div>
@@ -444,20 +451,24 @@
       <div class="tool-block" id="bd-selecao">
         <p class="tool-label">Seleção <span id="bd-qtd-sel"></span></p>
         <div class="tool-row">
-          <button class="tool-btn" data-bd="frente" title="Trazer para frente"><i data-i="frente"></i></button>
-          <button class="tool-btn" data-bd="subir"  title="Uma camada acima"><i data-i="seta-cima"></i></button>
-          <button class="tool-btn" data-bd="descer" title="Uma camada abaixo"><i data-i="seta-baixo"></i></button>
-          <button class="tool-btn" data-bd="fundo"  title="Enviar para o fundo"><i data-i="fundo"></i></button>
+          <button class="tool-btn" data-bd="frente" title="Trazer para frente" aria-label="Trazer para frente"><i data-i="frente"></i></button>
+          <button class="tool-btn" data-bd="subir"  title="Uma camada acima" aria-label="Uma camada acima"><i data-i="seta-cima"></i></button>
+          <button class="tool-btn" data-bd="descer" title="Uma camada abaixo" aria-label="Uma camada abaixo"><i data-i="seta-baixo"></i></button>
+          <button class="tool-btn" data-bd="fundo"  title="Enviar para o fundo" aria-label="Enviar para o fundo"><i data-i="fundo"></i></button>
         </div>
         <div class="tool-row">
-          <button class="tool-btn" data-bd="espelhar"  title="Espelhar"><i data-i="espelhar"></i></button>
-          <button class="tool-btn" data-bd="duplicar"  title="Duplicar (Ctrl+D)"><i data-i="duplicar"></i></button>
-          <button class="tool-btn" data-bd="travar"    title="Travar/destravar"><i data-i="cadeado"></i></button>
-          <button class="tool-btn danger" data-bd="remover" title="Remover"><i data-i="x"></i></button>
+          <button class="tool-btn" data-bd="espelhar"  title="Espelhar" aria-label="Espelhar"><i data-i="espelhar"></i></button>
+          <button class="tool-btn" data-bd="duplicar"  title="Duplicar (Ctrl+D)" aria-label="Duplicar"><i data-i="duplicar"></i></button>
+          <button class="tool-btn" data-bd="travar"    title="Travar/destravar" aria-label="Travar ou destravar"><i data-i="cadeado"></i></button>
+          <button class="tool-btn danger" data-bd="remover" title="Remover" aria-label="Remover"><i data-i="x"></i></button>
         </div>
         <label class="tool-slider">Tamanho <input type="range" id="bd-escala" min="4" max="100" value="26"></label>
         <label class="tool-slider">Rotação <input type="range" id="bd-rot" min="-180" max="180" value="0"></label>
         <label class="tool-slider">Opacidade <input type="range" id="bd-opacidade" min="10" max="100" value="100"></label>
+        <div class="tool-row">
+          <button class="tool-btn largo" data-bd="agrupar" title="Agrupar (Ctrl+G)">agrupar</button>
+          <button class="tool-btn largo" data-bd="desagrupar" title="Desagrupar (Ctrl+Shift+G)">desagrupar</button>
+        </div>
         <label class="tool-check" title="Vale para a seleção e fica como padrão das próximas peças">
           <input type="checkbox" id="bd-sombra" checked> sombra
         </label>
@@ -480,6 +491,17 @@
         <div class="tool-row">
           <button class="tool-btn largo" data-arranjo="grade">organizar em grade</button>
           <button class="tool-btn largo" data-arranjo="leque">espalhar</button>
+        </div>
+        <p class="tool-label">Alinhar a seleção</p>
+        <div class="tool-row alinhar">
+          <button class="tool-btn" data-alinhar="esq" title="Alinhar à esquerda" aria-label="Alinhar à esquerda">⇤</button>
+          <button class="tool-btn" data-alinhar="centro" title="Centralizar na horizontal" aria-label="Centralizar na horizontal">↔</button>
+          <button class="tool-btn" data-alinhar="dir" title="Alinhar à direita" aria-label="Alinhar à direita">⇥</button>
+          <button class="tool-btn" data-alinhar="topo" title="Alinhar em cima" aria-label="Alinhar em cima">⤒</button>
+          <button class="tool-btn" data-alinhar="meio" title="Centralizar na vertical" aria-label="Centralizar na vertical">↕</button>
+          <button class="tool-btn" data-alinhar="base" title="Alinhar embaixo" aria-label="Alinhar embaixo">⤓</button>
+          <button class="tool-btn" data-alinhar="dist-h" title="Espaçar igual na horizontal (3 ou mais)" aria-label="Espaçar igual na horizontal">⋯</button>
+          <button class="tool-btn" data-alinhar="dist-v" title="Espaçar igual na vertical (3 ou mais)" aria-label="Espaçar igual na vertical">⋮</button>
         </div>
       </div>
 
@@ -533,12 +555,12 @@
           <h2 id="mc-titulo">Minhas colagens</h2>
           <p class="ms-sub" id="mc-sub"></p>
         </div>
-        <button class="modal-x" id="mc-fechar" title="Fechar"><i data-i="x"></i></button>
+        <button class="modal-x" id="mc-fechar" title="Fechar" aria-label="Fechar"><i data-i="x"></i></button>
       </header>
       <div class="ms-barra">
-        <input type="search" id="mc-busca" placeholder="Buscar pelo nome" maxlength="46">
+        <input type="search" id="mc-busca" placeholder="Buscar pelo nome" maxlength="46" aria-label="Buscar colagem pelo nome">
         <div class="ms-filtros" id="mc-filtros"></div>
-        <select id="mc-ordem" title="Ordem">
+        <select id="mc-ordem" title="Ordem" aria-label="Ordem">
           <option value="recentes">Recentes</option>
           <option value="antigos">Antigos</option>
           <option value="nome">Nome A–Z</option>

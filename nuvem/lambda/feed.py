@@ -9,6 +9,7 @@ tira as publicações do save e põe num lugar que todo mundo lê.
 
     GET    /api/feed[?autor=<id>]              os posts, mais novos primeiro
     POST   /api/feed                           publica { chave, tipo, nome, thumb, pecas, origem, camadas }
+                                                (com `atualizar: true`, o dono troca a imagem do post que já existe)
     DELETE /api/feed/<id>                      o dono apaga
     POST   /api/feed/<id>/curtir               { curte }
     POST   /api/feed/<id>/comentarios          { texto }
@@ -291,6 +292,8 @@ def publicar(eu_id, corpo):
 
     post_id = 'p-' + hashlib.sha256(('%s|%s' % (eu_id, chave)).encode()).hexdigest()[:16]
     existente = _pegar('POST#' + post_id)
+    if existente and corpo.get('atualizar') is True:
+        return _atualizar_post(eu_id, existente, corpo, tipo, nome)
     if existente:
         return _com_autores([existente], eu_id)
 
@@ -324,6 +327,35 @@ def publicar(eu_id, corpo):
             raise
         item = _ler(post_id)
     return _com_autores([item], eu_id)
+
+
+def _atualizar_post(eu_id, existente, corpo, tipo, nome):
+    """O dono editou o look (ou a colagem) e pediu `atualizar`: o mesmo post
+    ganha a imagem, o nome, as peças e as camadas novas. Curtidas,
+    comentários e a data continuam; a imagem antiga sai do bucket."""
+    if existente['autor'] != eu_id:
+        raise ErroDeConta('Só quem publicou pode atualizar.', 403)
+    post_id = existente['id']
+    binario, extensao, tipo_mime = _imagem(corpo.get('thumb'))
+    impressao = hashlib.sha256(binario).hexdigest()[:10]
+    caminho = 'assets/posts/%s-%s.%s' % (post_id, impressao, extensao)
+    _s3.put_object(Bucket=BUCKET_SITE, Key=caminho, Body=binario,
+                   ContentType=tipo_mime, CacheControl=ETERNO)
+    _atualizar(post_id,
+               'SET #n = :nome, thumb = :thumb, pecas = :pecas, camadas = :camadas, editado_em = :em',
+               {
+                   ':nome': _ser.serialize(nome),
+                   ':thumb': _ser.serialize(caminho),
+                   ':pecas': _ser.serialize(_pecas(corpo.get('pecas'))),
+                   ':camadas': _ser.serialize(json.dumps(_camadas(corpo.get('camadas'), tipo),
+                                                         separators=(',', ':'))),
+                   ':em': _ser.serialize(iso(agora())),
+               },
+               nomes={'#n': 'nome'})
+    antiga = existente.get('thumb') or ''
+    if antiga != caminho and antiga.startswith('assets/posts/'):
+        _s3.delete_object(Bucket=BUCKET_SITE, Key=antiga)
+    return _devolver(post_id, eu_id)
 
 
 def apagar(eu_id, post_id):

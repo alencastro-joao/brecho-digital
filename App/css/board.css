@@ -30,12 +30,12 @@
 
 .board-bar {
   flex: none; height: 46px;
-  display: flex; align-items: center; gap: 18px;
+  display: flex; align-items: center; gap: 14px;
   padding: 0 18px;
   background: var(--branco); border-bottom: 1px solid var(--linha);
 }
 .bar-grupo { display: flex; align-items: center; gap: 6px; }
-.bar-dir { margin-left: auto; }
+.bar-dir { margin-left: auto; min-width: 0; }
 .bar-btn {
   width: 30px; height: 30px; border-radius: 9px;
   border: 1px solid var(--linha); background: #fff;
@@ -51,7 +51,7 @@
   font-size: 11px; color: var(--tinta-suave); cursor: pointer;
 }
 .bar-check input { accent-color: var(--tinta); }
-.bar-info { font-size: 11px; color: var(--tinta-suave); }
+.bar-info { font-size: 11px; color: var(--tinta-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 .board-scroll {
   flex: 1; min-height: 0; overflow: auto;
@@ -73,7 +73,7 @@
 .acao-btn:hover:not(:disabled) { border-color: var(--tinta); transform: translateY(-1px); }
 .acao-btn.forte { background: var(--tinta); color: #fff; border-color: var(--tinta); }
 .acao-btn.forte:hover { background: #000; }
-.bar-btn.largo { width: auto; padding: 0 11px; font-size: 11px; font-weight: 700; }
+.bar-btn.largo { width: auto; padding: 0 11px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 #board-nome {
   border: none; border-bottom: 1px solid var(--linha); background: transparent;
   font-family: inherit; font-size: 13px; padding: 4px 2px; width: 260px;
@@ -84,7 +84,8 @@
   font-size: 10.5px; color: #a9a196;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-#board-nome { flex: none; }
+/* O nome encolhe antes dos botões: com story e 2× a barra não cabia em 1440. */
+#board-nome { flex: 0 1 260px; min-width: 110px; }
 
 /* -------------------------------- Colagem -------------------------------- */
 .prancheta-wrap { position: relative; flex: none; }
@@ -122,22 +123,24 @@
   white-space: nowrap; line-height: 1;
   user-select: none; pointer-events: none;
 }
-.pr-item.selecionado { outline: 1.5px solid #ff2e63; outline-offset: 3px; }
 .pr-item.travado { cursor: not-allowed; }
-.pr-item.travado.selecionado { outline-color: #9aa0a6; outline-style: dashed; }
 .pr-item.arrastando { cursor: grabbing; }
+.pr-item:focus { outline: none; }
+.pr-item:focus-visible { outline: 2px solid var(--wii, #34beed); outline-offset: 5px; }
+/* As peças numa camada isolada: o z delas não passa por cima das alças. */
+.pr-itens { isolation: isolate; }
 
-.pr-alca {
-  position: absolute; width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; border: 2px solid #ff2e63; display: none; z-index: 3;
-}
-.pr-item.selecionado:not(.travado) .pr-alca { display: block; }
-.pr-alca-rot { top: -24px; left: 50%; transform: translateX(-50%); cursor: grab; background: #ffe08a; }
-/* Uma alça de tamanho em cada quina da caixa da peça. */
-.pr-alca-no { top: -9px;    left: -9px;  cursor: nwse-resize; }
-.pr-alca-ne { top: -9px;    right: -9px; cursor: nesw-resize; }
-.pr-alca-so { bottom: -9px; left: -9px;  cursor: nesw-resize; }
-.pr-alca-se { bottom: -9px; right: -9px; cursor: nwse-resize; }
+/* Moldura e alças da seleção (js/alcas.js), por cima de todas as peças. */
+.bd-alcas .alcas-moldura { outline: 1.5px solid #ff2e63; outline-offset: 3px; }
+.bd-alcas .alcas-moldura.travada { outline-color: #9aa0a6; outline-style: dashed; }
+.bd-alcas .alcas-moldura.travada .alca { display: none; }
+.bd-alcas .alca { width: 14px; height: 14px; border-color: #ff2e63; }
+.bd-alcas .alca-rot { top: -24px; background: #ffe08a; }
+.bd-alcas .alcas-moldura.rot-embaixo .alca-rot { top: auto; bottom: -24px; }
+.bd-alcas .alca-no { top: -9px;    left: -9px; }
+.bd-alcas .alca-ne { top: -9px;    right: -9px; }
+.bd-alcas .alca-so { bottom: -9px; left: -9px; }
+.bd-alcas .alca-se { bottom: -9px; right: -9px; }
 
 /* Assinatura */
 .pr-assinatura { pointer-events: none; }
@@ -190,9 +193,13 @@
 .regua-h .tick.maior { height: 10px; background: #bcb3a5; }
 .regua-v .tick { right: 0; height: 1px; width: 5px; }
 .regua-v .tick.maior { width: 10px; background: #bcb3a5; }
-.regua .num { position: absolute; font-size: 8px; letter-spacing: -.3px; }
-.regua-h .num { top: 1px; transform: translateX(2px); }
-.regua-v .num { left: 1px; transform: translateY(1px); }
+.regua .num { position: absolute; font-size: 10px; letter-spacing: -.2px; color: #8f877b; }
+.regua-h .num { top: 0; transform: translateX(2px); }
+/* Na régua de pé o número fica deitado: com 10px, "1000" não cabia em 22px. */
+.regua-v .num { left: 1px; writing-mode: vertical-rl; transform: rotate(180deg) translateX(-1px); }
+.bar-btn.zoom-txt { font-size: 17px; font-weight: 700; line-height: 1; }
+.tool-row.alinhar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tool-row.alinhar .tool-btn { font-size: 16px; }
 .reguas-off .regua, .reguas-off .regua-canto { display: none; }
 
 /* ------------------------------ Ferramentas ------------------------------ */
@@ -253,4 +260,13 @@
 @media (max-width: 1240px) {
   .view-board .board-tools { width: 226px; }
   .board-scroll { padding: 60px 34px 46px; }
+}
+
+/* Tela de notebook: os sete botões do rodapé ficam mais justos e o nome
+   encolhe mais, para nada sair da barra. */
+@media (max-width: 1400px) {
+  .board-rodape { gap: 10px; padding: 0 12px; }
+  .rodape-acoes { gap: 5px; }
+  .acao-btn { padding: 7px 10px; }
+  #board-nome { min-width: 80px; }
 }

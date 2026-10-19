@@ -58,12 +58,12 @@ export async function renderizarLook(camadas, opts = {}) {
 
   if (fundo) fundoPapel(ctx, w, h); else ctx.clearRect(0, 0, w, h);
 
-  const margemV = assinatura ? 0.80 : 0.92;
+  const margemV = assinatura != null ? 0.80 : 0.92;
   const escala = Math.min((w * 0.92) / CONFIG.STAGE_W, (h * margemV) / CONFIG.STAGE_H);
   const larg = CONFIG.STAGE_W * escala;
   const alt = CONFIG.STAGE_H * escala;
   const ox = (w - larg) / 2;
-  const oy = (h - alt) / 2 - (assinatura ? h * 0.03 : 0);
+  const oy = (h - alt) / 2 - (assinatura != null ? h * 0.03 : 0);
 
   const paraTela = (ux, uy) => [ox + ux * escala, oy + uy * escala];
 
@@ -94,11 +94,12 @@ export async function renderizarLook(camadas, opts = {}) {
     ctx.restore();
   }
 
-  if (assinatura) {
+  // Sem nome, sai só o "brechó digital": nada de "meu look" inventado na foto.
+  if (assinatura != null) {
     ctx.fillStyle = '#1a1a1a';
     ctx.textAlign = 'center';
     ctx.font = `600 ${Math.round(w * 0.032)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
-    ctx.fillText(assinatura, w / 2, h - Math.round(h * 0.062));
+    if (assinatura.trim()) ctx.fillText(assinatura, w / 2, h - Math.round(h * 0.062));
     ctx.fillStyle = 'rgba(0,0,0,.42)';
     ctx.font = `${Math.round(w * 0.021)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
     ctx.fillText('brechó digital', w / 2, h - Math.round(h * 0.032));
@@ -181,13 +182,14 @@ export async function imagemDoFeed(camadas, aparencia = null) {
 }
 
 export async function imagemDoFeedColagem(board) {
+  await fontesDaColagem(board);
   const canvas = await renderizarBoard(board, { escala: FEED_ESCALA_COLAGEM });
   return comoWebp(canvas, FEED_QUALIDADE);
 }
 
 export async function baixarLook(camadas, formato, nomeLook) {
   const canvas = await renderizarLook(camadas, {
-    formato, fundo: true, assinatura: nomeLook || 'meu look',
+    formato, fundo: true, assinatura: nomeLook || '',
   });
   const a = document.createElement('a');
   a.download = `brecho-${(nomeLook || 'look').toLowerCase().replace(/\s+/g, '-')}-${formato}.png`;
@@ -224,8 +226,14 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
       ctx.fillStyle = it.cor;
       ctx.font = `${it.tamanho * k}px ${fonteCss(it.fonte)}`;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(it.texto || '', 0, 0);
+      // Na tela a etiqueta é um span com line-height 1 centrado na caixa: a
+      // linha de base fica (ascendente - descendente) / 2 abaixo do centro.
+      // O 'middle' do canvas punha o texto um pouco mais alto que na tela.
+      ctx.textBaseline = 'alphabetic';
+      const m = ctx.measureText(it.texto || ' ');
+      const base = m.fontBoundingBoxAscent !== undefined
+        ? (m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 : it.tamanho * k * 0.35;
+      ctx.fillText(it.texto || '', 0, base);
       ctx.restore();
       continue;
     }
@@ -267,13 +275,35 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
 }
 
 export async function miniaturaBoard(board) {
+  await fontesDaColagem(board);
   const canvas = await renderizarBoard(board, { escala: 0.34 });
   try { return canvas.toDataURL('image/webp', 0.72); }
   catch { return canvas.toDataURL('image/jpeg', 0.7); }
 }
 
-export async function baixarBoard(board, { escala = 1 } = {}) {
-  const canvas = await renderizarBoard(board, { escala });
+// Antes de desenhar texto no canvas, as fontes da colagem precisam ter
+// chegado: senão a etiqueta sai na fonte reserva do sistema.
+export async function fontesDaColagem(board) {
+  if (!document.fonts?.load) return;
+  const ids = new Set([board.assinatura?.fonte, ...board.itens.filter(i => i.tipo === 'texto').map(i => i.fonte)]);
+  await Promise.all([...ids].filter(Boolean).map(id =>
+    document.fonts.load(`40px ${fonteCss(id)}`).catch(() => null)));
+}
+
+// `story`: a colagem (4:5) no meio de um Story 1080×1920 de fundo branco.
+export async function baixarBoard(board, { escala = 1, story = false } = {}) {
+  await fontesDaColagem(board);
+  let canvas = await renderizarBoard(board, { escala });
+  if (story) {
+    const s = document.createElement('canvas');
+    s.width = 1080; s.height = 1920;
+    const ctx = s.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s.width, s.height);
+    const h = canvas.height * (s.width / canvas.width);
+    ctx.drawImage(canvas, 0, (s.height - h) / 2, s.width, h);
+    canvas = s;
+  }
   const nome = (board.nome || 'colagem').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const a = document.createElement('a');
   a.download = `brecho-${nome}-${canvas.width}x${canvas.height}.png`;

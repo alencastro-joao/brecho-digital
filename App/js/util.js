@@ -247,3 +247,27 @@ export function toast(msg, tipo = '') {
   requestAnimationFrame(() => t.classList.add('show'));
   setTimeout(() => tirarToast(t), 2600);
 }
+
+// Atalho de teclado de tela (setas, Delete, Ctrl+Z…) só vale com o foco fora
+// de campo e sem janela aberta por cima: senão a tecla de quem está digitando
+// ou mexendo num painel mexe no que está escondido atrás dele.
+export function teclaLivre() {
+  const a = document.activeElement;
+  if (a && (['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName) || a.isContentEditable)) return false;
+  return !document.body.classList.contains('com-modal');
+}
+
+// Ângulo em graus de volta para -180..180, para girar além de meia volta
+// sem travar na ponta.
+export const anguloNormal = (g) => ((((g + 180) % 360) + 360) % 360) - 180;
+
+// Toque (dedo) em vez de mouse: muda o texto das dicas ("Toque" × "Clique").
+export const ehToque = () => matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+// Pegar uma peça no palco tira o foco do campo onde se estava digitando
+// (busca, nome...): o pointerdown da peça faz preventDefault, então o foco
+// ficaria lá e os atalhos (Delete, setas) não chegariam na peça.
+export function soltarCampo() {
+  const a = document.activeElement;
+  if (a && a !== document.body && (['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName) || a.isContentEditable)) a.blur();
+}

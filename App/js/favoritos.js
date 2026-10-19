@@ -32,6 +32,8 @@ export function estrelaFavorito(tipo, id, aoMudar) {
     title: ligada
       ? `No seu perfil — clique para tirar`
       : `Mostrar ${nome.toLowerCase()} no seu perfil`,
+    'aria-label': ligada ? `Tirar ${nome.toLowerCase()} do seu perfil` : `Mostrar ${nome.toLowerCase()} no seu perfil`,
+    'aria-pressed': String(ligada),
     onclick: (e) => {
       // A estrela fica dentro de uma linha clicável: o clique dela para aqui,
       // senão favoritar também abriria o item.

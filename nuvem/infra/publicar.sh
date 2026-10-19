@@ -93,6 +93,13 @@ if [ -d "$APP/assets/icones" ]; then
     --cache-control 'public, max-age=86400' --content-type 'image/svg+xml' --exclude '*' --include '*.svg'
 fi
 
+# Fontes da Colagem (etiqueta e assinatura): as mesmas em todo aparelho e no
+# PNG exportado. Nome fixo; um dia no cache, como os ícones.
+if [ -d "$APP/assets/fontes" ]; then
+  aws s3 sync "$APP/assets/fontes" "s3://$SITE/assets/fontes" --delete \
+    --cache-control 'public, max-age=86400' --content-type 'font/woff2' --exclude '*' --include '*.woff2'
+fi
+
 if [ -d "$APP/assets/audio" ] && [ -n "$(ls -A "$APP/assets/audio" 2>/dev/null)" ]; then
   aws s3 sync "$APP/assets/audio" "s3://$SITE/assets/audio" --cache-control "$ETERNO"
 fi
