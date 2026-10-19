@@ -18,6 +18,7 @@ import { abrirEditar } from './editar.js';
 import { montarVitrine } from './vitrine.js';
 import { irPara } from './router.js';
 import { festejar } from './animacoes.js';
+import { rearrumar } from './movimento.js';
 import { vestirPeca } from './stylist.js';
 import { adicionar as soltarNaColagem } from './board.js';
 import { colecoesDaPeca, chipDaColecao, abrirColecao } from './colecoes.js';
@@ -150,7 +151,9 @@ function montarSeletorDeAgrupamento() {
 }
 
 function montarSeletorDeOrdem() {
-  $('#closet-ordem').replaceChildren(seletorDeOrdem(() => carregarCategoria(categoriaAtual)));
+  // Trocar a ordem desliza cada peça para o lugar novo, em vez de recascatear.
+  $('#closet-ordem').replaceChildren(seletorDeOrdem(() =>
+    rearrumar($('#inventory-grid'), () => carregarCategoria(categoriaAtual))));
 }
 
 function montarRail() {
@@ -288,7 +291,7 @@ function criarSlot(peca) {
     class: `item-slot r-${peca.raridade}`,
     // Arrastar só reordena na "Minha ordem"; nos outros modos a ordem é calculada.
     draggable: manual() ? 'true' : 'false',
-    dataset: { id: peca.id },
+    dataset: { id: peca.id, flipId: peca.id },
     title: nomeDaPeca(cat) + ' · ' + r.nome,
     // No guarda-roupa a raridade é só cor: borda e fundo do slot. A aura fica
     // reservada para a loja, onde ela serve para a peça saltar no mural.
@@ -320,7 +323,7 @@ function criarSlot(peca) {
     slot.classList.remove('alvo');
     if (manual() && arrastando && arrastando !== peca.id) {
       db.reordenarInventario(arrastando, peca.id);
-      carregarCategoria(categoriaAtual, { manterPagina: true });
+      rearrumar($('#inventory-grid'), () => carregarCategoria(categoriaAtual, { manterPagina: true }));
     }
   });
   slot.addEventListener('dragend', () => {
