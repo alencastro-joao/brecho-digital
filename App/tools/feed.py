@@ -266,8 +266,10 @@ def publicar(eu_id, corpo):
 
     with banco() as con:
         existente = con.execute('SELECT * FROM posts WHERE id=?', (post_id,)).fetchone()
-        if existente:
+        if existente and corpo.get('atualizar') is not True:
             return _com_autores(con, [existente], eu_id)
+    if existente:
+        return _atualizar_post(eu_id, existente, corpo, tipo, nome)
 
     binario, extensao = _imagem(corpo.get('thumb'))
     impressao = hashlib.sha256(binario).hexdigest()[:10]
@@ -286,6 +288,31 @@ def publicar(eu_id, corpo):
              json.dumps(_origem(corpo.get('origem'), tipo)),
              json.dumps(_camadas(corpo.get('camadas'), tipo), separators=(',', ':'))))
         return _com_autores(con, [_ler(con, post_id)], eu_id)
+
+
+def _atualizar_post(eu_id, existente, corpo, tipo, nome):
+    """Como na Lambda: o dono troca imagem, nome, peças e camadas do post que
+    já existe; curtidas, comentários e a data ficam."""
+    if existente['autor'] != eu_id:
+        raise ErroDeConta('Só quem publicou pode atualizar.', 403)
+    post_id = existente['id']
+    binario, extensao = _imagem(corpo.get('thumb'))
+    impressao = hashlib.sha256(binario).hexdigest()[:10]
+    nome_arquivo = '%s-%s.%s' % (post_id, impressao, extensao)
+    os.makedirs(PASTA_THUMBS, exist_ok=True)
+    with open(os.path.join(PASTA_THUMBS, nome_arquivo), 'wb') as f:
+        f.write(binario)
+    with banco() as con:
+        con.execute('UPDATE posts SET nome=?, thumb=?, pecas=?, camadas=? WHERE id=?',
+                    (nome, 'assets/posts/' + nome_arquivo,
+                     json.dumps(_pecas(corpo.get('pecas'))),
+                     json.dumps(_camadas(corpo.get('camadas'), tipo), separators=(',', ':')),
+                     post_id))
+    antiga = existente['thumb'] or ''
+    caminho = os.path.join(PASTA, *antiga.split('/'))
+    if antiga != 'assets/posts/' + nome_arquivo and antiga.startswith('assets/posts/') and os.path.exists(caminho):
+        os.remove(caminho)
+    return _devolver(post_id, eu_id)
 
 
 def apagar(eu_id, post_id):

@@ -25,3 +25,6 @@
 @media (hover: none), (pointer: coarse) {
   .alca-mover:not([hidden]) { display: grid; }
 }
+/* Com uma janela aberta por cima (nome do look, confirmar...), a alça some:
+   o z-index alto a punha por cima do fundo escuro da janela. */
+body.com-modal .alca-mover { display: none !important; }

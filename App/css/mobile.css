@@ -495,9 +495,8 @@
   .view-stylist .st-historico { top: 10px; right: 10px; }
   .view-stylist .st-hist-btn { width: 40px; height: 38px; }
 
-  /* Nome do look em bloco; a "ASSINATURA" sai. */
+  /* Nome do look em bloco. */
   .view-stylist .stage-caption { width: 100%; }
-  .view-stylist .stage-sig { display: none; }
   .view-stylist #outfit-nome {
     max-width: none; height: 42px; padding: 0 12px;
     border: 2px solid var(--bloco-borda); border-radius: 11px; background: var(--bloco);
@@ -568,8 +567,8 @@
   .view-stylist .pal-item:hover { transform: none; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .07); }
   .view-stylist .pal-item.vestida { border-color: var(--tinta); }
   .view-stylist .pal-item.vestida::after {
-    top: 3px; right: 4px; width: 16px; height: 16px; border-radius: 50%;
-    display: grid; place-items: center; font-size: 9px;
+    top: 3px; right: 4px; width: 20px; height: 20px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 11px;
     background: var(--stylist); border: 1.5px solid var(--tinta);
   }
   /* Como no closet: as peças corridas na ordem escolhida, sem os títulos de grupo. */
@@ -637,7 +636,7 @@
   }
   .view-stylist .stylist-tools:has(.tool-btn:disabled) { display: none; }
   /* Sem o pontilhado em volta da peça escolhida: as alças já mostram qual é. */
-  .view-stylist .camada.selecionada { outline: 0; }
+  .view-stylist .st-alcas .alcas-moldura { outline: 0; }
   .view-stylist #layer-tools > :not(.tool-row) { display: none; }
   .view-stylist #layer-tools .tool-row { flex-direction: column; flex-wrap: nowrap; gap: 5px; }
   .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 34px; font-size: 15px; }
@@ -1184,4 +1183,48 @@
     background: var(--perola); border: 2px solid var(--wii-borda);
     box-shadow: inset 0 -3px 0 var(--perola-degrau);
   }
+}
+
+/* ---------- Stylist e Colagem: revisão de 19/10/2026 ---------- */
+@media (max-width: 900px) {
+  /* Busca da paleta do Stylist: aparece com o ⇅, como o agrupar e a ordem. */
+  .view-stylist .stylist-palette { grid-template-rows: auto auto auto minmax(0, 1fr); }
+  .view-stylist .stylist-palette .pal-busca { grid-row: 3; grid-column: 1 / -1; display: none; }
+  .view-stylist .stylist-palette.abertas .pal-busca { display: block; }
+  .view-stylist .stylist-palette .pal-busca input {
+    height: 38px; border: 2px solid var(--bloco-borda); border-radius: 11px;
+    background: var(--bloco); font-size: 14px;
+  }
+  .view-stylist .palette-grid { grid-row: 4; }
+
+  /* Com peça escolhida, o ✓ salvar continua à vista em cima da barra de
+     tamanho: antes as ações sumiam até tocar fora da peça. */
+  .view-stylist:has(#st-tamanho:not([hidden])) .look-barra { display: flex; }
+  .view-stylist:has(#st-tamanho:not([hidden])) .look-barra > :not(#btn-salvar) { display: none; }
+  .view-stylist .st-tamanho:not([hidden]) { top: 56px; }
+  .view-stylist .st-tam-btn { width: 40px; height: 40px; }
+
+  /* Ferramentas da peça no celular: girar e trocar entram; os textos não. */
+  .view-stylist #layer-tools .tool-txt, .view-stylist .tool-dica { display: none; }
+
+  /* Barra da Colagem: botões de 40px (o "nova" fica no ▦, que já tem
+     "+ Nova colagem", e o Story no PC). */
+  .view-board :is(.board-bar .bar-btn, .rodape-acoes .acao-btn) { width: 38px; height: 40px; }
+  .view-board #bd-nova, .view-board [data-bd-export="story"] { display: none; }
+  .view-board .tool-check input { width: 22px; height: 22px; }
+  .view-board .tool-row.alinhar .tool-btn { height: 40px; }
+}
+
+/* Alças maiores para o dedo: o desenho é o mesmo, a área de toque cresce. */
+@media (pointer: coarse) {
+  .alcas-moldura .alca::before { content: ''; position: absolute; inset: -14px; border-radius: 50%; }
+  .alcas-moldura .alca { width: 20px; height: 20px; }
+  .alcas-moldura .alca-no, .alcas-moldura .alca-ne { top: -12px; }
+  .alcas-moldura .alca-so, .alcas-moldura .alca-se { bottom: -12px; }
+  .alcas-moldura .alca-no, .alcas-moldura .alca-so { left: -12px; }
+  .alcas-moldura .alca-ne, .alcas-moldura .alca-se { right: -12px; }
+}
+@media (max-width: 900px) {
+  .view-stylist #layer-tools .tool-grade { display: flex; }
+  .view-stylist #layer-tools .tool-grade .tool-btn { height: 34px; }
 }

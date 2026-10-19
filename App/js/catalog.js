@@ -107,6 +107,19 @@ export function nomeDaPeca(it) {
 }
 export const proporcao = (it) => (it.w && it.h ? it.w / it.h : 1);
 
+// Busca da paleta (Stylist e Colagem): nome, marca, cor, categoria ou o
+// número da tiragem da peça do guarda-roupa, sem ligar para acento nem caixa.
+const semAcento = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+export function pecaCombina(pecaInv, termo) {
+  const t = semAcento(termo).trim();
+  if (!t) return true;
+  const it = item(pecaInv.id);
+  if (!it) return false;
+  const textos = [nomeDaPeca(it), it.marca, it.cor, SINGULAR[it.cat],
+    pecaInv.numero != null ? `nº ${pecaInv.numero} ${pecaInv.numero}` : ''];
+  return textos.some(x => semAcento(x).includes(t));
+}
+
 // A imagem da peça vem em dois tamanhos: `src` (até 512 px, a das miniaturas)
 // e `srcG` (até 1280 px). Peça antiga ou subida pelo navegador só tem a `src`.
 //

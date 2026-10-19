@@ -782,11 +782,14 @@ export const BOARD = {
   },
 
   FONTES: [
-    { id: 'serif',   nome: 'Serifada',  css: "Georgia, 'Times New Roman', serif" },
-    { id: 'sans',    nome: 'Sem serifa', css: "'Segoe UI', Helvetica, Arial, sans-serif" },
-    { id: 'script',  nome: 'Manuscrita', css: "'Brush Script MT', 'Segoe Script', cursive" },
-    { id: 'display', nome: 'Display',    css: "Impact, 'Haettenschweiler', sans-serif" },
-    { id: 'mono',    nome: 'Máquina',    css: "Consolas, 'Courier New', monospace" },
+    // Fontes do próprio site (assets/fontes, @font-face em base.css): a
+    // etiqueta e a assinatura saem iguais no PC, no celular e no PNG. As do
+    // sistema ficam de reserva enquanto a fonte não chega.
+    { id: 'serif',   nome: 'Serifada',  css: "'BD Lora', Georgia, 'Times New Roman', serif" },
+    { id: 'sans',    nome: 'Sem serifa', css: "'BD Inter', 'Segoe UI', Helvetica, Arial, sans-serif" },
+    { id: 'script',  nome: 'Manuscrita', css: "'BD Caveat', 'Segoe Script', cursive" },
+    { id: 'display', nome: 'Display',    css: "'BD Anton', Impact, sans-serif" },
+    { id: 'mono',    nome: 'Máquina',    css: "'BD Courier Prime', Consolas, 'Courier New', monospace" },
   ],
 
   POSICOES_ASSINATURA: [

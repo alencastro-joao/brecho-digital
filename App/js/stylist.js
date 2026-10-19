@@ -8,18 +8,22 @@
 
 import { CONFIG, CATEGORIAS, RARIDADE, escalaGrade, ancoraDaPeca } from './config.js';
 import { doPadraoParaAtual, doAtualParaPadrao } from './proporcao.js';
-import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande } from './catalog.js';
+import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande, pecaCombina } from './catalog.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta, baixarLook } from './render.js';
-import { publicarOuGuardar, pacoteDoLook, jaPublicado, apagarDoFeedPorOrigem } from './publicacoes.js';
+import { publicarOuGuardar, publicarNoFeed, pacoteDoLook, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
-import { estrelaFavorito } from './favoritos.js';
-import { el, $, $$, clamp, toast } from './util.js';
+import { el, $, $$, clamp, toast, teclaLivre, anguloNormal, ehToque, soltarCampo } from './util.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
+import { camadaDeAlcas } from './alcas.js';
+import { ligarPinca } from './pinca.js';
+import { confirmar, pedirTexto } from './janela.js';
+import { criarDesfazer } from './desfazer.js';
+import { criarPainel, idNovo, nomeLivre } from './painelsalvos.js';
 import { animando, cairNoCorpo } from './movimento.js';
 
 let camadas = [];
@@ -29,15 +33,44 @@ let selecionado = null;
 let palcoSorteado = false;
 let lookAtualId = null;
 let catPaleta = 'todas';   // o grupo aberto; a paleta abre mostrando o guarda-roupa inteiro
+let buscaPaleta = '';
 let guiaLigado = false;
 let uidSeq = 1;
-// Desfazer/refazer: fotos do palco antes de cada mudança. Abrir outro look
-// zera as duas pilhas, como na Colagem.
-let historico = [], futuro = [];
+let painel = null;
+let alcas = null, pinca = null;
 
+const ESC_MIN = 0.2, ESC_MAX = 2.2;
 const stage = () => $('#stage');
 const unidades = (rect, px, eixo) =>
   eixo === 'x' ? px / rect.width * CONFIG.STAGE_W : px / rect.height * CONFIG.STAGE_H;
+const atual = () => camadas.find(c => c.uid === selecionado);
+const noDe = (c) => c && $(`.camada[data-uid="${c.uid}"]`);
+
+// Desfazer/refazer: fotos do palco antes de cada mudança. Abrir outro look
+// zera as duas pilhas, como na Colagem.
+const hist = criarDesfazer({
+  foto: () => JSON.stringify(camadas),
+  restaurar: (json) => {
+    camadas = JSON.parse(json);
+    if (!camadas.some(c => c.uid === selecionado)) selecionado = null;
+    palcoSorteado = false;
+    renderCamadas();
+    atualizarVestidas();
+  },
+  aoMudar: () => {
+    const d = $('#st-undo'), r = $('#st-redo');
+    if (d) d.disabled = !hist.podeDesfazer();
+    if (r) r.disabled = !hist.podeRefazer();
+  },
+});
+
+// Toda mudança feita à mão passa por aqui: entra no histórico (junto, se for
+// um gesto contínuo) e o palco deixa de ser "o sorteado", então gerar de novo
+// volta a perguntar antes de jogar o trabalho fora.
+function mudanca(gesto = null) {
+  palcoSorteado = false;
+  if (gesto) hist.marcarJunto(gesto); else hist.marcar();
+}
 
 // --- Montagem -------------------------------------------------------------
 export function montarStylist() {
@@ -45,45 +78,83 @@ export function montarStylist() {
   montarPaleta();
   ligarFerramentas();
   renderCamadas();
-  renderSalvos();
+  hist.zerar();
   montarMeusStylists();
+
+  alcas = camadaDeAlcas(stage(), {
+    classe: 'st-alcas',
+    aoPegar: (e, uid) => {
+      const c = camadas.find(k => k.uid === uid);
+      if (c) iniciarManipulacao(e, c, noDe(c));
+    },
+  });
+  pinca = ligarPinca(stage(), {
+    comecar: () => {
+      const c = atual();
+      if (!c) return null;
+      mudanca();
+      return { c, escala: c.escala, rot: c.rot };
+    },
+    mudar: (s, fator, graus) => {
+      s.c.escala = clamp(s.escala * fator, ESC_MIN, ESC_MAX);
+      s.c.rot = Math.round(anguloNormal(s.rot + graus));
+      posicionar(s.c);
+      atualizarFerramentas();
+    },
+  });
 
   // ⇅ (só no celular): mostra e esconde o agrupar e a ordem da paleta.
   $('#palette-ajustes').addEventListener('click', (e) => {
     const aberto = $('.stylist-palette').classList.toggle('abertas');
     e.currentTarget.setAttribute('aria-expanded', String(aberto));
   });
+  $('#palette-busca').addEventListener('input', (e) => {
+    buscaPaleta = e.target.value;
+    montarPaleta();
+  });
 
   stage().addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.camada')) return;
+    if (e.target.closest('.camada, .alcas-moldura, .alca-mover, .st-troca')) return;
+    fecharTroca();
     selecionar(null);
   });
 
   // Ctrl+Z desfaz; Ctrl+Y ou Ctrl+Shift+Z refaz.
   document.addEventListener('keydown', (e) => {
-    if (document.body.dataset.view !== 'stylist' || !(e.ctrlKey || e.metaKey)) return;
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
-    if (!$('#modal-meus')?.hidden) return;
+    if (document.body.dataset.view !== 'stylist' || !(e.ctrlKey || e.metaKey) || !teclaLivre()) return;
     const k = e.key.toLowerCase();
-    if (k === 'z') { e.preventDefault(); e.shiftKey ? refazer() : desfazer(); }
-    else if (k === 'y') { e.preventDefault(); refazer(); }
+    if (k === 'z') { e.preventDefault(); e.shiftKey ? hist.refazer() : hist.desfazer(); }
+    else if (k === 'y') { e.preventDefault(); hist.refazer(); }
   });
 
+  // Com uma peça escolhida: setas movem (Shift: passo maior), R / Shift+R
+  // giram 15°, + e − mudam o tamanho, Delete tira, Esc solta a escolha.
   document.addEventListener('keydown', (e) => {
-    if (document.body.dataset.view !== 'stylist' || !selecionado) return;
-    if (e.ctrlKey || e.metaKey) return;
-    if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-    const c = camadas.find(c => c.uid === selecionado);
+    if (document.body.dataset.view !== 'stylist' || !teclaLivre()) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const c = atual();
     if (!c) return;
     const passo = e.shiftKey ? 12 : 3;
-    if (e.key.startsWith('Arrow')) marcarJunto('setas');
-    if (e.key === 'ArrowLeft')  { c.x -= passo; e.preventDefault(); }
-    else if (e.key === 'ArrowRight') { c.x += passo; e.preventDefault(); }
-    else if (e.key === 'ArrowUp')    { c.y -= passo; e.preventDefault(); }
-    else if (e.key === 'ArrowDown')  { c.y += passo; e.preventDefault(); }
-    else if (e.key === 'Delete' || e.key === 'Backspace') { remover(c.uid); return; }
-    else return;
+    const mover = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] }[e.key];
+    if (mover) {
+      e.preventDefault();
+      mudanca('setas');
+      c.x = clamp(c.x + mover[0], -80, CONFIG.STAGE_W + 80);
+      c.y = clamp(c.y + mover[1], -80, CONFIG.STAGE_H + 80);
+    } else if (e.key === 'r' || e.key === 'R') {
+      mudanca('girar');
+      c.rot = Math.round(anguloNormal(c.rot + (e.shiftKey ? -15 : 15)));
+    } else if (e.key === '+' || e.key === '=' || e.key === '-') {
+      mudanca('escala');
+      c.escala = clamp(c.escala * (e.key === '-' ? 0.94 : 1.06), ESC_MIN, ESC_MAX);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      return remover(c.uid);
+    } else if (e.key === 'Escape') {
+      return selecionar(null);
+    } else return;
     posicionar(c);
+    atualizarFerramentas();
   });
 }
 
@@ -112,17 +183,24 @@ function montarPaleta() {
   abas.innerHTML = '';
 
   // Primeira aba: o guarda-roupa inteiro, como no rail do closet.
+  const total = db.state.inventario.length;
   abas.append(el('button', {
+    type: 'button',
     class: 'pal-cat todas' + (catPaleta === 'todas' ? ' active' : ''),
     title: 'Todas as peças',
+    'aria-label': `Todas as peças, ${total}`,
+    'aria-pressed': String(catPaleta === 'todas'),
     onclick: () => { catPaleta = 'todas'; montarPaleta(); },
-  }, ico('brilho'), el('small', {}, String(db.state.inventario.length))));
+  }, ico('brilho'), el('small', {}, String(total))));
 
   for (const g of grupos) {
     if (!g.qtd) continue;
     abas.append(el('button', {
+      type: 'button',
       class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
       title: g.nome,
+      'aria-label': `${g.nome}, ${g.qtd}`,
+      'aria-pressed': String(g.id === catPaleta),
       onclick: () => { catPaleta = g.id; montarPaleta(); },
     }, emo(g.icone), el('small', {}, String(g.qtd))));
   }
@@ -130,92 +208,54 @@ function montarPaleta() {
   const grid = $('#palette-grid');
   grid.innerHTML = '';
   const pecas = ordenar(db.state.inventario
-    .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta));
+    .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta)
+    .filter(p => pecaCombina(p, buscaPaleta)));
 
-  if (!db.state.inventario.length) {
+  if (!total) {
     grid.append(el('p', { class: 'palette-vazia' },
       'Seu guarda-roupa está vazio. Pegue peças na vitrine primeiro.'));
     return;
   }
   if (!pecas.length) {
-    grid.append(el('p', { class: 'palette-vazia' }, 'Nada nessa categoria ainda.'));
+    grid.append(el('p', { class: 'palette-vazia' },
+      buscaPaleta.trim() ? `Nenhuma peça com "${buscaPaleta.trim()}".` : 'Nada nessa categoria ainda.'));
     return;
   }
 
+  const acao = ehToque() ? 'toque' : 'clique';
   preencherComGrupos(grid, pecas, (p) => {
     const peca = pecaDoCatalogo(p.id);
     if (!peca) return null;
-    const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' });
+    const img = el('img', { src: peca.src, alt: '', loading: 'lazy' });
     aplicarContorno(img, peca);
-    const vestida = camadas.some(c => c.itemId === p.id);
     // A raridade pinta o bloco no celular, como na grade do closet.
     const r = RARIDADE[p.raridade] || RARIDADE.common;
+    const nome = nomeDaPeca(peca);
     return el('button', {
-      class: `pal-item r-${p.raridade || 'common'}` + (vestida ? ' vestida' : ''),
+      type: 'button',
+      class: `pal-item r-${p.raridade || 'common'}`,
       style: { '--rar-borda': r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor },
-      title: vestida ? nomeDaPeca(peca) + ' — no palco (clique para tirar)' : nomeDaPeca(peca),
+      dataset: { id: p.id, nome, acao },
       onclick: () => vestirPeca(p.id),
     }, el('div', {
       class: 'peca-caixa',
       style: { '--esc': String(escalaGrade(peca)) },
     }, img));
   }, { categoriaAberta: catPaleta !== 'todas' });
+  atualizarVestidas();
 }
 
-// --- Desfazer / refazer ---------------------------------------------------
-const foto = () => JSON.stringify(camadas);
-
-function marcar() {
-  marcaAberta = null;
-  historico.push(foto());
-  if (historico.length > 60) historico.shift();
-  futuro.length = 0;
-  atualizarHistorico();
-}
-
-// Um gesto contínuo (setas seguidas, rodinha do mouse, arrastar um slider)
-// vira um passo só no histórico: marca na primeira vez e deixa o resto
-// passar até o gesto parar.
-let marcaAberta = null, marcaTimer = 0;
-function marcarJunto(tipo) {
-  clearTimeout(marcaTimer);
-  if (marcaAberta !== tipo) { marcar(); marcaAberta = tipo; }
-  marcaTimer = setTimeout(() => { marcaAberta = null; }, 700);
-}
-
-function restaurar(json) {
-  camadas = JSON.parse(json);
-  if (!camadas.some(c => c.uid === selecionado)) selecionado = null;
-  palcoSorteado = false;
-  renderCamadas();
-  montarPaleta();
-}
-
-function desfazer() {
-  if (!historico.length) return;
-  marcaAberta = null;
-  futuro.push(foto());
-  restaurar(historico.pop());
-  atualizarHistorico();
-}
-
-function refazer() {
-  if (!futuro.length) return;
-  marcaAberta = null;
-  historico.push(foto());
-  restaurar(futuro.pop());
-  atualizarHistorico();
-}
-
-function zerarHistorico() {
-  historico = []; futuro = []; marcaAberta = null;
-  atualizarHistorico();
-}
-
-function atualizarHistorico() {
-  const d = $('#st-undo'), r = $('#st-redo');
-  if (d) d.disabled = !historico.length;
-  if (r) r.disabled = !futuro.length;
+// Só a marca de "no palco" de cada botão da paleta: vestir ou tirar uma peça
+// não precisa refazer a paleta inteira (com 200 peças, pesava no celular).
+function atualizarVestidas() {
+  const noPalco = new Set(camadas.map(c => c.itemId));
+  for (const b of $$('#palette-grid .pal-item')) {
+    const vestida = noPalco.has(b.dataset.id);
+    b.classList.toggle('vestida', vestida);
+    b.setAttribute('aria-pressed', String(vestida));
+    b.title = vestida ? `${b.dataset.nome} — no palco (${b.dataset.acao} para tirar)` : b.dataset.nome;
+    b.setAttribute('aria-label', vestida ? `${b.dataset.nome}, no palco` : b.dataset.nome);
+  }
 }
 
 // --- Camadas --------------------------------------------------------------
@@ -225,14 +265,14 @@ function atualizarHistorico() {
 export function vestirPeca(itemId) {
   const peca = pecaDoCatalogo(itemId);
   if (!peca) return;
-  marcar();
-  palcoSorteado = false;
+  mudanca();
+  fecharTroca();
 
   if (camadas.some(c => c.itemId === itemId)) {
     camadas = camadas.filter(c => c.itemId !== itemId);
     if (!camadas.some(c => c.uid === selecionado)) selecionado = null;
     renderCamadas();
-    montarPaleta();
+    atualizarVestidas();
     return;
   }
 
@@ -253,55 +293,64 @@ export function vestirPeca(itemId) {
     z: anterior ? anterior.z : a.z,
   };
   camadas.push(camada);
+  selecionado = camada.uid;
   renderCamadas();
-  selecionar(camada.uid);
-  montarPaleta();
+  atualizarVestidas();
 }
 
-// As peças que já estavam no palco: só a que acabou de chegar cai no corpo.
-const jaNoPalco = new Set();
-
+// Atualiza o palco sem recriar quem já estava nele: só a peça que chegou
+// ganha um nó novo (e cai no corpo), as outras só se reposicionam.
 function renderCamadas() {
   const raiz = $('#stage-layers');
-  raiz.innerHTML = '';
+  const vivos = new Map($$('.camada', raiz).map(n => [n.dataset.uid, n]));
   for (const c of camadas) {
-    const no = criarCamadaDOM(c);
-    if (!jaNoPalco.has(c.uid)) {
-      no.classList.add('chegou');
-      if (animando()) {
-        no.classList.add('com-gsap');
-        cairNoCorpo(no.querySelector('img'));
-      }
+    let no = vivos.get(c.uid);
+    vivos.delete(c.uid);
+    if (no && no.dataset.item === c.itemId) {
+      posicionar(c, no);
+      continue;
+    }
+    no?.remove();
+    no = criarCamadaDOM(c);
+    no.classList.add('chegou');
+    if (animando()) {
+      no.classList.add('com-gsap');
+      cairNoCorpo(no.querySelector('img'));
     }
     raiz.append(no);
   }
-  jaNoPalco.clear();
-  for (const c of camadas) jaNoPalco.add(c.uid);
-  atualizarFerramentas();
+  for (const n of vivos.values()) n.remove();
+  marcarSelecao();
 }
 
 function criarCamadaDOM(c) {
   const peca = pecaDoCatalogo(c.itemId);
   // No palco a peça cresce na mão: vai a grande desde o começo.
-  const img = el('img', { src: srcGrande(peca), alt: nomeDaPeca(peca), draggable: 'false' });
+  const img = el('img', { src: srcGrande(peca), alt: '', draggable: 'false' });
   aplicarContorno(img, peca);
 
+  // Peça no palco também recebe foco (Tab): Enter ou espaço a escolhem, e
+  // aí as setas, R e +/− mexem nela.
   const no = el('div', {
-    class: 'camada' + (c.uid === selecionado ? ' selecionada' : ''),
-    dataset: { uid: c.uid },
-  }, img,
-    el('span', { class: 'alca alca-rot', dataset: { alca: 'rot' } }),
-    ...['no', 'ne', 'so', 'se'].map(q =>
-      el('span', { class: `alca alca-esc alca-${q}`, dataset: { alca: 'esc' } }))
-  );
+    class: 'camada',
+    tabindex: '0', role: 'button',
+    'aria-label': nomeDaPeca(peca),
+    dataset: { uid: c.uid, item: c.itemId },
+  }, img);
 
-  no.addEventListener('pointerdown', (e) => iniciarManipulacao(e, c, no));
+  no.addEventListener('pointerdown', (e) => {
+    const k = camadas.find(x => x.uid === no.dataset.uid);
+    if (k) iniciarManipulacao(e, k, no);
+  });
+  no.addEventListener('focus', () => { if (selecionado !== no.dataset.uid) selecionar(no.dataset.uid); });
+  no.addEventListener('dblclick', () => abrirTroca(no.dataset.uid));
   no.addEventListener('wheel', (e) => {
-    if (c.uid !== selecionado) return;
+    const k = camadas.find(x => x.uid === no.dataset.uid);
+    if (!k || k.uid !== selecionado) return;
     e.preventDefault();
-    marcarJunto('roda');
-    c.escala = clamp(c.escala * (e.deltaY < 0 ? 1.06 : 0.94), 0.2, 2.2);
-    posicionar(c);
+    mudanca('roda');
+    k.escala = clamp(k.escala * (e.deltaY < 0 ? 1.06 : 0.94), ESC_MIN, ESC_MAX);
+    posicionar(k);
     atualizarFerramentas();
   }, { passive: false });
 
@@ -310,10 +359,10 @@ function criarCamadaDOM(c) {
 }
 
 function posicionar(c, no = null) {
-  const alvo = no || $(`.camada[data-uid="${c.uid}"]`);
+  const alvo = no || noDe(c);
   if (!alvo) return;
   const peca = pecaDoCatalogo(c.itemId);
-  const larguraUnid = ancoraDaPeca(pecaDoCatalogo(c.itemId)).w * c.escala;
+  const larguraUnid = ancoraDaPeca(peca).w * c.escala;
   alvo.style.left = (c.x / CONFIG.STAGE_W * 100) + '%';
   alvo.style.top = (c.y / CONFIG.STAGE_H * 100) + '%';
   alvo.style.width = (larguraUnid / CONFIG.STAGE_W * 100) + '%';
@@ -323,9 +372,15 @@ function posicionar(c, no = null) {
   alvo.querySelector('img').style.transform = c.flip ? 'scaleX(-1)' : '';
 }
 
+// Segurar a peça parada (~½ s, no dedo) também abre a troca rápida.
+const SEGURAR_MS = 520;
+
 function iniciarManipulacao(e, c, no) {
+  if (!no || e.button > 0) return;
   e.preventDefault();
-  selecionar(c.uid);
+  soltarCampo();
+  if (selecionado !== c.uid) selecionar(c.uid);
+  fecharTroca();
 
   const rect = stage().getBoundingClientRect();
   const alca = e.target.dataset?.alca;
@@ -341,32 +396,38 @@ function iniciarManipulacao(e, c, no) {
   no.setPointerCapture(e.pointerId);
   no.classList.add('manipulando');
   let mexeu = false;   // só um clique para selecionar não entra no histórico
+  const segurar = !alca && e.pointerType === 'touch'
+    ? setTimeout(() => { if (!mexeu) { soltar(); abrirTroca(c.uid); } }, SEGURAR_MS) : 0;
 
   const mover = (ev) => {
-    if (!mexeu) { marcar(); mexeu = true; }
-    palcoSorteado = false;
+    if (pinca?.ativa()) return;
+    // Um tremor de dedo de 3px não é arrasto: não suja o histórico.
+    if (!mexeu && Math.hypot(ev.clientX - inicioPtr.x, ev.clientY - inicioPtr.y) < 3) return;
+    if (!mexeu) { mudanca(); mexeu = true; clearTimeout(segurar); }
     if (alca === 'esc') {
       const raio = Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y);
-      c.escala = clamp(inicial.escala * (raio / raio0), 0.2, 2.2);
+      c.escala = clamp(inicial.escala * (raio / raio0), ESC_MIN, ESC_MAX);
     } else if (alca === 'rot') {
       const ang = Math.atan2(ev.clientY - centro.y, ev.clientX - centro.x);
       let g = inicial.rot + (ang - ang0) * 180 / Math.PI;
       if (ev.shiftKey) g = Math.round(g / 15) * 15;
-      c.rot = Math.round(clamp(g, -180, 180));
+      c.rot = Math.round(anguloNormal(g));
     } else {
       c.x = clamp(inicial.x + unidades(rect, ev.clientX - inicioPtr.x, 'x'), -80, CONFIG.STAGE_W + 80);
       c.y = clamp(inicial.y + unidades(rect, ev.clientY - inicioPtr.y, 'y'), -80, CONFIG.STAGE_H + 80);
     }
-    posicionar(c);
-    atualizarFerramentas();
+    posicionar(c, no);
+    agendarFerramentas();
   };
 
-  const soltar = () => {
+  function soltar() {
+    clearTimeout(segurar);
     no.classList.remove('manipulando');
     no.removeEventListener('pointermove', mover);
     no.removeEventListener('pointerup', soltar);
     no.removeEventListener('pointercancel', soltar);
-  };
+    atualizarFerramentas();
+  }
 
   no.addEventListener('pointermove', mover);
   no.addEventListener('pointerup', soltar);
@@ -375,30 +436,77 @@ function iniciarManipulacao(e, c, no) {
 
 function selecionar(uid) {
   selecionado = uid;
-  $$('.camada').forEach(n => n.classList.toggle('selecionada', n.dataset.uid === uid));
+  marcarSelecao();
+}
+
+function marcarSelecao() {
+  $$('.camada').forEach(n => n.classList.toggle('selecionada', n.dataset.uid === selecionado));
   atualizarFerramentas();
 }
 
 function remover(uid) {
-  marcar();
+  mudanca();
   camadas = camadas.filter(c => c.uid !== uid);
   if (selecionado === uid) selecionado = null;
+  fecharTroca();
   renderCamadas();
-  montarPaleta();          // a peça volta a aparecer como "fora do palco"
+  atualizarVestidas();       // a peça volta a aparecer como "fora do palco"
 }
+
+// --- Troca rápida ---------------------------------------------------------
+// Duplo clique (ou segurar, no dedo) numa peça do palco: as outras peças da
+// mesma categoria aparecem ali do lado, e tocar numa troca sem voltar à paleta.
+function abrirTroca(uid) {
+  const c = camadas.find(k => k.uid === uid);
+  if (!c) return;
+  fecharTroca();
+  const outras = db.state.inventario
+    .filter(p => p.id !== c.itemId && pecaDoCatalogo(p.id)?.cat === c.cat);
+  const caixa = el('div', { class: 'st-troca', role: 'dialog', 'aria-label': 'Trocar por outra peça' },
+    el('p', { class: 'st-troca-titulo' }, outras.length
+      ? `Trocar ${CATEGORIAS[c.cat]?.nome?.toLowerCase() || 'peça'}` : 'Nenhuma outra peça dessa categoria'),
+    el('div', { class: 'st-troca-lista' }, outras.map(p => {
+      const peca = pecaDoCatalogo(p.id);
+      const img = el('img', { src: peca.src, alt: '' });
+      aplicarContorno(img, peca);
+      return el('button', {
+        type: 'button', class: 'st-troca-item', title: nomeDaPeca(peca), 'aria-label': nomeDaPeca(peca),
+        onclick: () => trocarPor(uid, p.id),
+      }, img);
+    })));
+  stage().append(caixa);
+  caixa.querySelector('button')?.focus();
+}
+
+function trocarPor(uid, itemId) {
+  const c = camadas.find(k => k.uid === uid);
+  const peca = pecaDoCatalogo(itemId);
+  if (!c || !peca) return;
+  mudanca();
+  // A nova fica onde a outra estava (lugar, giro e camada), com o tamanho
+  // da âncora dela.
+  Object.assign(c, { uid: 'c' + (uidSeq++), itemId, cat: peca.cat });
+  selecionado = c.uid;
+  fecharTroca();
+  renderCamadas();
+  atualizarVestidas();
+}
+
+function fecharTroca() { $('.st-troca')?.remove(); }
 
 // --- Ferramentas ----------------------------------------------------------
 function ligarFerramentas() {
   $$('#layer-tools .tool-btn').forEach(btn => btn.addEventListener('click', () => {
-    const c = camadas.find(c => c.uid === selecionado);
+    const c = atual();
     if (!c) return;
     const act = btn.dataset.act;
     if (act === 'del') return remover(c.uid);
-    marcar();
-    palcoSorteado = false;
+    if (act === 'trocar') return abrirTroca(c.uid);
+    mudanca();
     if (act === 'up')   c.z = Math.min(999, c.z + 1);
     if (act === 'down') c.z = Math.max(1, c.z - 1);
     if (act === 'flip') c.flip = !c.flip;
+    if (act === 'girar') c.rot = Math.round(anguloNormal(c.rot + 15));
     if (act === 'reset') {
       const a = ancoraDaPeca(pecaDoCatalogo(c.itemId));
       Object.assign(c, { x: a.x, y: a.y, escala: 1, rot: 0, flip: false, z: a.z });
@@ -409,10 +517,10 @@ function ligarFerramentas() {
 
   // O tamanho tem duas barras: a do painel (PC) e a em pé no palco (celular).
   const mudarEscala = (valor) => {
-    const c = camadas.find(c => c.uid === selecionado);
+    const c = atual();
     if (!c) return;
-    marcarJunto('escala');
-    c.escala = clamp(valor / 100, 0.2, 2.2);
+    mudanca('escala');
+    c.escala = clamp(valor / 100, ESC_MIN, ESC_MAX);
     posicionar(c);
     atualizarFerramentas();
   };
@@ -420,29 +528,31 @@ function ligarFerramentas() {
   $('#sld-escala-vert').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
   // + e − dão um passo de 10% de cada vez, para ajustar sem arrastar.
   $$('.st-tam-btn').forEach(b => b.addEventListener('click', () => {
-    const c = camadas.find(c => c.uid === selecionado);
+    const c = atual();
     if (c) mudarEscala(Math.round(c.escala * 100) + 10 * Number(b.dataset.tam));
   }));
   $('#sld-rot').addEventListener('input', (e) => {
-    const c = camadas.find(c => c.uid === selecionado);
+    const c = atual();
     if (!c) return;
-    marcarJunto('rot');
+    mudanca('rot');
     c.rot = Number(e.target.value);
     posicionar(c);
+    agendarFerramentas();
   });
 
   $('#btn-limpar').addEventListener('click', () => {
-    if (camadas.length) marcar();
+    if (camadas.length) hist.marcar();
     limparPalco({ manterHistorico: true });
   });
-  $('#st-undo').addEventListener('click', desfazer);
-  $('#st-redo').addEventListener('click', refazer);
+  $('#st-undo').addEventListener('click', () => hist.desfazer());
+  $('#st-redo').addEventListener('click', () => hist.refazer());
   $('#btn-apagar-look').addEventListener('click', () => {
-    if (lookAtualId) apagarLook(lookAtualId);
+    if (lookAtualId) painel.apagar(lookAtualId);
   });
   $('#btn-guia').addEventListener('click', (e) => {
     guiaLigado = !guiaLigado;
     e.currentTarget.classList.toggle('ativo', guiaLigado);
+    e.currentTarget.setAttribute('aria-pressed', String(guiaLigado));
     desenharAvatar();
   });
   $('#btn-sortear').addEventListener('click', gerarLook);
@@ -452,9 +562,15 @@ function ligarFerramentas() {
   $$('[data-export]').forEach(b => b.addEventListener('click', async () => {
     if (!camadas.length) return toast('Monte um look antes de exportar.', 'aviso');
     b.disabled = true;
-    await baixarLook(estruturaLimpa(), b.dataset.export, $('#outfit-nome').value.trim() || 'meu look');
-    b.disabled = false;
-    toast('PNG gerado. Confere os downloads.');
+    try {
+      await baixarLook(estruturaLimpa(), b.dataset.export, $('#outfit-nome').value.trim());
+      toast('PNG gerado. Confere os downloads.');
+    } catch (err) {
+      console.warn('exportar look', err);
+      toast('Não consegui gerar o PNG agora. Tente de novo.', 'aviso');
+    } finally {
+      b.disabled = false;
+    }
   }));
 }
 
@@ -476,16 +592,18 @@ function ligarMenusDaBarra() {
   $$('#look-barra .lb-menu button').forEach(i => i.addEventListener('click', fechar));
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#look-barra .lb-menu')) fechar();
+    if (!e.target.closest('.st-troca, .camada, [data-act="trocar"]')) fecharTroca();
   });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fechar(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { fechar(); fecharTroca(); } });
 }
 
 function limparPalco({ manterHistorico = false } = {}) {
   camadas = []; selecionado = null; lookAtualId = null; palcoSorteado = false;
   $('#outfit-nome').value = '';
-  if (!manterHistorico) zerarHistorico();
+  if (!manterHistorico) hist.zerar();
+  fecharTroca();
   renderCamadas();
-  montarPaleta();
+  atualizarVestidas();
   renderSalvos();
 }
 
@@ -493,18 +611,26 @@ function limparPalco({ manterHistorico = false } = {}) {
 // que arrastar a peça, só que sem o dedo em cima (celular).
 let alcaMov = null;
 function colocarAlcaMover(c) {
-  const noDe = (c) => c && $(`.camada[data-uid="${c.uid}"]`);
   alcaMov ??= alcaMover(stage(), (e) => {
-    const atual = camadas.find(k => k.uid === selecionado);
-    const no = noDe(atual);
-    if (no) iniciarManipulacao(e, atual, no);
+    const k = atual();
+    const no = noDe(k);
+    if (no) iniciarManipulacao(e, k, no);
   });
   alcaMov.colocar([noDe(c)]);
 }
 
+// Durante o arrasto as alças e os controles acompanham uma vez por quadro,
+// não a cada movimento do ponteiro.
+let quadro = 0;
+function agendarFerramentas() {
+  if (quadro) return;
+  quadro = requestAnimationFrame(() => { quadro = 0; atualizarFerramentas(); });
+}
+
 function atualizarFerramentas() {
-  const c = camadas.find(c => c.uid === selecionado);
+  const c = atual();
   colocarAlcaMover(c);
+  alcas?.sincronizar(c ? [{ uid: c.uid, no: noDe(c) }] : []);
   const temSelecao = Boolean(c);
   $('#tool-empty').hidden = temSelecao;
   $$('#layer-tools .tool-btn, #layer-tools input').forEach(n => { n.disabled = !temSelecao; });
@@ -515,7 +641,7 @@ function atualizarFerramentas() {
 }
 
 // Sorteia um look inteiro com as peças do guarda-roupa.
-export function gerarLook() {
+export async function gerarLook() {
   const acervo = db.state.inventario
     .map(p => pecaDoCatalogo(p.id))
     .filter(Boolean);
@@ -526,11 +652,12 @@ export function gerarLook() {
   }
   // Só pergunta se tem trabalho não sorteado no palco e nenhum look aberto.
   if (camadas.length && !palcoSorteado && !lookAtualId &&
-      !confirm('Trocar o que está no palco por um look sorteado?')) {
+      !await confirmar('Dá para voltar com ↶ desfazer.',
+        { titulo: 'Trocar o que está no palco por um look sorteado?', sim: 'Sortear' })) {
     return;
   }
 
-  if (camadas.length) marcar();
+  if (camadas.length) hist.marcar();
   const sorteadas = noAtual(camadasParaAvatar(sortearConjunto(acervo)));
   camadas = sorteadas.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
@@ -540,24 +667,40 @@ export function gerarLook() {
   lookAtualId = null;
   palcoSorteado = true;
 
+  fecharTroca();
   renderCamadas();
-  montarPaleta();
+  atualizarVestidas();
   renderSalvos();
-  toast(`Look sorteado com ${camadas.length} peças. Clique de novo para outro.`);
+  toast(`Look sorteado com ${camadas.length} peças. ${ehToque() ? 'Toque' : 'Clique'} de novo para outro.`);
 }
 
 // --- Looks salvos ---------------------------------------------------------
+// No celular o campo do nome não aparece no palco: o primeiro salvar pergunta
+// o nome numa janelinha, já com "Look N" escrito.
+async function nomeDoLook(novo) {
+  const campo = $('#outfit-nome');
+  const digitado = campo.value.trim();
+  if (digitado || !novo || campo.offsetParent !== null) return digitado || nomeLivre('Look', db.state.looks);
+  const nome = await pedirTexto('Dá para trocar depois em ▦.', {
+    titulo: 'Nome do look', sim: 'Salvar', valor: nomeLivre('Look', db.state.looks), max: 40,
+  });
+  if (nome === null) return null;
+  campo.value = nome.trim().slice(0, 40);
+  return campo.value || nomeLivre('Look', db.state.looks);
+}
+
 async function salvarLook({ silencioso = false } = {}) {
   if (!camadas.length) { toast('O palco está vazio.', 'aviso'); return null; }
-  const nome = $('#outfit-nome').value.trim() || `Look ${db.state.looks.length + 1}`;
+  let look = db.state.looks.find(l => l.id === lookAtualId);
+  const nome = await nomeDoLook(!look);
+  if (nome === null) return null;
   const thumb = await miniaturaAtual(estruturaLimpa());
 
-  let look = db.state.looks.find(l => l.id === lookAtualId);
   if (look) {
     Object.assign(look, { nome, camadas: estruturaLimpa(), thumb, editadoEm: new Date().toISOString() });
   } else {
     look = {
-      id: 'l' + Date.now(),
+      id: idNovo('l'),
       nome,
       criadoEm: new Date().toISOString(),
       camadas: estruturaLimpa(),
@@ -586,8 +729,18 @@ const noPadrao = (cs) => cs.map(c => ({ ...c, ...doAtualParaPadrao(regiaoDe(c), 
 async function publicarLook() {
   const look = await salvarLook({ silencioso: true });
   if (!look) return;
+
+  // Já está no feed: a versão nova substitui a imagem do post (curtidas e
+  // comentários ficam).
   if (look.publicado && jaPublicado('lookId', look.id)) {
-    return toast('Esse look já está no feed.', 'aviso');
+    if (!await confirmar('As curtidas e os comentários continuam.',
+      { titulo: 'Atualizar o post no feed com esta versão?', sim: 'Atualizar' })) return;
+    try {
+      await publicarNoFeed({ ...await pacoteDoLook(look), atualizar: true });
+      return toast('Post atualizado no feed.');
+    } catch (e) {
+      return toast(e.message || 'Não consegui atualizar o post agora.', 'aviso');
+    }
   }
 
   let onde;
@@ -608,9 +761,8 @@ async function publicarLook() {
     : 'Sem conexão: publicado só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
-// Os looks salvos moram só no painel "Meus stylists" (mais abaixo), aberto
-// pelo botão em cima do palco; aqui só se atualiza o número dele e o painel,
-// se estiver aberto.
+// Os looks salvos moram só no painel "Meus stylists", aberto pelo botão em
+// cima do palco; aqui só se atualiza o número dele e o painel, se aberto.
 function renderSalvos() {
   const total = db.state.looks.length;
   // "Apagar look salvo" no ⋯ só vale com um look salvo aberto no palco.
@@ -618,7 +770,7 @@ function renderSalvos() {
   if (apagar) apagar.disabled = !db.state.looks.some(l => l.id === lookAtualId);
   const qtd = $('#meus-qtd');
   if (qtd) qtd.textContent = total ? String(total) : '';
-  if (!$('#modal-meus')?.hidden) renderMeus();
+  painel?.render();
 }
 
 export function abrirLook(id) {
@@ -627,131 +779,16 @@ export function abrirLook(id) {
   lookAtualId = look.id;
   camadas = noAtual(look.camadas).map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
   selecionado = null;
+  palcoSorteado = false;
   $('#outfit-nome').value = look.nome;
-  zerarHistorico();
+  hist.zerar();
+  fecharTroca();
   renderCamadas();
-  montarPaleta();
+  atualizarVestidas();
   renderSalvos();
 }
 
 // --- Meus stylists -------------------------------------------------------
-// O painel com todos os looks salvos. No PC é um modal com uma grade de
-// cartões; no celular (mobile: ver stylist.css) ocupa a tela toda, duas
-// colunas. Cada cartão abre o look no palco para editar, e o ⋯ guarda o resto:
-// renomear, duplicar e apagar. A estrela é a mesma do resto do app.
-let msFiltro = 'todos';
-let msMenuAberto = null;      // id do look com o menu ⋯ aberto
-let msRenomeando = null;      // id do look com o nome virando campo
-
-const quandoDoLook = (l) => l.editadoEm || l.criadoEm || '';
-
-function ordenarLooks(looks, ordem) {
-  const lista = [...looks];
-  if (ordem === 'nome') return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  // Sem data (save muito antigo), vale a posição na lista: o último salvo é o mais novo.
-  const pos = new Map(looks.map((l, i) => [l.id, i]));
-  lista.sort((a, b) =>
-    quandoDoLook(b).localeCompare(quandoDoLook(a)) || pos.get(b.id) - pos.get(a.id));
-  return ordem === 'antigos' ? lista.reverse() : lista;
-}
-
-function dataCurta(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
-    .replace(/ de /g, ' ').replace('.', '');
-}
-
-function montarMeusStylists() {
-  const modal = $('#modal-meus');
-  if (!modal) return;
-  $('#btn-meus-stylists').addEventListener('click', abrirMeus);
-  $('#ms-fechar').addEventListener('click', fecharMeus);
-  $('#ms-novo').addEventListener('click', () => {
-    limparPalco();
-    fecharMeus();
-    toast('Palco limpo: monte o look novo e salve.');
-  });
-  $('#ms-busca').addEventListener('input', renderMeus);
-  $('#ms-ordem').addEventListener('change', renderMeus);
-  modal.addEventListener('pointerdown', (e) => { if (e.target === modal) fecharMeus(); });
-  // Clicar fora do ⋯ fecha o menu dele.
-  modal.addEventListener('click', (e) => {
-    if (msMenuAberto && !e.target.closest('.ms-menu, .ms-mais')) {
-      msMenuAberto = null;
-      renderMeus();
-    }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || modal.hidden || msRenomeando) return;
-    if (msMenuAberto) { msMenuAberto = null; renderMeus(); return; }
-    fecharMeus();
-  });
-}
-
-function abrirMeus() {
-  msMenuAberto = null;
-  msRenomeando = null;
-  $('#ms-busca').value = '';
-  $('#modal-meus').hidden = false;
-  document.body.classList.add('com-modal');
-  renderMeus();
-}
-
-function fecharMeus() {
-  $('#modal-meus').hidden = true;
-  document.body.classList.remove('com-modal');
-  msMenuAberto = null;
-  msRenomeando = null;
-}
-
-function renderMeus() {
-  const looks = db.state.looks;
-  const favs = looks.filter(l => l.favorito).length;
-  const noFeed = looks.filter(l => l.publicado).length;
-
-  $('#ms-sub').textContent = looks.length
-    ? `${looks.length} ${looks.length === 1 ? 'look salvo' : 'looks salvos'} · ${favs} de 3 no perfil`
-    : '';
-
-  const filtros = $('#ms-filtros');
-  filtros.replaceChildren(...[
-    ['todos', 'Todos', looks.length],
-    ['fav', [ico('estrela-cheia'), ' Favoritos'], favs],
-    ['feed', 'No feed', noFeed],
-  ].map(([id, nome, n]) => el('button', {
-    type: 'button',
-    class: 'ms-filtro' + (msFiltro === id ? ' ativo' : ''),
-    onclick: () => { msFiltro = id; renderMeus(); },
-  }, nome, el('small', {}, String(n)))));
-
-  const busca = $('#ms-busca').value.trim().toLocaleLowerCase('pt-BR');
-  const visiveis = ordenarLooks(looks, $('#ms-ordem').value).filter(l =>
-    (msFiltro === 'todos' || (msFiltro === 'fav' ? l.favorito : l.publicado)) &&
-    (!busca || l.nome.toLocaleLowerCase('pt-BR').includes(busca)));
-
-  const grade = $('#ms-grade');
-  grade.replaceChildren();
-  if (!looks.length) {
-    grade.append(el('div', { class: 'ms-vazio' },
-      el('strong', {}, 'Nenhum look salvo ainda'),
-      el('p', {}, 'Vista o avatar com as suas peças e toque em "Salvar look": ele aparece aqui.')));
-    return;
-  }
-  if (!visiveis.length) {
-    grade.append(el('div', { class: 'ms-vazio' },
-      el('p', {}, busca ? `Nenhum look com "${$('#ms-busca').value.trim()}".`
-        : msFiltro === 'fav' ? 'Nenhum favorito. Toque na ☆ de um look para ele ir para o seu perfil.'
-        : 'Nenhum look publicado no feed ainda.')));
-    return;
-  }
-  for (const l of visiveis) grade.append(cartaoDoLook(l));
-
-  const campo = grade.querySelector('.ms-renomear');
-  if (campo) { campo.focus(); campo.select(); }
-}
-
 // O cartão desenha o look com o personagem de agora (render.js), não a
 // miniatura do save: ela é de quando o look foi salvo e fica com o cabelo e o
 // corpo de antes. A do save só aparece se o desenho falhar.
@@ -769,127 +806,34 @@ function imagemDoCartao(l) {
   return vaga;
 }
 
-function cartaoDoLook(l) {
-  const aberto = l.id === lookAtualId;
-  const nPecas = l.camadas?.length || 0;
-
-  const nome = msRenomeando === l.id
-    ? el('input', {
-      class: 'ms-renomear', type: 'text', value: l.nome, maxlength: '40',
-      'aria-label': 'Novo nome do look',
-      onkeydown: (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
-        // Esc aqui só desiste do nome: não pode subir e fechar o painel.
-        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); msRenomeando = null; renderMeus(); }
-      },
-      onblur: (e) => { if (msRenomeando === l.id) renomearLook(l.id, e.currentTarget.value); },
-    })
-    : el('button', {
-      type: 'button', class: 'ms-nome', title: 'Renomear',
-      onclick: () => { msRenomeando = l.id; msMenuAberto = null; renderMeus(); },
-    }, l.nome);
-
-  const menu = msMenuAberto === l.id ? el('div', { class: 'ms-menu', role: 'menu' },
-    el('button', { type: 'button', role: 'menuitem', onclick: () => editarDoPainel(l.id) }, ico('editar'), ' Abrir e editar'),
-    el('button', {
-      type: 'button', role: 'menuitem',
-      onclick: () => { msRenomeando = l.id; msMenuAberto = null; renderMeus(); },
-    }, 'Aa Renomear'),
-    el('button', { type: 'button', role: 'menuitem', onclick: () => duplicarLook(l.id) }, ico('duplicar'), ' Duplicar'),
-    el('button', { type: 'button', role: 'menuitem', class: 'perigo', onclick: () => apagarLook(l.id) }, ico('lixo'), ' Excluir'),
-  ) : null;
-
-  return el('article', { class: 'ms-card' + (aberto ? ' aberto' : '') + (menu ? ' com-menu' : '') },
-    el('button', {
-      type: 'button', class: 'ms-thumb',
-      title: `Abrir "${l.nome}" no palco para editar`,
-      onclick: () => editarDoPainel(l.id),
+function montarMeusStylists() {
+  painel = criarPainel({
+    prefixo: 'ms',
+    botao: '#btn-meus-stylists',
+    modal: '#modal-meus',
+    lista: () => db.state.looks,
+    tipoFav: 'look',
+    origem: 'look',
+    campo: 'lookId',
+    prefixoId: 'l',
+    maxNome: 40,
+    feminino: false,
+    nomes: ['look', 'looks'],
+    lugar: 'no palco',
+    vazio: ['Nenhum look salvo ainda',
+      'Vista o avatar com as suas peças e toque em "Salvar look": ele aparece aqui.'],
+    abertoId: () => lookAtualId,
+    imagem: imagemDoCartao,
+    pecas: (l) => l.camadas?.length || 0,
+    abrir: abrirLook,
+    novo: async () => {
+      limparPalco();
+      toast('Palco limpo: monte o look novo e salve.');
     },
-      imagemDoCartao(l),
-      el('span', { class: 'ms-editar' }, ico('editar'), ' Editar'),
-      aberto ? el('span', { class: 'ms-selo' }, 'no palco') : null,
-      l.publicado ? el('span', { class: 'ms-selo feed' }, 'no feed') : null,
-    ),
-    el('div', { class: 'ms-fav' }, estrelaFavorito('look', l.id, renderSalvos)),
-    el('div', { class: 'ms-info' },
-      el('div', { class: 'ms-linha' },
-        nome,
-        el('button', {
-          type: 'button', class: 'ms-apagar', title: `Apagar "${l.nome}"`,
-          'aria-label': `Apagar "${l.nome}"`,
-          onclick: () => apagarLook(l.id),
-        }, ico('lixo')),
-        el('button', {
-          type: 'button', class: 'ms-mais', title: 'Mais opções',
-          'aria-haspopup': 'menu', 'aria-expanded': menu ? 'true' : 'false',
-          onclick: () => { msMenuAberto = msMenuAberto === l.id ? null : l.id; renderMeus(); },
-        }, ico('mais'))),
-      el('small', {}, [dataCurta(quandoDoLook(l)),
-        nPecas === 1 ? '1 peça' : `${nPecas} peças`].filter(Boolean).join(' · '))),
-    menu);
-}
-
-function editarDoPainel(id) {
-  abrirLook(id);
-  fecharMeus();
-  const look = db.state.looks.find(l => l.id === id);
-  if (look) toast(`"${look.nome}" no palco. Mexa e toque em "Salvar look".`);
-}
-
-function renomearLook(id, valor) {
-  msRenomeando = null;
-  const look = db.state.looks.find(l => l.id === id);
-  const nome = String(valor || '').trim().slice(0, 40);
-  if (look && nome && nome !== look.nome) {
-    look.nome = nome;
-    if (id === lookAtualId) $('#outfit-nome').value = nome;
-    db.salvar();
-    toast(`Renomeado para "${nome}".`);
-  }
-  renderSalvos();
-  renderMeus();
-}
-
-function duplicarLook(id) {
-  const orig = db.state.looks.find(l => l.id === id);
-  if (!orig) return;
-  const agora = new Date().toISOString();
-  // A cópia é um look novo: não herda a estrela (o perfil tem três vagas) nem
-  // o "no feed" — quem foi publicado foi o original.
-  const copia = {
-    ...structuredClone(orig),
-    id: 'l' + Date.now(),
-    nome: `${orig.nome} (cópia)`.slice(0, 40),
-    criadoEm: agora,
-    editadoEm: agora,
-    publicado: false,
-    favorito: false,
-  };
-  db.state.looks.push(copia);
-  msMenuAberto = null;
-  db.salvar();
-  renderSalvos();
-  renderMeus();
-  toast(`"${copia.nome}" criado.`);
-}
-
-function apagarLook(id) {
-  const look = db.state.looks.find(l => l.id === id);
-  if (!look) return;
-  msMenuAberto = null;
-  const aviso = `Excluir "${look.nome}"? Não dá para desfazer.` +
-    (jaPublicado('lookId', id) || look.publicado ? '\nO post dele sai do feed também.' : '');
-  if (!confirm(aviso)) { if (!$('#modal-meus').hidden) renderMeus(); return; }
-  db.state.looks.splice(db.state.looks.indexOf(look), 1);
-  // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.
-  if (id === lookAtualId) lookAtualId = null;
-  db.salvar();
-  renderSalvos();
-  if (!$('#modal-meus').hidden) renderMeus();
-  toast(`"${look.nome}" excluído.`);
-  apagarDoFeedPorOrigem('look', id).then(ok => {
-    db.salvar();
-    if (!ok) toast('Não consegui tirar o post do feed agora. Apague por lá.', 'aviso');
+    aoRenomear: (id, nome) => { if (id === lookAtualId) $('#outfit-nome').value = nome; },
+    // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.
+    aoApagar: (id) => { if (id === lookAtualId) lookAtualId = null; },
+    aoMudar: renderSalvos,
   });
 }
 

@@ -10,38 +10,49 @@
 import { BOARD, RARIDADE, escalaGrade, escalaMural } from './config.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
-         srcGrande } from './catalog.js';
+import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
+         srcGrande, pecaCombina } from './catalog.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
 import { miniaturaBoard, baixarBoard } from './render.js';
-import { publicarOuGuardar, pacoteDaColagem, jaPublicado, apagarDoFeedPorOrigem } from './publicacoes.js';
+import { publicarOuGuardar, publicarNoFeed, pacoteDaColagem, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
-import { estrelaFavorito } from './favoritos.js';
-import { el, $, $$, clamp, toast } from './util.js';
-import { confirmar } from './janela.js';
+import { el, $, $$, clamp, toast, teclaLivre, anguloNormal, ehToque, soltarCampo } from './util.js';
+import { confirmar, pedirTexto } from './janela.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
+import { camadaDeAlcas } from './alcas.js';
+import { ligarPinca } from './pinca.js';
+import { criarDesfazer } from './desfazer.js';
+import { criarPainel, idNovo, nomeLivre } from './painelsalvos.js';
 import { espalhar } from './movimento.js';
 
 const W = BOARD.W;
 
-let board = novaColagem();
+// A mesa nasce ao montar a tela (depois do login), não ao importar o módulo:
+// a assinatura padrão vem da conta de quem entrou.
+let board = null;
 let selecao = new Set();
 // No celular, selecionar uma peça no palco troca a paleta pelas ferramentas.
 // Peça recém-solta pela paleta já nasce selecionada, mas aí a paleta fica:
 // quem está soltando peças quer continuar soltando.
 let vemDaPaleta = false;
-let historico = [], futuro = [];
 let uidSeq = 1;
 let zoom = 1, ajustarSozinho = true;
 let catPaleta = 'todas', busca = '';
 let montado = false;
+let painel = null;
+let alcas = null, pinca = null;
+// A foto do que foi salvo (ou aberto) por último: "nova" só pergunta se a
+// mesa mudou desde então.
+let fotoSalva = '';
 
 const H = () => alturaDe(board.formato);
 const prancheta = () => $('#prancheta');
 const itemDe = (uid) => board.itens.find(i => i.uid === uid);
 const selecionados = () => board.itens.filter(i => selecao.has(i.uid));
+const livres = () => selecionados().filter(i => !i.travado);
+const noDoItem = (it) => prancheta().querySelector(`.pr-item[data-uid="${it.uid}"]`);
 const pxPorUnidade = () => (prancheta()?.getBoundingClientRect().width || 1) / W;
 
 // A colagem aceita dois tipos de item: peca (imagem) e etiqueta (texto).
@@ -49,6 +60,7 @@ const ehTexto = (it) => it.tipo === 'texto';
 const propDoItem = (it) => ehTexto(it)
   ? (it.w || 1) / (it.tamanho * 1.25)
   : proporcao(pecaDoCatalogo(it.itemId));
+const nomeDoItem = (it) => ehTexto(it) ? `Texto: ${it.texto}` : nomeDaPeca(pecaDoCatalogo(it.itemId));
 
 // Mede a etiqueta no mesmo referencial das unidades do board: como a medicao usa
 // a fonte em `tamanho` px, a largura ja sai em unidades.
@@ -75,31 +87,28 @@ function novaColagem() {
 }
 
 // --------------------------- Histórico (undo/redo) ------------------------
-function marcar() {
-  historico.push(JSON.stringify(board));
-  if (historico.length > 60) historico.shift();
-  futuro.length = 0;
-  atualizarBarra();
-}
-function desfazer() {
-  if (!historico.length) return;
-  futuro.push(JSON.stringify(board));
-  board = JSON.parse(historico.pop());
-  selecao.clear();
-  render();
-}
-function refazer() {
-  if (!futuro.length) return;
-  historico.push(JSON.stringify(board));
-  board = JSON.parse(futuro.pop());
-  selecao.clear();
-  render();
-}
+const hist = criarDesfazer({
+  foto: () => JSON.stringify(board),
+  restaurar: (json) => {
+    board = JSON.parse(json);
+    selecao.clear();
+    render();
+  },
+  aoMudar: () => atualizarBarra(),
+});
+// `gesto`: rodinha, setas e sliders viram um passo só enquanto duram.
+const mudanca = (gesto = null) => (gesto ? hist.marcarJunto(gesto) : hist.marcar());
+
+// O que conta para "mudou desde o último salvar": a mesa sem os uid.
+const fotoDaMesa = () => JSON.stringify(dadosLimpos());
+const temMudanca = () => board.itens.length > 0 && fotoDaMesa() !== fotoSalva;
 
 // =============================== Montagem ================================
 export function montarBoard() {
   if (montado) return;
   montado = true;
+  board ??= novaColagem();
+  fotoSalva = fotoDaMesa();
 
   preencherSelects();
   ligarControles();
@@ -108,6 +117,28 @@ export function montarBoard() {
   ligarTeclado();
   montarPaleta();
   montarMinhasColagens();
+
+  alcas = camadaDeAlcas(prancheta(), {
+    classe: 'bd-alcas',
+    aoPegar: (e, uid) => {
+      const it = itemDe(uid);
+      if (it) iniciarManipulacao(e, it, noDoItem(it));
+    },
+  });
+  pinca = ligarPinca(prancheta(), {
+    comecar: () => {
+      const alvos = livres();
+      if (!alvos.length) return null;
+      mudanca();
+      return { antes: fotoDosItens(alvos), centro: centroDe(alvos) };
+    },
+    mudar: (s, fator, graus) => {
+      transformarGrupo(s.antes, s.centro, { fator, graus });
+      s.antes.forEach(a => posicionarItem(a.ref));
+      agendarFerramentas();
+    },
+  });
+
   render();
 
   // Só no celular: ⇅ mostra o agrupar, a ordem e a busca da paleta, e ⚙ troca
@@ -123,6 +154,13 @@ export function montarBoard() {
 
   new ResizeObserver(() => { if (ajustarSozinho) encaixar(); })
     .observe($('#board-scroll'));
+
+  // As fontes da etiqueta chegam depois da primeira medida: mede de novo.
+  document.fonts?.ready.then(() => {
+    board.itens.filter(ehTexto).forEach(medirTexto);
+    posicionarTodos();
+    renderAssinatura();
+  });
 }
 
 function preencherSelects() {
@@ -155,15 +193,22 @@ function montarPaleta() {
   $('#board-ordem').replaceChildren(seletorDeOrdem(() => montarPaleta()));
 
   abas.append(el('button', {
+    type: 'button',
     class: 'pal-cat' + (catPaleta === 'todas' ? ' active' : ''),
+    title: 'Todas as peças',
+    'aria-label': `Todas as peças, ${total}`,
+    'aria-pressed': String(catPaleta === 'todas'),
     onclick: () => { catPaleta = 'todas'; montarPaleta(); },
   }, ico('brilho'), el('small', {}, String(total))));
 
   for (const g of grupos) {
     if (!g.qtd) continue;
     abas.append(el('button', {
+      type: 'button',
       class: 'pal-cat' + (g.id === catPaleta ? ' active' : ''),
       title: g.nome,
+      'aria-label': `${g.nome}, ${g.qtd}`,
+      'aria-pressed': String(g.id === catPaleta),
       onclick: () => { catPaleta = g.id; montarPaleta(); },
     }, emo(g.icone), el('small', {}, String(g.qtd))));
   }
@@ -178,22 +223,26 @@ function montarPaleta() {
 
   const pecas = ordenar(db.state.inventario
     .filter(p => catPaleta === 'todas' || grupoDe(p) === catPaleta)
-    .filter(p => !busca || p.id.includes(busca)));
+    .filter(p => pecaCombina(p, busca)));
 
   if (!pecas.length) {
-    grid.append(el('p', { class: 'palette-vazia' }, 'Nada aqui com esse filtro.'));
+    grid.append(el('p', { class: 'palette-vazia' },
+      busca.trim() ? `Nenhuma peça com "${busca.trim()}".` : 'Nada aqui com esse filtro.'));
     return;
   }
 
+  const acao = ehToque() ? 'toque' : 'clique';
   preencherComGrupos(grid, pecas, (p) => {
     const peca = pecaDoCatalogo(p.id);
     if (!peca) return null;
-    const img = el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' });
+    const img = el('img', { src: peca.src, alt: '', loading: 'lazy' });
     aplicarContorno(img, peca);
     // A raridade pinta o bloco no celular, como na grade do closet.
     const r = RARIDADE[p.raridade] || RARIDADE.common;
     return el('button', {
-      class: `pal-item r-${p.raridade || 'common'}`, title: nomeDaPeca(peca) + ' — clique para soltar',
+      type: 'button',
+      class: `pal-item r-${p.raridade || 'common'}`, title: `${nomeDaPeca(peca)} — ${acao} para soltar`,
+      'aria-label': `Soltar ${nomeDaPeca(peca)} na colagem`,
       style: { '--rar-borda': r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor },
       onclick: () => adicionar(p.id),
     }, el('div', {
@@ -204,34 +253,59 @@ function montarPaleta() {
 }
 
 // ============================== Peças no board ============================
+// O lugar mais vazio da área útil para uma caixa de w × h: testa uma grade de
+// casas e fica com a que menos encosta nas peças que já estão lá. Assim a
+// colagem nasce ocupada, e a 13ª peça não cai em cima da 1ª.
+function lugarLivre(w, h) {
+  const area = areaUtil(board, W, H());
+  const caixas = board.itens.map(i => caixaDoItem(i, propDoItem(i)));
+  const cols = 4, linhas = 5;
+  const cw = (area.x1 - area.x0) / cols, ch = (area.y1 - area.y0) / linhas;
+  let melhor = null;
+  for (let l = 0; l < linhas; l++) {
+    for (let c = 0; c < cols; c++) {
+      const x = clamp(area.x0 + cw * (c + 0.5), area.x0 + w / 2, area.x1 - w / 2);
+      const y = clamp(area.y0 + ch * (l + 0.5), area.y0 + h / 2, area.y1 - h / 2);
+      let encosta = 0;
+      for (const b of caixas) {
+        const dx = Math.min(x + w / 2, b.x + b.w / 2) - Math.max(x - w / 2, b.x - b.w / 2);
+        const dy = Math.min(y + h / 2, b.y + b.h / 2) - Math.max(y - h / 2, b.y - b.h / 2);
+        if (dx > 0 && dy > 0) encosta += dx * dy;
+      }
+      if (!melhor || encosta < melhor.encosta) melhor = { x, y, encosta };
+      if (melhor.encosta === 0) break;
+    }
+    if (melhor?.encosta === 0) break;
+  }
+  // Um empurrãozinho para não ficar tudo alinhado demais.
+  return {
+    x: melhor.x + (Math.random() - 0.5) * cw * 0.12,
+    y: melhor.y + (Math.random() - 0.5) * ch * 0.12,
+  };
+}
+
+const zDoTopo = () => Math.max(0, ...board.itens.map(i => i.z)) + 1;
+
 export function adicionar(itemId) {
   const peca = pecaDoCatalogo(itemId);
-  if (!peca) return;
-  marcar();
+  if (!peca || !board) return;
+  mudanca();
 
-  const escalaCat = escalaMural(peca);
-  // Cada peça nova cai na próxima casa de uma grade 3×N dentro do enquadramento,
-  // com um empurrãozinho aleatório — assim a colagem já nasce ocupada, não
-  // empilhada no meio.
   const area = areaUtil(board, W, H());
-  const cols = 3, linhas = 4;
-  const n = board.itens.length;
-  const c = n % cols, l = Math.floor(n / cols) % linhas;
-  const cw = (area.x1 - area.x0) / cols, ch = (area.y1 - area.y0) / linhas;
+  const w = Math.round(Math.min((area.x1 - area.x0) / 3.6, 240) * escalaMural(peca));
+  const { x, y } = lugarLivre(w, w / proporcao(peca));
 
   const it = {
     uid: 'b' + (uidSeq++),
     itemId,
     cat: peca.cat,
-    x: clamp(area.x0 + cw * (c + 0.5) + (Math.random() - 0.5) * cw * 0.22, area.x0, area.x1),
-    y: clamp(area.y0 + ch * (l + 0.5) + (Math.random() - 0.5) * ch * 0.22, area.y0, area.y1),
-    w: Math.round(Math.min(cw * 1.02, 300) * escalaCat),
+    x, y, w,
     rot: 0,
     flip: false,
     opacidade: 100,
     sombra: db.state.usuario.preferencias.sombra,
     travado: false,
-    z: (board.itens.at(-1)?.z ?? 0) + 1,
+    z: zDoTopo(),
   };
   board.itens.push(it);
   selecao = new Set([it.uid]);
@@ -239,37 +313,51 @@ export function adicionar(itemId) {
   render();
 }
 
-export function adicionarTexto() {
+// A etiqueta pergunta o texto na hora (no celular não há campo à vista) e
+// nasce num canto vazio da colagem.
+export async function adicionarTexto() {
   vemDaPaleta = false;
-  marcar();
-  const area = areaUtil(board, W, H());
+  const texto = await pedirTexto('Duplo clique na etiqueta muda o texto depois.',
+    { titulo: 'Texto da etiqueta', sim: 'Pôr na colagem', max: 60 });
+  if (!texto?.trim()) return;
+  mudanca();
   const it = {
     uid: 'b' + (uidSeq++),
     tipo: 'texto',
-    texto: 'texto',
+    texto: texto.trim(),
     fonte: board.assinatura.fonte,
     tamanho: 54,
     cor: '#1a1a1a',
-    x: (area.x0 + area.x1) / 2,
-    y: area.y0 + 40,
+    x: 0, y: 0,
     rot: 0,
     flip: false,
     opacidade: 100,
     sombra: false,       // texto com sombra costuma sujar; fica desligado
     travado: false,
-    z: (board.itens.at(-1)?.z ?? 0) + 1,
+    z: zDoTopo(),
   };
   medirTexto(it);
+  Object.assign(it, lugarLivre(it.w, it.tamanho * 1.25));
   board.itens.push(it);
   selecao = new Set([it.uid]);
   render();
-  setTimeout(() => $('#bd-texto')?.select(), 60);
+}
+
+async function editarTexto(it) {
+  if (!ehTexto(it) || it.travado) return;
+  const texto = await pedirTexto('', { titulo: 'Texto da etiqueta', sim: 'Trocar', valor: it.texto, max: 60 });
+  if (texto === null || !texto.trim() || texto.trim() === it.texto) return;
+  mudanca();
+  it.texto = texto.trim();
+  medirTexto(it);
+  posicionarItem(it);
+  atualizarFerramentas();
 }
 
 function removerSelecionados() {
-  const alvos = selecionados().filter(i => !i.travado);
+  const alvos = livres();
   if (!alvos.length) return;
-  marcar();
+  mudanca();
   const ids = new Set(alvos.map(i => i.uid));
   board.itens = board.itens.filter(i => !ids.has(i.uid));
   selecao.clear();
@@ -277,13 +365,18 @@ function removerSelecionados() {
 }
 
 function duplicarSelecionados() {
-  const alvos = selecionados();
+  const alvos = selecionados().sort((a, b) => a.z - b.z);
   if (!alvos.length) return;
-  marcar();
+  mudanca();
+  // A cópia de um grupo é um grupo novo; cada peça vai para o topo, na ordem.
+  const novosGrupos = new Map();
+  let z = zDoTopo();
   const novos = alvos.map(o => ({
     ...o, uid: 'b' + (uidSeq++),
     x: o.x + 40, y: o.y + 40,
-    z: (board.itens.at(-1)?.z ?? 0) + 1,
+    z: z++,
+    travado: false,
+    grupo: o.grupo ? (novosGrupos.get(o.grupo) ?? novosGrupos.set(o.grupo, 'g' + (uidSeq++)).get(o.grupo)) : undefined,
   }));
   board.itens.push(...novos);
   selecao = new Set(novos.map(i => i.uid));
@@ -292,7 +385,7 @@ function duplicarSelecionados() {
 
 // ================================ Desenho =================================
 function render() {
-  if (!prancheta()) return;
+  if (!prancheta() || !board) return;
   const alt = H();
   prancheta().style.setProperty('--ar', String(W / alt));
   $('#prancheta-wrap').style.width = larguraAlvo() + 'px';
@@ -331,15 +424,28 @@ function encaixar() {
   $('#prancheta-wrap').style.width = larguraAlvo() + 'px';
   renderReguas();
   renderAssinatura();
+  posicionarTodos();
   atualizarBarra();
 }
 
+// Reaproveita o nó de quem já estava na mesa (a imagem não carrega de novo);
+// só quem chegou ganha nó novo. A ordem no DOM segue o z.
 function renderItens() {
   const raiz = $('#pr-itens');
-  raiz.innerHTML = '';
+  const vivos = new Map($$('.pr-item', raiz).map(n => [n.dataset.uid, n]));
   for (const it of [...board.itens].sort((a, b) => a.z - b.z)) {
-    raiz.append(criarItemDOM(it));
+    let no = vivos.get(it.uid);
+    vivos.delete(it.uid);
+    if (!no || no.dataset.item !== (it.itemId || 'texto')) {
+      no?.remove();
+      no = criarItemDOM(it);
+    } else {
+      posicionarItem(it, no);
+    }
+    no.classList.toggle('selecionado', selecao.has(it.uid));
+    raiz.append(no);
   }
+  for (const n of vivos.values()) n.remove();
 }
 
 function criarItemDOM(it) {
@@ -349,35 +455,38 @@ function criarItemDOM(it) {
   } else {
     const peca = pecaDoCatalogo(it.itemId);
     // Na prancheta a peça cresce na mão: vai a grande desde o começo.
-    conteudo = el('img', { src: srcGrande(peca), alt: nomeDaPeca(peca), draggable: 'false' });
+    conteudo = el('img', { src: srcGrande(peca), alt: '', draggable: 'false' });
     aplicarContorno(conteudo, peca);
   }
 
+  // A peça recebe foco (Tab) e Enter ou espaço a escolhem; na etiqueta,
+  // Enter muda o texto.
   const no = el('div', {
-    class: 'pr-item' + (ehTexto(it) ? ' pr-item-texto' : '') +
-           (selecao.has(it.uid) ? ' selecionado' : '') +
-           (it.travado ? ' travado' : '') + (it.sombra ? ' com-sombra' : ''),
-    dataset: { uid: it.uid },
-  }, conteudo,
-    el('span', { class: 'pr-alca pr-alca-rot', dataset: { alca: 'rot' } }),
-    // Uma alça em cada quina: a conta é radial a partir do centro, então
-    // qualquer uma delas redimensiona igual.
-    ...['no', 'ne', 'so', 'se'].map(q =>
-      el('span', { class: `pr-alca pr-alca-esc pr-alca-${q}`, dataset: { alca: 'esc' } }))
-  );
+    class: 'pr-item' + (ehTexto(it) ? ' pr-item-texto' : ''),
+    tabindex: '0', role: 'button',
+    dataset: { uid: it.uid, item: it.itemId || 'texto' },
+  }, conteudo);
 
-  no.addEventListener('pointerdown', (e) => iniciarManipulacao(e, it, no));
+  const meu = () => itemDe(no.dataset.uid);
+  no.addEventListener('pointerdown', (e) => { const k = meu(); if (k) iniciarManipulacao(e, k, no); });
+  no.addEventListener('dblclick', () => { const k = meu(); if (k) editarTexto(k); });
+  no.addEventListener('focus', () => {
+    const k = meu();
+    if (k && !selecao.has(k.uid)) { selecao = new Set(doGrupo([k.uid])); marcarSelecaoNoDOM(); atualizarFerramentas(); }
+  });
+  no.addEventListener('keydown', (e) => {
+    const k = meu();
+    if (e.key === 'Enter' && k && ehTexto(k)) { e.preventDefault(); editarTexto(k); }
+  });
   no.addEventListener('wheel', (e) => {
-    if (!selecao.has(it.uid) || it.travado) return;
+    const k = meu();
+    if (!k || !selecao.has(k.uid) || k.travado) return;
     e.preventDefault();
-    marcar();
+    mudanca('roda');
     const f = e.deltaY < 0 ? 1.06 : 0.94;
-    for (const s of selecionados()) {
-      if (s.travado) continue;
-      if (ehTexto(s)) { s.tamanho = clamp(s.tamanho * f, 12, 260); medirTexto(s); }
-      else s.w = clamp(s.w * f, 40, 1000);
-    }
-    posicionarTodos();
+    const alvos = livres();
+    transformarGrupo(fotoDosItens(alvos), centroDe(alvos), { fator: f });
+    alvos.forEach(a => posicionarItem(a));
     atualizarFerramentas();
   }, { passive: false });
 
@@ -386,7 +495,7 @@ function criarItemDOM(it) {
 }
 
 function posicionarItem(it, no = null) {
-  const alvo = no || prancheta().querySelector(`.pr-item[data-uid="${it.uid}"]`);
+  const alvo = no || noDoItem(it);
   if (!alvo) return;
   const alt = H();
   if (ehTexto(it)) {
@@ -406,11 +515,12 @@ function posicionarItem(it, no = null) {
   alvo.style.transform = `translate(-50%, -50%) rotate(${it.rot}deg)`;
   alvo.classList.toggle('com-sombra', !!it.sombra);
   alvo.classList.toggle('travado', !!it.travado);
+  alvo.setAttribute('aria-label', nomeDoItem(it) + (it.travado ? ' (travada)' : ''));
   const arte = alvo.querySelector('img');
   if (arte) arte.style.transform = it.flip ? 'scaleX(-1)' : '';
 }
 
-const posicionarTodos = () => board.itens.forEach(i => posicionarItem(i));
+const posicionarTodos = () => board?.itens.forEach(i => posicionarItem(i));
 
 function renderAssinatura() {
   const caixa = $('#pr-assinatura');
@@ -455,13 +565,13 @@ function renderGuias() {
   board.guias.h.forEach((y, i) => {
     const g = el('div', { class: 'guia guia-h', style: { top: (y / alt * 100) + '%' } });
     g.addEventListener('pointerdown', (e) => arrastarGuia(e, 'h', i));
-    g.addEventListener('dblclick', () => { marcar(); board.guias.h.splice(i, 1); render(); });
+    g.addEventListener('dblclick', () => { mudanca(); board.guias.h.splice(i, 1); render(); });
     caixa.append(g);
   });
   board.guias.v.forEach((x, i) => {
     const g = el('div', { class: 'guia guia-v', style: { left: (x / W * 100) + '%' } });
     g.addEventListener('pointerdown', (e) => arrastarGuia(e, 'v', i));
-    g.addEventListener('dblclick', () => { marcar(); board.guias.v.splice(i, 1); render(); });
+    g.addEventListener('dblclick', () => { mudanca(); board.guias.v.splice(i, 1); render(); });
     caixa.append(g);
   });
 }
@@ -487,20 +597,61 @@ function renderReguas() {
 function unidadesX(rect, px) { return px / rect.width * W; }
 function unidadesY(rect, px) { return px / rect.height * H(); }
 
+// Peça de um grupo vem com o grupo inteiro.
+function doGrupo(uids) {
+  const grupos = new Set(uids.map(u => itemDe(u)?.grupo).filter(Boolean));
+  if (!grupos.size) return uids;
+  return [...new Set([...uids, ...board.itens.filter(i => grupos.has(i.grupo)).map(i => i.uid)])];
+}
+
+const fotoDosItens = (alvos) =>
+  alvos.map(s => ({ ref: s, x: s.x, y: s.y, w: s.w, rot: s.rot, tamanho: s.tamanho }));
+
+function centroDe(alvos) {
+  const n = alvos.length || 1;
+  return { x: alvos.reduce((t, a) => t + a.x, 0) / n, y: alvos.reduce((t, a) => t + a.y, 0) / n };
+}
+
+// Escala e giro do grupo em volta do centro dele: cada peça soma o giro ao
+// que já tinha (não fica todo mundo no mesmo ângulo) e se afasta ou se
+// aproxima do centro junto com o tamanho. Com uma peça só, o centro é ela.
+function transformarGrupo(antes, centro, { fator = 1, graus = 0 }) {
+  const rad = graus * Math.PI / 180;
+  const cos = Math.cos(rad), sin = Math.sin(rad);
+  // O limite de tamanho vale para o grupo inteiro, senão as peças se
+  // desencontrariam quando uma batesse no limite.
+  let f = fator;
+  for (const a of antes) {
+    if (ehTexto(a.ref)) f = clamp(f, 12 / (a.tamanho ?? 54), 260 / (a.tamanho ?? 54));
+    else f = clamp(f, 40 / a.w, 1000 / a.w);
+  }
+  for (const a of antes) {
+    const dx = (a.x - centro.x) * f, dy = (a.y - centro.y) * f;
+    a.ref.x = centro.x + dx * cos - dy * sin;
+    a.ref.y = centro.y + dx * sin + dy * cos;
+    a.ref.rot = Math.round(anguloNormal(a.rot + graus));
+    if (ehTexto(a.ref)) { a.ref.tamanho = (a.tamanho ?? 54) * f; medirTexto(a.ref); }
+    else a.ref.w = a.w * f;
+  }
+}
+
 function iniciarManipulacao(e, it, no) {
+  if (!no || e.button > 0) return;
   e.preventDefault();
+  soltarCampo();
   e.stopPropagation();
 
   const alca = e.target.dataset?.alca;
   // Tocar numa peça (mesmo a que acabou de cair da paleta) abre as ferramentas.
   if (vemDaPaleta) { vemDaPaleta = false; atualizarFerramentas(); }
   if (!selecao.has(it.uid)) {
-    if (e.shiftKey) selecao.add(it.uid);
-    else selecao = new Set([it.uid]);
+    const doMesmo = doGrupo([it.uid]);
+    if (e.shiftKey) doMesmo.forEach(u => selecao.add(u));
+    else selecao = new Set(doMesmo);
     marcarSelecaoNoDOM();
     atualizarFerramentas();
   } else if (e.shiftKey && !alca) {
-    selecao.delete(it.uid);
+    doGrupo([it.uid]).forEach(u => selecao.delete(u));
     marcarSelecaoNoDOM();
     atualizarFerramentas();
     return;
@@ -508,35 +659,41 @@ function iniciarManipulacao(e, it, no) {
   if (it.travado) return;
 
   const rect = prancheta().getBoundingClientRect();
+  const alvos = livres();
+  const antes = fotoDosItens(alvos);
+  // Girar e redimensionar contam a partir do centro do grupo escolhido.
+  const c = alca ? centroDe(alvos) : it;
   const centro = {
-    x: rect.left + (it.x / W) * rect.width,
-    y: rect.top + (it.y / H()) * rect.height,
+    x: rect.left + (c.x / W) * rect.width,
+    y: rect.top + (c.y / H()) * rect.height,
   };
   const raio0 = Math.hypot(e.clientX - centro.x, e.clientY - centro.y) || 1;
   const ang0 = Math.atan2(e.clientY - centro.y, e.clientX - centro.x);
   const inicio = { x: e.clientX, y: e.clientY };
-  const antes = selecionados().filter(s => !s.travado)
-    .map(s => ({ ref: s, x: s.x, y: s.y, w: s.w, rot: s.rot, tamanho: s.tamanho }));
+  const centroU = centroDe(alvos);
 
   let mexeu = false;
   no.setPointerCapture(e.pointerId);
   no.classList.add('arrastando');
 
   const mover = (ev) => {
-    if (!mexeu) { marcar(); mexeu = true; }
+    if (pinca?.ativa()) return;
+    // Um tremor de dedo de 3px não é arrasto: não suja o histórico.
+    if (!mexeu && Math.hypot(ev.clientX - inicio.x, ev.clientY - inicio.y) < 3) return;
+    if (!mexeu) { mudanca(); mexeu = true; }
 
     if (alca === 'esc') {
       const raio = Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y);
-      const f = clamp(raio / raio0, 0.1, 8);
-      for (const a of antes) {
-        if (ehTexto(a.ref)) { a.ref.tamanho = clamp((a.tamanho ?? 54) * f, 12, 260); medirTexto(a.ref); }
-        else a.ref.w = clamp(a.w * f, 40, 1000);
-      }
+      transformarGrupo(antes, centroU, { fator: clamp(raio / raio0, 0.1, 8) });
     } else if (alca === 'rot') {
       const ang = Math.atan2(ev.clientY - centro.y, ev.clientX - centro.x);
-      let g = antes[0].rot + (ang - ang0) * 180 / Math.PI;
-      if (ev.shiftKey) g = Math.round(g / 15) * 15;
-      for (const a of antes) a.ref.rot = Math.round(clamp(g, -180, 180));
+      let g = (ang - ang0) * 180 / Math.PI;
+      // Shift: a peça que se puxou para de 15 em 15°; o grupo gira junto.
+      if (ev.shiftKey) {
+        const base = antes.find(a => a.ref === it)?.rot ?? 0;
+        g = Math.round((base + g) / 15) * 15 - base;
+      }
+      transformarGrupo(antes, centroU, { graus: g });
     } else {
       let dx = unidadesX(rect, ev.clientX - inicio.x);
       let dy = unidadesY(rect, ev.clientY - inicio.y);
@@ -551,8 +708,8 @@ function iniciarManipulacao(e, it, no) {
         a.ref.y = clamp(a.y + dy, -200, H() + 200);
       }
     }
-    posicionarTodos();
-    atualizarFerramentas();
+    antes.forEach(a => posicionarItem(a.ref));
+    agendarFerramentas();
   };
 
   const soltar = () => {
@@ -561,6 +718,7 @@ function iniciarManipulacao(e, it, no) {
     no.removeEventListener('pointermove', mover);
     no.removeEventListener('pointerup', soltar);
     no.removeEventListener('pointercancel', soltar);
+    atualizarFerramentas();
   };
 
   no.addEventListener('pointermove', mover);
@@ -638,7 +796,7 @@ function marcarSelecaoNoDOM() {
 // ------------------------------- Laço ------------------------------------
 function ligarPalco() {
   prancheta().addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.pr-item') || e.target.closest('.guia')) return;
+    if (e.target.closest('.pr-item, .guia, .alcas-moldura, .alca-mover')) return;
     const rect = prancheta().getBoundingClientRect();
     const alt = H();
     const ini = {
@@ -649,10 +807,9 @@ function ligarPalco() {
     if (!e.shiftKey) { selecao.clear(); marcarSelecaoNoDOM(); atualizarFerramentas(); }
 
     const laco = $('#pr-marquee');
-    let arrastou = false;
 
     const mover = (ev) => {
-      arrastou = true;
+      if (pinca?.ativa()) return;
       const p = {
         x: clamp(unidadesX(rect, ev.clientX - rect.left), 0, W),
         y: clamp(unidadesY(rect, ev.clientY - rect.top), 0, alt),
@@ -664,26 +821,32 @@ function ligarPalco() {
         left: (x0 / W * 100) + '%', top: (y0 / alt * 100) + '%',
         width: ((x1 - x0) / W * 100) + '%', height: ((y1 - y0) / alt * 100) + '%',
       });
+      const pegos = [];
       for (const it of board.itens) {
         const c = caixaDoItem(it, propDoItem(it));
         const cruza = c.x + c.w / 2 > x0 && c.x - c.w / 2 < x1 &&
                       c.y + c.h / 2 > y0 && c.y - c.h / 2 < y1;
-        if (cruza) selecao.add(it.uid);
+        if (cruza) pegos.push(it.uid);
         else if (!ev.shiftKey) selecao.delete(it.uid);
       }
+      doGrupo(pegos).forEach(u => selecao.add(u));
       marcarSelecaoNoDOM();
-      atualizarFerramentas();
+      agendarFerramentas();
     };
 
+    // pointercancel também: o sistema pode tomar o toque (notificação, gesto)
+    // e o laço não pode ficar preso na tela.
     const soltar = () => {
       laco.hidden = true;
       window.removeEventListener('pointermove', mover);
       window.removeEventListener('pointerup', soltar);
-      if (!arrastou) { /* clique simples no vazio: só limpa */ }
+      window.removeEventListener('pointercancel', soltar);
+      atualizarFerramentas();
     };
 
     window.addEventListener('pointermove', mover);
     window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', soltar);
   });
 }
 
@@ -695,7 +858,7 @@ function ligarReguas() {
 
 function criarGuiaArrastando(e, eixo) {
   e.preventDefault();
-  marcar();
+  mudanca();
   const rect = prancheta().getBoundingClientRect();
   const alt = H();
   if (eixo === 'h') board.guias.h.push(clamp(unidadesY(rect, e.clientY - rect.top), 0, alt));
@@ -707,7 +870,7 @@ function criarGuiaArrastando(e, eixo) {
 function arrastarGuia(e, eixo, idx) {
   e.preventDefault();
   e.stopPropagation();
-  marcar();
+  mudanca();
   seguirGuia(eixo, idx);
 }
 
@@ -724,6 +887,7 @@ function seguirGuia(eixo, idx) {
   const soltar = () => {
     window.removeEventListener('pointermove', mover);
     window.removeEventListener('pointerup', soltar);
+    window.removeEventListener('pointercancel', soltar);
     // Guia largada fora da colagem é descartada.
     const lista = eixo === 'h' ? board.guias.h : board.guias.v;
     const limite = eixo === 'h' ? alt : W;
@@ -732,26 +896,45 @@ function seguirGuia(eixo, idx) {
   };
   window.addEventListener('pointermove', mover);
   window.addEventListener('pointerup', soltar);
+  window.addEventListener('pointercancel', soltar);
 }
 
 // ============================== Ferramentas ===============================
+async function comecarNova() {
+  if (temMudanca() && !await confirmar('O que não foi salvo nesta colagem se perde.',
+    { titulo: 'Começar uma colagem nova?', sim: 'Começar' })) return false;
+  board = novaColagem();
+  selecao.clear();
+  hist.zerar();
+  fotoSalva = fotoDaMesa();
+  encaixar(); render();
+  return true;
+}
+
 function ligarControles() {
   const on = (sel, evt, fn) => $(sel).addEventListener(evt, fn);
 
-  on('#board-busca', 'input', (e) => { busca = e.target.value.trim(); montarPaleta(); });
+  on('#board-busca', 'input', (e) => { busca = e.target.value; montarPaleta(); });
 
   on('#bd-margem-val', 'input', (e) => {
+    mudanca('margem');
     board.margem = Number(e.target.value);
     renderMargem(); renderAssinatura();
   });
 
-  on('#bd-assinatura', 'input', (e) => { board.assinatura.texto = e.target.value; renderAssinatura(); });
-  on('#bd-fonte', 'change', (e) => { board.assinatura.fonte = e.target.value; renderAssinatura(); });
-  on('#bd-pos-assinatura', 'change', (e) => { board.assinatura.posicao = e.target.value; renderAssinatura(); });
-  on('#bd-tam-assinatura', 'input', (e) => { board.assinatura.tamanho = Number(e.target.value); renderAssinatura(); });
-  on('#bd-esp-assinatura', 'input', (e) => { board.assinatura.espaco = Number(e.target.value); renderAssinatura(); });
-  on('#bd-cor-assinatura', 'input', (e) => { board.assinatura.cor = e.target.value; renderAssinatura(); });
-  on('#bd-ver-assinatura', 'change', (e) => { board.assinatura.visivel = e.target.checked; renderAssinatura(); });
+  // A assinatura entra no desfazer como um passo por ajuste.
+  const assin = (campo, valor, gesto = 'assinatura') => {
+    mudanca(gesto);
+    board.assinatura[campo] = valor;
+    renderAssinatura();
+  };
+  on('#bd-assinatura', 'input', (e) => assin('texto', e.target.value, 'assinatura-texto'));
+  on('#bd-fonte', 'change', (e) => assin('fonte', e.target.value, null));
+  on('#bd-pos-assinatura', 'change', (e) => assin('posicao', e.target.value, null));
+  on('#bd-tam-assinatura', 'input', (e) => assin('tamanho', Number(e.target.value), 'assinatura-tam'));
+  on('#bd-esp-assinatura', 'input', (e) => assin('espaco', Number(e.target.value), 'assinatura-esp'));
+  on('#bd-cor-assinatura', 'input', (e) => assin('cor', e.target.value, 'assinatura-cor'));
+  on('#bd-ver-assinatura', 'change', (e) => assin('visivel', e.target.checked, null));
   on('#bd-salvar-assinatura', 'click', () => {
     db.state.usuario.assinatura = { ...board.assinatura };
     db.salvar();
@@ -764,8 +947,8 @@ function ligarControles() {
     $('#prancheta-wrap').classList.toggle('reguas-off', !e.target.checked);
   });
 
-  on('#bd-undo', 'click', desfazer);
-  on('#bd-redo', 'click', refazer);
+  on('#bd-undo', 'click', () => hist.desfazer());
+  on('#bd-redo', 'click', () => hist.refazer());
   $$('[data-zoom]').forEach(b => b.addEventListener('click', () => {
     const acao = b.dataset.zoom;
     if (acao === 'fit') return encaixar();
@@ -773,36 +956,50 @@ function ligarControles() {
     zoom = clamp(zoom * (acao === '+' ? 1.2 : 1 / 1.2), 0.3, 4);
     $('#prancheta-wrap').style.width = larguraAlvo() + 'px';
     renderAssinatura();
+    posicionarTodos();
     atualizarBarra();
+    atualizarFerramentas();
   }));
 
   $$('[data-bd]').forEach(b => b.addEventListener('click', () => acaoNaSelecao(b.dataset.bd)));
   $$('[data-arranjo]').forEach(b => b.addEventListener('click', () => arranjar(b.dataset.arranjo)));
+  $$('[data-alinhar]').forEach(b => b.addEventListener('click', () => alinhar(b.dataset.alinhar)));
 
   on('#bd-escala', 'input', (e) => {
+    const alvos = livres();
+    if (!alvos.length) return;
+    mudanca('escala');
     const v = Number(e.target.value) / 100 * W;
-    for (const it of selecionados()) {
-      if (it.travado) continue;
-      if (ehTexto(it)) { it.tamanho = clamp(v / 6, 12, 260); medirTexto(it); }
-      else it.w = v;
-    }
-    posicionarTodos();
+    // O slider diz o tamanho da primeira; as outras crescem na mesma conta.
+    const ref = alvos[0];
+    const atualRef = ehTexto(ref) ? ref.tamanho * 6 : ref.w;
+    transformarGrupo(fotoDosItens(alvos), centroDe(alvos), { fator: v / atualRef });
+    alvos.forEach(a => posicionarItem(a));
+    agendarFerramentas();
   });
   on('#bd-rot', 'input', (e) => {
-    for (const it of selecionados()) if (!it.travado) it.rot = Number(e.target.value);
-    posicionarTodos();
+    const alvos = livres();
+    if (!alvos.length) return;
+    mudanca('rot');
+    const delta = Number(e.target.value) - alvos[0].rot;
+    transformarGrupo(fotoDosItens(alvos), centroDe(alvos), { graus: delta });
+    alvos.forEach(a => posicionarItem(a));
+    agendarFerramentas();
   });
   on('#bd-opacidade', 'input', (e) => {
-    for (const it of selecionados()) if (!it.travado) it.opacidade = Number(e.target.value);
-    posicionarTodos();
+    const alvos = livres();
+    if (!alvos.length) return;
+    mudanca('opacidade');
+    for (const it of alvos) it.opacidade = Number(e.target.value);
+    alvos.forEach(a => posicionarItem(a));
   });
   // A sombra vale para a seleção e, ao mesmo tempo, fica gravada como padrão
   // das próximas peças — para não ter que reajustar a cada colagem.
   on('#bd-sombra', 'change', (e) => {
     const querSombra = e.target.checked;
-    if (selecionados().length) {
-      marcar();
-      for (const it of selecionados()) if (!it.travado) it.sombra = querSombra;
+    if (livres().length) {
+      mudanca();
+      for (const it of livres()) it.sombra = querSombra;
       posicionarTodos();
     }
     db.state.usuario.preferencias.sombra = querSombra;
@@ -811,76 +1008,143 @@ function ligarControles() {
 
   on('#bd-add-texto', 'click', adicionarTexto);
   on('#bd-texto', 'input', (e) => {
-    for (const it of selecionados()) {
-      if (!ehTexto(it) || it.travado) continue;
-      it.texto = e.target.value;
-      medirTexto(it);
-    }
-    posicionarTodos();
+    const alvos = livres().filter(ehTexto);
+    if (!alvos.length) return;
+    mudanca('texto');
+    for (const it of alvos) { it.texto = e.target.value; medirTexto(it); posicionarItem(it); }
+    agendarFerramentas();
   });
   on('#bd-texto-fonte', 'change', (e) => {
-    marcar();
-    for (const it of selecionados()) {
-      if (!ehTexto(it) || it.travado) continue;
-      it.fonte = e.target.value;
-      medirTexto(it);
-    }
-    posicionarTodos();
+    const alvos = livres().filter(ehTexto);
+    if (!alvos.length) return;
+    mudanca();
+    for (const it of alvos) { it.fonte = e.target.value; medirTexto(it); posicionarItem(it); }
+    // A fonte nova pode chegar depois: mede de novo quando chegar.
+    document.fonts?.load(`40px ${fonteCss(e.target.value)}`).then(() => {
+      alvos.forEach(it => { medirTexto(it); posicionarItem(it); });
+      atualizarFerramentas();
+    }, () => {});
+    atualizarFerramentas();
   });
   on('#bd-texto-cor', 'input', (e) => {
-    for (const it of selecionados()) if (ehTexto(it) && !it.travado) it.cor = e.target.value;
-    posicionarTodos();
+    const alvos = livres().filter(ehTexto);
+    if (!alvos.length) return;
+    mudanca('texto-cor');
+    for (const it of alvos) { it.cor = e.target.value; posicionarItem(it); }
   });
 
   on('#board-nome', 'input', (e) => { board.nome = e.target.value; });
   on('#bd-salvar', 'click', () => salvarBoard());
   on('#bd-publicar', 'click', publicarBoard);
   on('#bd-sortear', 'click', gerarColagem);
-  on('#bd-nova', 'click', async () => {
-    if (board.itens.length && !await confirmar('O que não foi salvo nesta colagem se perde.',
-      { titulo: 'Começar uma colagem nova?', sim: 'Começar' })) return;
-    board = novaColagem();
-    selecao.clear(); historico = []; futuro = [];
-    encaixar(); render();
-  });
-  on('#bd-limpar-guias', 'click', () => { marcar(); board.guias = { h: [], v: [] }; renderGuias(); });
+  on('#bd-nova', 'click', comecarNova);
+  on('#bd-limpar-guias', 'click', () => { mudanca(); board.guias = { h: [], v: [] }; renderGuias(); });
 
   $$('[data-bd-export]').forEach(b => b.addEventListener('click', async () => {
     if (!board.itens.length) return toast('Solte alguma peça antes de exportar.', 'aviso');
+    const tipo = b.dataset.bdExport;
     b.disabled = true;
-    await baixarBoard(board, { escala: b.dataset.bdExport === 'alta' ? 2 : 1 });
-    b.disabled = false;
-    toast('PNG gerado. Confere os downloads.');
+    try {
+      await baixarBoard(board, { escala: tipo === 'alta' ? 2 : 1, story: tipo === 'story' });
+      toast('PNG gerado. Confere os downloads.');
+    } catch (err) {
+      console.warn('exportar colagem', err);
+      toast('Não consegui gerar o PNG agora. Tente de novo.', 'aviso');
+    } finally {
+      b.disabled = false;
+    }
   }));
 }
 
-function acaoNaSelecao(acao) {
-  const alvos = selecionados();
-  if (!alvos.length) return;
-  marcar();
-
-  const zs = board.itens.map(i => i.z);
-  const max = Math.max(...zs), min = Math.min(...zs);
-
-  for (const it of alvos) {
-    if (it.travado && acao !== 'travar') continue;
-    if (acao === 'frente') it.z = max + 1;
-    if (acao === 'fundo') it.z = min - 1;
-    if (acao === 'subir') it.z += 1;
-    if (acao === 'descer') it.z -= 1;
-    if (acao === 'espelhar') it.flip = !it.flip;
-    if (acao === 'travar') it.travado = !it.travado;
+// Ordem das camadas. Subir e descer trocam a peça de lugar com a vizinha de
+// cima ou de baixo (antes somava 1 no z, empatava com a vizinha e o
+// desempate devolvia a peça ao mesmo lugar).
+function reordenar(acao) {
+  const pilha = [...board.itens].sort((a, b) => a.z - b.z);
+  const mexe = (it) => selecao.has(it.uid) && !it.travado;
+  let nova = pilha;
+  if (acao === 'frente') nova = [...pilha.filter(i => !mexe(i)), ...pilha.filter(mexe)];
+  if (acao === 'fundo') nova = [...pilha.filter(mexe), ...pilha.filter(i => !mexe(i))];
+  if (acao === 'subir') {
+    for (let i = nova.length - 2; i >= 0; i--) {
+      if (mexe(nova[i]) && !mexe(nova[i + 1])) [nova[i], nova[i + 1]] = [nova[i + 1], nova[i]];
+    }
   }
-  if (acao === 'duplicar') { historico.pop(); return duplicarSelecionados(); }
-  if (acao === 'remover') { historico.pop(); return removerSelecionados(); }
+  if (acao === 'descer') {
+    for (let i = 1; i < nova.length; i++) {
+      if (mexe(nova[i]) && !mexe(nova[i - 1])) [nova[i], nova[i - 1]] = [nova[i - 1], nova[i]];
+    }
+  }
+  nova.forEach((it, i) => { it.z = i + 1; });
+}
 
-  normalizarZ();
+function acaoNaSelecao(acao) {
+  if (!selecionados().length) return;
+  if (acao === 'duplicar') return duplicarSelecionados();
+  if (acao === 'remover') return removerSelecionados();
+  mudanca();
+
+  if (['frente', 'fundo', 'subir', 'descer'].includes(acao)) reordenar(acao);
+  for (const it of selecionados()) {
+    if (acao === 'travar') it.travado = !it.travado;
+    if (it.travado) continue;
+    if (acao === 'espelhar') it.flip = !it.flip;
+  }
+  if (acao === 'agrupar') agrupar(true);
+  if (acao === 'desagrupar') agrupar(false);
+
   renderItens();
   atualizarFerramentas();
 }
 
-function normalizarZ() {
-  [...board.itens].sort((a, b) => a.z - b.z).forEach((it, i) => { it.z = i + 1; });
+// Grupo: as peças escolhidas passam a andar juntas (escolher uma escolhe
+// todas). Desagrupar solta todas as da seleção.
+function agrupar(juntar) {
+  const alvos = selecionados();
+  if (juntar) {
+    if (alvos.length < 2) return toast('Escolha duas peças ou mais para agrupar.', 'aviso');
+    const g = 'g' + (uidSeq++);
+    alvos.forEach(i => { i.grupo = g; });
+    toast(`${alvos.length} peças agrupadas.`);
+  } else {
+    alvos.forEach(i => { delete i.grupo; });
+    toast('Grupo desfeito.');
+  }
+}
+
+// Alinhar: com uma peça, em relação à área útil (dentro da margem); com
+// várias, em relação à caixa delas. Distribuir espalha por igual.
+function alinhar(modo) {
+  const alvos = livres();
+  if (!alvos.length) return;
+  mudanca();
+  const caixas = alvos.map(i => ({ it: i, c: caixaDoItem(i, propDoItem(i)) }));
+  const area = areaUtil(board, W, H());
+  const ref = alvos.length > 1 ? {
+    x0: Math.min(...caixas.map(({ c }) => c.x - c.w / 2)),
+    x1: Math.max(...caixas.map(({ c }) => c.x + c.w / 2)),
+    y0: Math.min(...caixas.map(({ c }) => c.y - c.h / 2)),
+    y1: Math.max(...caixas.map(({ c }) => c.y + c.h / 2)),
+  } : area;
+
+  if (modo === 'dist-h' || modo === 'dist-v') {
+    if (alvos.length < 3) { toast('Distribuir pede três peças ou mais.', 'aviso'); return; }
+    const eixo = modo === 'dist-h' ? 'x' : 'y';
+    const ord = caixas.sort((a, b) => a.c[eixo] - b.c[eixo]);
+    const primeiro = ord[0].c[eixo], ultimo = ord.at(-1).c[eixo];
+    ord.forEach(({ it }, i) => { it[eixo] = primeiro + (ultimo - primeiro) * i / (ord.length - 1); });
+  } else {
+    for (const { it, c } of caixas) {
+      if (modo === 'esq') it.x = ref.x0 + c.w / 2;
+      if (modo === 'centro') it.x = (ref.x0 + ref.x1) / 2;
+      if (modo === 'dir') it.x = ref.x1 - c.w / 2;
+      if (modo === 'topo') it.y = ref.y0 + c.h / 2;
+      if (modo === 'meio') it.y = (ref.y0 + ref.y1) / 2;
+      if (modo === 'base') it.y = ref.y1 - c.h / 2;
+    }
+  }
+  alvos.forEach(a => posicionarItem(a));
+  atualizarFerramentas();
 }
 
 // Sorteia uma colagem inteira com as peças do guarda-roupa.
@@ -893,7 +1157,7 @@ export function gerarColagem() {
     toast('Seu guarda-roupa está vazio. Garimpe na vitrine primeiro.', 'aviso');
     return;
   }
-  marcar();
+  mudanca();
 
   // O espalhamento é o mesmo que o feed usa para as colagens dos perfis
   // fictícios (sorteio.js). `base` mantém o enquadramento que você escolheu:
@@ -910,14 +1174,14 @@ export function gerarColagem() {
   selecao.clear();
   render();
   espalhar(prancheta(), antes);
-  toast(`Colagem sorteada com ${board.itens.length} peças. Ctrl+Z desfaz.`);
+  toast(`Colagem sorteada com ${board.itens.length} peças. ${ehToque() ? '↶ desfaz' : 'Ctrl+Z desfaz'}.`);
 }
 
 // Arruma as peças sozinho: grade certinha ou espalhadas com leve inclinação.
 function arranjar(modo) {
-  const alvos = selecionados().length > 1 ? selecionados() : board.itens;
+  const alvos = selecionados().length > 1 ? livres() : board.itens.filter(i => !i.travado);
   if (alvos.length < 2) return;
-  marcar();
+  mudanca();
   distribuir(alvos, modo);
   atualizarFerramentas();
 }
@@ -952,48 +1216,70 @@ function distribuir(alvos, modo) {
 // arrastar a peça, só que sem o dedo em cima (celular).
 let alcaMov = null;
 function colocarAlcaMover() {
-  const livres = vemDaPaleta ? [] : selecionados().filter(s => !s.travado);
+  const soltas = vemDaPaleta ? [] : livres();
   alcaMov ??= alcaMover(prancheta(), (e) => {
-    const it = selecionados().find(s => !s.travado);
-    const no = it && prancheta().querySelector(`.pr-item[data-uid="${it.uid}"]`);
+    const it = livres()[0];
+    const no = it && noDoItem(it);
     if (no) iniciarManipulacao(e, it, no);
   });
-  alcaMov.colocar(livres.map(s => prancheta().querySelector(`.pr-item[data-uid="${s.uid}"]`)));
+  alcaMov.colocar(soltas.map(s => noDoItem(s)));
+}
+
+// Durante o arrasto as alças e os controles acompanham uma vez por quadro.
+let quadro = 0;
+function agendarFerramentas() {
+  if (quadro) return;
+  quadro = requestAnimationFrame(() => { quadro = 0; atualizarFerramentas(); });
 }
 
 function atualizarFerramentas() {
+  if (!board) return;
   colocarAlcaMover();
   const alvos = selecionados();
+  alcas?.sincronizar(alvos.map(it => ({ uid: it.uid, no: noDoItem(it), travado: it.travado })));
   const tem = alvos.length > 0;
   $('.view-board').classList.toggle('com-selecao', tem && !vemDaPaleta);
   $('#bd-vazio').hidden = tem;
   $('#bd-qtd-sel').textContent = tem ? `(${alvos.length})` : '';
-  $$('#bd-selecao .tool-btn, #bd-selecao input').forEach(n => {
+  $$('#bd-selecao .tool-btn, #bd-selecao input, #bd-selecao select').forEach(n => {
     n.disabled = !tem && n.id !== 'bd-sombra';
   });
+  $$('[data-alinhar]').forEach(n => { n.disabled = !alvos.some(i => !i.travado); });
+  // Agrupar pede duas ou mais; desagrupar só tem sentido com um grupo.
+  $('[data-bd="agrupar"]').disabled = alvos.length < 2 || alvos.every(i => i.grupo && i.grupo === alvos[0].grupo);
+  $('[data-bd="desagrupar"]').disabled = !alvos.some(i => i.grupo);
   if (!tem) $('#bd-sombra').checked = db.state.usuario.preferencias.sombra;
   const texto = alvos.find(ehTexto);
   $('#bd-texto-campos').hidden = !texto;
-  if (texto) {
+  if (texto && document.activeElement?.id !== 'bd-texto') {
     $('#bd-texto').value = texto.texto;
     $('#bd-texto-fonte').value = texto.fonte;
     $('#bd-texto-cor').value = texto.cor;
   }
-  if (!tem) return;
+  const travar = $('[data-bd="travar"]');
+  travar?.setAttribute('aria-pressed', String(tem && alvos.every(i => i.travado)));
+  if (!tem) { atualizarBarra(); return; }
   const it = alvos[0];
   $('#bd-escala').value = Math.round((ehTexto(it) ? it.tamanho * 6 : it.w) / W * 100);
   $('#bd-rot').value = Math.round(it.rot);
   $('#bd-opacidade').value = Math.round(it.opacidade ?? 100);
   $('#bd-sombra').checked = !!it.sombra;
-  $('#bd-info').textContent =
-    `${board.itens.length} peças · ${alvos.length} selecionada${alvos.length > 1 ? 's' : ''}`;
+  $('#bd-info').textContent = `${contagem()} · ${alvos.length} selecionad${alvos.length > 1 ? 'os' : 'o'}`;
+}
+
+function contagem() {
+  const pecas = board.itens.filter(i => !ehTexto(i)).length;
+  const textos = board.itens.length - pecas;
+  return (pecas === 1 ? '1 peça' : `${pecas} peças`) +
+    (textos ? ` · ${textos === 1 ? '1 texto' : `${textos} textos`}` : '');
 }
 
 function atualizarBarra() {
-  $('#bd-undo').disabled = !historico.length;
-  $('#bd-redo').disabled = !futuro.length;
+  if (!board) return;
+  $('#bd-undo').disabled = !hist.podeDesfazer();
+  $('#bd-redo').disabled = !hist.podeRefazer();
   $('#bd-zoom').textContent = Math.round(zoom * 100) + '%';
-  if (!selecionados().length) $('#bd-info').textContent = `${board.itens.length} peças`;
+  if (!selecionados().length) $('#bd-info').textContent = contagem();
 }
 
 function sincronizarControles() {
@@ -1011,53 +1297,69 @@ function sincronizarControles() {
 // ================================ Teclado =================================
 function ligarTeclado() {
   document.addEventListener('keydown', (e) => {
-    if (document.body.dataset.view !== 'board') return;
-    const campo = document.activeElement;
-    if (campo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(campo.tagName)) return;
+    if (document.body.dataset.view !== 'board' || !teclaLivre()) return;
 
     const ctrl = e.ctrlKey || e.metaKey;
-    if (ctrl && e.key.toLowerCase() === 'z') {
+    const k = e.key.toLowerCase();
+    if (ctrl && k === 'z') {
       e.preventDefault();
-      return e.shiftKey ? refazer() : desfazer();
+      return e.shiftKey ? hist.refazer() : hist.desfazer();
     }
-    if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); return refazer(); }
-    if (ctrl && e.key.toLowerCase() === 'd') { e.preventDefault(); return duplicarSelecionados(); }
-    if (ctrl && e.key.toLowerCase() === 'a') {
+    if (ctrl && k === 'y') { e.preventDefault(); return hist.refazer(); }
+    if (ctrl && k === 'd') { e.preventDefault(); return duplicarSelecionados(); }
+    if (ctrl && k === 'g') { e.preventDefault(); return acaoNaSelecao(e.shiftKey ? 'desagrupar' : 'agrupar'); }
+    if (ctrl && k === 'a') {
       e.preventDefault();
       selecao = new Set(board.itens.map(i => i.uid));
       marcarSelecaoNoDOM(); atualizarFerramentas();
       return;
     }
+    if (ctrl || e.altKey) return;
     if (e.key === 'Escape') { selecao.clear(); marcarSelecaoNoDOM(); atualizarFerramentas(); return; }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); return removerSelecionados(); }
     if (e.key === '[') return acaoNaSelecao('descer');
     if (e.key === ']') return acaoNaSelecao('subir');
 
+    const alvos = livres();
+    if (!alvos.length) return;
+    if (k === 'r' || ['+', '=', '-'].includes(e.key)) {
+      e.preventDefault();
+      mudanca(k === 'r' ? 'girar' : 'escala');
+      transformarGrupo(fotoDosItens(alvos), centroDe(alvos), k === 'r'
+        ? { graus: e.shiftKey ? -15 : 15 } : { fator: e.key === '-' ? 0.94 : 1.06 });
+      alvos.forEach(a => posicionarItem(a));
+      atualizarFerramentas();
+      return;
+    }
+
     const passo = e.shiftKey ? 20 : 4;
     const mapa = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] };
     const mov = mapa[e.key];
-    if (!mov || !selecao.size) return;
+    if (!mov) return;
     e.preventDefault();
-    marcar();
-    for (const it of selecionados()) {
-      if (it.travado) continue;
-      it.x += mov[0]; it.y += mov[1];
+    mudanca('setas');
+    for (const it of alvos) {
+      it.x = clamp(it.x + mov[0], -200, W + 200);
+      it.y = clamp(it.y + mov[1], -200, H() + 200);
+      posicionarItem(it);
     }
-    posicionarTodos();
+    agendarFerramentas();
   });
 }
 
 // ============================ Salvar / publicar ===========================
+// Só o desenho da colagem: estrela, "no feed", datas e miniatura são do item
+// salvo, não da mesa (antes a estrela velha voltava ao salvar).
 function dadosLimpos() {
-  return JSON.parse(JSON.stringify({ ...board, itens: board.itens.map(({ uid, ...r }) => r) }));
+  const { thumb, publicado, favorito, criadoEm, editadoEm, ...resto } = board;
+  return JSON.parse(JSON.stringify({ ...resto, itens: board.itens.map(({ uid, ...r }) => r) }));
 }
 
 async function salvarBoard({ silencioso = false } = {}) {
   if (!board.itens.length) { toast('A colagem está vazia.', 'aviso'); return null; }
-  const nome = board.nome.trim() || `Colagem ${db.state.boards.length + 1}`;
+  const nome = board.nome.trim() || nomeLivre('Colagem', db.state.boards);
   board.nome = nome;
   $('#board-nome').value = nome;
-
   const thumb = await miniaturaBoard(board);
   const dados = { ...dadosLimpos(), nome, thumb };
 
@@ -1065,11 +1367,12 @@ async function salvarBoard({ silencioso = false } = {}) {
   if (salvo) {
     Object.assign(salvo, dados, { editadoEm: new Date().toISOString() });
   } else {
-    salvo = { ...dados, id: 'bd' + Date.now(), criadoEm: new Date().toISOString(), publicado: false };
+    salvo = { ...dados, id: idNovo('bd'), criadoEm: new Date().toISOString(), publicado: false };
     db.state.boards.push(salvo);
     db.progredirMissao('board');
     board.id = salvo.id;
   }
+  fotoSalva = fotoDaMesa();
   db.salvar();
   renderLista();
   if (!silencioso) toast(`"${nome}" salva.`);
@@ -1079,8 +1382,18 @@ async function salvarBoard({ silencioso = false } = {}) {
 async function publicarBoard() {
   const salvo = await salvarBoard({ silencioso: true });
   if (!salvo) return;
+
+  // Já está no feed: a versão nova troca a imagem do post (curtidas e
+  // comentários ficam).
   if (salvo.publicado && jaPublicado('boardId', salvo.id)) {
-    return toast('Essa colagem já está no feed.', 'aviso');
+    if (!await confirmar('As curtidas e os comentários continuam.',
+      { titulo: 'Atualizar o post no feed com esta versão?', sim: 'Atualizar' })) return;
+    try {
+      await publicarNoFeed({ ...await pacoteDaColagem(salvo), atualizar: true });
+      return toast('Post atualizado no feed.');
+    } catch (e) {
+      return toast(e.message || 'Não consegui atualizar o post agora.', 'aviso');
+    }
   }
 
   let onde;
@@ -1101,138 +1414,19 @@ async function publicarBoard() {
     : 'Sem conexão: publicada só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
 }
 
-// As colagens salvas moram só no painel "Minhas colagens" (mais abaixo),
-// aberto pelo botão em cima da mesa; aqui só se atualiza o número dele e o
-// painel, se estiver aberto.
+// As colagens salvas moram só no painel "Minhas colagens", aberto pelo
+// botão em cima da mesa; aqui só se atualiza o número dele e o painel.
 function renderLista() {
   const qtd = $('#mc-qtd');
   if (qtd) qtd.textContent = db.state.boards.length ? String(db.state.boards.length) : '';
-  if ($('#modal-colagens') && !$('#modal-colagens').hidden) renderMinhas();
+  painel?.render();
 }
 
 // --- Minhas colagens ------------------------------------------------------
-// O mesmo painel do Meus stylists (stylist.js), com as mesmas classes ms-*:
-// no PC um modal com uma grade de cartões; no celular a tela toda, duas
-// colunas. O cartão abre a colagem na mesa, e o ⋯ guarda o resto: renomear,
-// duplicar e apagar.
-let mcFiltro = 'todos';
-let mcMenuAberto = null;      // id da colagem com o menu ⋯ aberto
-let mcRenomeando = null;      // id da colagem com o nome virando campo
-const miniaturas = new Map(); // id -> miniatura desenhada agora (save sem thumb)
-
-const quandoDaColagem = (b) => b.editadoEm || b.criadoEm || '';
-
-function ordenarColagens(boards, ordem) {
-  const lista = [...boards];
-  if (ordem === 'nome') return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  const pos = new Map(boards.map((b, i) => [b.id, i]));
-  lista.sort((a, b) =>
-    quandoDaColagem(b).localeCompare(quandoDaColagem(a)) || pos.get(b.id) - pos.get(a.id));
-  return ordem === 'antigos' ? lista.reverse() : lista;
-}
-
-function dataCurta(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
-    .replace(/ de /g, ' ').replace('.', '');
-}
-
-function montarMinhasColagens() {
-  const modal = $('#modal-colagens');
-  if (!modal) return;
-  $('#btn-minhas-colagens').addEventListener('click', abrirMinhas);
-  $('#mc-fechar').addEventListener('click', fecharMinhas);
-  $('#mc-novo').addEventListener('click', async () => {
-    fecharMinhas();
-    if (board.itens.length && !await confirmar('O que não foi salvo nesta colagem se perde.',
-      { titulo: 'Começar uma colagem nova?', sim: 'Começar' })) return;
-    board = novaColagem();
-    selecao.clear(); historico = []; futuro = [];
-    encaixar(); render();
-    toast('Mesa limpa: monte a colagem nova e salve.');
-  });
-  $('#mc-busca').addEventListener('input', renderMinhas);
-  $('#mc-ordem').addEventListener('change', renderMinhas);
-  modal.addEventListener('pointerdown', (e) => { if (e.target === modal) fecharMinhas(); });
-  // Clicar fora do ⋯ fecha o menu dele.
-  modal.addEventListener('click', (e) => {
-    if (mcMenuAberto && !e.target.closest('.ms-menu, .ms-mais')) {
-      mcMenuAberto = null;
-      renderMinhas();
-    }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || modal.hidden || mcRenomeando) return;
-    if (mcMenuAberto) { mcMenuAberto = null; renderMinhas(); return; }
-    fecharMinhas();
-  });
-}
-
-function abrirMinhas() {
-  mcMenuAberto = null;
-  mcRenomeando = null;
-  $('#mc-busca').value = '';
-  $('#modal-colagens').hidden = false;
-  document.body.classList.add('com-modal');
-  renderMinhas();
-}
-
-function fecharMinhas() {
-  $('#modal-colagens').hidden = true;
-  document.body.classList.remove('com-modal');
-  mcMenuAberto = null;
-  mcRenomeando = null;
-}
-
-function renderMinhas() {
-  const boards = db.state.boards;
-  const favs = boards.filter(b => b.favorito).length;
-  const noFeed = boards.filter(b => b.publicado).length;
-
-  $('#mc-sub').textContent = boards.length
-    ? `${boards.length} ${boards.length === 1 ? 'colagem salva' : 'colagens salvas'} · ${favs} de 3 no perfil`
-    : '';
-
-  $('#mc-filtros').replaceChildren(...[
-    ['todos', 'Todas', boards.length],
-    ['fav', [ico('estrela-cheia'), ' Favoritas'], favs],
-    ['feed', 'No feed', noFeed],
-  ].map(([id, nome, n]) => el('button', {
-    type: 'button',
-    class: 'ms-filtro' + (mcFiltro === id ? ' ativo' : ''),
-    onclick: () => { mcFiltro = id; renderMinhas(); },
-  }, nome, el('small', {}, String(n)))));
-
-  const termo = $('#mc-busca').value.trim().toLocaleLowerCase('pt-BR');
-  const visiveis = ordenarColagens(boards, $('#mc-ordem').value).filter(b =>
-    (mcFiltro === 'todos' || (mcFiltro === 'fav' ? b.favorito : b.publicado)) &&
-    (!termo || b.nome.toLocaleLowerCase('pt-BR').includes(termo)));
-
-  const grade = $('#mc-grade');
-  grade.replaceChildren();
-  if (!boards.length) {
-    grade.append(el('div', { class: 'ms-vazio' },
-      el('strong', {}, 'Nenhuma colagem salva ainda'),
-      el('p', {}, 'Solte as suas peças na mesa e toque em "salvar": ela aparece aqui.')));
-    return;
-  }
-  if (!visiveis.length) {
-    grade.append(el('div', { class: 'ms-vazio' },
-      el('p', {}, termo ? `Nenhuma colagem com "${$('#mc-busca').value.trim()}".`
-        : mcFiltro === 'fav' ? 'Nenhuma favorita. Toque na ☆ de uma colagem para ela ir para o seu perfil.'
-        : 'Nenhuma colagem publicada no feed ainda.')));
-    return;
-  }
-  for (const b of visiveis) grade.append(cartaoDaColagem(b));
-
-  const campo = grade.querySelector('.ms-renomear');
-  if (campo) { campo.focus(); campo.select(); }
-}
-
 // A miniatura do save pode ter sido descartada (quota cheia: ver db.salvar);
 // aí desenha uma agora e guarda só na memória.
+const miniaturas = new Map(); // id -> miniatura desenhada agora (save sem thumb)
+
 function imagemDoCartao(b) {
   const pronta = b.thumb || miniaturas.get(b.id);
   if (pronta) return el('img', { src: pronta, alt: b.nome, loading: 'lazy' });
@@ -1246,147 +1440,61 @@ function imagemDoCartao(b) {
   return vaga;
 }
 
-function cartaoDaColagem(b) {
-  const aberta = b.id === board.id;
-  const nPecas = b.itens?.filter(i => i.tipo !== 'texto').length || 0;
-
-  const nome = mcRenomeando === b.id
-    ? el('input', {
-      class: 'ms-renomear', type: 'text', value: b.nome, maxlength: '46',
-      'aria-label': 'Novo nome da colagem',
-      onkeydown: (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
-        // Esc aqui só desiste do nome: não pode subir e fechar o painel.
-        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); mcRenomeando = null; renderMinhas(); }
-      },
-      onblur: (e) => { if (mcRenomeando === b.id) renomearColagem(b.id, e.currentTarget.value); },
-    })
-    : el('button', {
-      type: 'button', class: 'ms-nome', title: 'Renomear',
-      onclick: () => { mcRenomeando = b.id; mcMenuAberto = null; renderMinhas(); },
-    }, b.nome);
-
-  const menu = mcMenuAberto === b.id ? el('div', { class: 'ms-menu', role: 'menu' },
-    el('button', { type: 'button', role: 'menuitem', onclick: () => abrirDoPainel(b.id) }, ico('editar'), ' Abrir e editar'),
-    el('button', {
-      type: 'button', role: 'menuitem',
-      onclick: () => { mcRenomeando = b.id; mcMenuAberto = null; renderMinhas(); },
-    }, 'Aa Renomear'),
-    el('button', { type: 'button', role: 'menuitem', onclick: () => duplicarColagem(b.id) }, ico('duplicar'), ' Duplicar'),
-    el('button', { type: 'button', role: 'menuitem', class: 'perigo', onclick: () => apagarColagem(b.id) }, ico('lixo'), ' Excluir'),
-  ) : null;
-
-  return el('article', { class: 'ms-card' + (aberta ? ' aberto' : '') + (menu ? ' com-menu' : '') },
-    el('button', {
-      type: 'button', class: 'ms-thumb',
-      title: `Abrir "${b.nome}" na mesa para editar`,
-      onclick: () => abrirDoPainel(b.id),
+function montarMinhasColagens() {
+  painel = criarPainel({
+    prefixo: 'mc',
+    botao: '#btn-minhas-colagens',
+    modal: '#modal-colagens',
+    lista: () => db.state.boards,
+    tipoFav: 'colagem',
+    origem: 'board',
+    campo: 'boardId',
+    prefixoId: 'bd',
+    maxNome: 46,
+    feminino: true,
+    nomes: ['colagem', 'colagens'],
+    lugar: 'na mesa',
+    vazio: ['Nenhuma colagem salva ainda',
+      'Solte as suas peças na mesa e toque em "salvar": ela aparece aqui.'],
+    abertoId: () => board?.id,
+    imagem: imagemDoCartao,
+    pecas: (b) => b.itens?.filter(i => i.tipo !== 'texto').length || 0,
+    abrir: abrirBoard,
+    novo: async () => {
+      if (await comecarNova()) toast('Mesa limpa: monte a colagem nova e salve.');
     },
-      imagemDoCartao(b),
-      el('span', { class: 'ms-editar' }, ico('editar'), ' Editar'),
-      aberta ? el('span', { class: 'ms-selo' }, 'na mesa') : null,
-      b.publicado ? el('span', { class: 'ms-selo feed' }, 'no feed') : null,
-    ),
-    el('div', { class: 'ms-fav' }, estrelaFavorito('colagem', b.id, renderLista)),
-    el('div', { class: 'ms-info' },
-      el('div', { class: 'ms-linha' },
-        nome,
-        el('button', {
-          type: 'button', class: 'ms-apagar', title: `Apagar "${b.nome}"`,
-          'aria-label': `Apagar "${b.nome}"`,
-          onclick: () => apagarColagem(b.id),
-        }, ico('lixo')),
-        el('button', {
-          type: 'button', class: 'ms-mais', title: 'Mais opções',
-          'aria-haspopup': 'menu', 'aria-expanded': menu ? 'true' : 'false',
-          onclick: () => { mcMenuAberto = mcMenuAberto === b.id ? null : b.id; renderMinhas(); },
-        }, ico('mais'))),
-      el('small', {}, [dataCurta(quandoDaColagem(b)),
-        nPecas === 1 ? '1 peça' : `${nPecas} peças`].filter(Boolean).join(' · '))),
-    menu);
-}
-
-function abrirDoPainel(id) {
-  abrirBoard(id);
-  fecharMinhas();
-  const salvo = db.state.boards.find(b => b.id === id);
-  if (salvo) toast(`"${salvo.nome}" na mesa. Mexa e toque em "salvar".`);
-}
-
-function renomearColagem(id, valor) {
-  mcRenomeando = null;
-  const salvo = db.state.boards.find(b => b.id === id);
-  const nome = String(valor || '').trim().slice(0, 46);
-  if (salvo && nome && nome !== salvo.nome) {
-    salvo.nome = nome;
-    if (id === board.id) { board.nome = nome; $('#board-nome').value = nome; }
-    db.salvar();
-    toast(`Renomeada para "${nome}".`);
-  }
-  renderLista();
-  renderMinhas();
-}
-
-function duplicarColagem(id) {
-  const orig = db.state.boards.find(b => b.id === id);
-  if (!orig) return;
-  const agora = new Date().toISOString();
-  // A cópia é uma colagem nova: não herda a estrela nem o "no feed".
-  const copia = {
-    ...structuredClone(orig),
-    id: 'bd' + Date.now(),
-    nome: `${orig.nome} (cópia)`.slice(0, 46),
-    criadoEm: agora,
-    editadoEm: agora,
-    publicado: false,
-    favorito: false,
-  };
-  db.state.boards.push(copia);
-  mcMenuAberto = null;
-  db.salvar();
-  renderLista();
-  renderMinhas();
-  toast(`"${copia.nome}" criada.`);
-}
-
-function apagarColagem(id) {
-  const salvo = db.state.boards.find(b => b.id === id);
-  if (!salvo) return;
-  mcMenuAberto = null;
-  const aviso = `Excluir "${salvo.nome}"? Não dá para desfazer.` +
-    (jaPublicado('boardId', id) || salvo.publicado ? '\nO post dela sai do feed também.' : '');
-  if (!confirm(aviso)) { renderLista(); return; }
-  db.state.boards.splice(db.state.boards.indexOf(salvo), 1);
-  miniaturas.delete(id);
-  // A mesa fica como está, só deixa de ser aquela colagem: salvar de novo cria outra.
-  if (id === board.id) board.id = null;
-  db.salvar();
-  renderLista();
-  toast(`"${salvo.nome}" excluída.`);
-  apagarDoFeedPorOrigem('board', id).then(ok => {
-    db.salvar();
-    if (!ok) toast('Não consegui tirar o post do feed agora. Apague por lá.', 'aviso');
+    aoRenomear: (id, nome) => {
+      if (id === board.id) { board.nome = nome; $('#board-nome').value = nome; }
+    },
+    // A mesa fica como está, só deixa de ser aquela colagem: salvar de novo cria outra.
+    aoApagar: (id) => { miniaturas.delete(id); if (id === board.id) board.id = null; },
+    aoMudar: renderLista,
   });
 }
 
 export function abrirBoard(id) {
   const salvo = db.state.boards.find(b => b.id === id);
   if (!salvo) return;
-  const { thumb, publicado, criadoEm, editadoEm, ...dados } = salvo;
+  const { thumb, publicado, favorito, criadoEm, editadoEm, ...dados } = salvo;
   board = JSON.parse(JSON.stringify(dados));
   board.itens = board.itens.map(i => ({ ...i, uid: 'b' + (uidSeq++) }));
   board.guias = board.guias || { h: [], v: [] };
   // Colagem salva antes de a moldura sair: aproveita a margem e larga o resto.
   board.margem = margemDe(board);
   delete board.moldura; delete board.fundo;
-  selecao.clear(); historico = []; futuro = [];
-  encaixar(); render();
+  selecao.clear();
+  hist.zerar();
+  fotoSalva = fotoDaMesa();
+  if (montado) { encaixar(); render(); }
 }
 
 export function aoEntrarNoBoard() {
   // A mesa vazia nasceu antes do login (ou na conta anterior): refaz com a
   // assinatura de quem está entrando agora.
-  if (!board.id && !board.itens.length) board = novaColagem();
+  if (!board || (!board.id && !board.itens.length)) {
+    board = novaColagem();
+    fotoSalva = fotoDaMesa();
+  }
   montarBoard();
   montarPaleta();
   encaixar();
