@@ -11,6 +11,7 @@
 import * as db from './db.js';
 import { ferramenta, nivelDaFerramenta } from './config.js';
 import { toast } from './util.js';
+import { deslizarTela } from './movimento.js';
 
 const ganchos = new Map();
 export const onEnter = (view, fn) => ganchos.set(view, fn);
@@ -54,11 +55,16 @@ export function irPara(view, param = null) {
 
 function aplicar(view) {
   if (!db.ferramentaLiberada(view)) view = 'vitrine';
+  const anterior = document.body.dataset.view;
   document.querySelectorAll('.view').forEach(s => { s.hidden = s.dataset.view !== view; });
   const aceso = BOTAO_DA_VIEW[view] || view;
   document.querySelectorAll('.sidebar-btn').forEach(b =>
     b.classList.toggle('ativa', b.dataset.goto === aceso));
   document.body.dataset.view = view;
+  if (anterior && anterior !== view) {
+    deslizarTela(document.querySelector(`.view[data-view="${view}"]`),
+      VIEWS.indexOf(view) > VIEWS.indexOf(anterior) ? 1 : -1);
+  }
   ganchos.get(view)?.();
 }
 

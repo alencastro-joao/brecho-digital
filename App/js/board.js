@@ -22,6 +22,7 @@ import { el, $, $$, clamp, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
+import { espalhar } from './movimento.js';
 
 const W = BOARD.W;
 
@@ -898,6 +899,8 @@ export function gerarColagem() {
   // fictícios (sorteio.js). `base` mantém o enquadramento que você escolheu:
   // sortear troca as peças, não a margem.
   const pecas = sortearConjunto(acervo, Math.random, { minimo: 5 });
+  const antes = new Map([...prancheta().querySelectorAll('.pr-item[data-uid]')]
+    .map(n => [n.dataset.uid, n.getBoundingClientRect()]));
   board.itens = colagemAleatoria(pecas, Math.random, { base: board }).itens
     .map(it => ({
       ...it,
@@ -906,6 +909,7 @@ export function gerarColagem() {
     }));
   selecao.clear();
   render();
+  espalhar(prancheta(), antes);
   toast(`Colagem sorteada com ${board.itens.length} peças. Ctrl+Z desfaz.`);
 }
 

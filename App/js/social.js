@@ -35,6 +35,7 @@ import {
   curtirPublicacao, comentarPublicacao, apagarComentarioPublicado,
 } from './publicacoes.js';
 import { festejar } from './animacoes.js';
+import { cascataDoFeed, pulsoCurtida } from './movimento.js';
 
 const sou = (id) => id === db.state.usuario.id;
 
@@ -358,6 +359,7 @@ function renderFeed() {
 
   colunasDesenhadas = colunasDoMural(feed);
   feed.replaceChildren(montarMural(posts, colunasDesenhadas));
+  cascataDoFeed(feed);
 
   if (escrevendo) {
     const campo = feed.querySelector(`.campo-comentario[data-post="${CSS.escape(escrevendo)}"]`);
@@ -397,7 +399,7 @@ export function cardDoPost(post, { abrivel = true } = {}) {
   prepararGerado(post);
   const pecas = pecasDoPost(post);
 
-  return el('article', { class: 'post' + (meu ? ' meu' : '') },
+  return el('article', { class: 'post' + (meu ? ' meu' : ''), dataset: { post: post.id } },
     abrivel ? null : topoDoPost(post),
     el('div', {
       class: 'post-thumb' + (post.tipo === 'board' ? ' colagem' : '') + (abrivel ? ' abrivel' : ''),
@@ -719,11 +721,16 @@ function alternarThread(post) {
 async function alternarCurtida(post, botao) {
   // Curtir o look de outra pessoa conta para a missão da semana (uma vez por post).
   const conta = !post.curtido && !sou(post.autor);
+  const antes = post.curtidas;
+  const liberando = !post.curtido;
+  const pulsar = (de, ate) => pulsoCurtida(
+    document.querySelector(`.post[data-post="${CSS.escape(post.id)}"] .curtir`), de, ate);
   if (!post.curtido) festejar(botao, 'coracao');
   if (post.real) {
     try { await curtirPublicacao(post); }
     catch (e) { return toast(e.message || 'Não consegui curtir agora.', 'aviso'); }
     if (conta) { db.progredirSemana('curtir', 1, post.id); db.salvar(); }
+    pulsar(antes, antes + (liberando ? 1 : -1));
     return;
   }
   post.curtido = !post.curtido;
@@ -731,6 +738,7 @@ async function alternarCurtida(post, botao) {
   if (conta) db.progredirSemana('curtir', 1, post.id);
   db.salvar();
   repintar();
+  pulsar(antes, post.curtidas);
 }
 
 // ============================ O menu do post ==============================

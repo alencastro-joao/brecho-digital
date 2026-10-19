@@ -20,6 +20,7 @@ import { estrelaFavorito } from './favoritos.js';
 import { el, $, $$, clamp, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
+import { animando, cairNoCorpo } from './movimento.js';
 
 let camadas = [];
 let selecionado = null;
@@ -265,7 +266,13 @@ function renderCamadas() {
   raiz.innerHTML = '';
   for (const c of camadas) {
     const no = criarCamadaDOM(c);
-    if (!jaNoPalco.has(c.uid)) no.classList.add('chegou');
+    if (!jaNoPalco.has(c.uid)) {
+      no.classList.add('chegou');
+      if (animando()) {
+        no.classList.add('com-gsap');
+        cairNoCorpo(no.querySelector('img'));
+      }
+    }
     raiz.append(no);
   }
   jaNoPalco.clear();

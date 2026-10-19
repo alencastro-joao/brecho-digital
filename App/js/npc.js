@@ -4,6 +4,7 @@
 
 import { CONFIG, FALAS } from './config.js';
 import { escolher } from './util.js';
+import { animarFala } from './movimento.js';
 
 const ART = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 280" width="240" height="280">
@@ -65,9 +66,8 @@ export function montarNPC() {
 export function falar(msg, { tempo = 6000 } = {}) {
   if (!texto) return;
   texto.textContent = msg;
-  bolha.classList.remove('pop');
-  void bolha.offsetWidth;          // reinicia a animação
-  bolha.classList.add('visivel', 'pop');
+  bolha.classList.add('visivel');
+  animarFala(bolha);
   clearTimeout(timer);
   timer = setTimeout(() => bolha.classList.remove('visivel'), tempo);
 }
