@@ -6,7 +6,7 @@ feed e perfil. Tudo em português (código, comentários, commits).
 ## Economizar contexto
 
 - Comece por `grep`/`rg` no nome da função ou do texto da tela. Não leia arquivo
-  inteiro: `db.js`, `roupinhas.js`, `board.js`, `config.js` e `esteira.js` têm
+  inteiro: `roupinhas.js`, `board.js`, `config.js` e `esteira.js` têm
   mais de 1.000 linhas cada; leia só o trecho.
 - `App/README.md` (1.340 linhas) e `nuvem/README.md` (416) são referência: busque
   a seção, não leia tudo.
@@ -47,7 +47,7 @@ Telas (`App/js/` + o `.css` de mesmo nome em `App/css/`):
 | Instagram/Pinterest | `conexoes.js` |
 | Admin, esteira de peças, editar peça | `admin.js`, `painel.js`, `esteira.js` (+ `App/esteira.html`), `editar.js` |
 | Catálogo, tiragem | `catalog.js`, `estoque.js` |
-| Save / persistência | `db.js` |
+| Save / persistência | `db.js` (state, save, nuvem); `dbinventario.js`, `dbprogresso.js`, `dbcolecoes.js` (reexportados por `db.js`) |
 | Regras de negócio e números | `config.js` |
 
 API (`nuvem/lambda/`): `app.py` roteia; `contas.py` login/sessão; `estado.py`
