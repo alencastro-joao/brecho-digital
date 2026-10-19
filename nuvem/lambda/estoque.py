@@ -40,7 +40,7 @@ _dynamo = boto3.client('dynamodb')
 
 LIMITES = {'common': 1000, 'uncommon': 500, 'rare': 300, 'epic': 100, 'legendary': 25}
 
-# Como a cópia chegou ao dono: as mesmas origens do inventário (js/db.js).
+# Como a cópia chegou ao dono: as mesmas origens do inventário (js/dbinventario.js).
 COMO = {'vitrine', 'presente', 'missao', 'semana', 'bau-especial', 'nivel',
         'collab', 'propria', 'teste'}
 

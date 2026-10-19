@@ -67,6 +67,9 @@ App/
     config.js           regras do jogo: limites, raridades, âncoras por categoria, missões, níveis, collab
     catalog.js          carrega assets/acervo.json e monta os <clipPath> de cada peça
     db.js               persistência (localStorage no formato que vai para o DynamoDB)
+    dbinventario.js     dia, fichas, inventário, marcas, cores, favoritos (reexportado por db.js)
+    dbprogresso.js      missões, baús, níveis, XP, pontinhos (reexportado por db.js)
+    dbcolecoes.js       vestiário e coleções (reexportado por db.js)
     presente.js         o brinde de conta nova: 2 tops, 2 calças e 2 calçados, comuns e incomuns
     vitrine.js          mural do dia, resgate, NPC
     closet.js           inventário
