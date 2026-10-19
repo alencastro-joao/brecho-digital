@@ -1,6 +1,6 @@
 // Parâmetros do protótipo. Tudo que é regra de negócio mora aqui.
 
-import { ancoraNoCorpo } from './proporcao.js';
+import { ancoraNoCorpo, CORPO_EM_TESTE } from './proporcao.js';
 
 export const CONFIG = {
   // Vitrine
@@ -281,7 +281,71 @@ export function tamanhoDaPeca(peca) {
 export function ancoraDaPeca(peca) {
   const padrao = CATEGORIAS[peca?.cat]?.anchor ?? { x: 300, y: 500, w: 240, z: 30 };
   const molde = peca?.ancora?.w ? { ...padrao, ...peca.ancora, z: padrao.z } : padrao;
-  return ancoraNoCorpo(CATEGORIAS[peca?.cat]?.regiao, molde);
+  const noCorpo = ancoraNoCorpo(CATEGORIAS[peca?.cat]?.regiao, molde);
+  return peca?.ancora?.w && !medidaNoCorpoDaArtista(peca) ? ajustarPecaAntiga(peca.cat, noCorpo) : noCorpo;
+}
+
+// ---------------------- Peças medidas no boneco antigo ----------------------
+// As medidas são gravadas no molde e levadas ao corpo por uma escala por
+// região (js/proporcao.js). Só que o corpo da artista não é o boneco antigo
+// esticado: o tronco é uns 15% mais largo, os braços saem mais para fora, as
+// mãos ficam ~65 mais baixas e as pernas se separam ~100 mais alto. Cabeça e
+// pés batem. Peça medida a olho em cima do boneco antigo sai estreita no
+// tronco e com a bolsa acima da mão.
+//
+// Mudar a escala da região consertaria essas e entortaria as medidas novas
+// (que também são gravadas desfazendo a escala de agora). Então a correção é
+// só das antigas, na hora de mostrar: nada salvo muda, e medir de novo no
+// editor grava a marca `ancora.corpo` e tira a peça daqui.
+//
+// Quem é antiga: sem a marca, salva no editor antes do corpo novo entrar
+// (#74) ou publicada pela esteira antes de ela desenhar o corpo novo (#83).
+const CORPO_NOVO_NO_EDITOR = Date.parse('2026-10-16T23:31:47Z');
+const CORPO_NOVO_NA_ESTEIRA = Date.parse('2026-10-17T17:21:34Z');
+
+export function medidaNoCorpoDaArtista(peca) {
+  if (peca?.ancora?.corpo) return peca.ancora.corpo === 'artista';
+  const editada = Date.parse(peca?.editadoEm || '');
+  const criada = Date.parse(peca?.criadoEm || '');
+  return editada >= CORPO_NOVO_NO_EDITOR || criada >= CORPO_NOVO_NA_ESTEIRA;
+}
+
+// Por categoria, em unidades do palco (já no corpo): `k` multiplica a largura
+// (e a altura, que segue a foto) em volta da linha `y0`, que fica parada —
+// a gola no ombro, o cós na cintura, a sola no chão. `dx` abre para fora
+// (espelhado no lado da peça) e `dy` desce. Medido nas silhuetas dos dois
+// corpos; calça e saia não ficam perfeitas porque o gancho da foto não sobe
+// sem esticar a perna, e essas vão para a revisão no editor.
+const TRONCO_ANTIGO = { k: 1.17, y0: 272 };
+const PERNA_ANTIGA = { k: 1.1, y0: 505 };
+const MAO_ANTIGA = { k: 1, dx: 13, dy: 66 };
+export const AJUSTE_PECA_ANTIGA = {
+  shirts: TRONCO_ANTIGO, cropped: TRONCO_ANTIGO, coats: TRONCO_ANTIGO, dresses: TRONCO_ANTIGO,
+  pants: PERNA_ANTIGA, shorts: PERNA_ANTIGA, skirts: PERNA_ANTIGA,
+  shoes: { k: 1.04, y0: 1144 },
+  bags: MAO_ANTIGA, watches: MAO_ANTIGA, bracelets: MAO_ANTIGA,
+};
+
+// ?ajuste=antes desliga a correção naquele carregamento, para comparar.
+const SEM_AJUSTE = (() => {
+  try { return new URLSearchParams(globalThis.location?.search || '').get('ajuste') === 'antes'; }
+  catch { return false; }
+})();
+
+export function ajustarPecaAntiga(cat, a) {
+  const aj = AJUSTE_PECA_ANTIGA[cat];
+  // O ajuste leva ao corpo da artista; no boneco antigo (?proporcao=padrao)
+  // a peça antiga já está no lugar.
+  if (!aj || SEM_AJUSTE || CORPO_EM_TESTE !== 'artista') return a;
+  const k = aj.k ?? 1;
+  const lado = a.x < 300 ? -1 : a.x > 300 ? 1 : 0;
+  const y0 = aj.y0 ?? a.y;
+  return {
+    ...a,
+    x: a.x + lado * (aj.dx ?? 0),
+    y: y0 + k * (a.y - y0) + (aj.dy ?? 0),
+    w: a.w * k,
+  };
 }
 
 // O ponto padrão de uma categoria, já no corpo: é de onde o molde começa.

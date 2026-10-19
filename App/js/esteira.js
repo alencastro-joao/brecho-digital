@@ -20,7 +20,7 @@
 
 import {
   CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
-  migrarCategoria, rotuloDeCadastro,
+  migrarCategoria, rotuloDeCadastro, ancoraDaPeca,
   ESTILOS,
 } from './config.js';
 import { ancoraNoCorpo, ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
@@ -734,10 +734,11 @@ const medidasDoAcervo = new Map();     // cat -> { x, y, w } no molde
 function lerMedidasDoAcervo(items) {
   const porCat = new Map();
   for (const i of items) {
-    const a = i.ancora;
-    if (!(a?.w > 0)) continue;
+    if (!(i.ancora?.w > 0)) continue;
     const cat = migrarCategoria(i.cat);
     if (!CATEGORIAS[cat]) continue;
+    // Peça medida no boneco antigo entra na conta já ajustada ao corpo novo.
+    const a = ancoraNoMolde(CATEGORIAS[cat].regiao, ancoraDaPeca({ ...i, cat }));
     if (!porCat.has(cat)) porCat.set(cat, []);
     porCat.get(cat).push(a);
   }
@@ -767,7 +768,8 @@ const medidaPadrao = (cat) => {
 const regiaoDe = (item) => CATEGORIAS[fichaDe(item).cat]?.regiao;
 const paraGravar = () => {
   const a = ancoraNoMolde(regiaoDe(medindo), medida);
-  return { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(a.w) };
+  return { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(a.w),
+           ...(CORPO_EM_TESTE ? { corpo: CORPO_EM_TESTE } : {}) };
 };
 
 function abrirMolde(item) {

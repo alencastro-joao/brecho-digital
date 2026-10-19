@@ -18,12 +18,12 @@
 // Ferramenta de administração: só aparece em modo admin, e quem grava é a API
 // (PUT /api/pecas/<id>), que recusa quem não for administrador.
 
-import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, ESTILOS, hexDaCor, ancoraPadrao,
+import { CONFIG, CATEGORIAS, CORES, ORDEM_CATEGORIAS, RARIDADES, ESTILOS, hexDaCor, ancoraPadrao, ancoraDaPeca,
          corDoPixel, distanciaEntreCores, rotuloDeCadastro } from './config.js';
 import { registrarPeca, esquecerPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
-import { ancoraNoMolde, ancoraNoCorpo } from './proporcao.js';
+import { ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { alcaMover } from './alcamover.js';
@@ -587,7 +587,8 @@ async function salvar() {
   const corpo = {
     ...ficha,
     tema: ficha.tema || (temaDaLista(peca.id) ? 'nenhum' : ''),
-    ancora: { x: Math.round(real.x), y: Math.round(real.y), w: Math.round(real.w) },
+    ancora: { x: Math.round(real.x), y: Math.round(real.y), w: Math.round(real.w),
+              ...(CORPO_EM_TESTE ? { corpo: CORPO_EM_TESTE } : {}) },
   };
   if (arquivo.novo) {
     Object.assign(corpo, { src: arquivo.src, w: arquivo.w, h: arquivo.h });
@@ -695,8 +696,10 @@ export function abrirEditar(alvo, callback) {
   origem = null;
   sairDoCorte();
   zerarEdicao();
+  // Peça antiga abre já com o ajuste para o corpo novo (config.js): salvar
+  // grava esse ponto de partida, com o que você mexer por cima.
   medida = alvo.ancora
-    ? ancoraNoCorpo(CATEGORIAS[alvo.cat]?.regiao, { ...alvo.ancora })
+    ? (({ x, y, w }) => ({ x, y, w }))(ancoraDaPeca({ ...alvo, cat: ficha.cat }))
     : medidaPadrao(alvo.cat);
 
   montarCategorias();
