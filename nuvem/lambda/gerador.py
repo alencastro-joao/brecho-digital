@@ -138,7 +138,8 @@ def ler_acervo():
 # parte de baixo, um sapato e alguns acessórios por chance. Mexeu num, mexa no
 # outro.
 CHANCES = [('hats', 0.55), ('bags', 0.5), ('coats', 0.35), ('glasses', 0.4),
-           ('necklaces', 0.3), ('watches', 0.25), ('bracelets', 0.2)]
+           ('necklaces', 0.3), ('watches', 0.25), ('bracelets', 0.2),
+           ('belts', 0.25)]
 CIMA = ('shirts', 'cropped', 'coats')
 BAIXO = ('pants', 'shorts', 'skirts')
 TRONCO = CIMA + ('dresses',)

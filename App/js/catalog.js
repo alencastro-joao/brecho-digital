@@ -14,6 +14,7 @@ const SINGULAR = {
   shoes: 'Sapato', pants: 'Calça', shorts: 'Bermuda', skirts: 'Saia', dresses: 'Vestido',
   shirts: 'Camisa', coats: 'Casaco', cropped: 'Top', watches: 'Relógio', bracelets: 'Pulseira',
   necklaces: 'Colar', glasses: 'Óculos', hats: 'Chapéu', bags: 'Bolsa',
+  belts: 'Cinto',
 };
 
 export const catalogo = {

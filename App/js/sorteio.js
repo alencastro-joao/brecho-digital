@@ -14,6 +14,7 @@ import { shuffle } from './util.js';
 // Chance de cada categoria opcional entrar no conjunto.
 const CHANCES = {
   hats: 0.55, bags: 0.5, coats: 0.35, glasses: 0.4, necklaces: 0.3, watches: 0.25, bracelets: 0.2,
+  belts: 0.25,
 };
 
 // O que cobre o tronco e o que cobre a perna. O look leva um de cada (ou um

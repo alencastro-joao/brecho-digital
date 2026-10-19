@@ -243,6 +243,7 @@ export const TAMANHO = {
   shoes:     0.58,
   bags:      0.52,
   hats:      0.46,
+  belts:     0.40,
   glasses:   0.34,
   necklaces: 0.30,
   watches:   0.24,
@@ -396,6 +397,11 @@ export const CATEGORIAS = {
   glasses:   { nome: 'Óculos',    icone: '🕶️', regiao: 'cabeca', anchor: { x: 300, y: 116, w: 124, z: 60 } },
   hats:      { nome: 'Chapéus',   icone: '👒', regiao: 'cabeca', anchor: { x: 300, y: 84,  w: 176, z: 65 } },
   bags:      { nome: 'Bolsas',    icone: '👜', regiao: 'maos',   anchor: { x: 440, y: 646, w: 152, z: 50 } },
+  // Cinto: no cós (y=572 do molde, ~520 no corpo da artista), por cima da
+  // calça, da saia, do vestido e da camisa por dentro, e por baixo do casaco
+  // aberto. Fica na perna para acompanhar a calça. Categoria nova: não tem
+  // medida no boneco antigo, então fica fora de AJUSTE_PECA_ANTIGA.
+  belts:     { nome: 'Cintos',    icone: '🪢', regiao: 'perna',  anchor: { x: 300, y: 568, w: 260, z: 35 } },
 };
 export const ORDEM_CATEGORIAS = Object.keys(CATEGORIAS);
 
