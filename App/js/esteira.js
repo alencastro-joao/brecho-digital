@@ -21,7 +21,7 @@
 import {
   CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, hexDaCor,
   migrarCategoria, rotuloDeCadastro, ancoraDaPeca,
-  ESTILOS,
+  ESTILOS, COLECOES,
 } from './config.js';
 import { ancoraNoCorpo, ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
 import { carregarSessao } from './auth.js';
@@ -1113,13 +1113,15 @@ function ligarLote() {
 }
 
 // As marcas do acervo viram autocomplete: escrever "Nike" sempre do mesmo jeito.
+// Entram também as das coleções, para a 1ª peça de uma marca nova já casar.
 // As medidas dele viram o tamanho padrão do molde.
 async function carregarAcervo() {
   try {
     const r = await fetch(CONFIG.ACERVO, { cache: 'no-cache' });
     const { items = [] } = await r.json();
     lerMedidasDoAcervo(items);
-    const marcas = [...new Set(items.map(i => (i.marca || '').trim()).filter(Boolean))].sort();
+    const marcas = [...new Set([...items.map(i => (i.marca || '').trim()), ...COLECOES.map(c => c.marca)]
+      .filter(Boolean))].sort();
     $('#es-marcas').replaceChildren(...marcas.map(m => el('option', { value: m })));
   } catch { /* sem autocomplete, segue */ }
 }
