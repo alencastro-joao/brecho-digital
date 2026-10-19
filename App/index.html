@@ -954,17 +954,17 @@
       </header>
 
       <section class="adm-bloco">
-        <h2>Hoje</h2>
-        <div id="painel-corpo"></div>
-      </section>
-
-      <section class="adm-bloco">
         <h2>Acervo</h2>
         <div class="tool-row">
           <button class="btn-ghost" id="btn-add-peca">Abrir a esteira</button>
           <button class="btn-ghost" id="adm-revisar" hidden>Revisar peças antigas</button>
         </div>
         <p class="tool-hint" id="adm-revisar-resumo" hidden></p>
+      </section>
+
+      <section class="adm-bloco">
+        <h2>Hoje</h2>
+        <div id="painel-corpo"></div>
       </section>
 
       <section class="adm-bloco">
@@ -1216,10 +1216,10 @@
         </div>
         <footer class="modal-rodape">
           <span class="mp-aviso" id="mp-medida"></span>
-          <button class="btn-ghost" id="mp-voltar"><i data-i="seta-esq"></i> Voltar</button>
-          <button class="btn-ghost" id="mp-padrao">Tamanho padrão</button>
+          <button class="btn-ghost" id="mp-voltar" title="Voltar para a ficha" aria-label="Voltar para a ficha"><i data-i="seta-esq"></i><span class="so-pc"> Voltar</span></button>
+          <button class="btn-ghost" id="mp-padrao" title="Tamanho padrão da categoria"><span class="so-pc">Tamanho padrão</span><span class="so-cel">Padrão</span></button>
           <button class="btn-ghost" id="mp-pular" hidden>Pular</button>
-          <button class="btn-dark" id="mp-salvar">Salvar alterações</button>
+          <button class="btn-dark" id="mp-salvar"><span class="so-pc">Salvar alterações</span><span class="so-cel">Salvar</span></button>
         </footer>
       </section>
     </div>
