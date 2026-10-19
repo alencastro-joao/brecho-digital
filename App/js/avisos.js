@@ -23,6 +23,7 @@ import { CONFIG } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { el, $, hojeISO, tempoRelativo } from './util.js';
 import { ico } from './icones.js';
+import { balancarSino } from './movimento.js';
 
 const MAXIMO = 40;              // a lista guarda os mais novos; o resto cai
 const INTERVALO = 3 * 60e3;     // de quanto em quanto o feed e os seguidores são relidos
@@ -225,11 +226,7 @@ function pintar({ chegou = false } = {}) {
   contador.hidden = !n;
   contador.textContent = n > 9 ? '9+' : String(n);
   botao.title = n ? `${n} ${n === 1 ? 'aviso novo' : 'avisos novos'}` : 'Avisos';
-  if (chegou && n) {
-    botao.classList.remove('chegou');
-    void botao.offsetWidth;          // reinicia a animação
-    botao.classList.add('chegou');
-  }
+  if (chegou && n) balancarSino(botao);
   if (!painel.hidden) pintarLista();
 }
 

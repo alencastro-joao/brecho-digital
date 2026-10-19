@@ -91,3 +91,111 @@ export function rearrumar(grade, mudar) {
     onComplete: () => grade.classList.remove('flipando'),
   });
 }
+
+// Nível: a barrinha anda até o novo valor e o número do nível conta até o
+// próximo. Sem GSAP, a largura vai direto para o valor, como antes.
+export function andarBarra(barra, de, ate) {
+  if (!barra) return;
+  if (!animando()) { barra.style.width = ate + '%'; return; }
+  gsap.fromTo(barra, { width: de + '%', transition: 'none' },
+    { width: ate + '%', duration: 0.9, ease: 'power3.out' });
+}
+
+export function contarNumero(el, de, ate) {
+  if (!el) return;
+  if (!animando()) { el.textContent = String(ate); return; }
+  const v = { n: de };
+  gsap.to(v, {
+    n: ate, duration: 0.6, ease: 'power1.out',
+    onUpdate: () => { el.textContent = String(Math.round(v.n)); },
+  });
+}
+
+// Baú: as peças saem de dentro do baú com um arco (sobem com uma curva e
+// vão para o lado) e assentam com um pulinho.
+export function animarBau(itens, atraso = 0.75) {
+  if (!animando() || !itens.length) return;
+  const limpar = { onComplete: () => gsap.set(itens, { clearProps: 'transform,opacity,visibility' }) };
+  gsap.timeline({ delay: atraso, ...limpar })
+    .from(itens, { y: -130, duration: 0.7, ease: 'back.out(1.6)', stagger: 0.09 }, 0)
+    .from(itens, { x: (i) => (i % 2 ? 46 : -46), duration: 0.7, ease: 'power1.out', stagger: 0.09 }, 0)
+    .from(itens, { scale: 0.3, rotation: (i) => (i % 2 ? -40 : 40), autoAlpha: 0, duration: 0.6, ease: 'power2.out', stagger: 0.09 }, 0);
+}
+
+// Colagem: cada peça sai do lugar em que estava e vai para o sorteado; as que
+// são novas na colagem aparecem com um pulinho. `antes` é o mapa uid → retângulo.
+export function espalhar(raiz, antes) {
+  if (!animando() || !raiz) return;
+  raiz.querySelectorAll('.pr-item[data-uid]').forEach((n) => {
+    const a = antes.get(n.dataset.uid);
+    if (!a) {
+      gsap.fromTo(n, { autoAlpha: 0, scale: 0.6 },
+        { autoAlpha: 1, scale: 1, duration: 0.45, delay: 0.2, ease: 'back.out(1.7)', clearProps: 'transform,opacity,visibility' });
+      return;
+    }
+    const r = n.getBoundingClientRect();
+    const dx = a.left - r.left, dy = a.top - r.top;
+    if (Math.abs(dx) + Math.abs(dy) < 1) return;
+    gsap.fromTo(n, { x: dx, y: dy }, { x: 0, y: 0, duration: 0.65, ease: 'power3.inOut' });
+  });
+}
+
+// Feed: cada publicação nova sobe e aparece quando entra na tela. As que já
+// apareceram não se animam de novo (curtir repinta o feed).
+const vistos = new Set();
+export function cascataDoFeed(raiz) {
+  if (!animando() || !raiz) return;
+  const novos = [...raiz.querySelectorAll('.post[data-post]')]
+    .filter((n) => !vistos.has(n.dataset.post));
+  if (!novos.length) return;
+  novos.forEach((n) => vistos.add(n.dataset.post));
+  const obs = new IntersectionObserver((entradas) => entradas.forEach((e) => {
+    if (!e.isIntersecting) return;
+    obs.unobserve(e.target);
+    gsap.fromTo(e.target, { y: 26, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.55, ease: 'power2.out', clearProps: 'transform,opacity,visibility' });
+  }), { rootMargin: '0px 0px -6% 0px' });
+  novos.forEach((n) => { gsap.set(n, { autoAlpha: 0 }); obs.observe(n); });
+}
+
+// Curtida: o coração estica e o número sobe de um valor ao outro.
+export function pulsoCurtida(botao, de, ate) {
+  if (!botao) return;
+  if (!animando()) return;
+  gsap.fromTo(botao, { scale: 0.7 },
+    { scale: 1, duration: 0.7, ease: 'elastic.out(1, 0.35)', clearProps: 'transform' });
+  const numero = botao.querySelector('span');
+  if (numero && de !== ate) {
+    const v = { n: de };
+    gsap.to(v, { n: ate, duration: 0.5, ease: 'power1.out',
+      onUpdate: () => { numero.textContent = String(Math.round(v.n)); } });
+  }
+}
+
+// Troca de tela: a tela nova entra deslizando para o lado de onde veio.
+// dir = 1 vem da direita, -1 da esquerda.
+export function deslizarTela(el, dir) {
+  if (!animando() || !el) return;
+  gsap.fromTo(el, { x: dir * 40 }, { x: 0, duration: 0.38, ease: 'power2.out', clearProps: 'transform' });
+}
+
+// Personagem: a bolha de fala cresce com elástico a partir do canto.
+export function animarFala(bolha) {
+  if (!animando() || !bolha) return;
+  gsap.fromTo(bolha, { scale: 0.5, autoAlpha: 0, transformOrigin: '0% 100%' },
+    { scale: 1, autoAlpha: 1, duration: 0.7, ease: 'elastic.out(1, 0.5)', clearProps: 'transform,opacity,visibility' });
+}
+
+// Sino: balança quando chega aviso novo.
+export function balancarSino(sino) {
+  if (!animando() || !sino) return;
+  gsap.fromTo(sino, { rotation: -18 },
+    { rotation: 0, duration: 1.1, ease: 'elastic.out(1, 0.25)', clearProps: 'transform' });
+}
+
+// Stylist: a peça que acabou de chegar cai no corpo, estica e assenta.
+export function cairNoCorpo(img) {
+  if (!animando() || !img) return;
+  gsap.fromTo(img, { y: -70, scaleY: 0.9, autoAlpha: 0 },
+    { y: 0, scaleY: 1, autoAlpha: 1, duration: 0.6, ease: 'bounce.out', clearProps: 'transform,opacity,visibility' });
+}

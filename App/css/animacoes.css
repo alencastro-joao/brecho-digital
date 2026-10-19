@@ -211,3 +211,8 @@ html body .sidebar .sidebar-btn:active { transform: translateY(2px) scale(.94); 
 /* Enquanto o Flip (js/movimento.js) desliza as peças, a transição de hover
    da casa fica desligada: ela atrasaria cada passo do transform. */
 .flipando > .item-slot { transition: none; }
+
+/* Baú, peça no corpo: quando o GSAP anima, o CSS destas telas fica quieto
+   (js/movimento.js). */
+.bau-modal.abrindo.com-gsap :is(.bau-item, .bau-extra, .bau-vazio) { animation: none; }
+.camada.chegou.com-gsap img { animation: none; }

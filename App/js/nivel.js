@@ -9,6 +9,7 @@ import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { festejar, flutuarTexto } from './animacoes.js';
+import { andarBarra, contarNumero } from './movimento.js';
 
 // Chip pequeno "Nv 3" para pendurar ao lado de um nome (feed, perfil, listas).
 export function chipNivel(n = db.nivel()) {
@@ -51,14 +52,16 @@ export function renderSeloNivel() {
   selo.title = p.maximo
     ? `Nível máximo (${p.nivel})`
     : `Nível ${p.nivel}: faltam ${p.xpFaltando} XP para o ${p.nivel + 1}`;
+  const numero = el('strong', {}, String(nivelAntes < p.nivel ? nivelAntes : p.nivel));
   selo.append(
-    el('strong', {}, String(p.nivel)),
+    numero,
     el('small', {}, 'nível'),
     el('div', { class: 'nivel-barra mini' },
       el('span', { style: { width: (antes && nivelAntes === p.nivel ? antes : (nivelAntes < p.nivel ? '0%' : p.pct + '%')) } }))
   );
   const barra = selo.querySelector('.nivel-barra span');
-  requestAnimationFrame(() => requestAnimationFrame(() => { barra.style.width = p.pct + '%'; }));
+  andarBarra(barra, nivelAntes < p.nivel ? 0 : parseFloat(antes) || 0, p.pct);
+  if (nivelAntes < p.nivel) contarNumero(numero, nivelAntes, p.nivel);
 
   renderTravasDaSidebar();
 }
