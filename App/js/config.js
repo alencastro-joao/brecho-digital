@@ -1114,6 +1114,14 @@ export const COLECOES = [
       'corta-vento-oakley': ['corta-vento', 'Corta-vento Oakley', '#3d4a3a'],
     },
     efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
+  { id: 'alex-clayton', marca: 'Alex Clayton',
+    itens: ['camiseta-alex-clayton', 'gorro-alex-clayton', 'corrente-alex-clayton'],
+    variantes: {
+      'camiseta-alex-clayton': ['camiseta', 'Camiseta Alex Clayton', '#f4f1ea'],
+      'gorro-alex-clayton': ['gorro', 'Gorro Alex Clayton', '#1f1f1f'],
+      'corrente-alex-clayton': ['corrente', 'Corrente Alex Clayton', '#c9c9c9'],
+    },
+    efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
