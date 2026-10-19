@@ -6,7 +6,9 @@
 // (painel.js), a esteira, as contas (perfil.js › montarLimpeza) e os testes da
 // própria conta (perfil.js › montarTestes), mais fichas e baús de teste.
 
-import { ADMIN, BAUS, SERVICOS } from './config.js';
+import { ADMIN, BAUS, SERVICOS, CATEGORIAS, medidaNoCorpoDaArtista } from './config.js';
+import { catalogo } from './catalog.js';
+import { abrirEditar } from './editar.js';
 import * as db from './db.js';
 import { renderPainel } from './painel.js';
 import { irPara } from './router.js';
@@ -26,12 +28,56 @@ export function montarAdmin() {
       class: 'btn-ghost',
       onclick: () => { db.guardarBau(tipo, 'teste', 'Teste'); toast(`${b.nome} guardado em Baús.`); },
     }, '+ ' + b.nome)));
+
+  $('#adm-revisar').addEventListener('click', () => revisar(pecasParaRevisar(), 0));
 }
 
 export function aoEntrarNoAdmin() {
   if (!ADMIN) { irPara('vitrine'); return; }
   renderPainel();
   renderRedes();
+  renderRevisao();
+}
+
+// --------------------------- Peças antigas ---------------------------------
+// Peças medidas no boneco antigo aparecem com um ajuste automático para o
+// corpo da artista (config.js › ajustarPecaAntiga). A fila abre cada uma no
+// molde do editor, já ajustada: salvar grava a medida no corpo novo e tira a
+// peça da fila. Perna primeiro, que é onde o ajuste acerta menos.
+const ORDEM_REVISAO = ['perna', 'tronco', 'maos', 'pes', 'cabeca'];
+
+function pecasParaRevisar() {
+  const ordem = (p) => {
+    const i = ORDEM_REVISAO.indexOf(CATEGORIAS[p.cat]?.regiao);
+    return i < 0 ? ORDEM_REVISAO.length : i;
+  };
+  return catalogo.itens
+    .filter(p => p.permanente && p.ancora?.w && !medidaNoCorpoDaArtista(p))
+    .sort((a, b) => ordem(a) - ordem(b) || a.cat.localeCompare(b.cat));
+}
+
+function renderRevisao() {
+  const n = pecasParaRevisar().length;
+  const botao = $('#adm-revisar');
+  const resumo = $('#adm-revisar-resumo');
+  botao.hidden = resumo.hidden = !n;
+  botao.textContent = `Revisar peças antigas (${n})`;
+  resumo.textContent = n === 1
+    ? '1 peça ainda está com a medida do boneco antigo.'
+    : `${n} peças ainda estão com a medida do boneco antigo.`;
+}
+
+// Salvar ou pular vai para a próxima. Quem foi pulada continua na fila para
+// a próxima vez.
+function revisar(fila, i) {
+  if (i >= fila.length) {
+    renderRevisao();
+    toast(fila.length ? 'Fim da fila de peças antigas.' : 'Nenhuma peça antiga para revisar.');
+    return;
+  }
+  const seguir = () => revisar(fila, i + 1);
+  abrirEditar(fila[i], (salva) => { renderRevisao(); if (salva) seguir(); },
+    { revisao: { posicao: i + 1, total: fila.length, pular: () => { renderRevisao(); seguir(); } } });
 }
 
 // ------------------------- Instagram e Pinterest ---------------------------
