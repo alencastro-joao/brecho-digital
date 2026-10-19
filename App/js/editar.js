@@ -24,7 +24,7 @@ import { registrarPeca, esquecerPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
-import { el, $, clamp, toast } from './util.js';
+import { el, $, $$, clamp, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { alcaMover } from './alcamover.js';
 
@@ -525,6 +525,7 @@ function posicionarPeca() {
   campo.textContent = `largura ${Math.round(real.w)} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
     + (fora ? ` — ${razao.toFixed(1).replace('.', ',')}× a largura padrão de ${CATEGORIAS[ficha.cat].nome}, confira` : '');
   campo.classList.toggle('alerta', fora);
+  $('#mp-tam-barra').value = Math.round(medida.w);
   alcaMov?.colocar([no]);
 }
 
@@ -600,6 +601,16 @@ function ligarPalco() {
     if (dedos.size < 2) pinca = null;
   };
   for (const evt of ['pointerup', 'pointercancel']) window.addEventListener(evt, largar, true);
+
+  // A barra em pé do celular, no lugar das quinas; + e − de 6% em 6%.
+  $('#mp-tam-barra').addEventListener('input', (e) => {
+    medida.w = clamp(Number(e.target.value), 20, 600);
+    posicionarPeca();
+  });
+  $$('#mp-tamanho .barra-tam-btn').forEach(b => b.addEventListener('click', () => {
+    medida.w = clamp(medida.w * (b.dataset.tam === '1' ? 1.06 : 0.94), 20, 600);
+    posicionarPeca();
+  }));
 
   molde.addEventListener('wheel', (e) => {
     if ($('#mp-passo2').hidden) return;

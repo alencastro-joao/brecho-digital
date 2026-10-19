@@ -265,14 +265,7 @@ body.com-modal { overflow: hidden; }
 }
 
 
-/* Dedo: as quinas continuam pequenas na tela, mas pegam num raio maior. */
 @media (pointer: coarse) {
-  .mp-alca::after { content: ''; position: absolute; inset: -14px; border-radius: 50%; }
-  .mp-alca { width: 16px; height: 16px; }
-  .mp-alca.no { top: -10px; left: -10px; }
-  .mp-alca.ne { top: -10px; right: -10px; }
-  .mp-alca.so { bottom: -10px; left: -10px; }
-  .mp-alca.se { bottom: -10px; right: -10px; }
   /* A alça de mover some com janela aberta (alcamover.css), menos no molde,
      que mora dentro da própria janela. */
   body.com-modal #mp-molde .alca-mover:not([hidden]) { display: grid !important; }

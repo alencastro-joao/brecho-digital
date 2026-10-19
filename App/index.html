@@ -412,6 +412,12 @@
       </div>
 
       <div class="board-scroll" id="board-scroll">
+        <!-- Tamanho da seleção numa barra em pé (celular), no lugar das quinas. -->
+        <div class="barra-tam bd-tamanho" id="bd-tamanho">
+          <button type="button" class="barra-tam-btn" data-tam="1" title="Aumentar" aria-label="Aumentar">+</button>
+          <input type="range" id="bd-escala-vert" min="4" max="100" value="26" aria-label="Tamanho da seleção">
+          <button type="button" class="barra-tam-btn" data-tam="-1" title="Diminuir" aria-label="Diminuir">−</button>
+        </div>
         <div class="prancheta-wrap" id="prancheta-wrap">
           <div class="regua regua-h" id="regua-h"></div>
           <div class="regua regua-v" id="regua-v"></div>
@@ -1212,6 +1218,13 @@
               <span class="mp-alca so" data-alca="1"></span>
               <span class="mp-alca se" data-alca="1"></span>
             </div>
+          </div>
+          <!-- Tamanho numa barra em pé, como na esteira e no Stylist: só no
+               celular, onde as quinas ficam apertadas no dedo. -->
+          <div class="barra-tam mp-tamanho" id="mp-tamanho">
+            <button type="button" class="barra-tam-btn" data-tam="1" title="Aumentar" aria-label="Aumentar">+</button>
+            <input type="range" id="mp-tam-barra" min="20" max="600" value="300" aria-label="Tamanho da peça">
+            <button type="button" class="barra-tam-btn" data-tam="-1" title="Diminuir" aria-label="Diminuir">−</button>
           </div>
         </div>
         <footer class="modal-rodape">

@@ -977,6 +977,18 @@ function ligarControles() {
     alvos.forEach(a => posicionarItem(a));
     agendarFerramentas();
   });
+  // A barra em pé do celular conversa com o slider do painel: mexer nela é
+  // mexer nele. + e − crescem 10% da seleção de cada vez.
+  const escala = $('#bd-escala');
+  const mudarEscala = (v) => {
+    escala.value = clamp(Math.round(v), Number(escala.min), Number(escala.max));
+    escala.dispatchEvent(new Event('input'));
+  };
+  on('#bd-escala-vert', 'input', (e) => mudarEscala(Number(e.target.value)));
+  $$('#bd-tamanho .barra-tam-btn').forEach(b => b.addEventListener('click', () => {
+    const v = Number(escala.value);
+    mudarEscala(v + Number(b.dataset.tam) * Math.max(1, Math.round(v * 0.1)));
+  }));
   on('#bd-rot', 'input', (e) => {
     const alvos = livres();
     if (!alvos.length) return;
@@ -1260,7 +1272,8 @@ function atualizarFerramentas() {
   travar?.setAttribute('aria-pressed', String(tem && alvos.every(i => i.travado)));
   if (!tem) { atualizarBarra(); return; }
   const it = alvos[0];
-  $('#bd-escala').value = Math.round((ehTexto(it) ? it.tamanho * 6 : it.w) / W * 100);
+  $('#bd-escala').value = $('#bd-escala-vert').value =
+    Math.round((ehTexto(it) ? it.tamanho * 6 : it.w) / W * 100);
   $('#bd-rot').value = Math.round(it.rot);
   $('#bd-opacidade').value = Math.round(it.opacidade ?? 100);
   $('#bd-sombra').checked = !!it.sombra;
