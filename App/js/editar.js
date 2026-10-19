@@ -670,6 +670,8 @@ async function apagar() {
 
 // =============================== Montagem =================================
 export function fechar() {
+  revisao = null;
+  $('#mp-pular').hidden = true;
   $('#modal-peca').hidden = true;
   $('#mp-caixa').classList.remove('medindo');
   sairDoCorte();
@@ -680,7 +682,11 @@ export function fechar() {
 
 // Só peça do acervo do administrador pode ser editada: as subidas pelo
 // navegador (legado) não moram no acervo.json e a API recusaria.
-export function abrirEditar(alvo, callback) {
+// `revisao` ({ posicao, total, pular }) é a fila de peças antigas do admin
+// (admin.js): abre direto no molde, com Pular, e o callback abre a próxima.
+let revisao = null;
+
+export function abrirEditar(alvo, callback, { revisao: fila = null } = {}) {
   if (!alvo) return;
   if (!alvo.permanente) {
     return toast('Essa peça foi guardada só neste navegador — só dá para editar as do acervo.', 'aviso');
@@ -720,6 +726,13 @@ export function abrirEditar(alvo, callback) {
   $('#mp-caixa').classList.remove('medindo');
   $('#modal-peca').hidden = false;
   document.body.classList.add('com-modal');
+
+  revisao = fila;
+  $('#mp-pular').hidden = !fila;
+  if (fila) {
+    $('#mp-titulo').textContent = `Revisar ${fila.posicao} de ${fila.total} · ${nomeDaPeca(alvo)}`;
+    irParaMedida();
+  }
 }
 
 export function montarEditar() {
@@ -751,6 +764,11 @@ export function montarEditar() {
   $('#mp-salvar').addEventListener('click', salvar);
   $('#mp-apagar').addEventListener('click', apagar);
   $('#mp-cancelar').addEventListener('click', fechar);
+  $('#mp-pular').addEventListener('click', () => {
+    const pular = revisao?.pular;
+    fechar();
+    pular?.();
+  });
   $('#mp-fechar').addEventListener('click', fechar);
   $('#modal-peca').addEventListener('pointerdown', (e) => {
     if (e.target.id === 'modal-peca') fechar();
