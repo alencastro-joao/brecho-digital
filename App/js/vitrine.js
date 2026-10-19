@@ -35,6 +35,7 @@ import {
 import { emo } from './icones.js';
 import { botaoDesejo } from './usuario.js';
 import { mostrar } from './janela.js';
+import { chegarNaArara, voar } from './movimento.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -360,7 +361,17 @@ function caixaDeAura(raridade, src) {
   return aura ? el('span', { class: 'aura-cx', 'aria-hidden': 'true' }, aura) : null;
 }
 
-export function montarVitrine() {
+// As peças caem na arara na primeira vez que o mural aparece e quando a loja
+// é reposta ou o dia vira; remontar no mesmo dia (redimensionar, desfazer)
+// não repete a chegada.
+let jaChegou = false;
+function chegar() {
+  if (!mural?.offsetParent) return;      // vitrine escondida: chega quando abrir
+  jaChegou = true;
+  chegarNaArara([...mural.querySelectorAll('.item-roupa')]);
+}
+
+export function montarVitrine({ entrada = false } = {}) {
   mural = $('#vitrine-mural');
   if (!mural) return;
 
@@ -517,6 +528,7 @@ export function montarVitrine() {
     passThroughInstalado = true;
   }
 
+  if (entrada || !jaChegou) chegar();
   atualizarBadge();
   conferirWishlist();
 }
@@ -813,6 +825,12 @@ function voarParaOCloset(noDOM) {
   const img = noDOM.querySelector('img');
   const alvo = document.querySelector('.sidebar-btn.inventario');
   if (!img || !alvo) return;
+  const acender = () => {
+    alvo.classList.add('recebeu');
+    setTimeout(() => alvo.classList.remove('recebeu'), 700);
+  };
+  // Com GSAP a peça vai num arco e o botão acende quando ela chega.
+  if (voar(img, alvo, acender)) return;
 
   const de = img.getBoundingClientRect();
   const para = alvo.getBoundingClientRect();
@@ -833,8 +851,7 @@ function voarParaOCloset(noDOM) {
     });
   });
   setTimeout(() => voo.remove(), 800);
-  alvo.classList.add('recebeu');
-  setTimeout(() => alvo.classList.remove('recebeu'), 700);
+  acender();
 }
 
 // --------------------------- Ferramentas de admin -------------------------
@@ -852,7 +869,7 @@ export function reporLoja() {
   db.state.dia.estoque = novaSemente();
   sementeArrumacao = novaSemente();
   db.salvar();
-  montarVitrine();
+  montarVitrine({ entrada: true });
   falarDe('boasVindas');
   toast('Loja reposta: estoque novo e resgates liberados.');
   avisarLojaReposta();
@@ -866,7 +883,7 @@ export function reporComFicha() {
   db.state.dia.estoque = novaSemente();
   sementeArrumacao = novaSemente();
   db.salvar();
-  montarVitrine();
+  montarVitrine({ entrada: true });
   falarDe('boasVindas');
   toast('Loja reposta!', 'rare');
 }
@@ -962,8 +979,11 @@ export function aoEntrarNaVitrine() {
   const virou = db.virarODiaSeNecessario();
   // Conta peça, não filho: o aviso de loja vazia também é filho do mural e
   // fazia a vitrine se achar montada.
-  if (virou || !mural?.querySelector('.item-roupa')) montarVitrine();
-  else atualizarBadge();
+  if (virou || !mural?.querySelector('.item-roupa')) montarVitrine({ entrada: virou });
+  else {
+    if (!jaChegou) chegar();
+    atualizarBadge();
+  }
   falarDe(db.resgatesRestantes(CONFIG.RESGATES_POR_DIA) ? 'boasVindas' : 'acabou');
 }
 

@@ -206,3 +206,8 @@ html body .sidebar .sidebar-btn:active { transform: translateY(2px) scale(.94); 
   html body .sidebar .sidebar-btn:active { transform: none; }
   .item-slot:hover .peca-caixa { transform: none; }
 }
+
+/* ----------------------- Guarda-roupa: rearrumando ----------------------- */
+/* Enquanto o Flip (js/movimento.js) desliza as peças, a transição de hover
+   da casa fica desligada: ela atrasaria cada passo do transform. */
+.flipando > .item-slot { transition: none; }

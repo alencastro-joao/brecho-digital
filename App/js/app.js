@@ -190,7 +190,7 @@ async function iniciar() {
   // O dia pode virar com a aba aberta.
   setInterval(() => {
     if (db.virarODiaSeNecessario()) {
-      montarVitrine();   // o sino já avisa do dia novo
+      montarVitrine({ entrada: true });   // o sino já avisa do dia novo
     } else {
       atualizarBadge();
     }
