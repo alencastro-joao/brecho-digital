@@ -7,7 +7,7 @@
 // problema, como no documento de upload/formatação. Peça sem contorno cai no
 // hit-test por canal alpha de alpha.js.
 
-import { CONFIG, CATEGORIAS, migrarCategoria } from './config.js';
+import { CONFIG, CATEGORIAS, migrarCategoria, calibrarAjuste } from './config.js';
 import * as db from './db.js';
 
 const SINGULAR = {
@@ -34,6 +34,7 @@ export async function carregarCatalogo() {
 
   catalogo.itens.sort((a, b) => a.id.localeCompare(b.id));
   catalogo.porId = new Map(catalogo.itens.map(i => [i.id, i]));
+  calibrarAjuste(catalogo.itens);
   montarClipPaths();
   return catalogo;
 }
@@ -82,6 +83,7 @@ export function registrarPeca(peca, { permanente = false } = {}) {
   if (i >= 0) catalogo.itens[i] = item;
   else catalogo.itens.push(item);
   catalogo.porId.set(item.id, item);
+  calibrarAjuste(catalogo.itens);
   return item;
 }
 

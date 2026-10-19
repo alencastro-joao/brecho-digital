@@ -518,4 +518,5 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-acoes .pf-vestir { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .pf-acoes .pf-vestir .ico { width: 17px; height: 17px; flex: none; }
 .perfil-atalho.recebeu { animation: pulso .7s ease; }
-#adm-revisar[hidden], #adm-revisar-resumo[hidden] { display: none; }
+#adm-revisar[hidden], #adm-revisar-resumo[hidden],
+#adm-calibrar[hidden], #adm-calibrar-resumo[hidden] { display: none; }
