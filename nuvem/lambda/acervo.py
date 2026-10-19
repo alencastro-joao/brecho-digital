@@ -205,6 +205,16 @@ def medida(ancora):
     out = {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')}
     if ancora.get('corpo') in CORPOS_DA_MEDIDA:
         out['corpo'] = ancora['corpo']
+    # A medida antiga, quando o admin mede de novo uma peça na fila de calibrar:
+    # a diferença entre as duas ajusta as outras peças da categoria.
+    antes = ancora.get('antes')
+    if isinstance(antes, dict):
+        try:
+            antes = {k: round(float(antes[k]), 1) for k in ('x', 'y', 'w')}
+        except (KeyError, TypeError, ValueError):
+            antes = None
+        if antes and antes['w'] > 0:
+            out['antes'] = antes
     return out
 
 

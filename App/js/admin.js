@@ -6,7 +6,8 @@
 // (painel.js), a esteira, as contas (perfil.js › montarLimpeza) e os testes da
 // própria conta (perfil.js › montarTestes), mais fichas e baús de teste.
 
-import { ADMIN, BAUS, SERVICOS, CATEGORIAS, medidaNoCorpoDaArtista } from './config.js';
+import { ADMIN, BAUS, SERVICOS, CATEGORIAS, ORDEM_CATEGORIAS, PECAS_PARA_CALIBRAR,
+  medidaNoCorpoDaArtista, calibradaPeloJoao } from './config.js';
 import { catalogo } from './catalog.js';
 import { abrirEditar } from './editar.js';
 import * as db from './db.js';
@@ -30,6 +31,7 @@ export function montarAdmin() {
     }, '+ ' + b.nome)));
 
   $('#adm-revisar').addEventListener('click', () => revisar(pecasParaRevisar(), 0));
+  $('#adm-calibrar').addEventListener('click', () => revisar(pecasParaCalibrar().falta, 0, true));
 }
 
 export function aoEntrarNoAdmin() {
@@ -56,7 +58,36 @@ function pecasParaRevisar() {
     .sort((a, b) => ordem(a) - ordem(b) || a.cat.localeCompare(b.cat));
 }
 
+// Calibrar: 3 peças antigas de cada categoria, na ordem das categorias. O João
+// mede cada uma no corpo novo; a diferença para a medida antiga vira o ajuste
+// de todas as outras da categoria (config.js › calibrarAjuste). Pega peças de
+// larguras diferentes (num quarto, na metade e em três quartos da fila por
+// largura), sem as pontas, que costumam ser as peças fora do comum.
+function pecasParaCalibrar() {
+  const todas = [], falta = [];
+  for (const cat of ORDEM_CATEGORIAS) {
+    const daCat = catalogo.itens.filter(p => p.permanente && p.cat === cat && p.ancora?.w);
+    const feitas = daCat.filter(calibradaPeloJoao);
+    const antigas = daCat.filter(p => !medidaNoCorpoDaArtista(p))
+      .sort((a, b) => a.ancora.w - b.ancora.w);
+    const n = Math.max(0, Math.min(PECAS_PARA_CALIBRAR - feitas.length, antigas.length));
+    const escolhidas = antigas.length <= n ? antigas : [...new Set(Array.from({ length: n },
+      (_, i) => antigas[Math.round((i + 1) * (antigas.length - 1) / (n + 1))]))];
+    todas.push(...feitas, ...escolhidas);
+    falta.push(...escolhidas);
+  }
+  return { todas, falta };
+}
+
 function renderRevisao() {
+  const { todas, falta } = pecasParaCalibrar();
+  const calibrar = $('#adm-calibrar');
+  const resumoCal = $('#adm-calibrar-resumo');
+  calibrar.hidden = resumoCal.hidden = !falta.length;
+  calibrar.textContent = `Calibrar ajuste (${falta.length})`;
+  resumoCal.textContent = `${todas.length - falta.length} de ${todas.length} peças medidas. `
+    + `Cada categoria usa a diferença das ${PECAS_PARA_CALIBRAR} dela para ajustar as outras.`;
+
   const n = pecasParaRevisar().length;
   const botao = $('#adm-revisar');
   const resumo = $('#adm-revisar-resumo');
@@ -69,15 +100,16 @@ function renderRevisao() {
 
 // Salvar ou pular vai para a próxima. Quem foi pulada continua na fila para
 // a próxima vez.
-function revisar(fila, i) {
+function revisar(fila, i, calibrar = false) {
   if (i >= fila.length) {
     renderRevisao();
-    toast(fila.length ? 'Fim da fila de peças antigas.' : 'Nenhuma peça antiga para revisar.');
+    toast(calibrar ? 'Fim da calibragem: as outras peças já usam as suas medidas.'
+      : fila.length ? 'Fim da fila de peças antigas.' : 'Nenhuma peça antiga para revisar.');
     return;
   }
-  const seguir = () => revisar(fila, i + 1);
+  const seguir = () => revisar(fila, i + 1, calibrar);
   abrirEditar(fila[i], (salva) => { renderRevisao(); if (salva) seguir(); },
-    { revisao: { posicao: i + 1, total: fila.length, pular: () => { renderRevisao(); seguir(); } } });
+    { calibrar, revisao: { posicao: i + 1, total: fila.length, pular: () => { renderRevisao(); seguir(); } } });
 }
 
 // ------------------------- Instagram e Pinterest ---------------------------

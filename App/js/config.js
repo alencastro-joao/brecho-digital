@@ -333,13 +333,62 @@ const SEM_AJUSTE = (() => {
   catch { return false; }
 })();
 
+// ---------------------- Calibragem pelas medidas do João ----------------------
+// Admin › "Calibrar ajuste" abre 3 peças antigas de cada categoria no molde.
+// Ao salvar, a peça grava a medida nova e guarda a antiga em `ancora.antes`.
+// A diferença entre as duas (escala da largura e deslocamento, no corpo) vira o
+// ajuste da categoria inteira, no lugar do número fixo acima. Com 3 peças, vale
+// a mediana: uma medida errada sozinha não puxa a categoria. Calcula de novo
+// toda vez que o catálogo muda (catalog.js chama `calibrarAjuste`).
+export const PECAS_PARA_CALIBRAR = 3;
+let calibrado = {};
+
+const mediana = (v) => {
+  const o = [...v].sort((x, y) => x - y);
+  const m = o.length >> 1;
+  return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
+};
+
+// A medida (no molde) levada ao corpo, como ancoraDaPeca faz.
+const medidaNoCorpo = (cat, m) => {
+  const padrao = CATEGORIAS[cat]?.anchor ?? { x: 300, y: 500, w: 240 };
+  return ancoraNoCorpo(CATEGORIAS[cat]?.regiao, { ...padrao, ...m });
+};
+
+export const calibradaPeloJoao = (peca) => !!(peca?.ancora?.antes?.w && peca.ancora.w);
+
+export function calibrarAjuste(itens) {
+  const porCat = {};
+  for (const p of itens || []) {
+    if (!calibradaPeloJoao(p) || !CATEGORIAS[p.cat]) continue;
+    const antes = medidaNoCorpo(p.cat, p.ancora.antes);
+    const depois = medidaNoCorpo(p.cat, p.ancora);
+    const lado = antes.x < 300 ? -1 : antes.x > 300 ? 1 : 0;
+    (porCat[p.cat] ||= []).push({
+      k: depois.w / antes.w,
+      dx: lado ? lado * (depois.x - antes.x) : 0,
+      dy: depois.y - antes.y,
+    });
+  }
+  calibrado = Object.fromEntries(Object.entries(porCat).map(([cat, l]) => [cat, {
+    k: mediana(l.map((d) => d.k)), dx: mediana(l.map((d) => d.dx)), dy: mediana(l.map((d) => d.dy)),
+    n: l.length,
+  }]));
+  return calibrado;
+}
+
 export function ajustarPecaAntiga(cat, a) {
-  const aj = AJUSTE_PECA_ANTIGA[cat];
   // O ajuste leva ao corpo da artista; no boneco antigo (?proporcao=padrao)
   // a peça antiga já está no lugar.
-  if (!aj || SEM_AJUSTE || CORPO_EM_TESTE !== 'artista') return a;
-  const k = aj.k ?? 1;
+  if (SEM_AJUSTE || CORPO_EM_TESTE !== 'artista') return a;
   const lado = a.x < 300 ? -1 : a.x > 300 ? 1 : 0;
+  // Calibrada pelo João: a diferença medida, sem ponto fixo (as peças de uma
+  // categoria ficam todas na mesma altura do corpo).
+  const c = calibrado[cat];
+  if (c) return { ...a, x: a.x + lado * c.dx, y: a.y + c.dy, w: a.w * c.k };
+  const aj = AJUSTE_PECA_ANTIGA[cat];
+  if (!aj) return a;
+  const k = aj.k ?? 1;
   const y0 = aj.y0 ?? a.y;
   return {
     ...a,

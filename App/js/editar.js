@@ -631,7 +631,8 @@ async function salvar() {
     ...ficha,
     tema: ficha.tema || (temaDaLista(peca.id) ? 'nenhum' : ''),
     ancora: { x: Math.round(real.x), y: Math.round(real.y), w: Math.round(real.w),
-              ...(CORPO_EM_TESTE ? { corpo: CORPO_EM_TESTE } : {}) },
+              ...(CORPO_EM_TESTE ? { corpo: CORPO_EM_TESTE } : {}),
+              ...(calibrando ? { antes: calibrando } : {}) },
   };
   if (arquivo.novo) {
     Object.assign(corpo, { src: arquivo.src, w: arquivo.w, h: arquivo.h });
@@ -714,6 +715,7 @@ async function apagar() {
 // =============================== Montagem =================================
 export function fechar() {
   revisao = null;
+  calibrando = null;
   $('#mp-pular').hidden = true;
   $('#modal-peca').hidden = true;
   $('#mp-caixa').classList.remove('medindo');
@@ -728,8 +730,12 @@ export function fechar() {
 // `revisao` ({ posicao, total, pular }) é a fila de peças antigas do admin
 // (admin.js): abre direto no molde, com Pular, e o callback abre a próxima.
 let revisao = null;
+// Na fila de calibrar (admin.js), a medida antiga da peça, no molde: vai junto
+// ao salvar (`ancora.antes`), e a diferença para a nova vira o ajuste da
+// categoria (config.js › calibrarAjuste).
+let calibrando = null;
 
-export function abrirEditar(alvo, callback, { revisao: fila = null } = {}) {
+export function abrirEditar(alvo, callback, { revisao: fila = null, calibrar = false } = {}) {
   if (!alvo) return;
   if (!alvo.permanente) {
     return toast('Essa peça foi guardada só neste navegador — só dá para editar as do acervo.', 'aviso');
@@ -771,9 +777,11 @@ export function abrirEditar(alvo, callback, { revisao: fila = null } = {}) {
   document.body.classList.add('com-modal');
 
   revisao = fila;
+  calibrando = calibrar && alvo.ancora?.w
+    ? (({ x, y, w }) => ({ x, y, w }))(alvo.ancora) : null;
   $('#mp-pular').hidden = !fila;
   if (fila) {
-    $('#mp-titulo').textContent = `Revisar ${fila.posicao} de ${fila.total} · ${nomeDaPeca(alvo)}`;
+    $('#mp-titulo').textContent = `${calibrando ? 'Calibrar' : 'Revisar'} ${fila.posicao} de ${fila.total} · ${nomeDaPeca(alvo)}`;
     irParaMedida();
   }
 }
