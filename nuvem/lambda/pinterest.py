@@ -59,6 +59,7 @@ PALAVRAS = [
     ('glasses', ('oculos', 'glasses', 'sunglass')),
     ('hats', ('bone', 'chapeu', 'hat', 'cap', 'gorro', 'bucket', 'beanie')),
     ('bags', ('bolsa', 'bag', 'mochila', 'pochete', 'carteira')),
+    ('belts', ('cinto', 'belt')),
 ]
 
 

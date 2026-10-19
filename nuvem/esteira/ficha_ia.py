@@ -39,6 +39,7 @@ CATEGORIAS = {
     'glasses': 'óculos de sol, óculos de grau',
     'hats': 'boné, chapéu, gorro, bucket, tiara',
     'bags': 'bolsa, mochila, pochete, carteira',
+    'belts': 'cinto, cinta, faixa de cintura',
 }
 CORES = ['Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Rosa',
          'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo', 'Dourado', 'Prateado',

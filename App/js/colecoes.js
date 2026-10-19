@@ -252,7 +252,7 @@ export function renderColecoes() {
 
 // Os tipos de peça na ordem do corpo, de cima para baixo, e os acessórios no fim.
 const ORDEM_DO_ALBUM = ['hats', 'glasses', 'necklaces', 'shirts', 'cropped', 'coats', 'dresses',
-  'pants', 'shorts', 'skirts', 'shoes', 'bags', 'watches', 'bracelets'];
+  'belts', 'pants', 'shorts', 'skirts', 'shoes', 'bags', 'watches', 'bracelets'];
 const tipoDe = (id) => migrarCategoria(pecaDoCatalogo(id)?.cat);
 const posDoTipo = (id) => {
   const i = ORDEM_DO_ALBUM.indexOf(tipoDe(id));
