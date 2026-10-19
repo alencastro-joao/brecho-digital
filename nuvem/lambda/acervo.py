@@ -194,6 +194,19 @@ def nova_peca(corpo):
     return item
 
 
+# Em qual boneco a medida foi feita. Sem a marca, o jogo trata a peça como
+# medida no boneco antigo e ajusta na hora de mostrar (ancoraDaPeca, config.js).
+CORPOS_DA_MEDIDA = ('artista',)
+
+
+def medida(ancora):
+    """A âncora {x, y, w} como se grava, com o corpo em que foi medida."""
+    out = {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+    if ancora.get('corpo') in CORPOS_DA_MEDIDA:
+        out['corpo'] = ancora['corpo']
+    return out
+
+
 def ficha_da_peca(item_id, corpo, src, path):
     """O item do acervo.json, a partir da ficha que veio da tela."""
     ancora = corpo.get('ancora') or {}
@@ -209,7 +222,7 @@ def ficha_da_peca(item_id, corpo, src, path):
         'cor': str(corpo.get('cor') or '').strip()[:24],
         'raridade': corpo.get('raridade', 'common'),
         **({'tema': tema(corpo.get('tema'))} if tema(corpo.get('tema')) else {}),
-        'ancora': {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')},
+        'ancora': medida(ancora),
         'criadoEm': _agora(),
     }
 
@@ -293,8 +306,7 @@ def editar_peca(item_id, corpo):
                 item.pop('tema', None)
 
         if corpo.get('ancora'):
-            ancora = corpo['ancora']
-            item['ancora'] = {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+            item['ancora'] = medida(corpo['ancora'])
 
         # A imagem sobe uma vez só; o que ela muda na ficha vale em toda
         # tentativa, porque cada tentativa relê o acervo do zero.
