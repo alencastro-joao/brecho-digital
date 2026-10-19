@@ -68,7 +68,7 @@ ANCORAS = {
     'watches': {'x': 172, 'y': 652, 'w': 72}, 'bracelets': {'x': 428, 'y': 660, 'w': 62},
     'necklaces': {'x': 300, 'y': 300, 'w': 120}, 'glasses': {'x': 300, 'y': 116, 'w': 124},
     'hats': {'x': 300, 'y': 84, 'w': 176}, 'bags': {'x': 440, 'y': 646, 'w': 152},
-    'belts': {'x': 300, 'y': 568, 'w': 260},
+    'belts': {'x': 300, 'y': 566, 'w': 365},
 }
 ID_OK = re.compile(r'^[a-z0-9_-]{1,40}$')
 TOKEN_OK = re.compile(r'^[a-f0-9]{16}$')

@@ -1,5 +1,5 @@
 // As duas formas de organizar as telas de roupa — por tipo de peça (Camisas,
-// Saias, Óculos...) ou por parte do corpo (Cabeça, Tronco, Perna, Pés, Mãos).
+// Saias, Óculos...) ou por parte do corpo (Cabeça, Tronco, Perna, Pés, Acessórios).
 //
 // É uma escolha só, guardada nas preferências: trocar no closet troca também
 // no Stylist e na Colagem. Só organiza a vista; a peça continua gravada com a
