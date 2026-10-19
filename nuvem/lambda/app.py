@@ -441,8 +441,10 @@ def rotas_de_redes(pedido):
         q = pedido.consulta
         if q.get('error') or not q.get('code'):
             return mandar_para(app + '&erro=recusou#/perfil')
+        if not usuario:
+            return mandar_para(app + '&erro=sessao#/perfil')
         try:
-            redes.concluir(servico, q.get('code'), q.get('state'))
+            redes.concluir(servico, q.get('code'), q.get('state'), usuario['id'])
         except (ValueError, KeyError) as e:
             print('redes: volta de %s falhou: %r' % (servico, e))
             return mandar_para(app + '&erro=falhou#/perfil')
