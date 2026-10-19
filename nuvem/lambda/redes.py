@@ -177,14 +177,21 @@ def _trocar_pinterest(cfg, code):
     return eu['username'], token, expira
 
 
-def concluir(servico, code, state):
-    """Volta da rede. Devolve (uid, usuario) ou levanta ValueError."""
+def concluir(servico, code, state, uid_sessao):
+    """Volta da rede. Devolve (uid, usuario) ou levanta ValueError.
+
+    `uid_sessao` é quem está logado no navegador que voltou. O `state` tem de
+    ser dessa mesma conta: sem isso, alguém abria o /entrar na conta dele,
+    mandava o link da rede para outra pessoa, e o Instagram dela ia parar
+    ligado na conta de quem mandou."""
     if servico not in SERVICOS or not code or not state:
         raise ValueError('ligação incompleta')
     pedido = _get('REDESTATE#' + state)
     _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': 'REDESTATE#' + state}})
     if not pedido or pedido.get('servico') != servico or int(pedido.get('ttl', 0)) < time.time():
         raise ValueError('a ligação expirou, tente de novo')
+    if not uid_sessao or pedido.get('uid') != uid_sessao:
+        raise ValueError('a ligação começou em outra conta')
     cfg = _config(servico)
     if not cfg:
         raise ValueError('rede ainda não configurada')
