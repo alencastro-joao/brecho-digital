@@ -666,6 +666,31 @@
     accent-color: var(--tinta); touch-action: none;
   }
 
+  /* Barra em pé do tamanho (molde do editor e Colagem; o Stylist tem a dele):
+     + em cima, − embaixo, a bolinha no meio. Troca as quinas, apertadas no
+     dedo. Mesmo desenho da do Stylist e da esteira. */
+  .barra-tam {
+    width: 40px; flex: none;
+    flex-direction: column; align-items: center; gap: 4px; padding: 4px 0;
+    border: 2px solid var(--bloco-borda, var(--linha)); border-radius: 20px;
+    background: var(--bloco, var(--branco)); box-shadow: inset 0 -3px 0 var(--bloco-fundo, var(--linha));
+  }
+  .barra-tam-btn {
+    flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+    border: 0; border-radius: 50%; background: none;
+    font: inherit; font-size: 20px; font-weight: 700; line-height: 1; color: var(--tinta);
+  }
+  .barra-tam-btn:active { background: var(--painel, #f1ece5); }
+  /* Em pé: o mínimo embaixo, o máximo em cima. */
+  .barra-tam input[type="range"] {
+    flex: 1 1 0; min-height: 0; width: 28px; margin: 0;
+    writing-mode: vertical-lr; direction: rtl;
+    accent-color: var(--tinta); touch-action: none;
+  }
+  /* Quinas de tamanho do Stylist e da Colagem saem: ficam a bolinha de girar
+     e a barra em pé. */
+  .alcas-moldura .alca-esc { display: none; }
+
   /* ------------------------------ Colagem -------------------------------- */
   /* No padrão do Stylist: tudo numa tela, sem rolar. A colagem em cima,
      num painel ocupando toda a largura dele, e os botões numa fileira só
@@ -682,7 +707,11 @@
     background: var(--papel);
   }
   .view-board .board-main { display: contents; }
+  .view-board.com-selecao .bd-tamanho {
+    display: flex; position: absolute; z-index: 30; top: 8px; right: 8px; bottom: 56px;
+  }
   .view-board .board-scroll {
+    position: relative;
     grid-row: 1; grid-column: 1; height: auto; min-height: 0;
     padding: 8px 8px 52px; overflow: hidden;
     border: 2px solid var(--bloco-borda); border-radius: 20px;
@@ -983,8 +1012,36 @@
   .mp-dica, .medindo .mp-dica { padding: 12px 16px 0; }
   .mp-molde-area, .medindo .mp-molde-area { padding: 10px 16px; }
   .mp-molde { height: min(430px, 50dvh); }
-  .medindo .mp-molde { height: calc(100dvh - 280px); }
-  .modal:has(.modal-caixa.medindo) { padding: 10px; }
+  /* O molde (editar.js, e a fila de peças antigas do admin) ocupa a tela
+     toda: a janela vira a tela, o molde pega toda a altura que sobra (medida
+     pelo contêiner, sem chutar a altura do topo e do rodapé) e o rodapé cabe
+     numa linha de botões, com a medida em cima. */
+  .modal:has(.modal-caixa.medindo) { padding: 0; }
+  .modal-caixa.medindo {
+    width: 100%; height: 100dvh; max-height: none; border-radius: 0;
+  }
+  .medindo .modal-topo { padding: 12px 14px 10px; gap: 10px; }
+  .medindo .modal-topo h2 {
+    font-size: 15px; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .medindo .modal-x { flex: none; }
+  .medindo .mp-dica { display: none; }
+  .medindo .mp-molde-area { padding: 10px 14px; container-type: size; }
+  .medindo .mp-molde { height: min(100cqh, 200cqw); }
+  .medindo .modal-rodape { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .medindo .modal-rodape .mp-aviso { font-size: 11.5px; line-height: 1.35; }
+  .medindo .modal-rodape .btn-ghost { flex: none; }
+  .medindo .modal-rodape .btn-dark { flex: 1; }
+  #modal-peca .so-pc { display: none; }
+  #modal-peca .so-cel { display: inline; }
+  /* As quinas saem: o tamanho vai na barra em pé à direita do molde. */
+  .mp-alca { display: none; }
+  .medindo .mp-molde-area {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .medindo .mp-molde, .medindo .mp-tamanho { height: min(100cqh, calc(200cqw - 96px)); }
+  .medindo .mp-tamanho { display: flex; }
   .cx-corpo { padding: 16px; }
   .aj-corpo { padding: 14px 16px 20px; }
   .aj-corpo .conexao-lista { grid-template-columns: minmax(0, 1fr); }

@@ -264,3 +264,9 @@ body.com-modal { overflow: hidden; }
   .mp-imagem { min-height: auto; grid-template-rows: auto; }
 }
 
+
+@media (pointer: coarse) {
+  /* A alça de mover some com janela aberta (alcamover.css), menos no molde,
+     que mora dentro da própria janela. */
+  body.com-modal #mp-molde .alca-mover:not([hidden]) { display: grid !important; }
+}

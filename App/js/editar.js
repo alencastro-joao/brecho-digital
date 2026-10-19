@@ -24,7 +24,7 @@ import { registrarPeca, esquecerPeca, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
-import { el, $, clamp, toast } from './util.js';
+import { el, $, $$, clamp, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { alcaMover } from './alcamover.js';
 
@@ -525,11 +525,15 @@ function posicionarPeca() {
   campo.textContent = `largura ${Math.round(real.w)} un · ${Math.round(real.w / 224 * 100)}% dos ombros`
     + (fora ? ` — ${razao.toFixed(1).replace('.', ',')}× a largura padrão de ${CATEGORIAS[ficha.cat].nome}, confira` : '');
   campo.classList.toggle('alerta', fora);
+  $('#mp-tam-barra').value = Math.round(medida.w);
   alcaMov?.colocar([no]);
 }
 
 // A alça de quatro setas ao lado da peça: arrastar sem tapar a peça (celular).
 let alcaMov = null;
+// Dedos no molde (id → ponto) e a pinça em andamento ({ d0, w0 }).
+const dedos = new Map();
+let pinca = null;
 
 function ligarPalco() {
   const no = $('#mp-peca');
@@ -547,7 +551,11 @@ function ligarPalco() {
     no.setPointerCapture(e.pointerId);
     no.classList.add('manipulando');
 
+    // Depois de uma pinça o dedo que sobra não arrasta: a peça pularia.
+    let pincou = false;
     const mover = (ev) => {
+      if (pinca) pincou = true;
+      if (pincou) return;
       if (alca && alca !== 'mov') {
         medida.w = clamp(base.w * (Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y) / raio0), 20, 600);
       } else {
@@ -569,7 +577,42 @@ function ligarPalco() {
   no.addEventListener('pointerdown', pegar);
   alcaMov = alcaMover($('#mp-molde'), pegar);
 
-  $('#mp-molde').addEventListener('wheel', (e) => {
+  // Pinça com dois dedos em qualquer lugar do molde muda a largura, como a
+  // roda do mouse. Captura: a alça de mover para a propagação do pointerdown.
+  const molde = $('#mp-molde');
+  const distancia = () => {
+    const [a, b] = [...dedos.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  };
+  molde.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (dedos.size === 2) pinca = { d0: distancia(), w0: medida.w };
+  }, true);
+  molde.addEventListener('pointermove', (e) => {
+    if (!dedos.has(e.pointerId)) return;
+    dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!pinca || dedos.size < 2) return;
+    medida.w = clamp(pinca.w0 * distancia() / pinca.d0, 20, 600);
+    posicionarPeca();
+  }, true);
+  const largar = (e) => {
+    dedos.delete(e.pointerId);
+    if (dedos.size < 2) pinca = null;
+  };
+  for (const evt of ['pointerup', 'pointercancel']) window.addEventListener(evt, largar, true);
+
+  // A barra em pé do celular, no lugar das quinas; + e − de 6% em 6%.
+  $('#mp-tam-barra').addEventListener('input', (e) => {
+    medida.w = clamp(Number(e.target.value), 20, 600);
+    posicionarPeca();
+  });
+  $$('#mp-tamanho .barra-tam-btn').forEach(b => b.addEventListener('click', () => {
+    medida.w = clamp(medida.w * (b.dataset.tam === '1' ? 1.06 : 0.94), 20, 600);
+    posicionarPeca();
+  }));
+
+  molde.addEventListener('wheel', (e) => {
     if ($('#mp-passo2').hidden) return;
     e.preventDefault();
     medida.w = clamp(medida.w * (e.deltaY < 0 ? 1.06 : 0.94), 20, 600);

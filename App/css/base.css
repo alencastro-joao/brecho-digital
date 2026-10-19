@@ -176,6 +176,8 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 
 /* Texto que só aparece no computador / só no celular (mobile.css troca). */
 .so-cel { display: none; }
+/* Barra em pé do tamanho (mobile.css): só no celular, no lugar das quinas. */
+.barra-tam { display: none; }
 
 /* ------------------------------ Favoritar ------------------------------- */
 /* A estrela que escolhe o que aparece no perfil (js/favoritos.js). No painel
