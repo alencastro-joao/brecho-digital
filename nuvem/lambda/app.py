@@ -45,9 +45,10 @@ função recusa qualquer pedido que chegue sem ele. Quem descobrir a URL
 
 **De onde vem o IP.** Atrás do CloudFront, `sourceIp` é o IP do CloudFront, não
 o de quem está do outro lado — usá-lo no rate limit juntaria o mundo inteiro
-num balde só. O IP verdadeiro é o **último** item do `X-Forwarded-For`: o
-CloudFront acrescenta o do visitante ao fim do que já estava lá, então o que um
-atacante tenha inventado fica antes, e nunca no lugar que a gente lê.
+num balde só. O IP verdadeiro é o último item do `X-Forwarded-For` que não é o
+próprio CloudFront: ele acrescenta o do visitante ao fim do que já estava lá, e
+a Function URL pode pôr o do CloudFront depois. O que um atacante tenha
+inventado fica antes, e nunca no lugar que a gente lê.
 """
 
 import json
@@ -87,6 +88,7 @@ class Pedido:
     def __init__(self, evento):
         http = (evento.get('requestContext') or {}).get('http') or {}
         self.metodo = http.get('method', 'GET')
+        self._conexao = http.get('sourceIp', '')
         self.rota = (evento.get('rawPath') or '/').rstrip('/') or '/'
         self.cabecalhos = {k.lower(): v for k, v in (evento.get('headers') or {}).items()}
         self.cookies = evento.get('cookies') or []
@@ -100,9 +102,15 @@ class Pedido:
 
     @property
     def origem(self):
-        encadeado = self.cabecalhos.get('x-forwarded-for', '')
-        if encadeado:
-            return encadeado.split(',')[-1].strip()
+        # Quem abriu a conexão com a Function URL foi o CloudFront, e a Function
+        # URL pode acrescentar o IP dele ao fim do X-Forwarded-For. Quando o
+        # último item é esse IP (`sourceIp`), o visitante é o anterior: foi o
+        # CloudFront que o escreveu ali.
+        itens = [i.strip() for i in self.cabecalhos.get('x-forwarded-for', '').split(',') if i.strip()]
+        if len(itens) > 1 and itens[-1] == self._conexao:
+            itens.pop()
+        if itens:
+            return itens[-1]
         return self.cabecalhos.get('cloudfront-viewer-address', '').rsplit(':', 1)[0]
 
     def token(self):
@@ -191,7 +199,8 @@ def rotas_de_conta(pedido):
     if rota == '/api/auth/registrar':
         corpo = pedido.corpo(LIMITE_LOGIN)
         usuario = contas.criar_conta(corpo.get('email'), corpo.get('senha'),
-                                     corpo.get('nome'), corpo.get('handle'))
+                                     corpo.get('nome'), corpo.get('handle'),
+                                     origem=pedido.origem)
         return entregar_sessao(usuario, pedido, 201)
 
     if rota == '/api/auth/entrar':
