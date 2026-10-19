@@ -71,6 +71,9 @@ SENHA_MIN = 8
 # morar fora do processo — e um item com TTL é mais barato que qualquer coisa
 # que precise ficar ligada só para contar.
 TENTATIVAS_MAX, TENTATIVAS_JANELA = 8, 15 * 60
+# Cadastro: 10 contas novas por IP a cada hora. Conta é de graça e cada uma
+# ganha cota de peças no estoque; sem teto, um script criava centenas.
+CADASTROS_MAX, CADASTROS_JANELA = 10, 60 * 60
 
 
 class ErroDeConta(Exception):
@@ -201,7 +204,12 @@ def _publico(item):
     }
 
 
-def criar_conta(email, senha, nome=None, handle=None):
+def criar_conta(email, senha, nome=None, handle=None, origem=''):
+    freio = 'cadastro|' + hashlib.sha256(str(origem or '').encode('utf-8')).hexdigest()[:32]
+    espera = _bloqueado(freio, CADASTROS_MAX, CADASTROS_JANELA)
+    if espera:
+        raise ErroDeConta('Muitas contas criadas daqui. Espere %d minutos.'
+                          % max(1, espera // 60), 429)
     email = limpar_email(email)
     senha = limpar_senha(senha)
     digitado = bool(str(handle or '').strip())
@@ -265,31 +273,44 @@ def criar_conta(email, senha, nome=None, handle=None):
     else:
         raise ErroDeConta('Esse @ já está em uso.', 409)
 
+    _errou(freio, CADASTROS_JANELA)
     return _publico(_pegar('USER#' + usuario_id))
 
 
-def _bloqueado(chave):
+def _bloqueado(chave, maximo=TENTATIVAS_MAX, janela=TENTATIVAS_JANELA):
     item = _pegar('TENTATIVA#' + chave)
     if not item:
         return 0
     erros, desde = int(item.get('erros') or 0), float(item.get('desde') or 0)
-    if time.time() - desde > TENTATIVAS_JANELA:
+    if time.time() - desde > janela:
         return 0
-    return int(TENTATIVAS_JANELA - (time.time() - desde)) if erros >= TENTATIVAS_MAX else 0
+    return int(janela - (time.time() - desde)) if erros >= maximo else 0
 
 
-def _errou(chave):
+def _errou(chave, janela=TENTATIVAS_JANELA):
+    """Soma uma tentativa. Janela vencida recomeça do zero: o item vencido só
+    some quando o TTL passa (até 48 h depois), e somar nele deixava o contador
+    com um `desde` antigo, que o `_bloqueado` já não conta — sem freio nenhum."""
     marca = int(time.time())
-    _dynamo.update_item(
-        TableName=TABELA, Key={'pk': {'S': 'TENTATIVA#' + chave}},
-        UpdateExpression='ADD erros :um SET desde = if_not_exists(desde, :agora),'
-                         ' #ttl = if_not_exists(#ttl, :ttl)',
-        ExpressionAttributeNames={'#ttl': 'ttl'},
-        ExpressionAttributeValues={
-            ':um': {'N': '1'},
-            ':agora': {'N': str(marca)},
-            ':ttl': {'N': str(marca + TENTATIVAS_JANELA)},
-        })
+    try:
+        _dynamo.update_item(
+            TableName=TABELA, Key={'pk': {'S': 'TENTATIVA#' + chave}},
+            UpdateExpression='ADD erros :um SET desde = if_not_exists(desde, :agora),'
+                             ' #ttl = if_not_exists(#ttl, :ttl)',
+            ConditionExpression='attribute_not_exists(desde) OR desde > :corte',
+            ExpressionAttributeNames={'#ttl': 'ttl'},
+            ExpressionAttributeValues={
+                ':um': {'N': '1'},
+                ':agora': {'N': str(marca)},
+                ':ttl': {'N': str(marca + janela)},
+                ':corte': {'N': str(marca - janela)},
+            })
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
+        _dynamo.put_item(TableName=TABELA, Item={
+            'pk': {'S': 'TENTATIVA#' + chave}, 'erros': {'N': '1'},
+            'desde': {'N': str(marca)}, 'ttl': {'N': str(marca + janela)}})
 
 
 def _esqueceu(chave):
@@ -369,9 +390,18 @@ def trocar_senha(usuario_id, senha_atual, senha_nova):
     item = _pegar('USER#' + str(usuario_id or ''))
     if not item:
         raise ErroDeConta('Conta não encontrada.', 404)
+    # O mesmo freio do login, por conta: quem pegou uma sessão aberta não
+    # testa a senha atual sem limite até achar.
+    freio = 'senha|' + str(usuario_id)
+    espera = _bloqueado(freio)
+    if espera:
+        raise ErroDeConta('Tentativas demais. Espere %d minutos.'
+                          % max(1, espera // 60), 429)
     ok, _ = conferir_senha(str(senha_atual or ''), item['senha'])
     if not ok:
+        _errou(freio)
         raise ErroDeConta('A senha atual não confere.', 401)
+    _esqueceu(freio)
 
     # Trocar a senha derruba as outras sessões: é o que se espera de quem troca
     # a senha justamente porque desconfia de alguém. Aqui isso é somar 1 na

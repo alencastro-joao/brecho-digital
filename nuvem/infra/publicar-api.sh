@@ -40,3 +40,16 @@ aws lambda update-function-code --function-name brecho-api \
 aws lambda wait function-updated-v2 --function-name brecho-api
 rm -f "$AQUI/../.brecho-funcao.zip"
 echo "== API publicada"
+
+# Sem BD_SEGREDO_ORIGEM a função aceita pedido que não passou pelo CloudFront
+# (ver o topo de nuvem/lambda/app.py). Confere só se existe; o valor nunca é
+# impresso.
+if ! segredo="$(aws lambda get-function-configuration --function-name brecho-api \
+    --query 'Environment.Variables.BD_SEGREDO_ORIGEM' --output text 2>/dev/null)"; then
+  echo "== não consegui conferir o BD_SEGREDO_ORIGEM (sem permissão de leitura?)"
+elif [ -z "$segredo" ] || [ "$segredo" = "None" ]; then
+  echo "::warning::A Lambda brecho-api está sem BD_SEGREDO_ORIGEM: a Function URL aceita pedido direto, sem o CloudFront."
+else
+  echo "== BD_SEGREDO_ORIGEM configurado"
+fi
+unset segredo

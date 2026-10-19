@@ -28,15 +28,19 @@ cópia e ela sai de novo com o mesmo número, a lista continua: a peça voltou
 para a loja e foi parar em outro guarda-roupa, que é o que aconteceu.
 """
 
+import json
 import os
+import time
 from datetime import datetime, timedelta, timezone
 
 import boto3
 from botocore.exceptions import ClientError
 
 TABELA = os.environ.get('BD_TABELA') or 'brecho'
+BUCKET_SITE = os.environ.get('BD_BUCKET_SITE') or ''
 PK = 'ESTOQUE#mapa'
 _dynamo = boto3.client('dynamodb')
+_s3 = boto3.client('s3')
 
 LIMITES = {'common': 1000, 'uncommon': 500, 'rare': 300, 'epic': 100, 'legendary': 25}
 
@@ -122,6 +126,41 @@ def _validar(pecas):
     return saida
 
 
+# --- Só peça que existe ------------------------------------------------------
+# Cada id novo vira uma chave no item único ESTOQUE#mapa, e o item para em
+# 400 KB. Sem esta conferência, umas dezenas de contas mandando ids inventados
+# enchiam o item, e aí ninguém mais levava peça nenhuma. A lista é a do
+# acervo.json (o mesmo que o jogo lê) mais as `removidas`, que ainda moram em
+# guarda-roupas antigos. Fica guardada no processo por um minuto; um id que
+# não está nela força uma releitura (peça recém-publicada pela esteira), no
+# máximo a cada 10 s.
+CACHE_ACERVO, RELER_MIN = 60, 10
+_acervo = {'ids': None, 'em': 0.0}
+
+
+def _ler_ids():
+    r = _s3.get_object(Bucket=BUCKET_SITE, Key='assets/acervo.json')
+    dados = json.loads(r['Body'].read().decode('utf-8'))
+    ids = {str(i.get('id')) for i in dados.get('items') or [] if isinstance(i, dict)}
+    ids.update(str(i) for i in dados.get('removidas') or [])
+    return ids
+
+
+def _existe(pid):
+    """A peça está no acervo? Se o acervo não puder ser lido, deixa passar:
+    a vitrine parada é pior que uma chave a mais no mapa."""
+    agora = time.time()
+    velho = agora - _acervo['em']
+    if _acervo['ids'] is None or velho > CACHE_ACERVO or (
+            pid not in _acervo['ids'] and velho > RELER_MIN):
+        try:
+            _acervo['ids'], _acervo['em'] = _ler_ids(), agora
+        except (ClientError, ValueError) as e:
+            print('estoque: não li o acervo: %r' % (e,))
+            return True
+    return pid in _acervo['ids']
+
+
 def _agora():
     return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -179,10 +218,14 @@ def levar(pecas, usuario=None):
     Com `usuario`, a cópia reservada já entra no histórico com ele de dono e
     conta na cota do dia dele; passada a cota, a peça volta em `limite`."""
     _garantir_item()
-    ok, esgotadas, limite, numeros = [], [], [], {}
+    ok, esgotadas, limite, numeros, desconhecidas = [], [], [], {}, []
     comos = [_como((p or {}).get('origem')) for p in pecas or []]
+    admin = bool(usuario) and usuario.get('papel') == 'admin'
     for i, (pid, rar) in enumerate(_validar(pecas)):
         k = chave(pid, rar)
+        if not admin and not _existe(pid):
+            desconhecidas.append(k)
+            continue
         if not _gastar_cota(usuario, comos[i]):
             limite.append(k)
             continue
@@ -208,7 +251,7 @@ def levar(pecas, usuario=None):
             esgotadas.append(k)
             _devolver_cota(usuario, comos[i])
     return {'levadas': ok, 'esgotadas': esgotadas, 'limite': limite, 'numeros': numeros,
-            'mapa': mapa()}
+            'desconhecidas': desconhecidas, 'mapa': mapa()}
 
 
 def devolver(pecas):
