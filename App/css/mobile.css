@@ -56,6 +56,10 @@
   .app > .sidebar .sidebar-btn span { font-size: 8px; letter-spacing: 0; }
   .app > .sidebar .sidebar-btn:hover { transform: none; }
   .sidebar-btn.travada::after { transform: none; top: 1px; right: 3px; font-size: 10px; }
+  /* No celular a ordem é Loja, Closet, Criar, Tarefas, Feed e, na ponta
+     direita, o Perfil (que no computador fica só na cabeça solta no canto). */
+  .app > .sidebar .sidebar-btn.social { order: 1; }
+  .app > .sidebar .sidebar-btn.perfil { display: flex; order: 2; }
   /* O nível continua na tela de Tarefas; aqui ele roubaria lugar dos botões. */
   .app > .sidebar .sidebar-rodape { display: none; }
 
