@@ -17,7 +17,7 @@
 // bermuda do corpo estreito não fica larga, e a manga cai no mesmo pulso.
 
 import {
-  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
+  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
@@ -1165,7 +1165,7 @@ export const ROUPINHAS = [
 
 // Com o que se começa. Ninguém entra pelado no próprio perfil: as três peças
 // de `inicial` já vêm vestidas, e trocar é o primeiro gesto do inventário.
-export const VESTIARIO_PADRAO = {
+export const VESTIARIO_PADRAO = SO_ROUPAS_DESENHADAS ? {} : {
   torso: 'camiseta', pernas: 'calca', pes: 'tenis',
 };
 
@@ -1221,6 +1221,18 @@ const adotar = (itens, colecao) => itens.forEach((id, ordem) => {
 });
 for (const c of COLECOES) adotar(c.itens, c.id);
 for (const [id, e] of Object.entries(ESTILOS)) adotar(e.libera || [], idDoEstilo(id));
+
+// Ocultação temporária (pedido do João, 20/10/2026): só ficam as roupas
+// desenhadas pela artista (as com `imagem`). As outras saem do catálogo, e
+// com isso do inventário, da loja e do vestir; o save de ninguém é tocado, e
+// voltar a `false` em config.js as traz de volta como estavam.
+if (SO_ROUPAS_DESENHADAS) {
+  for (let i = ROUPINHAS.length - 1; i >= 0; i--) {
+    if (ROUPINHAS[i].imagem) continue;
+    delete ROUPINHA[ROUPINHAS[i].id];
+    ROUPINHAS.splice(i, 1);
+  }
+}
 
 // ------------------------------ Atributos ---------------------------------
 // Marca, cor e estilo: os três que se combinam no corpo. São lidos do resto do
