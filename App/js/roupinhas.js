@@ -17,7 +17,7 @@
 // bermuda do corpo estreito não fica larga, e a manga cai no mesmo pulso.
 
 import {
-  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
+  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
@@ -1173,12 +1173,26 @@ export const VESTIARIO_PADRAO = {
 // `corNome` fixa a cor do atributo, sem passar pela leitura do tom.
 for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   const hex = hexDaCor(nomeDaCor);
-  itens.forEach(([base, nome], ordem) => {
+  const slug = idDaCor(nomeDaCor).slice(4);
+  const total = ROUPAS_BASE.length + itens.length;
+  // As três primeiras são desenhos da artista na cor da coleção (`imagem`);
+  // os de código seguem logo depois.
+  ROUPAS_BASE.forEach((b, ordem) => {
+    const id = `${b.id}-base-${slug}`;
+    ROUPINHAS.push({
+      id, nome: nomeDaRoupaBase(b, nomeDaCor), slot: b.slot, raridade: 'common',
+      cor: hex, corNome: nomeDaCor,
+      imagem: { href: `assets/roupas/${b.id}-${slug}.webp`, caixa: b.caixa },
+      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total, item: id },
+    });
+  });
+  itens.forEach(([base, nome], i) => {
+    const ordem = ROUPAS_BASE.length + i;
     const r = ROUPINHAS.find(x => x.id === base);
     if (!r || !hex) return;
     ROUPINHAS.push({
       ...r, id: `${base}-${idDaCor(nomeDaCor).slice(4)}`, nome, cor: hex, corNome: nomeDaCor,
-      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: itens.length,
+      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total,
         item: `${base}-${idDaCor(nomeDaCor).slice(4)}` },
     });
   });
@@ -1358,6 +1372,11 @@ const CONTORNO = 5;
 
 // `k` é a escala em que a peça vai ser desenhada (js/proporcao.js): o contorno
 // é dividido por ela para sair da mesma grossura em qualquer parte do corpo.
+const imagemDaPeca = (r) => {
+  const [x, y, w, h] = r.imagem.caixa;
+  return `<image href="${r.imagem.href}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+};
+
 const desenhar = (arte, m, cor, k = 1) => `
   <g fill="${escurecer(cor)}" stroke="${escurecer(cor)}" stroke-width="${CONTORNO / k}"
      stroke-linejoin="round" stroke-linecap="round">${arte(m, CONTORNO / k)}</g>
@@ -1393,6 +1412,8 @@ export function partesDasRoupas(roupas, corpo, soCabeca = false) {
     if (soCabeca && regiao !== 'cabeca') continue;
     const k = escalaDe(regiao);
 
+    // Desenho da artista: já está no palco, sem escala de região nem contorno.
+    if (r.imagem) { (z >= 60 ? rosto : frente).push({ z, svg: imagemDaPeca(r) }); continue; }
     if (r.atras) atras.push(naRegiao(regiao, desenhar(r.atras, m, cor, k) + (r.arte ? '' : detalhe)));
     if (!r.arte) continue;
     const svg = naRegiao(regiao, desenhar(r.arte, m, cor, k) + detalhe);
@@ -1482,6 +1503,11 @@ export function svgRoupinha(r, corpo = 'masculino', { margem = 26 } = {}) {
   if (!r) return '';
   const m = medidasDoCorpo(corpo);
   const cor = corDaPeca(r);
+  if (r.imagem) {
+    const [x, y, w, h] = r.imagem.caixa, lado = Math.max(w, h) + margem * 2;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${nn(x + w / 2 - lado / 2)} ${nn(y + h / 2 - lado / 2)} ${nn(lado)} ${nn(lado)}"
+     width="${nn(lado)}" height="${nn(lado)}">${imagemDaPeca(r)}</svg>`;
+  }
   const interno =
     (r.atras ? desenhar(r.atras, m, cor) : '') +
     (r.arte ? desenhar(r.arte, m, cor) : '') +
