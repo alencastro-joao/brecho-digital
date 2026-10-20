@@ -399,6 +399,23 @@ function iniciarManipulacao(e, c, no) {
   const segurar = !alca && e.pointerType === 'touch'
     ? setTimeout(() => { if (!mexeu) { soltar(); abrirTroca(c.uid); } }, SEGURAR_MS) : 0;
 
+  // O ponteiro manda vários movimentos por quadro: guarda o último e desenha
+  // uma vez por quadro. Arrastar só mexe no transform (a peça já está numa
+  // camada própria); left/top voltam a valer ao soltar.
+  let ultimo = null, quadroMov = 0;
+  const desenhar = () => {
+    quadroMov = 0;
+    if (!ultimo) return;
+    if (alca) posicionar(c, no);
+    else {
+      const dx = (c.x - inicial.x) / CONFIG.STAGE_W * rect.width;
+      const dy = (c.y - inicial.y) / CONFIG.STAGE_H * rect.height;
+      no.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%) rotate(${c.rot}deg)`;
+    }
+    ultimo = null;
+    atualizarFerramentas();
+  };
+
   const mover = (ev) => {
     if (pinca?.ativa()) return;
     // Um tremor de dedo de 3px não é arrasto: não suja o histórico.
@@ -416,12 +433,15 @@ function iniciarManipulacao(e, c, no) {
       c.x = clamp(inicial.x + unidades(rect, ev.clientX - inicioPtr.x, 'x'), -80, CONFIG.STAGE_W + 80);
       c.y = clamp(inicial.y + unidades(rect, ev.clientY - inicioPtr.y, 'y'), -80, CONFIG.STAGE_H + 80);
     }
-    posicionar(c, no);
-    agendarFerramentas();
+    ultimo = ev;
+    quadroMov ||= requestAnimationFrame(desenhar);
   };
 
   function soltar() {
     clearTimeout(segurar);
+    cancelAnimationFrame(quadroMov);
+    quadroMov = 0;
+    posicionar(c, no);
     no.classList.remove('manipulando');
     no.removeEventListener('pointermove', mover);
     no.removeEventListener('pointerup', soltar);
