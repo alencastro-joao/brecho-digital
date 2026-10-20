@@ -1258,6 +1258,9 @@ export const ROUPAS_BASE = [
   { id: 'calca',    nome: 'Calça',    slot: 'pernas', caixa: [168.8, 497.7, 263.1, 572.4], fem: true },
 ];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
+// Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
+// as de código ficam ocultas, sem apagar nada dos saves. false desfaz.
+export const SO_ROUPAS_DESENHADAS = true;
 export const nomeDaRoupaBase = (b, cor) => `${b.nome} ${b.fem ? (COR_FEMININA[cor] || cor.toLowerCase()) : cor.toLowerCase()}`;
 // A cor favorita (aba do Personagem): uma das cores que têm coleção, com a
 // bolinha de CORES. Aparece no perfil e dá as três primeiras peças do tutorial.
