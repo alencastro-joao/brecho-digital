@@ -298,13 +298,12 @@ function slotBox(slot) {
     class: 'vs-slot' + (r ? ` r-${r.raridade}` : ' vazio')
       + (r && selecionada === r.id ? ' selecionado' : ''),
     dataset: { slot },
-    title: r ? `${r.nome} — dois cliques para tirar` : `${s.nome}: nada vestido`,
+    title: r ? `${r.nome} — toque para tirar` : `${s.nome}: nada vestido`,
     style: r ? estiloDaRaridade(r) : {},
     onclick: () => {
-      if (r) abrirFicha(r.id);
+      if (r) { db.tirarRoupinha(slot); renderVestiario(); }
       else { filtro = slot; pagina = 0; selecionada = null; renderVestiario(); }
     },
-    ondblclick: () => { if (r) { db.tirarRoupinha(slot); renderVestiario(); } },
     // Só o lugar ocupado se arrasta: arrastar caixa vazia não leva nada.
     draggable: r ? 'true' : null,
     ondragstart: r ? comecarArrasto(r, 'corpo') : null,
@@ -341,12 +340,24 @@ function renderAbas() {
 // A grade é o saco: só o que já é seu, mais as casas vazias que sobram na
 // página. O que ainda não abriu não aparece aqui — quem avisa que abriu é o
 // toast.
+let ultimaGrade = '';
+
 function renderGrade() {
   const lista = minhasPecas();
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   pagina = Math.min(Math.max(pagina, 0), paginas - 1);
 
   const daPagina = lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
+
+  // Mesmo conteúdo da última pintura (o onChange do db repinta logo depois do
+  // clique): não refaz as 20 miniaturas à toa.
+  const assinatura = [filtro, pagina, selecionada, lista.length,
+    ...daPagina.map(r => `${r.id}${equipada(r) ? 'v' : ''}${db.ehNova(r.id) ? 'n' : ''}`)].join('|');
+  if (assinatura === ultimaGrade && $('#vs-grade').childElementCount) {
+    renderPaginacao(paginas, lista.length);
+    return;
+  }
+  ultimaGrade = assinatura;
 
   const grade = $('#vs-grade');
   grade.style.setProperty('--colunas', String(COLUNAS));
@@ -410,9 +421,8 @@ function itemDaGrade(r) {
     class: classes.join(' '),
     style: estiloDaRaridade(r),
     draggable: 'true',
-    title: `${r.nome} · ${RARIDADE[r.raridade].nome} — dois cliques para vestir`,
-    onclick: () => abrirFicha(r.id),
-    ondblclick: () => alternar(r),
+    title: `${r.nome} · ${RARIDADE[r.raridade].nome} — toque para ${equipada(r) ? 'tirar' : 'vestir'}`,
+    onclick: () => { selecionada = r.id; db.marcarVista(r.id); alternar(r); },
     ondragstart: comecarArrasto(r, 'saco'),
     ondragend: terminarArrasto,
   });
@@ -436,7 +446,7 @@ function renderFicha() {
 
   if (!r) {
     ficha.replaceChildren(el('div', { class: 'vs-ficha-vazia' },
-      el('p', {}, 'Toque para ver, dois toques para vestir.')));
+      el('p', {}, 'Toque numa peça para vestir. Toque de novo para tirar.')));
     return;
   }
 
