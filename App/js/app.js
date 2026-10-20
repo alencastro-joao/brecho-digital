@@ -15,7 +15,7 @@ import { carregarEstoque, numerarAntigas } from './estoque.js';
 import { darPresente } from './presente.js';
 import { montarNPC, falarDe } from './npc.js';
 import { iniciarRouter, onEnter } from './router.js';
-import { montarVitrine, aoEntrarNaVitrine, atualizarBadge } from './vitrine.js';
+import { montarVitrine, aoEntrarNaVitrine, atualizarBadge, precarregarVitrine } from './vitrine.js';
 import { montarCloset, aoEntrarNoCloset } from './closet.js';
 import { montarStylist, aoEntrarNoStylist } from './stylist.js';
 import { montarBoard, aoEntrarNoBoard } from './board.js';
@@ -101,6 +101,9 @@ async function iniciar() {
   const [, sync] = await Promise.all([
     carregarCatalogo(), db.sincronizarDaNuvem(), carregarEstoque()]);
   db.esquecerPecas(catalogo.removidas);
+  // Com o catálogo e o save na mão, as roupas da loja já podem baixar enquanto
+  // o resto do boot acontece.
+  try { precarregarVitrine(); } catch (err) { console.warn('pré-carregar a loja falhou', err); }
   let conflito = null;
   try {
     conflito = sessionStorage.getItem(AVISO_DE_CONFLITO);

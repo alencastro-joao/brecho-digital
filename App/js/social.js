@@ -76,6 +76,7 @@ export const aoAtualizarFeed = (fn) => { ouvintes.add(fn); return () => ouvintes
 const avisar = () => ouvintes.forEach(fn => fn());
 function repintar() {
   if (viewAtual() === 'social') renderFeed();
+  else precarregarFeed();
   avisar();
 }
 aoMudarPublicacoes(repintar);
@@ -610,10 +611,43 @@ async function andarFila() {
   if (desenhando) return;
   desenhando = true;
   while (fila.length) {
+    // Fora do feed (o pré-carregamento), só desenha quando a tela está à toa,
+    // para não engasgar a loja ou o closet.
+    if (viewAtual() !== 'social') await quandoAToa();
     await fila.shift()();
     await new Promise(r => setTimeout(r, 0));
   }
   desenhando = false;
+}
+
+const quandoAToa = () => new Promise(r => window.requestIdleCallback
+  ? requestIdleCallback(() => r(), { timeout: 1500 })
+  : setTimeout(r, 50));
+
+// ============================ Pré-carregar ================================
+// Os posts que aparecem primeiro quando você abre o feed já ficam prontos
+// antes: assim que a leitura do feed chega (avisos.js lê no boot), as imagens
+// do primeiro lote entram na fila de desenho, e as do servidor são baixadas.
+// Abrir o feed depois mostra tudo na hora, sem a imagem surgir aos poucos.
+const baixadas = new Map();              // caminho → Image, para o cache não soltar
+
+export function precarregarFeed() {
+  if (!aba) aba = db.state.usuario.seguindo.length ? 'seguindo' : 'tudo';
+  for (const post of postsVisiveis().slice(0, LOTE)) {
+    post.comentarios ??= [];
+    prepararGerado(post);
+    const desenho = desenhoDoPost(post);
+    if (desenho) imagemGrande(desenho);
+    // A colagem do servidor aparece com a imagem dele enquanto é redesenhada;
+    // o look, só depois do desenho.
+    const thumb = String(post.thumb || '');
+    if (thumb && !thumb.startsWith('data:') && (!desenho || post.tipo === 'board') && !baixadas.has(thumb)) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = thumb;
+      baixadas.set(thumb, img);
+    }
+  }
 }
 
 // O caminho da imagem no site (assets/posts/<id>-<hash>.webp) muda a cada
