@@ -1130,6 +1130,14 @@ export const COLECOES = [
       'gravata-coldf33t': ['gravata', 'Gravata grafitada Coldf33t', '#d0407a'],
     },
     efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
+  { id: 'sixth-dimension', marca: 'Sixth Dimension',
+    itens: ['moletom-sixth-dimension', 'camiseta-sixth-dimension', 'cropped-sixth-dimension'],
+    variantes: {
+      'moletom-sixth-dimension': ['moletom', 'Moletom cósmico Sixth Dimension', '#5b3a8c'],
+      'camiseta-sixth-dimension': ['camiseta', 'Camiseta Sixth Dimension', '#23264a'],
+      'cropped-sixth-dimension': ['cropped', 'Cropped Sixth Dimension', '#b98ad8'],
+    },
+    efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 // Compara só letras e números, sem acento: "Happy 99", "happy99" e "HAPPY-99"
