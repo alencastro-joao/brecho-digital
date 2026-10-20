@@ -48,7 +48,10 @@
   border: 1px solid var(--linha); border-radius: 22px;
   padding: 18px;
 }
-.vs-previa svg { height: 100%; width: auto; display: block; }
+/* `min-height: 0` no SVG também: o avatar tem overflow="visible" (cabelo e
+   chapéu passam do quadro), e item de grid com overflow visível não encolhe
+   abaixo do tamanho natural (600×1200) — o boneco saía do quadro. */
+.vs-previa svg { height: 100%; width: auto; min-height: 0; min-width: 0; display: block; }
 
 /* Um lugar do corpo. Vazio é tracejado com o ícone; cheio, mostra a peça
    vestida — o próprio avatar, recortado naquele pedaço. */
