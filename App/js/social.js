@@ -140,7 +140,7 @@ async function criarPostFicticio(rnd = Math.random, idadeHoras = null, quem = nu
 
 // Versão da semente: subindo o número, quem já tinha o feed antigo (só looks no
 // avatar, antes das colagens) recebe o novo — sem perder o que você publicou.
-const VERSAO_SEED = 5;
+const VERSAO_SEED = 6;
 
 function acervoParaLooks() {
   return catalogo.itens.filter(i => !COLLAB.itens.includes(i.id));
@@ -148,6 +148,8 @@ function acervoParaLooks() {
 
 // Versão 5: os perfis de exemplo passaram a postar no servidor, iguais para
 // todo mundo. Os doze que cada navegador sorteava saem do save — ficam os seus.
+// Versão 6: junto com a renovação dos posts de exemplo no servidor
+// (VERSAO_POSTS em gerador.py), os de exemplo que ainda moravam no save saem.
 async function semearFeed() {
   if (db.state.feedSemeado === VERSAO_SEED) return;
   db.state.feed = db.state.feed.filter(p => sou(p.autor));
