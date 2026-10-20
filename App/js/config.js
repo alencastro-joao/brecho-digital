@@ -1142,8 +1142,18 @@ export const COLECOES = [
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 // Compara só letras e números, sem acento: "Happy 99", "happy99" e "HAPPY-99"
 // são a mesma marca (a esteira grava a marca como foi digitada ou lida na peça).
-export const normalizarMarca = (m) => String(m || '').normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+// Guarda o resultado por texto: o acervo é comparado inteiro a cada consulta
+// de progresso, e normalizar milhares de vezes por toque travava o celular.
+const _marcasNormalizadas = new Map();
+export const normalizarMarca = (m) => {
+  const k = String(m || '');
+  let v = _marcasNormalizadas.get(k);
+  if (v === undefined) {
+    v = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    _marcasNormalizadas.set(k, v);
+  }
+  return v;
+};
 
 // Estilos dos itens do avatar: entram os de `itens`. Item que não combina com
 // nenhum fica sem. Estilo e marca são independentes: o item de uma marca só
