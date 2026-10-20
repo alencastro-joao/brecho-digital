@@ -78,11 +78,14 @@ export function carregarFeed() {
 
 // ------------------------------- Publicar ---------------------------------
 // A chave é o look ou a colagem de origem: o servidor monta o id do post a
-// partir dela, então publicar de novo o mesmo look devolve o mesmo post.
-export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }) {
+// partir dela, então publicar de novo o mesmo look devolve o mesmo post — a
+// não ser que venha `atualizar` (o dono editou e quer a versão nova no feed).
+// Sem mandar o `atualizar`, o servidor devolvia o post antigo e a tela dizia
+// "atualizado".
+export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm, atualizar }) {
   const dados = await chamar('/api/feed', {
     method: 'POST',
-    body: JSON.stringify({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }),
+    body: JSON.stringify({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm, atualizar: atualizar === true }),
   });
   return trocar(receber(dados)[0]);
 }
