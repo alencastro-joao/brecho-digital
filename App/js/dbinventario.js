@@ -90,12 +90,24 @@ function amanhaISO() {
 export const congeladas = (iso = hojeISO()) =>
   (state.congeladas ?? []).filter(c => c.ate >= iso).map(c => c.id);
 export const estaCongelada = (id) => congeladas().includes(id);
-export const podeCongelar = () => fichas() >= FICHAS.porCongelar;
+// Congelamentos guardados: comprados em Tarefas por FICHAS.porCongelar, e cada
+// um segura uma peça na loja (ver congelarPeca).
+export const congelamentos = () => state.congelamentos ?? 0;
+export const podeComprarCongelamento = () => fichas() >= FICHAS.porCongelar;
+export function comprarCongelamento() {
+  virarODiaSeNecessario();
+  if (!podeComprarCongelamento()) return false;
+  state.fichas = fichas() - FICHAS.porCongelar;
+  state.congelamentos = congelamentos() + 1;
+  salvar();
+  return true;
+}
+export const podeCongelar = () => congelamentos() >= 1;
 export function congelarPeca(id) {
   virarODiaSeNecessario();
   if (!podeCongelar() || estaCongelada(id)) return false;
   const hoje = hojeISO();
-  state.fichas = fichas() - FICHAS.porCongelar;
+  state.congelamentos = congelamentos() - 1;
   state.congeladas = [...(state.congeladas ?? []).filter(c => c.ate >= hoje && c.id !== id),
     { id, ate: amanhaISO() }];
   salvar();
