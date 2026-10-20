@@ -77,35 +77,34 @@
   .picks-badge #picks-left { font-size: 19px; }
   .picks-badge small { font-size: 9.5px; }
 
-  /* A ficha deixa de seguir a peça (o JS a encosta ao lado dela, o que numa
-     tela de 375px cai em cima da própria roupa) e vira uma folha no rodapé. */
-  /* Em cima a foto e o texto lado a lado; embaixo, de ponta a ponta, as
-     coleções numa fileira só e os botões numa linha. */
+  /* A ficha abre no centro da tela (não segue a peça: no celular ela cairia em
+     cima da própria roupa). A peça fica grande em cima, depois raridade, nome
+     e informações, e as coleções viram só os discos, numa fileira. */
   .ficha {
-    left: 12px !important; right: 12px; top: auto !important;
-    bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
-    width: auto; max-width: 420px; margin: 0 auto; padding: 14px;
-    display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; column-gap: 14px;
-    align-items: start;
+    inset: 0 !important; margin: auto; height: fit-content;
+    width: min(300px, calc(100vw - 32px)); max-width: none; padding: 16px 16px 18px;
+    display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 0;
+    justify-items: center; text-align: center; align-items: start;
   }
-  .ficha > * { grid-column: 2 / -1; }
-  .ficha .ficha-img { grid-column: 1; grid-row: 1 / span 4; height: 88px; margin: 0; }
-  .ficha .ficha-img img { max-height: 88px; }
-  .ficha .ficha-rar { justify-self: start; }
-  .ficha .ficha-nome { margin-top: 6px; padding-right: 24px; }
-  .ficha .ficha-chance { margin-bottom: 0; }
+  .ficha > * { grid-column: 1; }
+  .ficha .ficha-img { grid-row: auto; height: 170px; width: 100%; margin: 0 0 10px; }
+  .ficha .ficha-img img { max-height: 170px; width: auto !important; height: 170px !important; }
+  .ficha .ficha-rar { justify-self: center; }
+  .ficha .ficha-nome { margin: 9px 0 4px; padding: 0 22px 0 0; font-size: 16px; }
+  .ficha .ficha-meta, .ficha .ficha-chance { margin-bottom: 0; }
+  .ficha .ficha-chance { margin-bottom: 8px; }
   .ficha .col-chips {
-    grid-column: 1 / -1; margin: 12px 0 0; justify-content: flex-start;
-    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; align-items: center;
+    margin: 10px 0 0; justify-content: center; flex-wrap: wrap; gap: 6px;
   }
-  .ficha .col-chips::-webkit-scrollbar { display: none; }
-  .ficha .col-chips:empty { display: none; }
-  .ficha .col-chips-titulo { width: auto; flex: 0 0 auto; text-align: left; margin-right: 2px; }
-  .ficha .col-chip { flex: 0 0 auto; }
-  .ficha #ficha-acao { grid-column: 1 / 3; margin-top: 12px; }
-  .ficha #ficha-editar { grid-column: 3; margin-top: 12px; }
-  .ficha:has(#ficha-editar[hidden]) #ficha-acao { grid-column: 1 / -1; }
-  .ficha #ficha-congelar { grid-column: 1 / -1; }
+  .ficha .col-chips-titulo { width: 100%; text-align: center; margin-bottom: 2px; }
+  /* Só o disco da coleção: marca, contagem somem; o presente fica. */
+  .ficha .col-chip { padding: 3px; gap: 0; }
+  .ficha .col-chip > span:not(.col-chip-disco):not(.col-chip-gift),
+  .ficha .col-chip > small { display: none; }
+  .ficha .col-chip-disco { width: 28px; height: 28px; }
+  .ficha #ficha-acao { grid-column: 1; margin-top: 14px; width: 100%; }
+  .ficha #ficha-editar { grid-column: 1; margin-top: 8px; width: 100%; }
+  .ficha #ficha-congelar { grid-column: 1; width: 100%; }
   .ficha .btn-dark, .ficha .btn-ghost { padding: 10px 14px; }
 
   .npc-art { width: 130px; }
