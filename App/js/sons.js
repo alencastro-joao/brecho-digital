@@ -3,29 +3,47 @@
 //
 // Quem toca é quem sabe o que aconteceu: animacoes.js (clique, favoritar,
 // curtir, subir de nível, dado), o baú abrindo, a peça pega na vitrine, a
-// janela e os avisos. Aqui só se desenha cada som e se guarda o "silenciar",
-// que vale para o aparelho (localStorage), não para a conta.
+// janela e os avisos. Aqui só se desenha cada som e se guarda o volume (a
+// barra no menu da engrenagem do perfil; 0 é mudo), que vale para o aparelho
+// (localStorage), não para a conta.
 //
 // Celular: o navegador só deixa tocar depois de um toque da pessoa. O
 // primeiro toque em qualquer lugar acorda o áudio (ver destravar()).
 
-const CHAVE = 'bd-sons';
-const VOLUME = 0.5;           // geral; cada som ainda tem o seu, bem baixo
+const CHAVE = 'bd-volume';
+const CHAVE_ANTIGA = 'bd-sons';   // 'off' do botão de silenciar que veio antes
+export const VOLUME_PADRAO = 70;  // de 0 a 100
+// Ganho no volume 100. Cada som tem o seu volume, baixo; isto sobe todos
+// juntos, e o compressor no fim segura quando vários tocam ao mesmo tempo.
+const GANHO_MAXIMO = 2.4;
 
 let ctx = null;
 let mestre = null;
 let pediuEm = -1e9;           // quando se pediu para acordar o áudio
 
-export function sonsLigados() {
-  try { return localStorage.getItem(CHAVE) !== 'off'; } catch { return true; }
+let volumeSemGravar = null;       // sem localStorage: vale só até fechar
+
+export function volume() {
+  try {
+    const v = localStorage.getItem(CHAVE);
+    if (v !== null && v !== '') return Math.max(0, Math.min(100, Number(v) || 0));
+    if (localStorage.getItem(CHAVE_ANTIGA) === 'off') return 0;
+  } catch { /* segue */ }
+  return volumeSemGravar ?? VOLUME_PADRAO;
 }
 
-export function ligarSons(sim) {
+export const sonsLigados = () => volume() > 0;
+
+const ganho = (v) => (v / 100) ** 1.5 * GANHO_MAXIMO;   // o ouvido não é linear
+
+export function mudarVolume(v) {
+  v = Math.max(0, Math.min(100, Math.round(v)));
+  volumeSemGravar = v;
   try {
-    if (sim) localStorage.removeItem(CHAVE);
-    else localStorage.setItem(CHAVE, 'off');
-  } catch { /* sem localStorage: vale só até fechar */ }
-  if (sim) tocar('ok');
+    localStorage.setItem(CHAVE, String(v));
+    localStorage.removeItem(CHAVE_ANTIGA);
+  } catch { /* sem localStorage */ }
+  if (mestre) mestre.gain.setTargetAtTime(ganho(v), ctx.currentTime, 0.01);
 }
 
 function contexto(acordar = true) {
@@ -34,8 +52,11 @@ function contexto(acordar = true) {
     if (!AC) return null;
     ctx = new AC();
     mestre = ctx.createGain();
-    mestre.gain.value = VOLUME;
-    mestre.connect(ctx.destination);
+    mestre.gain.value = ganho(volume());
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -10;
+    compressor.ratio.value = 6;
+    mestre.connect(compressor).connect(ctx.destination);
   }
   if (acordar && ctx.state === 'suspended') {
     pediuEm = performance.now();
