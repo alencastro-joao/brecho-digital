@@ -135,8 +135,8 @@ const TROCAS = [
   { id: 'repor', nome: 'Repor a loja', texto: 'Arara nova agora. Os resgates do dia continuam.',
     icone: () => ico('atualizar'), preco: () => FICHAS.porRepor,
     acao: () => trocarFichasPorRepor() },
-  { id: 'congelar', nome: 'Congelamento', texto: 'Segura uma peça na loja até amanhã. Use na ficha dela.',
-    icone: () => '❄️', preco: () => FICHAS.porCongelar,
+  { id: 'congelar', nome: 'Congelar', texto: 'Segura uma peça na loja até amanhã. Use na ficha dela.',
+    icone: () => ico('floco'), preco: () => FICHAS.porCongelar,
     acao: () => { if (db.comprarCongelamento()) toast('+1 congelamento. Use na ficha de uma peça da loja.', 'rare'); },
     guardados: () => db.congelamentos() },
 ];

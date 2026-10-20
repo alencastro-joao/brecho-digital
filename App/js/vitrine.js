@@ -689,7 +689,7 @@ function abrirFicha(peca, raridade, no) {
   posicionarFicha(ficha, no);
 }
 
-const seloDeCongelada = () => el('span', { class: 'peca-presa', title: 'Congelada até amanhã' }, '❄️');
+const seloDeCongelada = () => el('span', { class: 'peca-presa', title: 'Congelada até amanhã' }, ico('floco'));
 
 // Congelar: FICHAS.porCongelar fichas prendem a peça na loja até o fim de
 // amanhã, mesmo que ela seja reposta. Peça que já é sua não tem o que congelar.
@@ -700,7 +700,7 @@ function renderCongelar(peca, possuida, no) {
   const presa = db.estaCongelada(peca.id);
   const sem = !db.podeCongelar();
   botao.disabled = presa;
-  botao.replaceChildren('❄️', presa ? ' Congelada até amanhã'
+  botao.replaceChildren(ico('floco'), presa ? ' Congelada até amanhã'
     : sem ? ' Comprar congelamento em Tarefas'
     : ` Congelar · usar 1 (tem ${db.congelamentos()})`);
   botao.onclick = () => {
