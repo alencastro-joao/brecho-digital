@@ -1123,7 +1123,10 @@ export const COLECOES = [
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
-export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
+// Compara só letras e números, sem acento: "Happy 99", "happy99" e "HAPPY-99"
+// são a mesma marca (a esteira grava a marca como foi digitada ou lida na peça).
+export const normalizarMarca = (m) => String(m || '').normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // Estilos dos itens do avatar: entram os de `itens`. Item que não combina com
 // nenhum fica sem. Estilo e marca são independentes: o item de uma marca só
