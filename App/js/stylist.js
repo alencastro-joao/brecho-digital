@@ -11,6 +11,7 @@ import { doPadraoParaAtual, doAtualParaPadrao } from './proporcao.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande, pecaCombina } from './catalog.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
+import { assinaturaDoUsuario } from './assinaturas.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta, baixarLook } from './render.js';
@@ -563,7 +564,7 @@ function ligarFerramentas() {
     if (!camadas.length) return toast('Monte um look antes de exportar.', 'aviso');
     b.disabled = true;
     try {
-      await baixarLook(estruturaLimpa(), b.dataset.export, $('#outfit-nome').value.trim());
+      await baixarLook(estruturaLimpa(), b.dataset.export, assinaturaDoUsuario() || $('#outfit-nome').value.trim());
       toast('PNG gerado. Confere os downloads.');
     } catch (err) {
       console.warn('exportar look', err);

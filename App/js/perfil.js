@@ -18,6 +18,7 @@
 
 import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
+import { abrirAssinaturas } from './assinaturas.js';
 import * as auth from './auth.js';
 import { cabeca, aparenciaAtual } from './avatar.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
@@ -139,6 +140,7 @@ export function renderPerfil() {
   // mora aqui, em destaque, ao lado de quem você é.
   $('#perfil-acoes').replaceChildren(
     el('button', { class: 'btn-ghost', onclick: abrirEdicao }, 'Editar perfil'),
+    el('button', { class: 'btn-ghost', onclick: () => abrirAssinaturas() }, 'Assinaturas'),
     el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') }, 'Personagem'),
     el('button', { class: 'btn-dark pf-vestir', id: 'perfil-vestir', onclick: () => irPara('vestiario') },
       ico('camiseta'), ' Vestir-se'));

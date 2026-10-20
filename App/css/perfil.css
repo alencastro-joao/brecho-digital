@@ -519,3 +519,11 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-acoes .pf-vestir .ico { width: 17px; height: 17px; flex: none; }
 .perfil-atalho.recebeu { animation: pulso .7s ease; }
 #adm-revisar[hidden], #adm-revisar-resumo[hidden] { display: none; }
+
+/* Janela de assinaturas */
+.ass-caixa { max-width: 440px; width: 92vw; }
+.ass-linha { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.ass-campo { width: 100%; box-sizing: border-box; font: inherit; padding: 8px; border: 1px solid #ccc; border-radius: 8px; resize: vertical; }
+.ass-estado { font-size: .85em; opacity: .75; min-height: 1.2em; margin: 6px 0; }
+.ass-escolha { display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow: auto; margin-bottom: 8px; }
+.ass-opcao { display: flex; gap: 8px; align-items: center; }
