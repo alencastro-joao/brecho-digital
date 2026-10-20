@@ -40,7 +40,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 import feed
-from contas import TABELA, _dynamo, agora, iso
+from contas import TABELA, _dynamo, agora, iso, pegar_varios
 
 BUCKET_SITE = os.environ.get('BD_BUCKET_SITE') or ''
 _s3 = boto3.client('s3')
@@ -204,20 +204,9 @@ def _texto_de_comentario(rnd, pecas):
 
 # --- Os posts gerados que já existem ---------------------------------------
 def _gerados():
-    args = {
-        'TableName': TABELA,
-        'FilterExpression': 'begins_with(pk, :p) AND gerado = :sim',
-        'ExpressionAttributeValues': {':p': {'S': 'POST#'}, ':sim': {'BOOL': True}},
-    }
-    itens = []
-    while True:
-        r = _dynamo.scan(**args)
-        itens.extend(feed._item(b) for b in r.get('Items', []))
-        if 'LastEvaluatedKey' not in r:
-            break
-        args['ExclusiveStartKey'] = r['LastEvaluatedKey']
-    itens.sort(key=lambda i: i['criado_em'], reverse=True)
-    return itens
+    """Os posts gerados, mais novos primeiro, como a linha do tempo os guarda:
+    { id, em, autor }. Sem varrer a tabela (feed.linha_do_tempo)."""
+    return feed.linha_do_tempo(so_gerados=True)
 
 
 def _quem_posta(rnd, recentes):
@@ -260,6 +249,7 @@ def criar_post(rnd, acervo, autor, quando):
     _dynamo.put_item(TableName=TABELA,
                      Item={k: feed._ser.serialize(v) for k, v in item.items()},
                      ConditionExpression='attribute_not_exists(pk)')
+    feed.indexar(item)
     return item
 
 
@@ -329,13 +319,17 @@ def rodar(quantos=None, espalhar_horas=0, rnd=None, em=None):
             if espalhar_horas else agora_
         publicados.append(criar_post(rnd, acervo, autor, quando)['id'])
 
-    # Os que já estavam ganham vida; os novos acabaram de nascer.
+    # Os que já estavam ganham vida; os novos acabaram de nascer. Só os
+    # recentes são lidos da tabela (em paralelo).
     acervo_por_id = {p['id']: p for p in acervo}
     limite = iso(agora_ - timedelta(hours=ANIMAR_HORAS))
+    recentes_ids = ['POST#' + e['id'] for e in existentes if e['em'] >= limite]
+    lidos = pegar_varios(recentes_ids)
     animados = 0
-    for item in existentes:
-        if item['criado_em'] < limite:
-            break
+    for pk in recentes_ids:
+        item = lidos.get(pk)
+        if not item:
+            continue
         try:
             animados += bool(_animar(rnd, item, acervo_por_id, agora_))
         except ClientError as e:                 # post apagado no meio do caminho
@@ -343,8 +337,9 @@ def rodar(quantos=None, espalhar_horas=0, rnd=None, em=None):
 
     # Teto: os mais velhos saem (a lista está do mais novo para o mais velho).
     sobrando = existentes[max(0, MAX_GERADOS - len(publicados)):]
-    for item in sobrando:
-        _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': item['pk']}})
+    for e in sobrando:
+        _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': 'POST#' + e['id']}})
+    feed.desindexar([e['id'] for e in sobrando])
 
     return {'publicados': publicados, 'animados': animados, 'apagados': len(sobrando)}
 

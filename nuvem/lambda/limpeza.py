@@ -36,6 +36,7 @@ import boto3
 from boto3.dynamodb.types import TypeSerializer
 
 from contas import ErroDeConta, TABELA, _dynamo, _des
+import feed
 
 BUCKET_DADOS = os.environ.get('BD_BUCKET_DADOS') or ''
 BUCKET_SITE = os.environ.get('BD_BUCKET_SITE') or ''
@@ -174,6 +175,7 @@ def limpar(eu, corpo):
     com_save = _backup(pasta, brutos, saem)
 
     sai = set(saem)
+    sairam = []                     # posts apagados: saem da linha do tempo
     feito = {'contas': 0, 'posts': 0, 'sessoes': 0, 'saves': 0,
              'postsLimpos': 0, 'backup': 's3://%s/%s' % (BUCKET_DADOS, pasta),
              'savesNoBackup': len(com_save)}
@@ -189,6 +191,7 @@ def limpar(eu, corpo):
             if thumb.startswith('assets/posts/') and BUCKET_SITE:
                 _apagar_no_s3(BUCKET_SITE, thumb)
             feito['posts'] += 1
+            sairam.append(item.get('id'))
         elif pk.startswith('POST#'):
             curtidas = set(item.get('curtidas') or ()) & sai
             comentarios = item.get('comentarios') or []
@@ -207,6 +210,8 @@ def limpar(eu, corpo):
                                 UpdateExpression=' '.join(partes),
                                 ExpressionAttributeValues=valores)
             feito['postsLimpos'] += 1
+
+    feed.desindexar(sairam)
 
     for uid in saem:
         c = contas[uid]

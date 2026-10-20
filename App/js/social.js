@@ -32,6 +32,7 @@ import { renderPessoas, atualizarPessoas } from './busca.js';
 import { ehFicticio, seguirNoServidor, perfilDe, roupasDoPerfil } from './pessoas.js';
 import {
   publicacoes, feedLidoEm, carregarFeed, aoMudarPublicacoes, apagarPublicacao, gerarNoServidor,
+  temMaisNoFeed, carregarMaisFeed,
   curtirPublicacao, comentarPublicacao, apagarComentarioPublicado,
 } from './publicacoes.js';
 import { festejar } from './animacoes.js';
@@ -358,12 +359,15 @@ function vigiarFim(fim) {
 
 function mostrarMais() {
   const m = muralAtual;
-  if (!m?.no.isConnected || m.feitos >= m.posts.length) return;
+  if (!m?.no.isConnected) return;
+  // Acabou o que já veio: pede a página seguinte ao servidor. Quando ela
+  // chega, o aviso de publicacoes.js repinta o mural com os novos no fim.
+  if (m.feitos >= m.posts.length) { if (temMaisNoFeed()) carregarMaisFeed(); return; }
   porNoMural(m, m.posts.slice(m.feitos, m.feitos + LOTE));
   m.feitos = Math.min(m.posts.length, m.feitos + LOTE);
   mostrando = m.feitos;
   cascataDoFeed($('#feed'));
-  if (m.feitos >= m.posts.length) {
+  if (m.feitos >= m.posts.length && !temMaisNoFeed()) {
     m.fim.remove();
     vigiarFim(null);
   } else {
@@ -405,7 +409,8 @@ function renderFeed() {
   const mural = montarMural(colunasDesenhadas);
   const feitos = Math.min(posts.length, Math.max(mostrando, LOTE));
   porNoMural(mural, posts.slice(0, feitos));
-  const fim = feitos < posts.length ? el('div', { class: 'mural-fim', 'aria-hidden': 'true' }) : null;
+  const fim = feitos < posts.length || temMaisNoFeed()
+    ? el('div', { class: 'mural-fim', 'aria-hidden': 'true' }) : null;
   muralAtual = { ...mural, posts, feitos, fim };
   feed.replaceChildren(mural.no, ...(fim ? [fim] : []));
   vigiarFim(fim);

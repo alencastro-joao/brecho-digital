@@ -58,7 +58,8 @@ save; `acervo.py`/`esteira.py` peças do admin; `feed.py`, `pessoas.py`,
 
 ## Verificar e publicar
 
-- Antes de subir: `python -m pyflakes nuvem/lambda nuvem/esteira App/tools` e
+- Antes de subir: `python -m pyflakes nuvem/lambda nuvem/esteira App/tools nuvem/testes`,
+  `python -m unittest discover -s nuvem/testes` (precisa de `pip install moto`) e
   `for f in App/js/*.js App/sw.js; do node --check "$f"; done` (é o que o CI roda).
 - Push direto no `main` é barrado: abra PR e faça merge pelo GitHub. O merge no
   `main` publica sozinho na AWS (`.github/workflows/publicar.yml`), só a parte
