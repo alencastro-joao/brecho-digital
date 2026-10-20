@@ -57,6 +57,10 @@ async function api(rota, { metodo = 'GET', corpo } = {}) {
 // juntas engasgam o 4G. Três em paralelo é o meio-termo.
 const PARALELO = 3;
 
+// Fotos ainda subindo: fechar a aba agora as perderia, então o navegador pergunta.
+let enviando = 0;
+window.addEventListener('beforeunload', (e) => { if (enviando > 0) e.preventDefault(); });
+
 async function enviar(arquivos, origem) {
   const fotos = [...arquivos].filter(f => /^image\/(jpeg|png|webp)$/.test(f.type));
   if (fotos.length < arquivos.length) {
@@ -77,6 +81,7 @@ async function enviar(arquivos, origem) {
   const fila = reserva.envios.map((envio, i) => ({ envio, foto: fotos[i], linha: linhaDeEnvio(fotos[i]) }));
   await atualizar();                    // entram na contagem de "sendo cortadas"
 
+  enviando += fila.length;
   const trabalhar = async () => {
     for (let t = fila.shift(); t; t = fila.shift()) {
       try {
@@ -85,6 +90,7 @@ async function enviar(arquivos, origem) {
       } catch (e) {
         t.linha.falhou(e.message);
       }
+      enviando--;
     }
   };
   await Promise.all(Array.from({ length: PARALELO }, trabalhar));
@@ -292,6 +298,15 @@ async function desvincularPasta(p) {
 }
 
 // ============================== Lista =====================================
+// A esteira segue na nuvem com a aba em segundo plano; o título conta o que
+// ficou pronto enquanto a pessoa estava em outra aba.
+const TITULO = document.title;
+let prontasFora = 0;
+function avisarNoTitulo(n) {
+  prontasFora += n;
+  document.title = `(${prontasFora}) ${prontasFora === 1 ? 'peça pronta' : 'peças prontas'} · ${TITULO}`;
+}
+
 async function atualizar() {
   let dados;
   try {
@@ -310,6 +325,11 @@ async function atualizar() {
   }
   const antes = new Map(itens.map(i => [i.id, i]));
   const agora = Date.now();
+  // Aba em segundo plano: conta as peças que ficaram prontas para avisar no título.
+  if (document.hidden) {
+    const novas = dados.itens.filter(n => n.estado === 'pronta' && antes.get(n.id)?.estado !== 'pronta').length;
+    if (novas) avisarNoTitulo(novas);
+  }
   const emUso = document.activeElement?.closest?.('.es-cartao')?.dataset.id;
   itens = dados.itens.map(novo => {
     const velho = antes.get(novo.id);
@@ -1171,6 +1191,8 @@ async function iniciar() {
   // novo): confere a esteira e relê as pastas do Pinterest.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
+    prontasFora = 0;
+    document.title = TITULO;
     atualizar();
     if (Date.now() - ultimaLeitura > RELER_MS) reler();
   });
