@@ -1388,7 +1388,18 @@ async function salvarBoard({ silencioso = false } = {}) {
   fotoSalva = fotoDaMesa();
   db.salvar();
   renderLista();
-  if (!silencioso) toast(`"${nome}" salva.`);
+  if (silencioso) return salvo;
+  // Já está no feed: salvar leva a versão nova para o post também.
+  if (salvo.publicado && jaPublicado('boardId', salvo.id)) {
+    try {
+      await publicarNoFeed({ ...await pacoteDaColagem(salvo), atualizar: true });
+      toast(`"${nome}" salva e atualizada no feed.`);
+    } catch (e) {
+      toast(`"${nome}" salva, mas o post do feed não mudou: ${e.message || 'sem conexão'}.`, 'aviso');
+    }
+    return salvo;
+  }
+  toast(`"${nome}" salva.`);
   return salvo;
 }
 

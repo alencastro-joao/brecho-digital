@@ -714,7 +714,20 @@ async function salvarLook({ silencioso = false } = {}) {
   }
   db.salvar();
   renderSalvos();
-  if (!silencioso) toast(`"${nome}" salvo no seu perfil.`);
+  if (silencioso) return look;
+  // Já está no feed: salvar leva a versão nova para o post também (curtidas e
+  // comentários ficam). Antes só o "Publicar" fazia isso, e o post ficava com
+  // o look de antes.
+  if (look.publicado && jaPublicado('lookId', look.id)) {
+    try {
+      await publicarNoFeed({ ...await pacoteDoLook(look), atualizar: true });
+      toast(`"${nome}" salvo e atualizado no feed.`);
+    } catch (e) {
+      toast(`"${nome}" salvo, mas o post do feed não mudou: ${e.message || 'sem conexão'}.`, 'aviso');
+    }
+    return look;
+  }
+  toast(`"${nome}" salvo no seu perfil.`);
   return look;
 }
 
