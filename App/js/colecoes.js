@@ -385,7 +385,7 @@ function renderDetalhe(c) {
     c.livres > 0 ? blocoDeEscolha(c) : null,
     c.total ? el('section', { class: 'col-album' },
       el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
-      el('div', { class: 'col-album-grade' }, ...emOrdem(c.ids).map(casaDoAlbum))) : null,
+      el('div', { class: 'col-album-grade' }, ...emOrdem(c.ids).map((id, _, todas) => casaDoAlbum(id, todas)))) : null,
     el('p', { class: 'col-det-efeito' }, ico('brilho'), ' Vestindo: ', c.efeito.texto,
       el('small', {}, ` (${textoDoBonus(c)})`)),
   ].filter(Boolean));
@@ -439,7 +439,7 @@ function blocoDeEscolha(c) {
 }
 
 // Uma casa do álbum: a peça, ou a silhueta dela quando ainda falta.
-function casaDoAlbum(id) {
+function casaDoAlbum(id, ids) {
   const peca = pecaDoCatalogo(id);
   if (!peca) return null;
   const tem = db.temPeca(id);
@@ -447,7 +447,7 @@ function casaDoAlbum(id) {
   return el('div', {
     class: 'col-album-casa' + (tem ? ' tem' : ' falta'),
     title: tem ? `${nomeDaPeca(peca)} · ver no guarda-roupa` : `Falta: ${nomeDaPeca(peca)}${rar ? ` (${rar.nome.toLowerCase()})` : ''}`,
-    onclick: tem ? () => abrirPecaNoCloset(id) : null,
+    onclick: tem ? () => abrirPecaNoCloset(id, ids) : null,
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
       el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy' })),
