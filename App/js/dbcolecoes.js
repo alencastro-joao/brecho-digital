@@ -74,7 +74,20 @@ export function escolherItem(colecao, id) {
 export const escolhasLivres = () =>
   Object.values(progressoDasColecoes()).reduce((n, c) => n + c.livres, 0);
 
+// Vários pontos da tela perguntam o progresso a cada toque; só recalcula
+// quando o inventário, as escolhas ou o acervo mudaram.
+let _cacheProg = null, _chaveProg = '';
 export function progressoDasColecoes() {
+  const inv = state.inventario;
+  const chave = [inv.length, inv[inv.length - 1]?.id, marcasFixas.size, coresFixas.size, temasFixos.size,
+    JSON.stringify(state.vestiario.escolhas || {}), (state.vestiario.herdadas || []).length].join('|');
+  if (_cacheProg && chave === _chaveProg) return _cacheProg;
+  _cacheProg = calcularProgressoDasColecoes();
+  _chaveProg = chave;
+  return _cacheProg;
+}
+
+function calcularProgressoDasColecoes() {
   const minhas = new Set(state.inventario.map(p => p.id));
   const out = {};
   const escolhas = state.vestiario.escolhas || {};
