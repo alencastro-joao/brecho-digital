@@ -371,6 +371,30 @@ function chegar() {
   chegarNaArara([...mural.querySelectorAll('.item-roupa')]);
 }
 
+// As roupas do dia começam a baixar antes de a loja ser montada: o boot ainda
+// espera quem você segue e monta as outras telas, e cada segundo disso era um
+// segundo a mais de mural vazio. O tamanho é o mesmo que o mural vai pedir
+// (mesma conta de medidasDoMural), então o navegador escolhe a mesma imagem do
+// srcset e a <img> da vitrine já nasce com ela no cache.
+const preCarregadas = [];                // segura as Image (são só as do dia)
+export function precarregarVitrine() {
+  const caixa = $('#vitrine-mural');
+  const largura = caixa?.clientWidth || window.innerWidth;
+  const altura = caixa?.clientHeight || window.innerHeight;
+  const celular = matchMedia('(max-width: 900px)').matches;
+  const pecas = poolDoDia(hojeISO()).slice(0, CONFIG.PECAS_NA_VITRINE);
+  const medidas = medidasDoMural(pecas, largura, altura, celular ? ESCALA_CELULAR : 1);
+  pecas.forEach((peca, i) => {
+    if (db.temPeca(peca.id)) return;
+    const { src, srcset, sizes } = imagemDaPeca(peca, medidas[i].w);
+    const img = new Image();
+    img.decoding = 'async';
+    if (srcset) { img.sizes = sizes; img.srcset = srcset; }
+    img.src = src;
+    preCarregadas.push(img);
+  });
+}
+
 export function montarVitrine({ entrada = false } = {}) {
   mural = $('#vitrine-mural');
   if (!mural) return;
