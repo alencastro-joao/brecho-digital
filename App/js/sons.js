@@ -15,7 +15,7 @@ const CHAVE_ANTIGA = 'bd-sons';   // 'off' do botão de silenciar que veio antes
 export const VOLUME_PADRAO = 70;  // de 0 a 100
 // Ganho no volume 100. Cada som tem o seu volume, baixo; isto sobe todos
 // juntos, e o compressor no fim segura quando vários tocam ao mesmo tempo.
-const GANHO_MAXIMO = 2.4;
+const GANHO_MAXIMO = 2.88;   // 2,4 + 20%
 
 let ctx = null;
 let mestre = null;
@@ -100,7 +100,7 @@ const arpejo = (c, freqs, passo, opcoes) =>
 
 const SONS = {
   // Clique de botão: um "tic" macio, quase só sentido.
-  toque: (c) => nota(c, 640, { ate: 480, dur: 0.05, tipo: 'triangle', vol: 0.05 }),
+  toque: (c) => nota(c, 640, { ate: 480, dur: 0.05, tipo: 'triangle', vol: 0.07 }),   // 0,05 + 40%
   // Favoritar: brilhinho.
   estrela: (c) => arpejo(c, [1318, 1760], 0.06, { dur: 0.16, vol: 0.06 }),
   // Curtir: "pop" que sobe.
