@@ -97,7 +97,7 @@
   -webkit-user-drag: none; user-select: none;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .13));
 }
-.camada.manipulando { cursor: grabbing; }
+.camada.manipulando { cursor: grabbing; will-change: transform; }
 
 /* As peças vivem numa camada isolada: o z-index delas (até 999) não passa
    por cima dos menus, das alças e da troca rápida. */

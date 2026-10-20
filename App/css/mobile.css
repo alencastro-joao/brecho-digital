@@ -637,6 +637,9 @@
   .view-stylist .stylist-tools:has(.tool-btn:disabled) { display: none; }
   /* Sem o pontilhado em volta da peça escolhida: as alças já mostram qual é. */
   .view-stylist .st-alcas .alcas-moldura { outline: 0; }
+  /* O mesmo na Colagem e no molde de peças antigas: nada de contorno
+     vermelho em volta da peça no celular (a peça travada mantém o cinza). */
+  .bd-alcas .alcas-moldura:not(.travada), .mp-peca { outline: 0; }
   .view-stylist #layer-tools > :not(.tool-row) { display: none; }
   .view-stylist #layer-tools .tool-row { flex-direction: column; flex-wrap: nowrap; gap: 5px; }
   .view-stylist #layer-tools .tool-btn { flex: none; width: 40px; min-width: 0; height: 34px; font-size: 15px; }
