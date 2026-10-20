@@ -1058,10 +1058,9 @@ function ligarControles() {
     abrirCompartilhar({
       formatos: [
         { id: 'formato', rotulo: 'Post 1080×1350' },
-        { id: 'alta', rotulo: 'Post alta 2160×2700' },
         { id: 'story', rotulo: 'Story 1080×1920' },
       ],
-      gerar: (tipo) => imagemDoBoard(board, { escala: tipo === 'alta' ? 2 : 1, story: tipo === 'story' }),
+      gerar: (tipo) => imagemDoBoard(board, { story: tipo === 'story' }),
     });
   });
 }

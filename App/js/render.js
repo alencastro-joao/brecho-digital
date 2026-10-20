@@ -94,15 +94,12 @@ export async function renderizarLook(camadas, opts = {}) {
     ctx.restore();
   }
 
-  // Sem nome, sai só o "brechó digital": nada de "meu look" inventado na foto.
+  // Sem nome, sai sem nada embaixo (sem marca d'água).
   if (assinatura != null) {
     ctx.fillStyle = '#1a1a1a';
     ctx.textAlign = 'center';
     ctx.font = `600 ${Math.round(w * 0.032)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
     if (assinatura.trim()) ctx.fillText(assinatura, w / 2, h - Math.round(h * 0.062));
-    ctx.fillStyle = 'rgba(0,0,0,.42)';
-    ctx.font = `${Math.round(w * 0.021)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
-    ctx.fillText('brechó digital', w / 2, h - Math.round(h * 0.032));
   }
 
   return canvas;
@@ -190,7 +187,7 @@ export async function imagemDoFeedColagem(board) {
 // Devolve { blob, nome } do PNG (para baixar ou para a folha de compartilhar).
 export async function imagemDoLook(camadas, formato, nomeLook) {
   const canvas = await renderizarLook(camadas, {
-    formato, fundo: true, assinatura: nomeLook || '',
+    formato, fundo: true, assinatura: nomeLook?.trim() || null,
   });
   return {
     blob: await new Promise((ok) => canvas.toBlob(ok, 'image/png')),
