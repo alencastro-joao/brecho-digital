@@ -379,6 +379,9 @@ function iniciarManipulacao(e, c, no) {
   if (!no || e.button > 0) return;
   e.preventDefault();
   soltarCampo();
+  // Peça já escolhida (ou puxada pela alça) anda desde o primeiro pixel: é
+  // assim que se faz o ajuste fino, como encaixar o óculos no rosto.
+  const jaEscolhida = selecionado === c.uid || Boolean(e.target.dataset?.alca);
   if (selecionado !== c.uid) selecionar(c.uid);
   fecharTroca();
 
@@ -406,7 +409,7 @@ function iniciarManipulacao(e, c, no) {
   const desenhar = () => {
     quadroMov = 0;
     if (!ultimo) return;
-    if (alca) posicionar(c, no);
+    if (alca === 'esc' || alca === 'rot') posicionar(c, no);
     else {
       const dx = (c.x - inicial.x) / CONFIG.STAGE_W * rect.width;
       const dy = (c.y - inicial.y) / CONFIG.STAGE_H * rect.height;
@@ -418,8 +421,9 @@ function iniciarManipulacao(e, c, no) {
 
   const mover = (ev) => {
     if (pinca?.ativa()) return;
-    // Um tremor de dedo de 3px não é arrasto: não suja o histórico.
-    if (!mexeu && Math.hypot(ev.clientX - inicioPtr.x, ev.clientY - inicioPtr.y) < 3) return;
+    // No toque que só escolhe a peça, um tremor de 3px não é arrasto: não
+    // suja o histórico. Na peça já escolhida qualquer movimento vale.
+    if (!mexeu && Math.hypot(ev.clientX - inicioPtr.x, ev.clientY - inicioPtr.y) < (jaEscolhida ? 0.5 : 3)) return;
     if (!mexeu) { mudanca(); mexeu = true; clearTimeout(segurar); }
     if (alca === 'esc') {
       const raio = Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y);
