@@ -125,6 +125,45 @@ function renderCartaoBaus() {
 // ---------------------------------- Topo ----------------------------------
 // Nível e fichas numa fileira. Tocar nas fichas troca por um resgate quando
 // dá; quando não dá, diz quanto falta.
+// Tudo que se troca com fichas, numa janela só: a ficha de repor (prêmio, da
+// vitrine), repor a loja e congelar. O resgate extra segue no contador de fichas.
+const podeAlgumaTroca = () => db.fichasDeRepor() > 0 || db.podeReporComFichas() || db.podeComprarCongelamento();
+
+function abrirTrocas() {
+  const fechar = () => {
+    fundo.remove();
+    document.body.classList.remove('com-modal');
+    document.removeEventListener('keydown', tecla);
+  };
+  // Fecha a janela antes de agir: as trocas abrem as suas próprias perguntas.
+  const agir = (f) => () => { fechar(); f(); };
+  const linha = (rotulo, detalhe, pode, f) => el('button', {
+    type: 'button', class: 'btn-ghost tf-troca-linha' + (pode ? ' pronto' : ''),
+    disabled: pode ? null : true, onclick: agir(f),
+  }, el('span', {}, rotulo), el('small', {}, detalhe));
+
+  const linhas = [
+    db.fichasDeRepor() ? linha('Ficha de repor a loja', `Você tem ${db.fichasDeRepor()}. Usa na vitrine.`,
+      true, () => irPara('vitrine')) : null,
+    linha('Repor a loja', `${FICHAS.porRepor} fichas. Os resgates do dia continuam.`,
+      db.podeReporComFichas(), () => trocarFichasPorRepor()),
+    linha('❄️ Congelamento', `${FICHAS.porCongelar} fichas. Você tem ${db.congelamentos()} guardado(s).`,
+      db.podeComprarCongelamento(), () => comprarCongelamentoAqui()),
+  ];
+  const caixa = el('div', { class: 'modal-caixa pergunta-caixa', role: 'dialog', 'aria-modal': 'true' },
+    el('h2', { class: 'pergunta-titulo' }, 'Trocas'),
+    el('p', { class: 'pergunta-texto' }, `Você tem ${db.fichas()} fichas.`),
+    el('div', { class: 'tf-trocas-lista' }, ...linhas),
+    el('div', { class: 'pergunta-botoes' },
+      el('button', { type: 'button', class: 'btn-ghost', onclick: fechar }, 'Fechar')));
+  const fundo = el('div', { class: 'modal pergunta' }, caixa);
+  const tecla = (e) => { if (e.key === 'Escape') fechar(); };
+  fundo.addEventListener('click', (e) => { if (e.target === fundo) fechar(); });
+  document.addEventListener('keydown', tecla);
+  document.body.append(fundo);
+  document.body.classList.add('com-modal');
+}
+
 function comprarCongelamentoAqui() {
   if (!db.comprarCongelamento()) {
     toast(`Congelamento custa ${FICHAS.porCongelar} fichas. Faltam ${FICHAS.porCongelar - db.fichas()}.`);
@@ -148,22 +187,11 @@ function renderTopo() {
       el('span', { class: 'tf-nv' }, 'NV', el('b', {}, String(p.nivel))),
       el('div', { class: 'tf-barra' }, el('span', { style: { width: p.pct + '%' } })),
       el('small', {}, p.maximo ? `${p.xpTotal} XP` : `${p.xpNoNivel}/${p.xpDoNivel}`)),
-    ...(db.fichasDeRepor() ? [el('button', {
-      type: 'button', class: 'tf-repor', title: 'Fichas de repor a loja', onclick: () => irPara('vitrine'),
-    }, ico('atualizar'), el('b', {}, String(db.fichasDeRepor())))] : []),
     el('button', {
-      type: 'button', class: 'tf-repor tf-repor-troca' + (db.podeReporComFichas() ? ' pronto' : ''),
-      title: `${FICHAS.porRepor} fichas = repor a loja`,
-      onclick: () => trocarFichasPorRepor(),
-    }, ico('atualizar'), 'Repor',
-      el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(FICHAS.porRepor))),
-    el('button', {
-      type: 'button', class: 'tf-repor tf-repor-troca' + (db.podeComprarCongelamento() ? ' pronto' : ''),
-      title: `${FICHAS.porCongelar} fichas = 1 congelamento (segura uma peça na loja até amanhã)`,
-      onclick: () => comprarCongelamentoAqui(),
-    }, ico('cadeado'), 'Congelar',
-      el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(FICHAS.porCongelar)),
-      db.congelamentos() ? el('small', { class: 'tf-tem' }, String(db.congelamentos())) : null),
+      type: 'button', class: 'tf-repor tf-trocas' + (podeAlgumaTroca() ? ' pronto' : ''),
+      title: 'Trocar fichas: repor a loja, congelar peças', onclick: abrirTrocas,
+    }, ico('atualizar'), 'Trocas',
+      db.fichasDeRepor() ? el('small', { class: 'tf-tem' }, String(db.fichasDeRepor())) : null),
     el('button', {
       type: 'button', class: 'tf-fichas' + (pode ? ' pronto' : ''),
       title: `${troca} fichas = 1 resgate`,
