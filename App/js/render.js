@@ -47,7 +47,7 @@ function fundoPapel(ctx, w, h) {
 
 export async function renderizarLook(camadas, opts = {}) {
   const {
-    formato = 'thumb', fundo = true, assinatura = null,
+    formato = 'thumb', fundo = true, assinatura = null, assinaturaImagem = '',
     avatar = true, guia = false, aparencia = null,
   } = opts;
   const { w, h } = FORMATOS[formato] || FORMATOS.thumb;
@@ -99,7 +99,14 @@ export async function renderizarLook(camadas, opts = {}) {
     ctx.fillStyle = '#1a1a1a';
     ctx.textAlign = 'center';
     ctx.font = `600 ${Math.round(w * 0.032)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
-    if (assinatura.trim()) ctx.fillText(assinatura, w / 2, h - Math.round(h * 0.062));
+    if (assinaturaImagem) {
+      try {
+        const img = await carregarImagem(assinaturaImagem);
+        const ah = Math.round(h * 0.05);
+        const aw = Math.min(w * 0.6, ah * img.naturalWidth / img.naturalHeight);
+        ctx.drawImage(img, (w - aw) / 2, h - Math.round(h * 0.062) - ah * 0.8, aw, aw * img.naturalHeight / img.naturalWidth);
+      } catch { /* sem a imagem, sai sem assinatura */ }
+    } else if (assinatura.trim()) ctx.fillText(assinatura, w / 2, h - Math.round(h * 0.062));
   }
 
   return canvas;
@@ -185,9 +192,9 @@ export async function imagemDoFeedColagem(board) {
 }
 
 // Devolve { blob, nome } do PNG (para baixar ou para a folha de compartilhar).
-export async function imagemDoLook(camadas, formato, nomeLook) {
+export async function imagemDoLook(camadas, formato, nomeLook, assinaturaImagem = '') {
   const canvas = await renderizarLook(camadas, {
-    formato, fundo: true, assinatura: nomeLook?.trim() || null,
+    formato, fundo: true, assinatura: nomeLook?.trim() || null, assinaturaImagem,
   });
   return {
     blob: await new Promise((ok) => canvas.toBlob(ok, 'image/png')),
@@ -271,7 +278,16 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
   }
 
   const a = board.assinatura;
-  if (a?.visivel && a.texto?.trim()) {
+  if (a?.visivel && a.imagem) {
+    try {
+      const img = await carregarImagem(a.imagem);
+      const p = posAssinatura(board, W, H);
+      const ah = a.tamanho * 1.6 * k;
+      const aw = ah * img.naturalWidth / img.naturalHeight;
+      const x = p.align === 'centro' ? p.x * k - aw / 2 : p.align === 'direita' ? p.x * k - aw : p.x * k;
+      ctx.drawImage(img, x, p.y * k - ah, aw, ah);
+    } catch { /* sem a imagem, a colagem sai sem assinatura */ }
+  } else if (a?.visivel && a.texto?.trim()) {
     const p = posAssinatura(board, W, H);
     ctx.fillStyle = a.cor;
     ctx.font = `${a.tamanho * k}px ${fonteCss(a.fonte)}`;

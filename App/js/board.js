@@ -12,7 +12,6 @@ import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
          srcGrande, pecaCombina } from './catalog.js';
-import { assinaturaDoUsuario } from './assinaturas.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
 import { miniaturaBoard, imagemDoBoard } from './render.js';
@@ -81,7 +80,8 @@ function novaColagem() {
     margem: BOARD.MARGEM_PADRAO,
     assinatura: {
       ...db.state.usuario.assinatura,
-      texto: assinaturaDoUsuario() || db.state.usuario.assinatura.texto || db.state.usuario.nome || '',
+      texto: db.state.usuario.assinaturaTexto || db.state.usuario.assinatura.texto || db.state.usuario.nome || '',
+      imagem: db.state.usuario.assinaturaImagem || '',
     },
     itens: [],
     guias: { h: [], v: [] },
@@ -528,17 +528,18 @@ function renderAssinatura() {
   const caixa = $('#pr-assinatura');
   caixa.innerHTML = '';
   const a = board.assinatura;
-  if (!a.visivel || !a.texto.trim()) return;
+  if (!a.visivel || !(a.imagem || a.texto.trim())) return;
 
   const alt = H();
   const p = posAssinatura(board, W, alt);
   const u = pxPorUnidade();
-  const span = el('span', {}, a.texto);
+  const span = a.imagem ? el('img', { src: a.imagem, alt: '' }) : el('span', {}, a.texto);
   Object.assign(span.style, {
     left: (p.x / W * 100) + '%',
     top: (p.y / alt * 100) + '%',
     fontFamily: fonteCss(a.fonte),
     fontSize: (a.tamanho * u) + 'px',
+    ...(a.imagem ? { height: (a.tamanho * 1.6 * u) + 'px', width: 'auto' } : {}),
     letterSpacing: (a.espaco * u) + 'px',
     color: a.cor,
     transform: p.align === 'centro' ? 'translate(-50%, -100%)'
@@ -930,7 +931,7 @@ function ligarControles() {
     board.assinatura[campo] = valor;
     renderAssinatura();
   };
-  on('#bd-assinatura', 'input', (e) => assin('texto', e.target.value, 'assinatura-texto'));
+  on('#bd-assinatura', 'input', (e) => { board.assinatura.imagem = ''; assin('texto', e.target.value, 'assinatura-texto'); });
   on('#bd-fonte', 'change', (e) => assin('fonte', e.target.value, null));
   on('#bd-pos-assinatura', 'change', (e) => assin('posicao', e.target.value, null));
   on('#bd-tam-assinatura', 'input', (e) => assin('tamanho', Number(e.target.value), 'assinatura-tam'));
