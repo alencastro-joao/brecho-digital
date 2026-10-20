@@ -82,17 +82,18 @@
      e informações, e as coleções viram só os discos, numa fileira. */
   .ficha {
     inset: 0 !important; margin: auto; height: fit-content;
-    width: min(300px, calc(100vw - 32px)); max-width: none; padding: 16px 16px 18px;
+    width: min(320px, calc(100vw - 24px)); max-width: none; padding: 14px 16px 16px;
     display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 0;
     justify-items: center; text-align: center; align-items: start;
   }
   .ficha > * { grid-column: 1; }
-  .ficha .ficha-img { grid-row: auto; height: 170px; width: 100%; margin: 0 0 10px; }
-  .ficha .ficha-img img { max-height: 170px; width: auto !important; height: 170px !important; }
+  .ficha .ficha-img { grid-row: auto; height: 250px; width: 100%; margin: 0 0 8px; }
+  .ficha .ficha-img img { max-height: 250px; width: auto !important; height: 250px !important; }
   .ficha .ficha-rar { justify-self: center; }
-  .ficha .ficha-nome { margin: 9px 0 4px; padding: 0 22px 0 0; font-size: 16px; }
-  .ficha .ficha-meta, .ficha .ficha-chance { margin-bottom: 0; }
-  .ficha .ficha-chance { margin-bottom: 8px; }
+  .ficha .ficha-nome { margin: 4px 0 2px; padding: 0 22px 0 0; font-size: 15px; }
+  /* Mínimo de texto: a marca, a cor e a categoria somem; ficam a raridade, o nome e a chance. */
+  .ficha .ficha-meta { display: none; }
+  .ficha .ficha-chance { margin: 0 0 8px; }
   .ficha .col-chips {
     margin: 10px 0 0; justify-content: center; flex-wrap: wrap; gap: 6px;
   }
