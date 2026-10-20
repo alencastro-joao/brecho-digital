@@ -1131,11 +1131,11 @@ export const COLECOES = [
     },
     efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
   { id: 'sixth-dimension', marca: 'Sixth Dimension',
-    itens: ['moletom-sixth-dimension', 'camiseta-sixth-dimension', 'cropped-sixth-dimension'],
+    itens: ['moletom-sixth-dimension', 'camiseta-sixth-dimension', 'sueter-sixth-dimension'],
     variantes: {
-      'moletom-sixth-dimension': ['moletom', 'Moletom cósmico Sixth Dimension', '#5b3a8c'],
-      'camiseta-sixth-dimension': ['camiseta', 'Camiseta Sixth Dimension', '#23264a'],
-      'cropped-sixth-dimension': ['cropped', 'Cropped Sixth Dimension', '#b98ad8'],
+      'moletom-sixth-dimension': ['moletom', 'Moletom de patinha Sixth Dimension', '#5b3a8c'],
+      'camiseta-sixth-dimension': ['camiseta', 'Camiseta de gatinhos Sixth Dimension', '#23264a'],
+      'sueter-sixth-dimension': ['sueter', 'Suéter Sixth Dimension', '#b98ad8'],
     },
     efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
 ];
