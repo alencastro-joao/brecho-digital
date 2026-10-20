@@ -6,7 +6,7 @@
 import { CONFIG, BOARD, CATEGORIAS, ancoraDaPeca } from './config.js';
 import { doPadraoParaAtual } from './proporcao.js';
 import { item as pecaDoCatalogo, proporcao, srcGrande } from './catalog.js';
-import { avatarDataURL, aparenciaAtual } from './avatar.js';
+import { avatarDataURLPronto, aparenciaAtual } from './avatar.js';
 import { alturaDe, posAssinatura, fonteCss } from './boardgeo.js';
 
 export const FORMATOS = {
@@ -68,7 +68,7 @@ export async function renderizarLook(camadas, opts = {}) {
   const paraTela = (ux, uy) => [ox + ux * escala, oy + uy * escala];
 
   if (avatar) {
-    const av = await carregarImagem(avatarDataURL({ guia, aparencia }));
+    const av = await carregarImagem(await avatarDataURLPronto({ guia, aparencia }));
     ctx.drawImage(av, ox, oy, larg, alt);
   }
 

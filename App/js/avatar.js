@@ -378,3 +378,26 @@ function escurecerTraco(hex, fator = 0.72) {
 
 export const avatarDataURL = (opts) =>
   'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgAvatar(opts));
+
+// Imagem solta dentro de um SVG usado como <img> não carrega (as roupas
+// desenhadas são arquivos). Para exportar, cada uma vira data URI antes.
+const inlines = new Map();
+const comoDataURI = (href) => {
+  if (!inlines.has(href)) {
+    inlines.set(href, fetch(href).then(r => r.blob()).then(b => new Promise((ok, erro) => {
+      const f = new FileReader();
+      f.onload = () => ok(f.result);
+      f.onerror = erro;
+      f.readAsDataURL(b);
+    })));
+  }
+  return inlines.get(href);
+};
+
+export async function avatarDataURLPronto(opts) {
+  let svg = svgAvatar(opts);
+  for (const href of new Set(svg.match(/assets\/roupas\/[\w-]+\.webp/g) || [])) {
+    svg = svg.replaceAll(`href="${href}"`, `href="${await comoDataURI(href)}"`);
+  }
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
