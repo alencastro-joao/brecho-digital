@@ -19,6 +19,7 @@ os.environ.update({
     'AWS_DEFAULT_REGION': 'us-east-1', 'AWS_ACCESS_KEY_ID': 'teste',
     'AWS_SECRET_ACCESS_KEY': 'teste', 'BD_TABELA': 'brecho-teste',
     'BD_BUCKET_SITE': 'site-teste', 'BD_SEGREDO_ORIGEM': '',
+    'BD_BUCKET_DADOS': 'dados-teste',
 })
 
 from moto import mock_aws  # noqa: E402
@@ -174,6 +175,63 @@ class Gerador(Base):
         self.assertTrue(gerados)
         self.assertLessEqual(len(gerados), gerador.MAX_GERADOS)
         self.assertEqual({e['id'] for e in gerados}, self.indice())
+
+
+class Renovacao(Base):
+    def setUp(self):
+        super().setUp()
+        _s3.create_bucket(Bucket='dados-teste')
+        cats = ['shirts', 'pants', 'shoes', 'hats', 'bags', 'dresses']
+        itens = [{'id': str(100 + n), 'cat': cats[n % len(cats)], 'nome': 'Peça %d' % n} for n in range(30)]
+        _s3.put_object(Bucket='site-teste', Key='assets/acervo.json', Body=json.dumps({'items': itens}))
+
+    def tearDown(self):
+        for o in _s3.list_objects_v2(Bucket='dados-teste').get('Contents', []):
+            _s3.delete_object(Bucket='dados-teste', Key=o['Key'])
+        _s3.delete_bucket(Bucket='dados-teste')
+        super().tearDown()
+
+    def test_versao_nova_troca_os_de_exemplo_e_guarda_backup(self):
+        gerador.em_dia()                                   # semeia, já na versão atual
+        velhos = {e['id'] for e in feed.linha_do_tempo(so_gerados=True)}
+        self.assertTrue(velhos)
+        meu = feed.publicar(self.eu, {'chave': 'board:b1', 'tipo': 'board', 'thumb': WEBP})['posts'][0]['id']
+        # Marcado como gerado, mas de conta de verdade: não é de exemplo.
+        _post_antigo(_pid(7), self.eu, contas.iso(contas.agora()), gerado=True)
+        feed.indexar({'id': _pid(7), 'autor': self.eu, 'criado_em': contas.iso(contas.agora()), 'gerado': True})
+        self.assertIsNone(gerador.em_dia())                # mesma versão: nada muda
+
+        _ddb.update_item(TableName=contas.TABELA, Key={'pk': {'S': gerador.CHAVE_RELOGIO}},
+                         UpdateExpression='SET versao = :v', ExpressionAttributeValues={':v': {'N': '1'}})
+        feito = gerador.em_dia()
+        self.assertEqual(len(feito['publicados']), 12)
+        novos = {e['id'] for e in feed.linha_do_tempo(so_gerados=True) if e['autor'] in gerador.HANDLE}
+        self.assertFalse(novos & velhos)
+        self.assertEqual(self.indice(), novos | {meu, _pid(7)})
+        for pid in velhos:
+            self.assertNotIn('Item', _ddb.get_item(TableName=contas.TABELA, Key={'pk': {'S': 'POST#' + pid}}))
+
+        chaves = [o['Key'] for o in _s3.list_objects_v2(Bucket='dados-teste')['Contents']]
+        self.assertEqual(len(chaves), 1)
+        corpo = _s3.get_object(Bucket='dados-teste', Key=chaves[0])['Body'].read()
+        guardados = {i['id']['S'] for i in json.loads(gzip.decompress(corpo))['itens']}
+        self.assertEqual(guardados, velhos)
+        self.assertIsNone(gerador.em_dia())                # e só uma vez
+
+    def test_sem_backup_nada_sai(self):
+        gerador.em_dia()
+        velhos = {e['id'] for e in feed.linha_do_tempo(so_gerados=True)}
+        _ddb.update_item(TableName=contas.TABELA, Key={'pk': {'S': gerador.CHAVE_RELOGIO}},
+                         UpdateExpression='REMOVE versao')
+        balde, gerador.BUCKET_DADOS = gerador.BUCKET_DADOS, ''
+        try:
+            with self.assertRaises(RuntimeError):
+                gerador.em_dia()
+        finally:
+            gerador.BUCKET_DADOS = balde
+        self.assertEqual({e['id'] for e in feed.linha_do_tempo(so_gerados=True)}, velhos)
+        relogio = _ddb.get_item(TableName=contas.TABELA, Key={'pk': {'S': gerador.CHAVE_RELOGIO}})['Item']
+        self.assertNotIn('versao', relogio)                # a próxima leitura tenta de novo
 
 
 class Api(Base):
