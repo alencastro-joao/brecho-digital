@@ -14,7 +14,8 @@ import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
          srcGrande, pecaCombina } from './catalog.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
-import { miniaturaBoard, baixarBoard } from './render.js';
+import { miniaturaBoard, imagemDoBoard } from './render.js';
+import { abrirCompartilhar } from './compartilhar.js';
 import { publicarOuGuardar, publicarNoFeed, pacoteDaColagem, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { el, $, $$, clamp, toast, teclaLivre, anguloNormal, ehToque, soltarCampo } from './util.js';
@@ -1052,20 +1053,17 @@ function ligarControles() {
   on('#bd-nova', 'click', comecarNova);
   on('#bd-limpar-guias', 'click', () => { mudanca(); board.guias = { h: [], v: [] }; renderGuias(); });
 
-  $$('[data-bd-export]').forEach(b => b.addEventListener('click', async () => {
-    if (!board.itens.length) return toast('Solte alguma peça antes de exportar.', 'aviso');
-    const tipo = b.dataset.bdExport;
-    b.disabled = true;
-    try {
-      await baixarBoard(board, { escala: tipo === 'alta' ? 2 : 1, story: tipo === 'story' });
-      toast('PNG gerado. Confere os downloads.');
-    } catch (err) {
-      console.warn('exportar colagem', err);
-      toast('Não consegui gerar o PNG agora. Tente de novo.', 'aviso');
-    } finally {
-      b.disabled = false;
-    }
-  }));
+  on('#bd-compartilhar', 'click', () => {
+    if (!board.itens.length) return toast('Solte alguma peça antes de compartilhar.', 'aviso');
+    abrirCompartilhar({
+      formatos: [
+        { id: 'formato', rotulo: 'Post 1080×1350' },
+        { id: 'alta', rotulo: 'Post alta 2160×2700' },
+        { id: 'story', rotulo: 'Story 1080×1920' },
+      ],
+      gerar: (tipo) => imagemDoBoard(board, { escala: tipo === 'alta' ? 2 : 1, story: tipo === 'story' }),
+    });
+  });
 }
 
 // Ordem das camadas. Subir e descer trocam a peça de lugar com a vizinha de

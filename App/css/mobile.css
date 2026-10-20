@@ -782,15 +782,15 @@
     min-height: 0; margin: 0 8px 8px 0; padding: 0;
     border: 0; background: none;
   }
-  .view-board #board-nome, .view-board .board-dica,
-  .view-board [data-bd-export="alta"] { display: none; }
+  .view-board #board-nome, .view-board .board-dica { display: none; }
   .view-board .rodape-acoes { flex-direction: row; flex-wrap: nowrap; gap: 4px; margin: 0; flex: none; }
   .view-board .acao-btn { font-size: 0; }
   .view-board .acao-btn::before { font-size: 16px; line-height: 1; }
   .view-board #bd-sortear::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/dado.svg) center / contain no-repeat; mask: url(../assets/icones/ph/dado.svg) center / contain no-repeat; }
   .view-board #bd-salvar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; }
   .view-board #bd-publicar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/publicar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/publicar.svg) center / contain no-repeat; }
-  .view-board [data-bd-export="formato"]::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/baixar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/baixar.svg) center / contain no-repeat; }
+  .view-board #bd-compartilhar i { display: none; }
+  .view-board #bd-compartilhar::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/compartilhar.svg) center / contain no-repeat; mask: url(../assets/icones/ph/compartilhar.svg) center / contain no-repeat; }
   .view-board #bd-nova::before { content: '＋'; font-weight: 800; }
   .view-board #bd-ferramentas { display: grid; }
   .view-board #bd-ferramentas::before { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ajustes.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ajustes.svg) center / contain no-repeat; }
@@ -1280,7 +1280,7 @@
   /* Barra da Colagem: botões de 40px (o "nova" fica no ▦, que já tem
      "+ Nova colagem", e o Story no PC). */
   .view-board :is(.board-bar .bar-btn, .rodape-acoes .acao-btn) { width: 38px; height: 40px; }
-  .view-board #bd-nova, .view-board [data-bd-export="story"] { display: none; }
+  .view-board #bd-nova { display: none; }
   .view-board .tool-check input { width: 22px; height: 22px; }
   .view-board .tool-row.alinhar .tool-btn { height: 40px; }
 }
