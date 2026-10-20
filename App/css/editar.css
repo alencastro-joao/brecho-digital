@@ -41,7 +41,7 @@ body.com-modal { overflow: hidden; }
   display: flex; align-items: center; gap: 10px;
   padding: 16px 26px;
   border-top: 1px solid var(--linha);
-  background: #fdfcfa;
+  background: var(--papel);
 }
 .modal-rodape .btn-dark,
 .modal-rodape .btn-ghost { width: auto; margin: 0; padding: 10px 20px; }
@@ -70,8 +70,8 @@ body.com-modal { overflow: hidden; }
 .mp-solta {
   border: 2px dashed var(--linha); border-radius: 20px;
   background:
-    linear-gradient(45deg, #f6f3ee 25%, transparent 25%, transparent 75%, #f6f3ee 75%),
-    linear-gradient(45deg, #f6f3ee 25%, #fff 25%, #fff 75%, #f6f3ee 75%);
+    linear-gradient(45deg, var(--perola-painel) 25%, transparent 25%, transparent 75%, var(--perola-painel) 75%),
+    linear-gradient(45deg, var(--perola-painel) 25%, #fff 25%, #fff 75%, var(--perola-painel) 75%);
   background-size: 18px 18px;
   background-position: 0 0, 9px 9px;
   min-height: 300px;
@@ -150,7 +150,7 @@ body.com-modal { overflow: hidden; }
 /* Marcas já usadas: um toque em vez de digitar de novo. */
 .mp-marcas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -6px; }
 .mp-marca-chip {
-  border: 1px solid var(--linha); background: #fdfcfa;
+  border: 1px solid var(--linha); background: var(--papel);
   border-radius: 20px; padding: 4px 11px;
   font-size: 11.5px; color: var(--tinta-suave);
 }
@@ -187,7 +187,7 @@ body.com-modal { overflow: hidden; }
   font-size: 12.5px; text-align: left; color: var(--tinta);
   transition: border-color .18s, background .18s;
 }
-.mp-rar:hover { border-color: #cfc6b9; }
+.mp-rar:hover { border-color: var(--perola-bloco); }
 .mp-rar.ativa { border-color: var(--tinta); font-weight: 700; }
 .mp-rar-bolha {
   width: 14px; height: 14px; border-radius: 50%; flex: none;
@@ -228,7 +228,7 @@ body.com-modal { overflow: hidden; }
      resolver (a faixa do grid é automática) e o molde colapsaria. */
   height: min(430px, 54vh); aspect-ratio: 1 / 2;
   background: var(--papel);
-  background-image: radial-gradient(#e7e2da 1px, transparent 1px);
+  background-image: radial-gradient(var(--perola-2) 1px, transparent 1px);
   background-size: 22px 22px;
   border: 1px solid var(--linha); border-radius: 10px;
   touch-action: none; user-select: none;

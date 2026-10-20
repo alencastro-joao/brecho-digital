@@ -88,7 +88,7 @@
   font-size: 12px; color: var(--tinta-suave);
 }
 .post:hover .post-thumb { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(60, 40, 20, .13); }
-.post.meu .post-thumb { box-shadow: 0 0 0 2px #d9d0c3, 0 8px 22px rgba(60, 40, 20, .06); }
+.post.meu .post-thumb { box-shadow: 0 0 0 2px var(--wii-borda), 0 8px 22px rgba(60, 40, 20, .06); }
 
 /* O coração mora na imagem, no canto de cima. */
 .post-thumb .curtir {
@@ -152,7 +152,7 @@
   width: 26px; height: 26px; flex: none;
   font-size: 16px; line-height: 1; color: var(--tinta-suave);
 }
-.post-mais:hover { background: #f3efe9; color: var(--tinta); }
+.post-mais:hover { background: var(--perola-painel); color: var(--tinta); }
 
 /* ------------------------------ Comentários ------------------------------ */
 /* Aberta, a conversa fica logo abaixo do card, numa caixa branca. */
@@ -181,7 +181,7 @@
 .campo-comentario {
   flex: 1; min-width: 0;
   border: 1px solid var(--linha); border-radius: 20px;
-  padding: 7px 12px; font-family: inherit; font-size: 12px; background: #fdfcfa;
+  padding: 7px 12px; font-family: inherit; font-size: 12px; background: var(--papel);
 }
 .campo-comentario:focus { outline: none; border-color: var(--tinta); background: #fff; }
 .enviar-com {
@@ -209,7 +209,7 @@
   border: 0; background: none; border-radius: 10px;
   padding: 8px 10px; font-size: 12.5px; text-align: left; color: var(--tinta);
 }
-.menu-item:hover { background: #f6f3ee; }
+.menu-item:hover { background: var(--perola-painel); }
 .menu-item .ponto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .menu-aviso { font-size: 11px; color: var(--tinta-suave); padding: 8px 10px; line-height: 1.5; }
 .menu-item.perigo {
@@ -253,7 +253,7 @@
 .busca-caixa input, .bp-corpo input[type="text"] {
   width: 100%; border: 1px solid var(--linha); border-radius: 20px;
   padding: 8px 32px 8px 14px; font-family: inherit; font-size: 12.5px;
-  background: #fdfcfa; color: var(--tinta);
+  background: var(--papel); color: var(--tinta);
 }
 .busca-caixa input:focus, .bp-corpo input[type="text"]:focus {
   outline: none; border-color: var(--tinta); background: #fff;
@@ -263,7 +263,7 @@
   width: 22px; height: 22px; border-radius: 50%;
   border: 0; background: none; font-size: 10px; color: var(--tinta-suave);
 }
-.busca-limpar:hover { color: var(--tinta); background: #f0ece6; }
+.busca-limpar:hover { color: var(--tinta); background: var(--perola-painel); }
 .busca-resumo { font-size: 11px; color: var(--tinta-suave); margin: 8px 0 4px; }
 .busca-vazio { font-size: 12.5px; color: var(--tinta-suave); line-height: 1.5; padding: 10px 0; }
 
@@ -364,7 +364,7 @@
 .cx-corpo input:focus { outline: none; border-color: var(--tinta); }
 .cx-nota {
   font-size: 11px; color: #a9a196; line-height: 1.55;
-  background: #faf7f2; border-radius: 12px; padding: 10px 12px;
+  background: var(--perola-painel); border-radius: 12px; padding: 10px 12px;
 }
 
 

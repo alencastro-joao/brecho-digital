@@ -122,8 +122,8 @@
      A peça tocada abre no lugar da grade (ver js/closet.js). */
   .view-closet {
     flex-direction: column;
-    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
-    --painel: #f3eee6;
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
   }
   .view-closet .cat-rail {
     width: auto !important; flex: none;
@@ -460,8 +460,8 @@
   /* No padrão do closet: painéis de borda clara, botões em bloco com um
      degrau embaixo, só ícones, e o ativo na cor do Stylist. */
   .view-stylist {
-    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
-    --painel: #f3eee6;
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
     background: var(--papel);
   }
   .view-stylist :is(.btn-meus, .st-hist-btn, .lb-btn, .pal-cat, .palette-ajustes,
@@ -708,8 +708,8 @@
      (seleção, arranjo, assinatura e as colagens salvas). Réguas, zoom, as
      opções da barra, o nome e a dica ficam para o computador. */
   .view-board {
-    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
-    --painel: #f3eee6;
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
     display: grid; grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 8px; padding: 10px 14px; overflow: hidden;
@@ -918,8 +918,8 @@
      uma aba por parte (corpo, pele, cabelo, cor do cabelo, nariz) e só as
      opções da aba aberta, em blocos. Tudo numa tela, sem rolar. */
   .view-personagem {
-    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
-    --painel: #f3eee6;
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
     display: grid; grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr);
     gap: 8px; padding: 10px 14px; overflow: hidden;
@@ -1172,7 +1172,7 @@
     box-shadow: inset 0 -3px 0 var(--bloco-fundo);
   }
   .view-vestiario .vs-slot { box-shadow: inset 0 -3px 0 var(--bloco-fundo); }
-  .view-vestiario .vs-slot.vazio { border-style: solid; border-color: var(--bloco-borda); background: #f7f9fb; }
+  .view-vestiario .vs-slot.vazio { border-style: solid; border-color: var(--bloco-borda); background: var(--papel); }
   .view-vestiario .vs-slot.selecionado { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--wii); }
   .view-vestiario .vs-ficha {
     border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
@@ -1201,7 +1201,7 @@
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
   }
   .view-vestiario .vs-item { box-shadow: inset 0 -3px 0 var(--bloco-fundo); }
-  .view-vestiario .vs-item.vaga { border-style: solid; border-color: var(--bloco-borda); background: #f7f9fb; box-shadow: none; }
+  .view-vestiario .vs-item.vaga { border-style: solid; border-color: var(--bloco-borda); background: var(--papel); box-shadow: none; }
   .view-vestiario .vs-item.selecionado { box-shadow: 0 0 0 2px var(--painel), 0 0 0 4px var(--wii); }
   .view-vestiario .vs-paginacao { border-top-color: var(--bloco-borda); }
   .view-vestiario .vs-pag-seta {

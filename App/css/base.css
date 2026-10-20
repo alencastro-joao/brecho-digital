@@ -192,7 +192,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
   display: grid; place-items: center;
   transition: color .15s, background .15s;
 }
-.fav-estrela.mini:hover { background: #f6f1e8; color: #8a6d24; }
+.fav-estrela.mini:hover { background: var(--perola-painel); color: #8a6d24; }
 .fav-estrela.mini.on { background: #fff6d6; color: #d6a81f; }
 
 /* Nome ou retrato de quem assina algo: leva ao perfil da pessoa. Continua
@@ -269,7 +269,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .fw-card p { font-size: 14px; line-height: 1.7; color: var(--tinta-suave); margin-bottom: 10px; }
 .fw-card pre, .fw-card code {
   font-family: ui-monospace, Consolas, monospace; font-size: 13px;
-  background: #f6f2ec; border-radius: 8px; padding: 2px 6px;
+  background: var(--perola-painel); border-radius: 8px; padding: 2px 6px;
 }
 .fw-card pre { padding: 12px 16px; margin: 6px 0 14px; }
 
@@ -342,7 +342,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
   content: ''; width: 2px; height: 46px; border-radius: 2px;
   background: transparent; transition: background .18s, height .18s;
 }
-.divisor:hover::after { background: #cfc6b9; height: 76px; }
+.divisor:hover::after { background: var(--perola-bloco); height: 76px; }
 .divisor.ativo::after { background: var(--tinta); height: 100%; border-radius: 0; }
 body.redimensionando { cursor: col-resize; user-select: none; }
 body.redimensionando .divisor::after { background: var(--tinta); }
@@ -350,7 +350,7 @@ body.redimensionando .divisor::after { background: var(--tinta); }
 /* ------------------------- Scrollbars discretas ------------------------- */
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: #e2dbd1; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #cfc6b9; }
+::-webkit-scrollbar-thumb:hover { background: var(--perola-bloco); }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* --------------------------- Janelas mais estreitas ---------------------
@@ -378,7 +378,7 @@ body.redimensionando .divisor::after { background: var(--tinta); }
 /* O seletor [Peça | Corpo] do closet, do Stylist e da Colagem. */
 .agrupar {
   display: inline-flex; padding: 2px; gap: 2px;
-  border: 1px solid #ddd6cc; border-radius: 9px; background: #fff;
+  border: 1px solid var(--wii-borda); border-radius: 9px; background: #fff;
 }
 .agrupar-op {
   border: 0; background: transparent; border-radius: 7px;
@@ -392,14 +392,14 @@ body.redimensionando .divisor::after { background: var(--tinta); }
 /* O "Organizar" (ordenacao.js): closet, Stylist e Colagem. */
 .ordem-sel {
   font: inherit; font-size: 12.5px; color: var(--tinta);
-  padding: 6px 10px; border: 1px solid #ddd6cc; border-radius: 8px; background: #fff; cursor: pointer;
+  padding: 6px 10px; border: 1px solid var(--wii-borda); border-radius: 8px; background: #fff; cursor: pointer;
 }
 /* A seta do sentido, colada no seletor. */
 .ordem-ctrl { display: inline-flex; align-items: stretch; gap: 6px; min-width: 0; }
 .ordem-sentido {
   flex: none; width: 32px; padding: 0;
   font: inherit; font-size: 15px; font-weight: 700; color: var(--tinta);
-  border: 1px solid #ddd6cc; border-radius: 8px; background: #fff; cursor: pointer;
+  border: 1px solid var(--wii-borda); border-radius: 8px; background: #fff; cursor: pointer;
 }
 .ordem-sentido.on { background: var(--tinta); color: #fff; border-color: var(--tinta); }
 /* Nas paletas, estreitas, o seletor ocupa a linha inteira e dispensa o rótulo. */

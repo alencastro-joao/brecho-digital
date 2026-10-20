@@ -17,8 +17,8 @@
   display: grid; place-items: center;
   transition: all .2s;
 }
-.cat-btn:hover { background: #faf7f2; transform: scale(1.06); }
-.cat-btn.active { background: #f4efe7; border-color: var(--linha); }
+.cat-btn:hover { background: var(--perola-painel); transform: scale(1.06); }
+.cat-btn.active { background: var(--perola-painel); border-color: var(--linha); }
 .cat-qtd {
   position: absolute; right: 2px; bottom: 2px;
   background: var(--tinta); color: #fff;
@@ -69,7 +69,7 @@
 .item-slot.arrastando { opacity: .35; cursor: grabbing; }
 .item-slot.alvo { border-style: dashed; transform: scale(1.04); }
 .item-slot.vazio {
-  border-style: dashed; border-color: #f0ebe3; background: #fdfcfa;
+  border-style: dashed; border-color: var(--linha); background: var(--papel);
   cursor: default; pointer-events: none;
 }
 /* Lendária: a borda é o arco-íris. Dois fundos empilhados — o de dentro cobre
@@ -110,7 +110,7 @@
 .display-section {
   width: 330px; flex: none;
   border-left: 1px solid var(--linha);
-  background: #fdfcfa;
+  background: var(--papel);
   display: flex; flex-direction: column;
   padding: 30px 26px; gap: 18px;
 }

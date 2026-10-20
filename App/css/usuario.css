@@ -3,7 +3,7 @@
    perfil.css —, então aqui fica só o que é da página pública: a célula das
    peças, o selo "segue você" e o modal que abre uma publicação inteira. */
 
-.view-usuario { background: #fbf8f4; overflow-y: auto; }
+.view-usuario { background: var(--papel); overflow-y: auto; }
 
 /* Peças: a mesma célula do guarda-roupa, sem aura nem arrastar. */
 .up-peca {
@@ -30,7 +30,7 @@
 /* Um look ou colagem favorito aberto grande: a miniatura e as peças dele. */
 .up-obra-foto {
   display: grid; place-items: center; min-height: 160px;
-  background: #fdfaf6; border: 1px solid var(--linha); border-radius: 16px;
+  background: var(--papel); border: 1px solid var(--linha); border-radius: 16px;
   overflow: hidden;
 }
 .up-obra-foto.colagem { background: #fff; }

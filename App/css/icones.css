@@ -20,6 +20,8 @@
    perfil), para pegar os tons de lá. */
 :root, [data-paleta] {
   --perola: linear-gradient(180deg, #ffffff 0%, var(--perola-1) 48%, var(--perola-2) 52%, var(--perola-3) 100%);
+  /* a linha fina das bordas e divisórias, puxada para a borda da paleta */
+  --linha: color-mix(in srgb, var(--wii-borda) 60%, var(--papel));
 }
 [data-paleta="rosa"] {
   --wii: #f06ba8; --wii-brilho: rgba(240, 107, 168, .28); --wii-borda: #e6cfd9;
