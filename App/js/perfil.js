@@ -23,6 +23,7 @@ import { cabeca, aparenciaAtual } from './avatar.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
 import { confirmar, pedirTexto } from './janela.js';
+import { sonsLigados, ligarSons } from './sons.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
@@ -348,6 +349,15 @@ function montarAjustes() {
     b.addEventListener('click', () => { mostrarMenu(false); abrirAjustes(b.dataset.ajuste); }));
   // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
   $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
+  // Sons: liga e desliga ali mesmo, sem fechar o menu, para ouvir a diferença.
+  const sons = $('#pf-menu-sons');
+  const pintarSons = () => {
+    const sim = sonsLigados();
+    sons.replaceChildren(ico(sim ? 'som' : 'mudo'), sim ? ' Sons ligados' : ' Sons desligados');
+    sons.setAttribute('aria-pressed', String(sim));
+  };
+  sons.addEventListener('click', () => { ligarSons(!sonsLigados()); pintarSons(); });
+  pintarSons();
 
   $('#aj-fechar').addEventListener('click', fecharAjustes);
   // Clique no fundo escuro fecha; clique dentro da caixa, não.

@@ -36,6 +36,7 @@ import { emo } from './icones.js';
 import { botaoDesejo } from './usuario.js';
 import { mostrar } from './janela.js';
 import { chegarNaArara, voar } from './movimento.js';
+import { tocar } from './sons.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -769,6 +770,7 @@ async function pegar(id, noDOM) {
 
   voarParaOCloset(noDOM);
   sairDaLoja(noDOM);
+  tocar('pegou', nova.raridade);
 
   const r = RARIDADE[nova.raridade];
   if (nova.raridade === 'legendary') falarDe('lendario');
@@ -826,6 +828,7 @@ async function desfazerResgate(peca, foto) {
   if (!db.desfazerResgate(peca.id, foto)) return;
   montarVitrine();
   atualizarBadge();
+  tocar('desfazer');
   toast(`${nomeDaPeca(pecaDoCatalogo(peca.id))} voltou para a loja.`);
 }
 

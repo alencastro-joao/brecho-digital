@@ -1,5 +1,7 @@
 // Utilitários gerais: aleatoriedade com semente, distribuição no mural, DOM.
 
+import { tocar } from './sons.js';
+
 export const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 export const randBetween = (min, max) => min + Math.random() * (max - min);
 
@@ -243,6 +245,8 @@ export function toast(msg, tipo = '') {
   const vivos = simples.filter(t => !t.saindo);
   for (const t of vivos.slice(0, Math.max(0, vivos.length - TOASTS_JUNTOS + 1))) tirarToast(t);
   const t = el('div', { class: `toast ${tipo}` }, msg);
+  if (tipo === 'aviso' || tipo === 'erro') tocar('aviso');
+  else if (tipo === 'ok') tocar('ok');
   stack.append(t);
   requestAnimationFrame(() => t.classList.add('show'));
   setTimeout(() => tirarToast(t), 2600);

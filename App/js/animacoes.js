@@ -6,7 +6,10 @@
 //   (flutuarTexto()), chamados por quem sabe que algo bom aconteceu.
 //
 // Tudo é enfeite: nada aqui muda o que o botão faz, e quem pede menos
-// movimento no sistema não vê nada disso.
+// movimento no sistema não vê nada disso. O som de cada uma (sons.js) toca
+// mesmo assim: pedir menos movimento não é pedir silêncio.
+
+import { tocar } from './sons.js';
 
 const calmo = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -22,18 +25,23 @@ function soltar(classe, x, y, estilo = {}) {
   setTimeout(() => d.remove(), 1500);   // garantia se a animação não rodar
 }
 
-// Onda: só em botão de verdade e habilitado.
+// Onda: só em botão de verdade e habilitado. O "tic" vale também para link e
+// aba.
 document.addEventListener('pointerdown', (e) => {
-  if (calmo() || e.button !== 0) return;
-  const b = e.target.closest('button');
-  if (!b || b.disabled) return;
+  if (e.button !== 0) return;
+  const b = e.target.closest('button, a[href], [role="tab"], [role="button"]');
+  if (!b || b.disabled || b.getAttribute('aria-disabled') === 'true') return;
+  tocar('toque');
+  if (calmo() || b.tagName !== 'BUTTON') return;
   soltar('anim-onda', e.clientX, e.clientY);
 }, { passive: true });
 
 // Dado: o "Gerar" do Stylist e da Colagem.
 document.addEventListener('click', (e) => {
   const b = e.target.closest('#btn-sortear, #bd-sortear');
-  if (!b || calmo()) return;
+  if (!b) return;
+  tocar('dado');
+  if (calmo()) return;
   b.classList.remove('rolando');
   void b.offsetWidth;                    // reinicia se clicar de novo no meio
   b.classList.add('rolando');
@@ -51,6 +59,7 @@ const ESTILOS_FESTA = {
 const CORES_CONFETE = ['#ff6b9a', '#ffc94d', '#57d68d', '#4dc3ff', '#a07cff'];
 
 export function festejar(botao, tipo = 'estrela') {
+  tocar(tipo);
   if (calmo() || !botao?.isConnected) return;
   const { n, dist, classe } = ESTILOS_FESTA[tipo] || ESTILOS_FESTA.estrela;
   const r = botao.getBoundingClientRect();
@@ -82,6 +91,7 @@ export function pular(alvo) {
 
 // Um texto curto que sobe e some saindo de um elemento ("+10 XP").
 export function flutuarTexto(alvo, texto) {
+  tocar('xp');
   if (calmo() || !alvo?.isConnected) return;
   const r = alvo.getBoundingClientRect();
   const d = document.createElement('div');
