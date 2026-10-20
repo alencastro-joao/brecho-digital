@@ -44,6 +44,7 @@ jobs:
               - 'App/assets/catalog.json'
               - 'App/assets/cloths/**'
               - 'App/assets/marcas/**'
+              - 'App/assets/roupas/**'
               - 'App/assets/temas/**'
               - 'App/assets/icones/**'
               - 'App/assets/fontes/**'
