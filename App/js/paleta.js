@@ -8,22 +8,32 @@
 
 import * as db from './db.js';
 
+// As cores do iMac G3 (1999) e dos plásticos translúcidos da época.
 export const PALETAS = [
-  { id: 'azul',     nome: 'Azul',     cor: '#34bEED' },
-  { id: 'rosa',     nome: 'Rosa',     cor: '#f06ba8' },
-  { id: 'menta',    nome: 'Menta',    cor: '#34c08a' },
-  { id: 'lilas',    nome: 'Lilás',    cor: '#9a7cea' },
-  { id: 'dourado',  nome: 'Dourado',  cor: '#eea52c' },
-  { id: 'coral',    nome: 'Coral',    cor: '#ff7a5c' },
-  { id: 'lima',     nome: 'Lima',     cor: '#8cc63f' },
-  { id: 'turquesa', nome: 'Turquesa', cor: '#1fbfae' },
-  { id: 'anil',     nome: 'Anil',     cor: '#5a72ee' },
-  { id: 'grafite',  nome: 'Grafite',  cor: '#6e7b88' },
+  { id: 'bondi',      nome: 'Bondi',      cor: '#0095b6' },
+  { id: 'blueberry',  nome: 'Blueberry',  cor: '#2e7bd6' },
+  { id: 'indigo',     nome: 'Índigo',     cor: '#4b4fc4' },
+  { id: 'grape',      nome: 'Grape',      cor: '#8a5cc9' },
+  { id: 'strawberry', nome: 'Strawberry', cor: '#e8457a' },
+  { id: 'ruby',       nome: 'Ruby',       cor: '#c8243c' },
+  { id: 'tangerine',  nome: 'Tangerine',  cor: '#ff8c1a' },
+  { id: 'lime',       nome: 'Lime',       cor: '#7ac143' },
+  { id: 'sage',       nome: 'Sage',       cor: '#7f9a72' },
+  { id: 'graphite',   nome: 'Graphite',   cor: '#5f6670' },
 ];
-export const PALETA_PADRAO = 'azul';
+export const PALETA_PADRAO = 'bondi';
+
+// Quem escolheu uma cor da paleta antiga fica com a nova mais parecida.
+const ANTIGAS = {
+  azul: 'bondi', turquesa: 'bondi', anil: 'indigo', lilas: 'grape', rosa: 'strawberry',
+  coral: 'tangerine', dourado: 'tangerine', lima: 'lime', menta: 'sage', grafite: 'graphite',
+};
 
 const CHAVE = 'bd:paleta';
-const valida = (id) => PALETAS.some(p => p.id === id) ? id : PALETA_PADRAO;
+const valida = (id) => {
+  id = ANTIGAS[id] || id;
+  return PALETAS.some(p => p.id === id) ? id : PALETA_PADRAO;
+};
 
 export function aplicarPaleta(id) {
   id = valida(id);

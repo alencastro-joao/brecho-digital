@@ -1,20 +1,16 @@
 /* Ícones (js/icones.js) e o acabamento "anos 2000 / Wii" dos botões.
    Phosphor duotone em tudo: SVG em 1em que pinta com a cor do texto. */
 
-/* A paleta do site: o tom da pérola, das bordas e do destaque. O azul é o
-   padrão; as outras trocam só o tom e mantêm o mesmo acabamento. Quem escolhe
-   é o perfil (js/paleta.js põe `data-paleta` no <html>). */
-:root, [data-paleta="azul"] {
-  --wii: #34bEED;            /* o azul do menu do Wii */
-  --wii-brilho: rgba(52, 190, 237, .28);
-  --wii-borda: #cdd7de;
-  --perola-1: #f6f8fa; --perola-2: #e9eef2; --perola-3: #f5f8fa;
-  --perola-degrau: #d3dde4;  /* o degrau embaixo dos botões */
-  --perola-painel: #eaf0f4;  /* fundo dos painéis das grades */
-  --perola-bloco: #c9d4dc;   /* degrau dos blocos dentro dos painéis */
+/* A paleta do site: o tom da pérola, das bordas e do destaque. São as cores
+   do iMac G3 (1999) e dos plásticos translúcidos da época; o Bondi é o padrão.
+   Os tons claros de todas seguem a mesma receita, só o matiz muda. Quem
+   escolhe é o perfil (js/paleta.js põe `data-paleta` no <html>). */
+:root, [data-paleta="bondi"] {
+  --wii: #0095b6; --wii-brilho: rgba(0, 149, 182, .28); --wii-borda: #cddbde;
+  --perola-1: #f6f9fa; --perola-2: #e9f0f2; --perola-3: #f5f9fa;
+  --perola-degrau: #d3e1e4; --perola-painel: #eaf2f4; --perola-bloco: #c9d9dc;
+  --branco: #f2f7f8; --papel: #f7fafb;
   --brilho-topo: linear-gradient(180deg, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .2) 46%, rgba(255, 255, 255, 0) 54%);
-  /* os fundos que eram brancos ou creme, puxados para o tom do painel */
-  --branco: #f2f6f8; --papel: #f7f9fb;
 }
 /* A pérola é recalculada onde a paleta muda (no <html> e nas amostras do
    perfil), para pegar os tons de lá. */
@@ -23,60 +19,59 @@
   /* a linha fina das bordas e divisórias, puxada para a borda da paleta */
   --linha: color-mix(in srgb, var(--wii-borda) 60%, var(--papel));
 }
-[data-paleta="rosa"] {
-  --wii: #f06ba8; --wii-brilho: rgba(240, 107, 168, .28); --wii-borda: #e6cfd9;
-  --perola-1: #fbf5f8; --perola-2: #f3e6ec; --perola-3: #faf4f7;
-  --perola-degrau: #e8d4dd; --perola-painel: #f6eaef; --perola-bloco: #e0c8d3;
-  --branco: #faf2f5; --papel: #fbf7f9;
+[data-paleta="blueberry"] {
+  --wii: #2e7bd6; --wii-brilho: rgba(46, 123, 214, .28); --wii-borda: #cdd5de;
+  --perola-1: #f6f8fa; --perola-2: #e9edf2; --perola-3: #f5f7fa;
+  --perola-degrau: #d3dbe4; --perola-painel: #eaeff4; --perola-bloco: #c9d2dc;
+  --branco: #f2f5f8; --papel: #f7f9fb;
 }
-[data-paleta="menta"] {
-  --wii: #34c08a; --wii-brilho: rgba(52, 192, 138, .28); --wii-borda: #c9dcd2;
-  --perola-1: #f5faf7; --perola-2: #e4f0e9; --perola-3: #f4f9f6;
-  --perola-degrau: #cfe1d6; --perola-painel: #e7f2ec; --perola-bloco: #c3d9cc;
-  --branco: #f1f7f4; --papel: #f5faf7;
+[data-paleta="indigo"] {
+  --wii: #4b4fc4; --wii-brilho: rgba(75, 79, 196, .28); --wii-borda: #cdcede;
+  --perola-1: #f6f6fa; --perola-2: #e9e9f2; --perola-3: #f5f5fa;
+  --perola-degrau: #d3d4e4; --perola-painel: #eaeaf4; --perola-bloco: #c9cadc;
+  --branco: #f2f2f8; --papel: #f7f7fb;
 }
-[data-paleta="lilas"] {
-  --wii: #9a7cea; --wii-brilho: rgba(154, 124, 234, .28); --wii-borda: #d7d0e5;
-  --perola-1: #f8f6fb; --perola-2: #ece8f5; --perola-3: #f7f5fb;
-  --perola-degrau: #dcd5ea; --perola-painel: #efebf7; --perola-bloco: #cfc6e2;
-  --branco: #f5f3fa; --papel: #f9f7fc;
+[data-paleta="grape"] {
+  --wii: #8a5cc9; --wii-brilho: rgba(138, 92, 201, .28); --wii-borda: #d4cdde;
+  --perola-1: #f8f6fa; --perola-2: #ede9f2; --perola-3: #f7f5fa;
+  --perola-degrau: #dad3e4; --perola-painel: #eeeaf4; --perola-bloco: #d1c9dc;
+  --branco: #f5f2f8; --papel: #f9f7fb;
 }
-[data-paleta="dourado"] {
-  --wii: #eea52c; --wii-brilho: rgba(238, 165, 44, .28); --wii-borda: #e3d8c4;
-  --perola-1: #fbf8f2; --perola-2: #f4ecdd; --perola-3: #faf7f0;
-  --perola-degrau: #e7dcc8; --perola-painel: #f5efe2; --perola-bloco: #ddcfb5;
-  --branco: #f9f5ee; --papel: #fbf9f3;
+[data-paleta="strawberry"] {
+  --wii: #e8457a; --wii-brilho: rgba(232, 69, 122, .28); --wii-borda: #decdd3;
+  --perola-1: #faf6f7; --perola-2: #f2e9ec; --perola-3: #faf5f7;
+  --perola-degrau: #e4d3d9; --perola-painel: #f4eaed; --perola-bloco: #dcc9cf;
+  --branco: #f8f2f4; --papel: #fbf7f8;
 }
-
-[data-paleta="coral"] {
-  --wii: #ff7a5c; --wii-brilho: rgba(255, 122, 92, .28); --wii-borda: #e9cec7;
-  --perola-1: #fcf9f8; --perola-2: #f7edea; --perola-3: #fdfaf9;
-  --perola-degrau: #eed8d3; --perola-painel: #f8efed; --perola-bloco: #e5c4bd;
-  --branco: #fbf5f4; --papel: #fcf9f8;
+[data-paleta="ruby"] {
+  --wii: #c8243c; --wii-brilho: rgba(200, 36, 60, .28); --wii-borda: #decdcf;
+  --perola-1: #faf6f7; --perola-2: #f2e9ea; --perola-3: #faf5f6;
+  --perola-degrau: #e4d3d5; --perola-painel: #f4eaeb; --perola-bloco: #dcc9cc;
+  --branco: #f8f2f3; --papel: #fbf7f8;
 }
-[data-paleta="lima"] {
-  --wii: #8cc63f; --wii-brilho: rgba(140, 198, 63, .28); --wii-borda: #d1ddc1;
-  --perola-1: #fafbf8; --perola-2: #eef3e8; --perola-3: #fafbf8;
-  --perola-degrau: #dbe4ce; --perola-painel: #f0f4eb; --perola-bloco: #c9d7b6;
-  --branco: #f6f8f3; --papel: #f9fbf7;
+[data-paleta="tangerine"] {
+  --wii: #ff8c1a; --wii-brilho: rgba(255, 140, 26, .28); --wii-borda: #ded5cd;
+  --perola-1: #faf8f6; --perola-2: #f2ede9; --perola-3: #faf7f5;
+  --perola-degrau: #e4dbd3; --perola-painel: #f4efea; --perola-bloco: #dcd2c9;
+  --branco: #f8f5f2; --papel: #fbf9f7;
 }
-[data-paleta="turquesa"] {
-  --wii: #1fbfae; --wii-brilho: rgba(31, 191, 174, .28); --wii-borda: #bbdcd8;
-  --perola-1: #f7fbfa; --perola-2: #e6f2f1; --perola-3: #f8fbfb;
-  --perola-degrau: #c9e3e0; --perola-painel: #e8f4f2; --perola-bloco: #aed6d1;
-  --branco: #f1f8f7; --papel: #f6fbfa;
+[data-paleta="lime"] {
+  --wii: #7ac143; --wii-brilho: rgba(122, 193, 67, .28); --wii-borda: #d4decd;
+  --perola-1: #f8faf6; --perola-2: #edf2e9; --perola-3: #f7faf5;
+  --perola-degrau: #dae4d3; --perola-painel: #eef4ea; --perola-bloco: #d1dcc9;
+  --branco: #f5f8f2; --papel: #f9fbf7;
 }
-[data-paleta="anil"] {
-  --wii: #5a72ee; --wii-brilho: rgba(90, 114, 238, .28); --wii-borda: #c7cce6;
-  --perola-1: #f8f9fc; --perola-2: #eaecf6; --perola-3: #f9fafc;
-  --perola-degrau: #d3d6eb; --perola-painel: #eceef7; --perola-bloco: #bcc2e1;
-  --branco: #f4f5fa; --papel: #f7f8fc;
+[data-paleta="sage"] {
+  --wii: #7f9a72; --wii-brilho: rgba(127, 154, 114, .28); --wii-borda: #d4d8d3;
+  --perola-1: #f8f9f7; --perola-2: #edefec; --perola-3: #f7f8f7;
+  --perola-degrau: #daded9; --perola-painel: #eef1ed; --perola-bloco: #d1d6cf;
+  --branco: #f5f6f4; --papel: #f9faf8;
 }
-[data-paleta="grafite"] {
-  --wii: #6e7b88; --wii-brilho: rgba(110, 123, 136, .28); --wii-borda: #cbced0;
-  --perola-1: #f9f9f9; --perola-2: #ecedee; --perola-3: #fafafa;
-  --perola-degrau: #d6d8da; --perola-painel: #eeeff0; --perola-bloco: #c1c4c8;
-  --branco: #f5f5f6; --papel: #f8f9f9;
+[data-paleta="graphite"] {
+  --wii: #5f6670; --wii-brilho: rgba(95, 102, 112, .28); --wii-borda: #d3d5d8;
+  --perola-1: #f7f8f9; --perola-2: #ecedef; --perola-3: #f7f7f8;
+  --perola-degrau: #d9dbde; --perola-painel: #edeff1; --perola-bloco: #cfd2d6;
+  --branco: #f4f5f6; --papel: #f8f9fa;
 }
 
 .ico {
