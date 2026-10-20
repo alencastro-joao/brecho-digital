@@ -897,11 +897,9 @@ export const MISSOES = [
   { id: 'publicar', evento: 'publicar', nome: 'Publicar 1 look',  meta: 1, xp: 30 },
 ];
 
-// Marcos do dia: 2 missões dão uma ficha; 3 fecham o dia — mais fichas e o
-// carimbo do dia no cartão da semana. Quem só entra e garimpa uma peça já
-// leva a primeira ficha.
-export const MARCOS_DIA = { ficha: { missoes: 2, fichas: 1 },
-                            carimbo: { missoes: 3, fichas: 2, xp: 40 } };
+// Cada missão do dia fechada paga 2 fichas na hora. As 5 feitas liberam o
+// carimbo do dia, que guarda um Baú incomum.
+export const MARCOS_DIA = { fichasPorMissao: 2, carimbo: { missoes: 5, bau: 'incomum', xp: 40 } };
 
 // Missões da SEMANA: zeram na segunda-feira, à meia-noite. São as diárias em
 // dose maior. Curtir é provisória: a vaga é de "ativar um efeito de coleção",
@@ -914,30 +912,21 @@ export const MISSOES_SEMANA = [
   { id: 'curtir',   evento: 'curtir',   nome: 'Curtir 10 looks de outras pessoas', meta: 10, xp: 80 },
 ];
 
-// Marcos da semana: 3 missões dão fichas (um resgate extra); as 5 carimbam a
-// semana, e 3 semanas carimbadas abrem o baú semanal (BAU_ESPECIAL).
-export const MARCOS_SEMANA = { fichas: { missoes: 3, fichas: 6 } };
+// Cada missão da semana fechada paga 4 fichas na hora. As 5 feitas liberam o
+// carimbo da semana, que guarda um Baú épico; 4 semanas carimbadas (o carimbo
+// mensal) abrem o Baú lendário (BAU_ESPECIAL).
+export const MARCOS_SEMANA = { fichasPorMissao: 4, carimbo: { bau: 'epico' } };
 
-// Os baús crescem com o nível: quanto mais alto, maior o baú (ver BAUS).
-//
-// Baú dos dias: 5 dias carimbados na mesma semana.
+// Baú dos dias: 5 dias carimbados na mesma semana dão um Baú raro.
 export const PREMIO_SEMANA = {
   carimbos: 5,
-  porNivel: [
-    { desde: 1,  xp: 200, bau: 'incomum' },
-    { desde: 10, xp: 300, bau: 'raro' },
-    { desde: 30, xp: 500, bau: 'epico' },
-  ],
+  porNivel: [{ desde: 1, xp: 200, bau: 'raro' }],
 };
 
-// Baú semanal: 3 semanas carimbadas (seguidas ou não).
+// Baú mensal: 4 semanas carimbadas (seguidas ou não) dão um Baú lendário.
 export const BAU_ESPECIAL = {
-  semanas: 3,
-  porNivel: [
-    { desde: 1,  xp: 300, bau: 'raro' },
-    { desde: 10, xp: 500, bau: 'epico' },
-    { desde: 30, xp: 800, bau: 'lendario' },
-  ],
+  semanas: 4,
+  porNivel: [{ desde: 1, xp: 500, bau: 'lendario' }],
 };
 
 // O prêmio de um baú para o nível dado, e o próximo degrau (null no topo).
@@ -1313,8 +1302,8 @@ export const INTRO = [
     dica: 'No Feed ficam os looks de todo mundo. Toque em Seguir em quem você curtir; dá pra achar amigos pelo nome ou @.',
     premio: { fichas: 2 } },
   { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
-    dica: 'Cada 3 missões do dia valem um carimbo no cartão da semana, e você já cumpriu algumas. ' +
-      'Toque no carimbo para pegar fichas. 5 dias carimbados na semana abrem o Baú dos dias.',
+    dica: 'Cada missão paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um Baú incomum. ' +
+      '5 dias carimbados na semana abrem o Baú raro.',
     premio: { fichas: 1, xp: 20 } },
   { evento: 'favoritar', ir: 'closet', lugar: 'cima', nome: 'Escolha uma peça favorita',
     dica: 'Abra uma peça e toque na estrela: ela vai para a vitrine do seu perfil.',
