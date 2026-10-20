@@ -1121,6 +1121,14 @@ export const COLECOES = [
       'tiracolo-happy99': ['tiracolo', 'Bolsa Happy99', '#e9e6df'],
     },
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
+  { id: 'coldf33t', marca: 'Coldf33t',
+    itens: ['moletom-coldf33t', 'bone-coldf33t', 'gravata-coldf33t'],
+    variantes: {
+      'moletom-coldf33t': ['moletom', 'Moletom grafitado Coldf33t', '#3f6fd1'],
+      'bone-coldf33t': ['bone', 'Boné grafitado Coldf33t', '#2f9fd8'],
+      'gravata-coldf33t': ['gravata', 'Gravata grafitada Coldf33t', '#d0407a'],
+    },
+    efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 // Compara só letras e números, sem acento: "Happy 99", "happy99" e "HAPPY-99"
