@@ -11,6 +11,7 @@ import { doPadraoParaAtual, doAtualParaPadrao } from './proporcao.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno, srcGrande, pecaCombina } from './catalog.js';
 import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento.js';
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
+import { assinaturaDoUsuario } from './assinaturas.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { miniaturaAtual, miniaturaPronta, imagemDoLook } from './render.js';
@@ -610,7 +611,7 @@ function ligarFerramentas() {
     if (!camadas.length) return toast('Monte um look antes de compartilhar.', 'aviso');
     abrirCompartilhar({
       formatos: [{ id: 'story', rotulo: 'Story 1080×1920' }, { id: 'post', rotulo: 'Post 1080×1350' }],
-      gerar: (formato) => imagemDoLook(estruturaLimpa(), formato, $('#outfit-nome').value.trim()),
+      gerar: (formato) => imagemDoLook(estruturaLimpa(), formato, assinaturaDoUsuario() || $('#outfit-nome').value.trim()),
     });
   });
 }

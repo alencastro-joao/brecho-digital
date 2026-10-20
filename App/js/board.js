@@ -12,6 +12,7 @@ import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
          srcGrande, pecaCombina } from './catalog.js';
+import { assinaturaDoUsuario } from './assinaturas.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
 import { miniaturaBoard, imagemDoBoard } from './render.js';
@@ -80,7 +81,7 @@ function novaColagem() {
     margem: BOARD.MARGEM_PADRAO,
     assinatura: {
       ...db.state.usuario.assinatura,
-      texto: db.state.usuario.assinatura.texto || db.state.usuario.nome || '',
+      texto: assinaturaDoUsuario() || db.state.usuario.assinatura.texto || db.state.usuario.nome || '',
     },
     itens: [],
     guias: { h: [], v: [] },
