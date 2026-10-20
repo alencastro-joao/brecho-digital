@@ -188,7 +188,7 @@ function montarRail() {
 
 let pecasDaVista = [];           // as peças da categoria aberta, já ordenadas
 
-export function carregarCategoria(cat, { manterPagina = false } = {}) {
+export function carregarCategoria(cat, { manterPagina = false, apenas = null } = {}) {
   const grupos = agrupamento().grupos;
   if (!grupos[cat]) cat = 'todas';
   if (cat !== categoriaAtual || !manterPagina) { pagina = 0; gradeEntra = true; }
@@ -201,7 +201,8 @@ export function carregarCategoria(cat, { manterPagina = false } = {}) {
   const tudo = cat === 'todas';
   // Peça órfã (no inventário mas fora do catálogo) não ocupa quadrado.
   pecasDaVista = db.state.inventario
-    .filter(p => (tudo || grupoDe(p) === cat) && pecaDoCatalogo(p.id));
+    .filter(p => (tudo || grupoDe(p) === cat) && pecaDoCatalogo(p.id)
+      && (!apenas || apenas.includes(p.id)));
   ordenar(pecasDaVista);
 
   const n = pecasDaVista.length;
@@ -504,10 +505,13 @@ function limparPreview() {
 }
 
 let pecaPedida = null;            // peça que outra tela pediu para mostrar
+let ladoAlado = null;             // ids da coleção de onde ela foi pedida
 
 // Abre o guarda-roupa já com a peça escolhida (o álbum das coleções usa).
-export function abrirPecaNoCloset(id) {
+// `ids` (opcional): a coleção de origem; passar para o lado fica dentro dela.
+export function abrirPecaNoCloset(id, ids = null) {
   pecaPedida = id;
+  ladoAlado = ids;
   irPara('closet');
 }
 
@@ -518,8 +522,11 @@ export function aoEntrarNoCloset() {
   montarRail();
   const id = pecaPedida;
   pecaPedida = null;
+  const apenas = ladoAlado;
+  ladoAlado = null;
   if (!id) { carregarCategoria(categoriaAtual, { manterPagina: true }); return; }
-  carregarCategoria('todas');
+  carregarCategoria('todas', { apenas });
+  if (apenas) $('#closet-sub').textContent += ' · coleção';
   const i = pecasDaVista.findIndex(p => p.id === id);
   if (i < 0) return;
   pagina = Math.floor(i / pecasPorPagina());
