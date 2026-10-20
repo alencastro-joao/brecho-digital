@@ -1045,7 +1045,7 @@ export const PREMIOS_DE_NIVEL = Array.from({ length: NIVEL.MAX - 1 }, (_, i) => 
 //
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
-export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike', 'alex-clayton']);
+export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike', 'alex-clayton', 'happy99']);
 // Tema usa o `icone` dele em ESTILOS: bandeira redonda do circle-flags (MIT,
 // github.com/HatScripts/circle-flags; licença em assets/temas).
 export const logoDaColecao = (c) => c.icone
@@ -1113,6 +1113,14 @@ export const COLECOES = [
       'corrente-alex-clayton': ['corrente', 'Corrente Alex Clayton', '#c9c9c9'],
     },
     efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
+  { id: 'happy99', marca: 'Happy99',
+    itens: ['tenis-happy99', 'moletom-happy99', 'tiracolo-happy99'],
+    variantes: {
+      'tenis-happy99': ['tenis', 'Tênis Happy99', '#c3c9d1'],
+      'moletom-happy99': ['moletom', 'Moletom Happy99', '#f2a7c3'],
+      'tiracolo-happy99': ['tiracolo', 'Bolsa Happy99', '#e9e6df'],
+    },
+    efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
