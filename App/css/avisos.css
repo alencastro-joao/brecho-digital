@@ -10,7 +10,7 @@
   z-index: 700;
   transition: transform .2s, border-color .2s;
 }
-.avisos-btn:hover { transform: translateY(-1px); border-color: #d8d0c4; }
+.avisos-btn:hover { transform: translateY(-1px); border-color: var(--wii-borda); }
 /* O Perfil não fica na barra de telas: é a cabeça do seu avatar, solta no
    canto, sem moldura, com o sino logo à esquerda (no celular, mais embaixo). */
 .app > .sidebar .sidebar-btn.perfil { display: none; }
@@ -78,9 +78,9 @@
   padding: 6px 8px; border: 0; border-radius: 10px;
   background: none; text-align: left; color: var(--tinta);
 }
-.aviso:hover { background: #f6f2ec; }
-.aviso.novo { background: #fbf3e6; }
-.aviso.novo:hover { background: #f6ead6; }
+.aviso:hover { background: var(--perola-painel); }
+.aviso.novo { background: color-mix(in srgb, var(--wii) 9%, var(--branco)); }
+.aviso.novo:hover { background: color-mix(in srgb, var(--wii) 16%, var(--branco)); }
 .aviso > .cabecinha { flex: none; }
 /* Texto e hora numa linha só, cortados em duas: a lista cabe mais avisos. */
 .aviso-texto {
@@ -94,7 +94,7 @@
   flex: none; width: 26px; height: 26px; border-radius: 50%;
   display: grid; place-items: center;
   font-size: 12px; font-weight: 800; color: rgba(0, 0, 0, .6);
-  background: #f1ece4;
+  background: var(--perola-painel);
 }
 .aviso-icone.curtida { background: var(--board); color: #b0285a; }
 .aviso-icone.comentario, .aviso-icone.seguidor { background: var(--social); color: #4b3a8a; }

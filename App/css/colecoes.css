@@ -40,7 +40,7 @@
 .col-vazio { font-size: 13px; color: var(--tinta-suave); }
 
 .col-cartao {
-  background: #fff; border: 1px solid #e6dccd; border-radius: 16px;
+  background: #fff; border: 1px solid var(--wii-borda); border-radius: 16px;
   padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0;
   text-align: left; color: var(--tinta); font: inherit; cursor: pointer;
   transition: border-color .15s, transform .15s;
@@ -49,14 +49,14 @@
 .col-cartao .col-pecas { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .col-mais {
   display: grid; place-items: center; font-size: 13px; font-weight: 800; color: var(--tinta-suave);
-  background: #f4efe7; border-style: solid;
+  background: var(--perola-painel); border-style: solid;
 }
 .barra.cheia span { background: #c9a443; }
 .col-rodape { display: flex; align-items: center; gap: 10px; }
 .col-mini-itens { display: flex; gap: 4px; }
 .col-mini {
   width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px;
-  background: #fbf8f4; border: 1px dashed var(--linha);
+  background: var(--papel); border: 1px dashed var(--linha);
 }
 .col-mini svg { width: 100%; height: 100%; }
 .col-mini:not(.aberto) svg { filter: grayscale(1); opacity: .45; }
@@ -108,7 +108,7 @@
 .col-pecas.muitas { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); }
 .col-peca {
   position: relative; aspect-ratio: 1; max-width: 100%;
-  background: #fbf8f4; border: 1px solid var(--linha); border-radius: 12px;
+  background: var(--papel); border: 1px solid var(--linha); border-radius: 12px;
 }
 .col-peca .peca-caixa { inset: 8px; }
 .col-peca.falta { border-style: dashed; background: #fff; }
@@ -122,7 +122,7 @@
 .col-itens-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .col-item {
   display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0;
-  background: #fbf8f4; border: 1px dashed var(--linha); border-radius: 12px; padding: 6px 10px 6px 6px;
+  background: var(--papel); border: 1px dashed var(--linha); border-radius: 12px; padding: 6px 10px 6px 6px;
   cursor: default;
 }
 .col-item.aberto { background: #f4faef; border: 1px solid #cfe3c0; cursor: pointer; }
@@ -176,14 +176,14 @@
 }
 .pf-emblema-disco {
   position: relative; width: 52px; height: 52px; border-radius: 50%; overflow: hidden;
-  background: #fbf8f4; border: 2px solid var(--linha);
+  background: var(--papel); border: 2px solid var(--linha);
   /* o anel mostra o progresso da coleção */
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px transparent;
 }
 .pf-emblema:not(.completa) .pf-emblema-disco {
   border-color: transparent;
   background:
-    linear-gradient(#fbf8f4, #fbf8f4) padding-box,
+    linear-gradient(var(--papel), var(--papel)) padding-box,
     conic-gradient(var(--tinta) var(--pct, 0%), var(--linha) 0) border-box;
 }
 .pf-emblema-disco .peca-caixa { inset: 7px; }
@@ -208,7 +208,7 @@
 .vs-atributos { display: flex; flex-wrap: wrap; gap: 6px; }
 .vs-atr {
   display: flex; flex-direction: column; gap: 1px; padding: 5px 10px;
-  background: #fbf8f4; border: 1px solid var(--linha); border-radius: 10px;
+  background: var(--papel); border: 1px solid var(--linha); border-radius: 10px;
   font-size: 12px; font-weight: 600;
 }
 .vs-atr small { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-suave); }
@@ -287,7 +287,7 @@
 
 .col-tile.aberto {
   grid-column: 1 / -1; align-items: stretch; gap: 12px; text-align: left;
-  background: #fff; border: 1px solid #e6dccd; border-radius: 16px; padding: 14px 16px;
+  background: #fff; border: 1px solid var(--wii-borda); border-radius: 16px; padding: 14px 16px;
 }
 .col-tile.aberto.completa { background: #fbf6e8; border-color: #e3d3a5; }
 .col-tile-topo {
@@ -314,14 +314,14 @@
 .col-hero-sub { font-size: 13px; color: var(--tinta-suave); }
 .col-hero.completa .col-hero-sub { color: #8a6d24; font-weight: 700; }
 
-.col-trilha { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px 14px; background: #fff; border: 1px solid #e6dccd; border-radius: 18px; }
+.col-trilha { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px 14px; background: #fff; border: 1px solid var(--wii-borda); border-radius: 18px; }
 .col-trilha-passos { display: flex; align-items: flex-start; justify-content: center; }
 .col-trilha-liga { flex: 1; max-width: 56px; height: 5px; margin-top: 18px; background: #efe8de; border-radius: 99px; }
 .col-trilha-liga.cheia { background: #d9b453; }
 .col-marco-casa { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 0 0 auto; }
 .col-marco {
   width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-  background: #fff; border: 2px solid #e6dccd; font-size: 16px; overflow: hidden; filter: grayscale(1); opacity: .8;
+  background: #fff; border: 2px solid var(--wii-borda); font-size: 16px; overflow: hidden; filter: grayscale(1); opacity: .8;
 }
 .col-marco svg { width: 80%; height: 80%; }
 .col-marco.meu { border-color: #cfe3c0; background: #f4faef; filter: none; opacity: 1; }
@@ -368,7 +368,7 @@
 .col-chips-titulo { width: 100%; font-size: 11px; font-weight: 700; color: var(--tinta-suave); letter-spacing: .02em; }
 .col-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px;
-  border: 1px solid #e6dccd; border-radius: 99px; background: #fff;
+  border: 1px solid var(--wii-borda); border-radius: 99px; background: #fff;
   font-size: 12px; font-weight: 600; color: var(--tinta); cursor: pointer;
 }
 .col-chip small { font-size: 11px; color: var(--tinta-suave); font-weight: 700; }
@@ -376,7 +376,7 @@
 .col-chip.completa small { color: #2f7a4a; }
 .col-chip-disco {
   width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
-  display: grid; place-items: center; background: #f4efe7; position: relative;
+  display: grid; place-items: center; background: var(--perola-painel); position: relative;
 }
 .col-chip-disco img { width: 100%; height: 100%; object-fit: contain; }
 .col-chip-disco .peca-caixa { inset: 2px; }

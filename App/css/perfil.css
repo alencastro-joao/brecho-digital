@@ -369,7 +369,7 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-obra:hover { border-color: var(--wii); }
 .pf-obra-foto {
   position: relative; aspect-ratio: 3 / 4; overflow: hidden;
-  background: #fdfaf6; display: grid; place-items: center;
+  background: var(--papel); display: grid; place-items: center;
 }
 .pf-obra-foto img {
   position: absolute; inset: 0; width: 100%; height: 100%;

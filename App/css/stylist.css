@@ -135,7 +135,7 @@
 .st-troca-lista { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
 .st-troca-item {
   flex: none; width: 64px; height: 64px; padding: 6px;
-  border: 1px solid var(--linha); border-radius: 12px; background: #fdfcfa;
+  border: 1px solid var(--linha); border-radius: 12px; background: var(--papel);
 }
 .st-troca-item img { width: 100%; height: 100%; object-fit: contain; }
 .st-troca-item:hover, .st-troca-item:focus-visible { border-color: var(--tinta); }
@@ -301,7 +301,7 @@ body:is([data-view="stylist"], [data-view="board"]) .toast-stack { bottom: 104px
   display: grid; gap: 18px;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   align-content: start;
-  background: #fbf8f4;
+  background: var(--papel);
 }
 .ms-vazio {
   grid-column: 1 / -1; text-align: center; padding: 60px 20px;
@@ -378,7 +378,7 @@ body:is([data-view="stylist"], [data-view="board"]) .toast-stack { bottom: 104px
   font-size: 14px; line-height: 1; opacity: .55;
 }
 .ms-apagar:hover { opacity: 1; border-color: #f0c9c4; background: #fdecea; }
-.ms-mais:hover, .ms-mais[aria-expanded="true"] { border-color: var(--linha); background: #f6f1e8; color: var(--tinta); }
+.ms-mais:hover, .ms-mais[aria-expanded="true"] { border-color: var(--linha); background: var(--perola-painel); color: var(--tinta); }
 
 .ms-menu {
   position: absolute; right: 8px; bottom: 50px; z-index: 10;
@@ -391,7 +391,7 @@ body:is([data-view="stylist"], [data-view="board"]) .toast-stack { bottom: 104px
   border: 0; background: none; border-radius: 9px;
   padding: 10px 12px; text-align: left; font: inherit; font-size: 13px; color: var(--tinta);
 }
-.ms-menu button:hover { background: #f6f1e8; }
+.ms-menu button:hover { background: var(--perola-painel); }
 .ms-menu button.perigo { color: #b3261e; }
 .ms-menu button.perigo:hover { background: #fdecea; }
 
@@ -429,8 +429,8 @@ body:is([data-view="stylist"], [data-view="board"]) .toast-stack { bottom: 104px
      num painel, cartões em bloco só com o nome e o ⋯ (apagar, renomear e
      duplicar ficam no ⋯), e os selos viram ícones. */
   :is(#modal-meus, #modal-colagens) {
-    --bloco: var(--branco); --bloco-borda: #ddd5c9; --bloco-fundo: #d3cabd;
-    --painel: #f3eee6;
+    --bloco: var(--branco); --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco);
+    --painel: var(--perola-painel);
   }
   :is(#modal-meus, #modal-colagens) .modal-caixa { position: relative; background: var(--papel); }
   :is(#modal-meus, #modal-colagens) .modal-topo {
@@ -520,7 +520,7 @@ body:is([data-view="stylist"], [data-view="board"]) .toast-stack { bottom: 104px
 .lb-btn.escuro:hover { background: #000; }
 .lb-btn.destaque { background: #fbf6e2; border-color: #e7dcb2; }
 .lb-btn.so-icone { width: 42px; padding: 0; font-size: 18px; }
-.lb-btn[aria-expanded="true"] { border-color: var(--tinta); background: #f6f1e8; }
+.lb-btn[aria-expanded="true"] { border-color: var(--tinta); background: var(--perola-painel); }
 .lb-btn:disabled { opacity: .5; }
 
 /* Abre para cima: no PC a barra fica no pé da tela. */
@@ -542,7 +542,7 @@ body:is([data-view="stylist"], [data-view="board"]) .toast-stack { bottom: 104px
   padding: 10px 12px; text-align: left; font: inherit; font-size: 13px; color: var(--tinta);
 }
 .lb-menu button small { color: var(--tinta-suave); font-size: 11px; }
-.lb-menu button:hover { background: #f6f1e8; }
+.lb-menu button:hover { background: var(--perola-painel); }
 .lb-menu button:disabled { opacity: .5; }
 .lb-menu #btn-guia.ativo::after { content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; mask: url(../assets/icones/ph/ok.svg) center / contain no-repeat; margin-left: auto; }
 .lb-menu button.perigo { color: #b3261e; }

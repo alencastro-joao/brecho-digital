@@ -14,7 +14,7 @@
 }
 .pal-busca input {
   width: 100%; border: 1px solid var(--linha); border-radius: 20px;
-  padding: 7px 13px; font-family: inherit; font-size: 12px; background: #fdfcfa;
+  padding: 7px 13px; font-family: inherit; font-size: 12px; background: var(--papel);
 }
 .pal-busca input:focus { outline: none; border-color: var(--tinta); }
 #bd-ferramentas { display: none; }
@@ -186,7 +186,7 @@
 .regua-v { left: -23px; top: 0; bottom: 0; width: 22px; cursor: ew-resize; }
 .regua-canto {
   position: absolute; left: -23px; top: -23px; width: 22px; height: 22px;
-  background: #f6f3ee; border: 1px solid var(--linha);
+  background: var(--perola-painel); border: 1px solid var(--linha);
 }
 .regua .tick { position: absolute; background: #d6cfc4; }
 .regua-h .tick { bottom: 0; width: 1px; height: 5px; }
@@ -254,7 +254,7 @@
 
 .board-tools .saved-item img {
   width: 30px; height: 38px; object-fit: contain;
-  background: #f6f3ee; border-radius: 4px;
+  background: var(--perola-painel); border-radius: 4px;
 }
 
 @media (max-width: 1240px) {

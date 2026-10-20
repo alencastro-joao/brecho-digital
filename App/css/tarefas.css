@@ -14,7 +14,7 @@
    embaixo, como o Closet e o Stylist. A cor de destaque é a da paleta. */
 .view-tarefas { --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco); }
 .view-tarefas .tarefas-wrapper { max-width: 560px; gap: 10px; }
-.tf-barra { height: 6px; border-radius: 4px; background: #e1e8ed; overflow: hidden; }
+.tf-barra { height: 6px; border-radius: 4px; background: var(--perola-degrau); overflow: hidden; }
 .tf-barra span { display: block; height: 100%; background: var(--wii); border-radius: 4px; transition: width .4s; }
 
 /* Topo: nível e fichas numa fileira. */
@@ -142,7 +142,7 @@
 .tf-bau-aberto .btn-ghost { width: auto; flex: none; padding-left: 18px; padding-right: 18px; }
 
 /* Barra genérica (também na tela de Coleções) e a moeda das fichas. */
-.barra { height: 5px; background: #f1ece4; border-radius: 4px; overflow: hidden; }
+.barra { height: 5px; background: var(--perola-degrau); border-radius: 4px; overflow: hidden; }
 .barra span { display: block; height: 100%; background: var(--tinta); transition: width .4s; }
 .ficha-moeda {
   width: 18px; height: 18px; border-radius: 50%; flex: none;

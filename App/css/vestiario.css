@@ -43,7 +43,7 @@
   min-width: 0; min-height: 0; overflow: hidden;
   display: grid; place-items: center;
   background: var(--papel);
-  background-image: radial-gradient(#e9e4dc 1px, transparent 1px);
+  background-image: radial-gradient(var(--perola-2) 1px, transparent 1px);
   background-size: 26px 26px;
   border: 1px solid var(--linha); border-radius: 22px;
   padding: 18px;
@@ -61,7 +61,7 @@
   transition: transform .18s, box-shadow .18s;
 }
 .vs-slot:hover { transform: translateY(-2px); box-shadow: var(--sombra); }
-.vs-slot.vazio { border-style: dashed; border-color: #e6ded2; background: #fbf8f3; }
+.vs-slot.vazio { border-style: dashed; border-color: var(--wii-borda); background: var(--papel); }
 .vs-slot.selecionado { box-shadow: 0 0 0 2px var(--branco), 0 0 0 4px var(--tinta); }
 .vs-slot svg { width: 100%; height: 100%; display: block; }
 .vs-slot-icone { font-size: 22px; line-height: 1; opacity: .45; }
@@ -98,7 +98,7 @@
   flex: none; width: 100px; height: 100px;
   border: 1px solid var(--linha); border-radius: 14px;
   background: var(--papel);
-  background-image: radial-gradient(#e9e4dc 1px, transparent 1px);
+  background-image: radial-gradient(var(--perola-2) 1px, transparent 1px);
   background-size: 18px 18px;
   display: grid; place-items: center; overflow: hidden;
 }
@@ -195,7 +195,7 @@
    inventário. Ela não recebe clique — mas recebe peça solta, que é como se
    manda alguma coisa para o fim da fila. */
 .vs-item.vaga {
-  border-style: dashed; border-color: #ece5da; background: #fbf9f5;
+  border-style: dashed; border-color: var(--wii-borda); background: var(--papel);
   cursor: default;
 }
 
@@ -241,7 +241,7 @@
 .vs-pag-pontos { flex: 1; display: flex; justify-content: center; gap: 6px; }
 .vs-pag-ponto {
   width: 8px; height: 8px; padding: 0; border-radius: 50%;
-  border: 1px solid #d9d1c5; background: transparent;
+  border: 1px solid var(--wii-borda); background: transparent;
   transition: background .18s, border-color .18s, transform .18s;
 }
 .vs-pag-ponto:hover { transform: scale(1.3); }

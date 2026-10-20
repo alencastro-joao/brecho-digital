@@ -11,7 +11,7 @@
   flex: 1; min-height: 0;
   display: grid; place-items: center;
   background: var(--papel);
-  background-image: radial-gradient(#e7e2da 1px, transparent 1px);
+  background-image: radial-gradient(var(--perola-2) 1px, transparent 1px);
   background-size: 26px 26px;
   border: 1px solid var(--linha); border-radius: 20px;
   padding: 22px; width: 100%;
