@@ -37,6 +37,10 @@
 }
 .btn-repor-ficha[hidden] { display: none; }
 .btn-repor-ficha .ico { font-size: 20px; }
+/* Sem ficha de repor: o preço em fichas, apagado até dar para pagar. */
+.btn-repor-ficha .ficha-moeda { display: none; }
+.btn-repor-ficha.com-fichas .ficha-moeda { display: block; }
+.btn-repor-ficha.com-fichas:not(.pronto) { color: var(--tinta-suave); }
 
 .picks-badge {
   pointer-events: auto;
@@ -211,6 +215,20 @@
 .ficha-nome { font-size: 15px; font-weight: 700; margin: 9px 0 3px; }
 .ficha-meta { font-size: 11.5px; color: var(--tinta-suave); }
 .ficha-chance { font-size: 11px; color: #a9a196; margin: 2px 0 14px; }
+/* Congelar a peça na loja, embaixo do Pegar. */
+.ficha .btn-congelar {
+  width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 12.5px; white-space: nowrap;
+}
+.ficha .btn-congelar[hidden] { display: none; }
+.ficha .btn-congelar:disabled { opacity: 1; color: #4f86b8; border-color: #bcd6ec; background: #eef5fb; }
+/* No mural, a congelada leva um cadeado azul em cima da peça. */
+.peca-presa {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%); z-index: 3;
+  width: 26px; height: 26px; display: grid; place-items: center;
+  background: #eef5fb; border: 1.5px solid #bcd6ec; border-radius: 50%;
+  color: #4f86b8; font-size: 14px; pointer-events: none;
+}
 .ficha .btn-dark:disabled { background: #eee9e1; color: var(--tinta-suave); border-color: transparent; }
 
 /* --------------------------- NPC dono da loja --------------------------- */

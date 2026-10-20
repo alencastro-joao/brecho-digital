@@ -68,6 +68,40 @@ export function trocarFichasPorResgate() {
   return true;
 }
 
+// Repor a loja com fichas (o mesmo repor da ficha de repor da trilha). Só
+// cobra: a arara nova é sorteada pela vitrine.
+export const podeReporComFichas = () => fichas() >= FICHAS.porRepor;
+export function gastarFichasNoRepor() {
+  virarODiaSeNecessario();
+  if (!podeReporComFichas()) return false;
+  state.fichas = fichas() - FICHAS.porRepor;
+  salvar();
+  return true;
+}
+
+// Peça congelada: fica na arara hoje e amanhã, mesmo que a loja seja reposta.
+// Fora de `state.dia` de propósito, senão sumia na virada. `ate` é o último
+// dia em que ela ainda aparece; depois disso a lista se limpa sozinha.
+function amanhaISO() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return hojeISO(d);
+}
+export const congeladas = (iso = hojeISO()) =>
+  (state.congeladas ?? []).filter(c => c.ate >= iso).map(c => c.id);
+export const estaCongelada = (id) => congeladas().includes(id);
+export const podeCongelar = () => fichas() >= FICHAS.porCongelar;
+export function congelarPeca(id) {
+  virarODiaSeNecessario();
+  if (!podeCongelar() || estaCongelada(id)) return false;
+  const hoje = hojeISO();
+  state.fichas = fichas() - FICHAS.porCongelar;
+  state.congeladas = [...(state.congeladas ?? []).filter(c => c.ate >= hoje && c.id !== id),
+    { id, ate: amanhaISO() }];
+  salvar();
+  return true;
+}
+
 // Onde a peça ficou depois de arrastada. Vale enquanto a página está aberta:
 // trocar de tela e voltar mantém a arara como você deixou.
 export function guardarPosicao(id, x, y) {
