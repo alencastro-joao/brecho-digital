@@ -5,6 +5,7 @@
 // seria desenhar o guarda-roupa de ninguém — e, pior, gravar por cima do save
 // de quem entrar depois.
 
+import { tratarAssinaturaAntiga } from './assinaturas.js';
 import './icones.js';   // troca os <i data-i>/<i data-e> do HTML antes de tudo
 import { ADMIN, aplicarPapel } from './config.js';
 import * as auth from './auth.js';
@@ -59,6 +60,7 @@ async function entrar() {
 
   aplicarPapel(conta.papel);      // o modo administrador vem da conta, não da URL
   db.iniciarEstado(conta);        // daqui para baixo, db.state é o save dela
+  tratarAssinaturaAntiga();
   document.getElementById('app').hidden = false;
   return { conta, nova };
 }
