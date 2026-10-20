@@ -1045,7 +1045,7 @@ export const PREMIOS_DE_NIVEL = Array.from({ length: NIVEL.MAX - 1 }, (_, i) => 
 //
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
-export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike', 'alex-clayton', 'happy99', 'coldf33t']);
+export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike', 'alex-clayton', 'happy99']);
 // Tema usa o `icone` dele em ESTILOS: bandeira redonda do circle-flags (MIT,
 // github.com/HatScripts/circle-flags; licença em assets/temas).
 export const logoDaColecao = (c) => c.icone
@@ -1121,7 +1121,8 @@ export const COLECOES = [
       'tiracolo-happy99': ['tiracolo', 'Bolsa Happy99', '#e9e6df'],
     },
     efeito: { tipo: 'raridade-acima', texto: 'Chance de a peça vir uma raridade acima' } },
-  { id: 'coldf33t', marca: 'Coldf33t',
+  // Logo com nome próprio: o primeiro coldf33t.webp (cinza) pode estar no cache.
+  { id: 'coldf33t', marca: 'Coldf33t', icone: 'assets/marcas/coldf33t-logo.webp',
     itens: ['moletom-coldf33t', 'bone-coldf33t', 'gravata-coldf33t'],
     variantes: {
       'moletom-coldf33t': ['moletom', 'Moletom grafitado Coldf33t', '#3f6fd1'],
