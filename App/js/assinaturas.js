@@ -15,6 +15,37 @@ export function assinaturaDoUsuario() {
   return { texto: u.assinaturaTexto || '', imagem: u.assinaturaImagem || '' };
 }
 
+// Quanto mais escuro o pixel, mais opaco; a tinta fica preta.
+function tirarFundo(ctx, w, h) {
+  const dados = ctx.getImageData(0, 0, w, h);
+  const px = dados.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const v = 255 - Math.min(px[i], px[i + 1], px[i + 2]);
+    px[i] = px[i + 1] = px[i + 2] = 0;
+    px[i + 3] = v < 25 ? 0 : Math.min(255, (v - 25) * 255 / 150);
+  }
+  ctx.putImageData(dados, 0, 0);
+}
+
+// Assinatura enviada antes de o fundo sair ainda tem a caixa branca: trata uma vez.
+export function tratarAssinaturaAntiga() {
+  const u = db.state.usuario;
+  if (!u.assinaturaImagem) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+    if (a < 200 || Math.min(r, g, b) < 200) return;   // já transparente
+    tirarFundo(ctx, c.width, c.height);
+    u.assinaturaImagem = c.toDataURL('image/png');
+    db.salvar();
+  };
+  img.src = u.assinaturaImagem;
+}
+
 // Pinta a tinta de outra cor mantendo a transparência.
 function recolorir(src, cor) {
   return new Promise((ok) => {
@@ -49,14 +80,7 @@ function lerImagem(arquivo) {
       URL.revokeObjectURL(url);
       // Tira o fundo branco: quanto mais escuro o pixel, mais opaco. A tinta
       // fica preta e transparente em volta; a cor vem depois (recolorir).
-      const dados = ctx.getImageData(0, 0, c.width, c.height);
-      const px = dados.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const v = 255 - Math.min(px[i], px[i + 1], px[i + 2]);
-        px[i] = px[i + 1] = px[i + 2] = 0;
-        px[i + 3] = v < 25 ? 0 : Math.min(255, (v - 25) * 255 / 150);
-      }
-      ctx.putImageData(dados, 0, 0);
+      tirarFundo(ctx, c.width, c.height);
       ok(c.toDataURL('image/png'));
     };
     img.onerror = () => { URL.revokeObjectURL(url); erro(new Error('imagem inválida')); };
