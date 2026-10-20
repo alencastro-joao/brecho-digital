@@ -97,7 +97,7 @@
   .ficha .col-chips {
     margin: 10px 0 0; justify-content: center; flex-wrap: wrap; gap: 6px;
   }
-  .ficha .col-chips-titulo { width: 100%; text-align: center; margin-bottom: 2px; }
+  .ficha .col-chips-titulo { display: none; }
   /* Só o disco da coleção: marca, contagem somem; o presente fica. */
   .ficha .col-chip { padding: 3px; gap: 0; }
   .ficha .col-chip > span:not(.col-chip-disco):not(.col-chip-gift),
@@ -105,7 +105,10 @@
   .ficha .col-chip-disco { width: 28px; height: 28px; }
   .ficha #ficha-acao { grid-column: 1; margin-top: 14px; width: 100%; }
   .ficha #ficha-editar { grid-column: 1; margin-top: 8px; width: 100%; }
-  .ficha #ficha-congelar { grid-column: 1; width: 100%; }
+  /* Só o essencial na ficha do celular: o congelar fica na tela de Tarefas. */
+  .ficha #ficha-congelar { display: none !important; }
+  /* A vitrine tem a sua regra de 72px para a foto: aqui ela cresce até o bloco. */
+  .view-vitrine .ficha .ficha-img img { max-height: 230px !important; height: 230px !important; width: auto !important; }
   .ficha .btn-dark, .ficha .btn-ghost { padding: 10px 14px; }
 
   .npc-art { width: 130px; }
