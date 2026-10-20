@@ -37,10 +37,6 @@
 }
 .btn-repor-ficha[hidden] { display: none; }
 .btn-repor-ficha .ico { font-size: 20px; }
-/* Sem ficha de repor: o preço em fichas, apagado até dar para pagar. */
-.btn-repor-ficha .ficha-moeda { display: none; }
-.btn-repor-ficha.com-fichas .ficha-moeda { display: block; }
-.btn-repor-ficha.com-fichas:not(.pronto) { color: var(--tinta-suave); }
 
 .picks-badge {
   pointer-events: auto;

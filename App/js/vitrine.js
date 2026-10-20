@@ -35,6 +35,7 @@ import {
 import { emo, ico } from './icones.js';
 import { botaoDesejo } from './usuario.js';
 import { confirmar, mostrar } from './janela.js';
+import { irPara } from './router.js';
 import { chegarNaArara, voar } from './movimento.js';
 import { tocar } from './sons.js';
 
@@ -934,41 +935,53 @@ export function reporLoja() {
   avisarLojaReposta();
 }
 
-// Ficha de repor a loja (prêmio da trilha de níveis) ou FICHAS.porRepor
-// fichas: a mesma arara nova do repor do admin, mas os resgates do dia
-// continuam contados. A ficha de repor, quando tem, é gasta antes das fichas.
-export async function reporComFicha() {
-  if (!db.fichasDeRepor()) {
-    const custo = FICHAS.porRepor;
-    if (!db.podeReporComFichas()) {
-      toast(`Repor a loja custa ${custo} fichas. Faltam ${custo - db.fichas()}.`);
-      return;
-    }
-    const presas = db.congeladas().length;
-    if (!await confirmar(`Trocar ${custo} das suas ${db.fichas()} fichas por uma arara nova?`
-      + (presas ? ' As peças congeladas continuam na loja.' : ''),
-      { titulo: 'Repor a loja', sim: `Repor · ${custo} fichas` })) return;
-    if (!db.gastarFichasNoRepor()) return;
-  } else if (!db.gastarFichaDeRepor()) return;
+// Repor a loja: estoque novo, sorteado fora da semente do dia. Os resgates do
+// dia continuam contados e as peças congeladas ficam na arara.
+function reporNaLoja() {
   db.limparPosicoes();
   db.state.dia.estoque = novaSemente();
   sementeArrumacao = novaSemente();
   db.salvar();
+}
+
+// Ficha de repor a loja (prêmio da trilha de níveis): gasta a ficha e repõe.
+export function reporComFicha() {
+  if (!db.gastarFichaDeRepor()) return;
+  reporNaLoja();
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
   toast('Loja reposta!', 'rare');
 }
 
+// Troca FICHAS.porRepor fichas por uma loja nova. Mora em Tarefas, ao lado das
+// fichas, como o resgate extra. Leva para a vitrine para ver a arara nova.
+export async function trocarFichasPorRepor() {
+  if (!db.podeReporComFichas()) {
+    toast(`Repor a loja custa ${FICHAS.porRepor} fichas. Faltam ${FICHAS.porRepor - db.fichas()}.`);
+    return false;
+  }
+  const presas = db.congeladas().length;
+  const custo = FICHAS.porRepor;
+  if (!await confirmar(`Trocar ${custo} das suas ${db.fichas()} fichas por uma arara nova?`
+    + (presas ? ' As peças congeladas continuam na loja.' : ''),
+    { titulo: 'Repor a loja', sim: `Repor · ${custo} fichas` })) return false;
+  if (!db.gastarFichasNoRepor()) return false;
+  reporNaLoja();
+  irPara('vitrine');
+  montarVitrine({ entrada: true });
+  falarDe('boasVindas');
+  toast('Loja reposta!', 'rare');
+  return true;
+}
+
 function renderFichaDeRepor() {
+  // Só o prêmio da trilha aparece aqui; a troca por fichas mora em Tarefas.
   const botao = $('#btn-repor-ficha');
   if (!botao) return;
-  // Sem ficha de repor, o botão mostra o preço em fichas.
   const n = db.fichasDeRepor();
-  botao.hidden = false;
-  botao.classList.toggle('com-fichas', !n);
-  botao.classList.toggle('pronto', !n && db.podeReporComFichas());
-  botao.title = n ? 'Usar uma ficha de repor a loja' : `Repor a loja por ${FICHAS.porRepor} fichas`;
-  botao.querySelector('b').textContent = n || FICHAS.porRepor;
+  botao.hidden = !n;
+  botao.classList.remove('com-fichas', 'pronto');
+  botao.querySelector('b').textContent = n;
   botao.onclick = reporComFicha;
 }
 
