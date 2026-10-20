@@ -28,6 +28,7 @@ import { carregarSessao } from './auth.js';
 import { svgAvatar, usarCorpoDesenhado } from './avatar.js';
 import { el, $, $$, clamp, toast } from './util.js';
 import { alcaMover } from './alcamover.js';
+import { barrasPosicao } from './barrapos.js';
 
 const API = 'api/esteira';
 const VIGIA_MS = 3000;                 // enquanto houver foto processando
@@ -909,10 +910,11 @@ function posicionar() {
   texto.classList.toggle('alerta', fora);
   $('#es-tam-barra').value = Math.round(medida.w);
   alcaMov?.colocar([no]);
+  barrasPos?.atualizar();
 }
 
 // A alça de quatro setas ao lado da peça: arrastar sem tapar a peça (celular).
-let alcaMov = null;
+let alcaMov = null, barrasPos = null;
 
 function ligarMolde() {
   const no = $('#es-peca');
@@ -941,6 +943,16 @@ function ligarMolde() {
   no.addEventListener('pointerdown', pegar);
   // A alça de mover sempre à direita da peça.
   alcaMov = alcaMover($('#es-molde'), pegar, { fixo: 'dir' });
+
+  // Celular: barras de posição, em pé à direita e deitada embaixo do molde.
+  const linha = $('#es-molde-linha');
+  barrasPos = barrasPosicao({
+    paiY: linha, paiX: linha.parentElement,
+    faixaX: [0, CONFIG.STAGE_W], faixaY: [0, CONFIG.STAGE_H],
+    ler: () => (medida && !$('#es-molde-modal').hidden ? medida : null),
+    mudar: ({ x, y }) => { medida.x = x; medida.y = y; posicionar(); },
+  });
+  linha.after(linha.parentElement.lastElementChild);
 
   // O tamanho: a barra em pé, e + / − de 6% em 6% para ajustar sem arrastar.
   $('#es-tam-barra').addEventListener('input', (e) => {

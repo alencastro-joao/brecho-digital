@@ -25,6 +25,7 @@ import { confirmar, pedirTexto } from './janela.js';
 import { criarDesfazer } from './desfazer.js';
 import { criarPainel, idNovo, nomeLivre } from './painelsalvos.js';
 import { animando, cairNoCorpo } from './movimento.js';
+import { barrasPosicao } from './barrapos.js';
 
 let camadas = [];
 let selecionado = null;
@@ -37,7 +38,7 @@ let buscaPaleta = '';
 let guiaLigado = false;
 let uidSeq = 1;
 let painel = null;
-let alcas = null, pinca = null;
+let alcas = null, pinca = null, barrasPos = null;
 
 const ESC_MIN = 0.2, ESC_MAX = 2.2;
 const stage = () => $('#stage');
@@ -554,6 +555,21 @@ function ligarFerramentas() {
     posicionar(c);
     atualizarFerramentas();
   };
+  // Celular: barra em pé à direita (altura) e deitada embaixo (lados).
+  const moldura = $('#stage').parentElement;
+  barrasPos = barrasPosicao({
+    paiX: moldura, paiY: moldura,
+    faixaX: [-80, CONFIG.STAGE_W + 80], faixaY: [-80, CONFIG.STAGE_H + 80],
+    ler: () => atual(),
+    mudar: ({ x, y }, gesto) => {
+      const c = atual();
+      if (!c) return;
+      mudanca(gesto);
+      c.x = x; c.y = y;
+      posicionar(c);
+      atualizarFerramentas();
+    },
+  });
   $('#sld-escala').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
   $('#sld-escala-vert').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
   // + e − dão um passo de 10% de cada vez, para ajustar sem arrastar.
@@ -665,6 +681,7 @@ function atualizarFerramentas() {
   $('#tool-empty').hidden = temSelecao;
   $$('#layer-tools .tool-btn, #layer-tools input').forEach(n => { n.disabled = !temSelecao; });
   $('#st-tamanho').hidden = !temSelecao;
+  barrasPos?.atualizar();
   if (!c) return;
   $('#sld-escala').value = $('#sld-escala-vert').value = Math.round(c.escala * 100);
   $('#sld-rot').value = Math.round(c.rot);

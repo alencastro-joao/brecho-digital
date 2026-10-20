@@ -1,0 +1,26 @@
+/* Barras de posição (js/barrapos.js): só no celular. A em pé sobe e desce a
+   peça, a deitada leva para os lados; setas nas pontas para o ajuste fino.
+   Mesmo desenho da barra de tamanho. */
+.barra-pos { display: none; }
+@media (max-width: 900px) {
+  .barra-pos:not([hidden]) {
+    display: flex; align-items: center; gap: 4px; flex: none;
+    border: 2px solid var(--bloco-borda, var(--linha, #e3ddd4)); border-radius: 20px;
+    background: var(--bloco, var(--papel, #fff));
+    box-shadow: inset 0 -3px 0 var(--bloco-fundo, var(--linha, #e3ddd4));
+    touch-action: none; user-select: none;
+  }
+  .barra-pos-y { flex-direction: column; width: 40px; padding: 4px 0; }
+  .barra-pos-x { flex-direction: row; height: 40px; padding: 0 4px; }
+  .barra-pos-btn {
+    flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+    border: 0; border-radius: 50%; background: none; padding: 0;
+    font: inherit; font-size: 18px; font-weight: 700; line-height: 1; color: var(--tinta, #1a1a1a);
+    -webkit-tap-highlight-color: transparent; touch-action: none;
+  }
+  .barra-pos-btn:active { background: var(--painel, #f1ece5); }
+  .barra-pos input[type="range"] { flex: 1 1 0; margin: 0; accent-color: var(--tinta, #1a1a1a); touch-action: none; }
+  /* Em pé: o topo da barra é o topo do palco. */
+  .barra-pos-y input[type="range"] { min-height: 0; width: 28px; writing-mode: vertical-lr; }
+  .barra-pos-x input[type="range"] { min-width: 0; height: 28px; }
+}
