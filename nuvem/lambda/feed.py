@@ -7,7 +7,10 @@ no navegador e em `estado/<uid>.json.gz`). Funcionava para quem publicou e para
 mais ninguém: o amigo abria o feed e não via nada, e vice-versa. Este módulo
 tira as publicações do save e põe num lugar que todo mundo lê.
 
-    GET    /api/feed[?autor=<id>]              os posts, mais novos primeiro
+    GET    /api/feed[?autor=<id>][&limite=<n>][&depois=<cursor>]
+                                                os posts, mais novos primeiro, de página em
+                                                página: a resposta traz `proximo`, o cursor
+                                                da página seguinte (null no fim)
     POST   /api/feed                           publica { chave, tipo, nome, thumb, pecas, origem, camadas }
                                                 (com `atualizar: true`, o dono troca a imagem do post que já existe)
     DELETE /api/feed/<id>                      o dono apaga
@@ -16,7 +19,7 @@ tira as publicações do save e põe num lugar que todo mundo lê.
     DELETE /api/feed/<id>/comentarios/<cid>    quem comentou (ou o dono do post) apaga
     POST   /api/perfil/miniatura               { thumb }: a miniatura de um favorito do perfil
 
-O desenho, na mesma tabela das contas (nenhum índice novo):
+O desenho, na mesma tabela das contas (nenhum índice novo do DynamoDB):
 
     POST#<id>   id, autor, tipo ('look' | 'board'), nome, criado_em,
                 thumb        caminho da miniatura no site (assets/posts/...)
@@ -25,6 +28,9 @@ O desenho, na mesma tabela das contas (nenhum índice novo):
                 camadas      JSON das camadas do look (vazio na colagem e nos antigos)
                 curtidas     conjunto (SS) de quem curtiu
                 comentarios  lista de { id, autor, texto, em }
+
+    FEED#indice p            mapa { <id do post>: "criado_em|autor|g" } de todos
+                             os posts ('g' no fim = gerado.py). É a linha do tempo.
 
 * **A miniatura vai para o bucket do site**, em `assets/posts/`, e não para o
   item: o item do DynamoDB para em 400 KB, e servir a imagem pelo CloudFront é
@@ -39,10 +45,23 @@ O desenho, na mesma tabela das contas (nenhum índice novo):
 * **Curtida é conjunto**, como seguir: idempotente e sem contador para
   dessincronizar. O número que a tela mostra é o tamanho do conjunto.
 
-* **A listagem é uma varredura (`Scan`)**, como a busca de pessoas: a tabela é
-  minúscula e o papel da Lambda já pode varrer. Quando o feed crescer, o
-  caminho é um item de linha do tempo por conta (ou um índice por data), e só
-  `listar()` muda.
+* **A listagem lê a linha do tempo (`FEED#indice`), não a tabela.** Antes era
+  um `Scan` da tabela inteira (contas, sessões, estoque, tudo) a cada abertura
+  do feed, mais um GetItem por pessoa, um depois do outro — e o feed travava.
+  Agora é um GetItem do índice, a página recortada dele em memória e um GetItem
+  por post da página, em paralelo (contas.pegar_varios). O índice é um mapa:
+  publicar põe uma chave (`SET p.#id`), apagar tira (`REMOVE p.#id`), as duas
+  atômicas, sem disputa entre dois pedidos ao mesmo tempo.
+
+* **O índice se refaz sozinho.** Se ele não existe (o primeiro deploy, ou
+  alguém apagou o item), a primeira leitura varre a tabela uma vez e o monta
+  com os posts que existem — nada nos posts muda, então nada se perde. Post que
+  o índice aponta e não existe mais (apagado por fora, pela limpeza) sai do
+  índice na leitura que o encontrar.
+
+* **Cabe uns 5 mil posts** (o item para em 400 KB, cada entrada tem ~70 bytes;
+  `listar` avisa no log ao passar de 300 KB). Quando chegar perto, o caminho é
+  um índice por mês (`FEED#indice#2026-10`), e só as funções do índice mudam.
 """
 
 import base64
@@ -56,7 +75,7 @@ import boto3
 from boto3.dynamodb.types import TypeSerializer
 from botocore.exceptions import ClientError
 
-from contas import ErroDeConta, TABELA, _dynamo, _des, _pegar, agora, iso
+from contas import ErroDeConta, TABELA, _dynamo, _des, _pegar, agora, iso, pegar_varios
 from pessoas import ID_OK, VALOR_OK, _cartoes
 
 BUCKET_SITE = os.environ.get('BD_BUCKET_SITE') or ''
@@ -72,7 +91,10 @@ NOME_MAX = 60
 TEXTO_MAX = 140
 PECAS_MAX = 40
 COMENTARIOS_MAX = 300
-LISTA_MAX = 120
+LISTA_MAX = 120                 # posts por página: o padrão e o máximo
+INDICE = 'FEED#indice'
+INDICE_ALERTA = 300 * 1024      # bytes do índice; o DynamoDB para em 400 KB
+CURSOR_OK = re.compile(r'^[A-Za-z0-9_\-]{8,96}$')
 THUMB_MAX = 900 * 1024          # bytes da imagem, já decodificada
 TIPOS_IMAGEM = {
     'image/webp': ('webp', lambda b: b[:4] == b'RIFF' and b[8:12] == b'WEBP'),
@@ -178,7 +200,9 @@ def _quando(bruto):
         dt = dt.replace(tzinfo=timezone.utc)
     if dt > agora_ or dt < agora_ - timedelta(days=365):
         return iso(agora_)
-    return iso(dt)
+    # Sempre em UTC: a linha do tempo ordena pelo texto da data, e "-03:00"
+    # misturado com "+00:00" poria o post fora do lugar.
+    return iso(dt.astimezone(timezone.utc))
 
 
 # --- O post como a tela vê ------------------------------------------------
@@ -224,6 +248,7 @@ def _com_autores(itens, eu_id):
     return {
         'posts': posts,
         'autores': _cartoes(ids, eu),
+        'proximo': None,
     }
 
 
@@ -240,29 +265,188 @@ def _devolver(post_id, eu_id):
     return _com_autores([_ler(post_id)], eu_id)
 
 
-# --- Listar ---------------------------------------------------------------
-def listar(eu_id, autor=None):
+# --- A linha do tempo -----------------------------------------------------
+def _em_utc(quando):
+    """A data como a linha do tempo ordena: ISO em UTC. Os posts de antes de
+    `_quando` normalizar podem ter outro fuso."""
+    try:
+        dt = datetime.fromisoformat(str(quando).replace('Z', '+00:00'))
+    except (TypeError, ValueError):
+        return str(quando or '')
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return iso(dt.astimezone(timezone.utc))
+
+
+def _entrada(item):
+    return '%s|%s|%s' % (_em_utc(item['criado_em']), item['autor'], 'g' if item.get('gerado') else '')
+
+
+def _desembrulhar(post_id, valor):
+    em, autor, marca = (valor.split('|') + ['', ''])[:3]
+    return {'id': post_id, 'em': em, 'autor': autor, 'gerado': marca == 'g'}
+
+
+def _reconstruir():
+    """Monta o índice com os posts que existem: uma varredura, só dos campos
+    que o índice guarda. Roda quando o índice não existe — o primeiro deploy
+    deste desenho, ou depois de alguém apagar o item."""
     args = {
         'TableName': TABELA,
         'FilterExpression': 'begins_with(pk, :p)',
+        'ProjectionExpression': '#id, autor, criado_em, gerado',
+        'ExpressionAttributeNames': {'#id': 'id'},
         'ExpressionAttributeValues': {':p': {'S': 'POST#'}},
     }
-    if autor:
-        if not (ID_OK.match(str(autor)) or ID_FICTICIO.match(str(autor))):
-            return {'posts': [], 'autores': {}}
-        args['FilterExpression'] += ' AND autor = :a'
-        args['ExpressionAttributeValues'][':a'] = {'S': autor}
-
-    itens = []
+    mapa = {}
     while True:
         r = _dynamo.scan(**args)
-        itens.extend(_item(b) for b in r.get('Items', []))
+        for bruto in r.get('Items', []):
+            item = _item(bruto)
+            if ID_POST.match(str(item.get('id') or '')) and item.get('autor') and item.get('criado_em'):
+                mapa[item['id']] = _entrada(item)
         if 'LastEvaluatedKey' not in r:
             break
         args['ExclusiveStartKey'] = r['LastEvaluatedKey']
+    try:
+        _dynamo.put_item(TableName=TABELA,
+                         Item={'pk': {'S': INDICE}, 'p': {'M': {k: {'S': v} for k, v in mapa.items()}}},
+                         ConditionExpression='attribute_not_exists(p)')
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
+        return _ler_indice(refazer=False)      # outra leitura montou primeiro
+    print('feed: índice refeito com %d posts' % len(mapa))
+    return mapa
 
-    itens.sort(key=lambda i: i['criado_em'], reverse=True)
-    return _com_autores(itens[:LISTA_MAX], eu_id)
+
+def _ler_indice(refazer=True):
+    """{id do post: "criado_em|autor|g"} de todos os posts."""
+    item = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': INDICE}},
+                            ConsistentRead=True).get('Item') or {}
+    if 'p' not in item:
+        return _reconstruir() if refazer else {}
+    mapa = {k: v['S'] for k, v in item['p']['M'].items()}
+    if len(mapa) * 70 > INDICE_ALERTA:
+        print('feed: o índice tem %d posts, perto do limite do item' % len(mapa))
+    return mapa
+
+
+def indexar(item):
+    """Põe o post na linha do tempo. Sem índice ainda, monta (e a varredura já
+    acha este post, que foi gravado antes)."""
+    args = {
+        'TableName': TABELA,
+        'Key': {'pk': {'S': INDICE}},
+        'UpdateExpression': 'SET p.#id = :v',
+        'ConditionExpression': 'attribute_exists(p)',
+        'ExpressionAttributeNames': {'#id': item['id']},
+        'ExpressionAttributeValues': {':v': {'S': _entrada(item)}},
+    }
+    try:
+        _dynamo.update_item(**args)
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+            raise
+        if item['id'] not in _reconstruir():
+            _dynamo.update_item(**args)
+
+
+def desindexar(post_ids):
+    """Tira posts da linha do tempo. Sem índice, nada a tirar: quando ele for
+    montado, já nasce sem eles."""
+    post_ids = [i for i in dict.fromkeys(post_ids) if ID_POST.match(str(i))]
+    for k in range(0, len(post_ids), 50):
+        lote = post_ids[k:k + 50]
+        nomes = {'#i%d' % n: pid for n, pid in enumerate(lote)}
+        try:
+            _dynamo.update_item(
+                TableName=TABELA, Key={'pk': {'S': INDICE}},
+                UpdateExpression='REMOVE ' + ', '.join('p.' + n for n in nomes),
+                ConditionExpression='attribute_exists(p)',
+                ExpressionAttributeNames=nomes)
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise
+
+
+def linha_do_tempo(autor=None, so_gerados=False):
+    """As entradas do índice, mais novas primeiro (empate: pelo id, para a
+    ordem ser sempre a mesma e o cursor não pular nem repetir post)."""
+    entradas = [_desembrulhar(k, v) for k, v in _ler_indice().items()]
+    if autor:
+        entradas = [e for e in entradas if e['autor'] == autor]
+    if so_gerados:
+        entradas = [e for e in entradas if e['gerado']]
+    entradas.sort(key=lambda e: (e['em'], e['id']), reverse=True)
+    return entradas
+
+
+# --- O cursor -------------------------------------------------------------
+# Opaco para a tela: a data e o id do último post da página, em base64 de URL.
+def _cursor(entrada):
+    texto = '%s|%s' % (entrada['em'], entrada['id'])
+    return base64.urlsafe_b64encode(texto.encode()).decode().rstrip('=')
+
+
+def _ler_cursor(bruto):
+    if bruto in (None, ''):
+        return None
+    bruto = str(bruto)
+    if not CURSOR_OK.match(bruto):
+        raise ErroDeConta('Cursor inválido.')
+    try:
+        texto = base64.urlsafe_b64decode(bruto + '=' * (-len(bruto) % 4)).decode()
+        em, post_id = texto.split('|')
+    except (ValueError, UnicodeDecodeError):
+        raise ErroDeConta('Cursor inválido.')
+    if not ID_POST.match(post_id):
+        raise ErroDeConta('Cursor inválido.')
+    return (em, post_id)
+
+
+def _limite(bruto):
+    if bruto in (None, ''):
+        return LISTA_MAX
+    try:
+        n = int(bruto)
+    except (TypeError, ValueError):
+        raise ErroDeConta('Limite inválido.')
+    return max(1, min(n, LISTA_MAX))
+
+
+# --- Listar ---------------------------------------------------------------
+def listar(eu_id, autor=None, limite=None, depois=None):
+    """Uma página do feed. `depois` é o `proximo` da página anterior."""
+    limite = _limite(limite)
+    cursor = _ler_cursor(depois)
+    if autor and not (ID_OK.match(str(autor)) or ID_FICTICIO.match(str(autor))):
+        return {'posts': [], 'autores': {}, 'proximo': None}
+
+    entradas = linha_do_tempo(autor)
+    if cursor:
+        entradas = [e for e in entradas if (e['em'], e['id']) < cursor]
+
+    # Lê de pouco em pouco além do que falta: se um post do índice sumiu da
+    # tabela, o seguinte entra no lugar e a página sai cheia.
+    itens, fantasmas, lidas = [], [], 0
+    while len(itens) < limite and lidas < len(entradas):
+        lote = entradas[lidas:lidas + limite - len(itens)]
+        lidas += len(lote)
+        achados = pegar_varios(['POST#' + e['id'] for e in lote])
+        for e in lote:
+            item = achados.get('POST#' + e['id'])
+            if item:
+                itens.append(item)
+            else:
+                fantasmas.append(e['id'])
+    if fantasmas:
+        desindexar(fantasmas)
+
+    resposta = _com_autores(itens, eu_id)
+    if lidas < len(entradas) and itens:
+        resposta['proximo'] = _cursor(entradas[lidas - 1])
+    return resposta
 
 
 # --- Miniatura de favorito -----------------------------------------------
@@ -326,6 +510,7 @@ def publicar(eu_id, corpo):
         if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
             raise
         item = _ler(post_id)
+    indexar(item)
     return _com_autores([item], eu_id)
 
 
@@ -363,6 +548,7 @@ def apagar(eu_id, post_id):
     if item['autor'] != eu_id:
         raise ErroDeConta('Só quem publicou pode apagar.', 403)
     _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': 'POST#' + post_id}})
+    desindexar([post_id])
     if item.get('thumb', '').startswith('assets/posts/'):
         _s3.delete_object(Bucket=BUCKET_SITE, Key=item['thumb'])
     return {'apagado': post_id}

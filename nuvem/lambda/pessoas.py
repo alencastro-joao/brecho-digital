@@ -56,7 +56,7 @@ import unicodedata
 from boto3.dynamodb.types import TypeSerializer
 from botocore.exceptions import ClientError
 
-from contas import ErroDeConta, TABELA, _dynamo, _des, _pegar, _transacao
+from contas import ErroDeConta, TABELA, _dynamo, _des, _pegar, _transacao, pegar_varios
 
 _ser = TypeSerializer()
 
@@ -119,17 +119,10 @@ def _cartao(item, eu=None):
 
 
 def _cartoes(ids, eu):
-    """Cartões de uma lista de ids. GetItem um a um, e não BatchGetItem: a
-    lista é curta (LISTA_MAX) e assim o papel da Lambda não ganha permissão
-    nenhuma além da que já tinha."""
-    achados = {}
-    for uid in ids:
-        if not ID_OK.match(uid):
-            continue
-        item = _pegar('USER#' + uid)
-        if item:
-            achados[uid] = _cartao(item, eu)
-    return achados
+    """Cartões de uma lista de ids, lidos em paralelo (contas.pegar_varios)."""
+    validos = [uid for uid in ids if ID_OK.match(uid)]
+    achados = pegar_varios(['USER#' + uid for uid in validos])
+    return {item['id']: _cartao(item, eu) for item in achados.values()}
 
 
 def _varrer():

@@ -94,15 +94,12 @@ export async function renderizarLook(camadas, opts = {}) {
     ctx.restore();
   }
 
-  // Sem nome, sai só o "brechó digital": nada de "meu look" inventado na foto.
+  // Sem nome, sai sem nada embaixo (sem marca d'água).
   if (assinatura != null) {
     ctx.fillStyle = '#1a1a1a';
     ctx.textAlign = 'center';
     ctx.font = `600 ${Math.round(w * 0.032)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
     if (assinatura.trim()) ctx.fillText(assinatura, w / 2, h - Math.round(h * 0.062));
-    ctx.fillStyle = 'rgba(0,0,0,.42)';
-    ctx.font = `${Math.round(w * 0.021)}px 'Segoe UI', Helvetica, Arial, sans-serif`;
-    ctx.fillText('brechó digital', w / 2, h - Math.round(h * 0.032));
   }
 
   return canvas;
@@ -187,14 +184,28 @@ export async function imagemDoFeedColagem(board) {
   return comoWebp(canvas, FEED_QUALIDADE);
 }
 
-export async function baixarLook(camadas, formato, nomeLook) {
+// Devolve { blob, nome } do PNG (para baixar ou para a folha de compartilhar).
+export async function imagemDoLook(camadas, formato, nomeLook) {
   const canvas = await renderizarLook(camadas, {
-    formato, fundo: true, assinatura: nomeLook || '',
+    formato, fundo: true, assinatura: nomeLook?.trim() || null,
   });
+  return {
+    blob: await new Promise((ok) => canvas.toBlob(ok, 'image/png')),
+    nome: `brecho-${(nomeLook || 'look').toLowerCase().replace(/\s+/g, '-')}-${formato}.png`,
+  };
+}
+
+export async function baixarLook(camadas, formato, nomeLook) {
+  const { blob, nome } = await imagemDoLook(camadas, formato, nomeLook);
+  baixarArquivo(blob, nome);
+}
+
+export function baixarArquivo(blob, nome) {
   const a = document.createElement('a');
-  a.download = `brecho-${(nomeLook || 'look').toLowerCase().replace(/\s+/g, '-')}-${formato}.png`;
-  a.href = canvas.toDataURL('image/png');
+  a.download = nome;
+  a.href = URL.createObjectURL(blob);
   a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 
 // ============================ COLAGEM (BOARD) ============================
@@ -291,7 +302,7 @@ export async function fontesDaColagem(board) {
 }
 
 // `story`: a colagem (4:5) no meio de um Story 1080×1920 de fundo branco.
-export async function baixarBoard(board, { escala = 1, story = false } = {}) {
+export async function imagemDoBoard(board, { escala = 1, story = false } = {}) {
   await fontesDaColagem(board);
   let canvas = await renderizarBoard(board, { escala });
   if (story) {
@@ -305,8 +316,13 @@ export async function baixarBoard(board, { escala = 1, story = false } = {}) {
     canvas = s;
   }
   const nome = (board.nome || 'colagem').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const a = document.createElement('a');
-  a.download = `brecho-${nome}-${canvas.width}x${canvas.height}.png`;
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+  return {
+    blob: await new Promise((ok) => canvas.toBlob(ok, 'image/png')),
+    nome: `brecho-${nome}-${canvas.width}x${canvas.height}.png`,
+  };
+}
+
+export async function baixarBoard(board, opcoes) {
+  const { blob, nome } = await imagemDoBoard(board, opcoes);
+  baixarArquivo(blob, nome);
 }

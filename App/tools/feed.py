@@ -36,7 +36,8 @@ NOME_MAX = 60
 TEXTO_MAX = 140
 PECAS_MAX = 40
 COMENTARIOS_MAX = 300
-LISTA_MAX = 120
+LISTA_MAX = 120                 # posts por página: o padrão e o máximo
+CURSOR_OK = re.compile(r'^[A-Za-z0-9_\-]{8,96}$')
 THUMB_MAX = 900 * 1024
 TIPOS_IMAGEM = {
     'image/webp': ('webp', lambda b: b[:4] == b'RIFF' and b[8:12] == b'WEBP'),
@@ -210,7 +211,7 @@ def _com_autores(con, linhas, eu_id):
         linha = _linha(con, uid)
         if linha:
             autores[uid] = _cartao(con, linha, eu_id)
-    return {'posts': posts, 'autores': autores}
+    return {'posts': posts, 'autores': autores, 'proximo': None}
 
 
 def _ler(con, post_id):
@@ -228,17 +229,58 @@ def _devolver(post_id, eu_id):
 
 
 # --- Listar ---------------------------------------------------------------
-def listar(eu_id, autor=None):
+def _cursor(linha):
+    texto = '%s|%s' % (linha['criado_em'], linha['id'])
+    return base64.urlsafe_b64encode(texto.encode()).decode().rstrip('=')
+
+
+def _ler_cursor(bruto):
+    if bruto in (None, ''):
+        return None
+    bruto = str(bruto)
+    if not CURSOR_OK.match(bruto):
+        raise ErroDeConta('Cursor inválido.')
+    try:
+        texto = base64.urlsafe_b64decode(bruto + '=' * (-len(bruto) % 4)).decode()
+        em, post_id = texto.split('|')
+    except (ValueError, UnicodeDecodeError):
+        raise ErroDeConta('Cursor inválido.')
+    if not ID_POST.match(post_id):
+        raise ErroDeConta('Cursor inválido.')
+    return (em, post_id)
+
+
+def _limite(bruto):
+    if bruto in (None, ''):
+        return LISTA_MAX
+    try:
+        n = int(bruto)
+    except (TypeError, ValueError):
+        raise ErroDeConta('Limite inválido.')
+    return max(1, min(n, LISTA_MAX))
+
+
+def listar(eu_id, autor=None, limite=None, depois=None):
+    """Uma página do feed, como a da Lambda: `proximo` é o cursor da seguinte."""
+    limite = _limite(limite)
+    cursor = _ler_cursor(depois)
+    if autor and not ID_OK.match(str(autor)):
+        return {'posts': [], 'autores': {}, 'proximo': None}
+    onde, args = [], []
+    if autor:
+        onde.append('autor=?')
+        args.append(autor)
+    if cursor:
+        onde.append('(criado_em < ? OR (criado_em = ? AND id < ?))')
+        args += [cursor[0], cursor[0], cursor[1]]
+    sql = 'SELECT * FROM posts%s ORDER BY criado_em DESC, id DESC LIMIT ?' % (
+        ' WHERE ' + ' AND '.join(onde) if onde else '')
     with banco() as con:
-        if autor:
-            if not ID_OK.match(str(autor)):
-                return {'posts': [], 'autores': {}}
-            linhas = con.execute('SELECT * FROM posts WHERE autor=? ORDER BY criado_em DESC'
-                                 ' LIMIT ?', (autor, LISTA_MAX)).fetchall()
-        else:
-            linhas = con.execute('SELECT * FROM posts ORDER BY criado_em DESC LIMIT ?',
-                                 (LISTA_MAX,)).fetchall()
-        return _com_autores(con, linhas, eu_id)
+        linhas = con.execute(sql, args + [limite + 1]).fetchall()
+        resposta = _com_autores(con, linhas[:limite], eu_id)
+        if len(linhas) > limite:
+            resposta['proximo'] = _cursor(linhas[limite - 1])
+        return resposta
 
 
 # --- Miniatura de favorito -----------------------------------------------

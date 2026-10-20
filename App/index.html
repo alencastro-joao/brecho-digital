@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="css/auth.css">
 <link rel="stylesheet" href="css/perfil.css">
 <link rel="stylesheet" href="css/avisos.css">
+<link rel="stylesheet" href="css/barrapos.css">
 <link rel="stylesheet" href="css/mobile.css">
 <link rel="stylesheet" href="css/icones.css">
 <link rel="stylesheet" href="css/alcamover.css">
@@ -159,6 +160,7 @@
       <p class="ficha-chance" id="ficha-chance"></p>
       <div class="col-chips" id="ficha-colecoes"></div>
       <button class="btn-dark" id="ficha-acao"></button>
+      <button type="button" class="btn-ghost btn-congelar" id="ficha-congelar" hidden></button>
       <button class="btn-ghost btn-editar" id="ficha-editar" hidden>Editar peça</button>
     </aside>
 
@@ -287,16 +289,8 @@
           <span class="lb-ico"><i data-i="ok"></i></span><span class="lb-txt">Salvar</span></button>
         <button class="lb-btn" id="btn-publicar" aria-label="Publicar no feed" title="Publicar no feed">
           <span class="lb-ico"><i data-i="publicar"></i></span><span class="lb-txt">Publicar</span></button>
-        <div class="lb-grupo">
-          <button class="lb-btn" data-menu="lb-exportar" aria-label="Exportar" title="Exportar PNG para o Instagram"
-                  aria-haspopup="menu" aria-expanded="false">
-            <span class="lb-ico"><i data-i="baixar"></i></span><span class="lb-txt">Exportar</span></button>
-          <div class="lb-menu" id="lb-exportar" role="menu" hidden>
-            <p class="lb-menu-titulo">PNG para o Instagram</p>
-            <button role="menuitem" data-export="story">Story <small>1080×1920</small></button>
-            <button role="menuitem" data-export="post">Post <small>1080×1350</small></button>
-          </div>
-        </div>
+        <button class="lb-btn" id="btn-compartilhar" aria-label="Compartilhar" title="Baixar a imagem ou compartilhar no Instagram">
+          <span class="lb-ico"><i data-i="compartilhar"></i></span><span class="lb-txt">Compartilhar</span></button>
         <div class="lb-grupo">
           <button class="lb-btn so-icone" data-menu="lb-mais" aria-label="Mais opções" title="Mais opções"
                   aria-haspopup="menu" aria-expanded="false"><span class="lb-ico"><i data-i="mais"></i></span></button>
@@ -412,6 +406,12 @@
       </div>
 
       <div class="board-scroll" id="board-scroll">
+        <!-- Tamanho da seleção numa barra em pé (celular), no lugar das quinas. -->
+        <div class="barra-tam bd-tamanho" id="bd-tamanho">
+          <button type="button" class="barra-tam-btn" data-tam="1" title="Aumentar" aria-label="Aumentar">+</button>
+          <input type="range" id="bd-escala-vert" min="4" max="100" value="26" aria-label="Tamanho da seleção">
+          <button type="button" class="barra-tam-btn" data-tam="-1" title="Diminuir" aria-label="Diminuir">−</button>
+        </div>
         <div class="prancheta-wrap" id="prancheta-wrap">
           <div class="regua regua-h" id="regua-h"></div>
           <div class="regua regua-v" id="regua-v"></div>
@@ -438,9 +438,8 @@
                   title="Monta uma colagem com as suas peças (Ctrl+Z desfaz)"><i data-e="🎲"></i> gerar</button>
           <button class="acao-btn" id="bd-salvar">salvar</button>
           <button class="acao-btn forte" id="bd-publicar">publicar</button>
-          <button class="acao-btn" data-bd-export="formato" title="PNG 1080×1350" aria-label="Exportar PNG">PNG</button>
-          <button class="acao-btn" data-bd-export="alta" title="PNG 2160×2700" aria-label="Exportar PNG em dobro">2×</button>
-          <button class="acao-btn" data-bd-export="story" title="Story 1080×1920" aria-label="Exportar para Story">story</button>
+          <button class="acao-btn" id="bd-compartilhar" title="Baixar a imagem ou compartilhar no Instagram"
+                  aria-label="Compartilhar"><i data-i="compartilhar"></i> compartilhar</button>
           <button class="acao-btn" id="bd-ferramentas" title="Ferramentas"
                   aria-label="Ferramentas" aria-expanded="false"></button>
         </div>
@@ -916,6 +915,12 @@
               <button type="button" data-ajuste="cores"><i data-i="paleta"></i> Cores do site</button>
               <button type="button" data-ajuste="conexoes"><i data-i="publicar"></i> Contas conectadas</button>
               <button type="button" data-ajuste="conta"><i data-i="usuario"></i> Sua conta</button>
+              <div class="pf-menu-volume">
+                <button type="button" id="pf-volume-mudo" aria-label="Silenciar"></button>
+                <label>Volume
+                  <input type="range" id="pf-volume" min="0" max="100" step="5">
+                </label>
+              </div>
               <button type="button" id="pf-menu-admin" hidden><i data-i="trofeu"></i> Administração</button>
             </nav>
           </div>
@@ -954,17 +959,17 @@
       </header>
 
       <section class="adm-bloco">
-        <h2>Hoje</h2>
-        <div id="painel-corpo"></div>
-      </section>
-
-      <section class="adm-bloco">
         <h2>Acervo</h2>
         <div class="tool-row">
           <button class="btn-ghost" id="btn-add-peca">Abrir a esteira</button>
           <button class="btn-ghost" id="adm-revisar" hidden>Revisar peças antigas</button>
         </div>
         <p class="tool-hint" id="adm-revisar-resumo" hidden></p>
+      </section>
+
+      <section class="adm-bloco">
+        <h2>Hoje</h2>
+        <div id="painel-corpo"></div>
       </section>
 
       <section class="adm-bloco">
@@ -1202,7 +1207,7 @@
           Arraste a peça sobre o molde e use as quinas para o tamanho. Essa medida é
           o tamanho real dela: define como entra no Stylist e o tamanho nas grades.
         </p>
-        <div class="mp-molde-area">
+        <div class="mp-molde-area" id="mp-molde-area">
           <div class="mp-molde" id="mp-molde">
             <div class="mp-avatar" id="mp-avatar"></div>
             <div class="mp-peca" id="mp-peca">
@@ -1213,13 +1218,20 @@
               <span class="mp-alca se" data-alca="1"></span>
             </div>
           </div>
+          <!-- Tamanho numa barra em pé, como na esteira e no Stylist: só no
+               celular, onde as quinas ficam apertadas no dedo. -->
+          <div class="barra-tam mp-tamanho" id="mp-tamanho">
+            <button type="button" class="barra-tam-btn" data-tam="1" title="Aumentar" aria-label="Aumentar">+</button>
+            <input type="range" id="mp-tam-barra" min="20" max="600" value="300" aria-label="Tamanho da peça">
+            <button type="button" class="barra-tam-btn" data-tam="-1" title="Diminuir" aria-label="Diminuir">−</button>
+          </div>
         </div>
         <footer class="modal-rodape">
           <span class="mp-aviso" id="mp-medida"></span>
-          <button class="btn-ghost" id="mp-voltar"><i data-i="seta-esq"></i> Voltar</button>
-          <button class="btn-ghost" id="mp-padrao">Tamanho padrão</button>
+          <button class="btn-ghost" id="mp-voltar" title="Voltar para a ficha" aria-label="Voltar para a ficha"><i data-i="seta-esq"></i><span class="so-pc"> Voltar</span></button>
+          <button class="btn-ghost" id="mp-padrao" title="Tamanho padrão da categoria"><span class="so-pc">Tamanho padrão</span><span class="so-cel">Padrão</span></button>
           <button class="btn-ghost" id="mp-pular" hidden>Pular</button>
-          <button class="btn-dark" id="mp-salvar">Salvar alterações</button>
+          <button class="btn-dark" id="mp-salvar"><span class="so-pc">Salvar alterações</span><span class="so-cel">Salvar</span></button>
         </footer>
       </section>
     </div>

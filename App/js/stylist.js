@@ -14,7 +14,8 @@ import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import { assinaturaDoUsuario } from './assinaturas.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
-import { miniaturaAtual, miniaturaPronta, baixarLook } from './render.js';
+import { miniaturaAtual, miniaturaPronta, imagemDoLook } from './render.js';
+import { abrirCompartilhar } from './compartilhar.js';
 import { publicarOuGuardar, publicarNoFeed, pacoteDoLook, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { el, $, $$, clamp, toast, teclaLivre, anguloNormal, ehToque, soltarCampo } from './util.js';
@@ -26,6 +27,7 @@ import { confirmar, pedirTexto } from './janela.js';
 import { criarDesfazer } from './desfazer.js';
 import { criarPainel, idNovo, nomeLivre } from './painelsalvos.js';
 import { animando, cairNoCorpo } from './movimento.js';
+import { barrasPosicao } from './barrapos.js';
 
 let camadas = [];
 let selecionado = null;
@@ -38,7 +40,7 @@ let buscaPaleta = '';
 let guiaLigado = false;
 let uidSeq = 1;
 let painel = null;
-let alcas = null, pinca = null;
+let alcas = null, pinca = null, barrasPos = null;
 
 const ESC_MIN = 0.2, ESC_MAX = 2.2;
 const stage = () => $('#stage');
@@ -380,6 +382,9 @@ function iniciarManipulacao(e, c, no) {
   if (!no || e.button > 0) return;
   e.preventDefault();
   soltarCampo();
+  // Peça já escolhida (ou puxada pela alça) anda desde o primeiro pixel: é
+  // assim que se faz o ajuste fino, como encaixar o óculos no rosto.
+  const jaEscolhida = selecionado === c.uid || Boolean(e.target.dataset?.alca);
   if (selecionado !== c.uid) selecionar(c.uid);
   fecharTroca();
 
@@ -400,10 +405,33 @@ function iniciarManipulacao(e, c, no) {
   const segurar = !alca && e.pointerType === 'touch'
     ? setTimeout(() => { if (!mexeu) { soltar(); abrirTroca(c.uid); } }, SEGURAR_MS) : 0;
 
+  // O ponteiro manda vários movimentos por quadro: guarda o último e desenha
+  // uma vez por quadro. Arrastar só mexe no transform (a peça já está numa
+  // camada própria); left/top voltam a valer ao soltar.
+  let ultimo = null, quadroMov = 0;
+  const desenhar = () => {
+    quadroMov = 0;
+    if (!ultimo) return;
+    ultimo = null;
+    if (alca === 'esc' || alca === 'rot') {
+      posicionar(c, no);
+      atualizarFerramentas();
+      return;
+    }
+    // Só andar: a peça, a moldura e a alça de mover vão juntas pelo mesmo
+    // deslocamento, sem medir nada na página (medir a cada quadro travava).
+    const dx = (c.x - inicial.x) / CONFIG.STAGE_W * rect.width;
+    const dy = (c.y - inicial.y) / CONFIG.STAGE_H * rect.height;
+    no.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%) rotate(${c.rot}deg)`;
+    for (const n of junto) n.style.translate = `${dx}px ${dy}px`;
+  };
+  const junto = [alcas?.camada, alcaMov?.botao].filter(Boolean);
+
   const mover = (ev) => {
     if (pinca?.ativa()) return;
-    // Um tremor de dedo de 3px não é arrasto: não suja o histórico.
-    if (!mexeu && Math.hypot(ev.clientX - inicioPtr.x, ev.clientY - inicioPtr.y) < 3) return;
+    // No toque que só escolhe a peça, um tremor de 3px não é arrasto: não
+    // suja o histórico. Na peça já escolhida qualquer movimento vale.
+    if (!mexeu && Math.hypot(ev.clientX - inicioPtr.x, ev.clientY - inicioPtr.y) < (jaEscolhida ? 0.5 : 3)) return;
     if (!mexeu) { mudanca(); mexeu = true; clearTimeout(segurar); }
     if (alca === 'esc') {
       const raio = Math.hypot(ev.clientX - centro.x, ev.clientY - centro.y);
@@ -417,12 +445,16 @@ function iniciarManipulacao(e, c, no) {
       c.x = clamp(inicial.x + unidades(rect, ev.clientX - inicioPtr.x, 'x'), -80, CONFIG.STAGE_W + 80);
       c.y = clamp(inicial.y + unidades(rect, ev.clientY - inicioPtr.y, 'y'), -80, CONFIG.STAGE_H + 80);
     }
-    posicionar(c, no);
-    agendarFerramentas();
+    ultimo = ev;
+    quadroMov ||= requestAnimationFrame(desenhar);
   };
 
   function soltar() {
     clearTimeout(segurar);
+    cancelAnimationFrame(quadroMov);
+    quadroMov = 0;
+    for (const n of junto) n.style.translate = '';
+    posicionar(c, no);
     no.classList.remove('manipulando');
     no.removeEventListener('pointermove', mover);
     no.removeEventListener('pointerup', soltar);
@@ -525,6 +557,21 @@ function ligarFerramentas() {
     posicionar(c);
     atualizarFerramentas();
   };
+  // Celular: barra em pé à direita (altura) e deitada embaixo (lados).
+  const moldura = $('#stage').parentElement;
+  barrasPos = barrasPosicao({
+    paiX: moldura, paiY: moldura,
+    faixaX: [-80, CONFIG.STAGE_W + 80], faixaY: [-80, CONFIG.STAGE_H + 80],
+    ler: () => atual(),
+    mudar: ({ x, y }, gesto) => {
+      const c = atual();
+      if (!c) return;
+      mudanca(gesto);
+      c.x = x; c.y = y;
+      posicionar(c);
+      atualizarFerramentas();
+    },
+  });
   $('#sld-escala').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
   $('#sld-escala-vert').addEventListener('input', (e) => mudarEscala(Number(e.target.value)));
   // + e − dão um passo de 10% de cada vez, para ajustar sem arrastar.
@@ -560,19 +607,13 @@ function ligarFerramentas() {
   ligarMenusDaBarra();
   $('#btn-salvar').addEventListener('click', () => salvarLook());
   $('#btn-publicar').addEventListener('click', () => publicarLook());
-  $$('[data-export]').forEach(b => b.addEventListener('click', async () => {
-    if (!camadas.length) return toast('Monte um look antes de exportar.', 'aviso');
-    b.disabled = true;
-    try {
-      await baixarLook(estruturaLimpa(), b.dataset.export, assinaturaDoUsuario() || $('#outfit-nome').value.trim());
-      toast('PNG gerado. Confere os downloads.');
-    } catch (err) {
-      console.warn('exportar look', err);
-      toast('Não consegui gerar o PNG agora. Tente de novo.', 'aviso');
-    } finally {
-      b.disabled = false;
-    }
-  }));
+  $('#btn-compartilhar').addEventListener('click', () => {
+    if (!camadas.length) return toast('Monte um look antes de compartilhar.', 'aviso');
+    abrirCompartilhar({
+      formatos: [{ id: 'story', rotulo: 'Story 1080×1920' }, { id: 'post', rotulo: 'Post 1080×1350' }],
+      gerar: (formato) => imagemDoLook(estruturaLimpa(), formato, assinaturaDoUsuario() || $('#outfit-nome').value.trim()),
+    });
+  });
 }
 
 // Os menus da barra do look (Exportar e ⋯): um aberto por vez, e qualquer
@@ -636,6 +677,7 @@ function atualizarFerramentas() {
   $('#tool-empty').hidden = temSelecao;
   $$('#layer-tools .tool-btn, #layer-tools input').forEach(n => { n.disabled = !temSelecao; });
   $('#st-tamanho').hidden = !temSelecao;
+  barrasPos?.atualizar();
   if (!c) return;
   $('#sld-escala').value = $('#sld-escala-vert').value = Math.round(c.escala * 100);
   $('#sld-rot').value = Math.round(c.rot);
@@ -715,7 +757,20 @@ async function salvarLook({ silencioso = false } = {}) {
   }
   db.salvar();
   renderSalvos();
-  if (!silencioso) toast(`"${nome}" salvo no seu perfil.`);
+  if (silencioso) return look;
+  // Já está no feed: salvar leva a versão nova para o post também (curtidas e
+  // comentários ficam). Antes só o "Publicar" fazia isso, e o post ficava com
+  // o look de antes.
+  if (look.publicado && jaPublicado('lookId', look.id)) {
+    try {
+      await publicarNoFeed({ ...await pacoteDoLook(look), atualizar: true });
+      toast(`"${nome}" salvo e atualizado no feed.`);
+    } catch (e) {
+      toast(`"${nome}" salvo, mas o post do feed não mudou: ${e.message || 'sem conexão'}.`, 'aviso');
+    }
+    return look;
+  }
+  toast(`"${nome}" salvo no seu perfil.`);
   return look;
 }
 

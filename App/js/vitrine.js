@@ -32,10 +32,12 @@ import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
   msAteMeiaNoite, formatarContagem, toast,
 } from './util.js';
-import { emo } from './icones.js';
+import { emo, ico } from './icones.js';
 import { botaoDesejo } from './usuario.js';
-import { mostrar } from './janela.js';
+import { confirmar, mostrar } from './janela.js';
+import { irPara } from './router.js';
 import { chegarNaArara, voar } from './movimento.js';
+import { tocar } from './sons.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -129,12 +131,18 @@ function sortearArara(iso) {
   // quantidade que a tabela `naLoja` sorteou para hoje. A raridade manda na
   // loja, não no acervo: ter 10 épicas cadastradas não põe mais épica na arara.
   const grupos = Object.fromEntries(RARIDADES.map(r => [r.id, []]));
-  for (const i of shuffle(candidatas, rnd)) grupos[raridade(i)].push(i);
+  // Congelada com fichas entra antes de tudo e não sai no repor. Ela conta na
+  // vaga da raridade dela, para a loja não ganhar uma rara a mais por isso.
+  const presas = db.congeladas(iso);
+  const congeladas = candidatas.filter(i => presas.includes(i.id));
+  for (const i of shuffle(candidatas, rnd)) if (!presas.includes(i.id)) grupos[raridade(i)].push(i);
 
-  const arara = [];
+  const arara = [...congeladas];
   for (const r of [...RARIDADES].reverse()) {
     const tabela = naLoja[r.id] ?? r.naLoja;
-    if (tabela) arara.push(...grupos[r.id].splice(0, sortearQuantidade(tabela, rnd)));
+    const presasDaRaridade = congeladas.filter(i => raridade(i) === r.id).length;
+    if (tabela) arara.push(...grupos[r.id].splice(0,
+      Math.max(0, sortearQuantidade(tabela, rnd) - presasDaRaridade)));
   }
 
   // Efeitos de coleção vestida (ver db.modificadoresDaLoja). Têm sorteio
@@ -371,6 +379,30 @@ function chegar() {
   chegarNaArara([...mural.querySelectorAll('.item-roupa')]);
 }
 
+// As roupas do dia começam a baixar antes de a loja ser montada: o boot ainda
+// espera quem você segue e monta as outras telas, e cada segundo disso era um
+// segundo a mais de mural vazio. O tamanho é o mesmo que o mural vai pedir
+// (mesma conta de medidasDoMural), então o navegador escolhe a mesma imagem do
+// srcset e a <img> da vitrine já nasce com ela no cache.
+const preCarregadas = [];                // segura as Image (são só as do dia)
+export function precarregarVitrine() {
+  const caixa = $('#vitrine-mural');
+  const largura = caixa?.clientWidth || window.innerWidth;
+  const altura = caixa?.clientHeight || window.innerHeight;
+  const celular = matchMedia('(max-width: 900px)').matches;
+  const pecas = poolDoDia(hojeISO()).slice(0, CONFIG.PECAS_NA_VITRINE);
+  const medidas = medidasDoMural(pecas, largura, altura, celular ? ESCALA_CELULAR : 1);
+  pecas.forEach((peca, i) => {
+    if (db.temPeca(peca.id)) return;
+    const { src, srcset, sizes } = imagemDaPeca(peca, medidas[i].w);
+    const img = new Image();
+    img.decoding = 'async';
+    if (srcset) { img.sizes = sizes; img.srcset = srcset; }
+    img.src = src;
+    preCarregadas.push(img);
+  });
+}
+
 export function montarVitrine({ entrada = false } = {}) {
   mural = $('#vitrine-mural');
   if (!mural) return;
@@ -494,7 +526,7 @@ export function montarVitrine({ entrada = false } = {}) {
       el('div', {
         class: 'peca-flutua',
         style: { '--flutua-atraso': (-Math.random() * 5).toFixed(2) + 's' },
-      }, caixaDeAura(raridade, peca.src), img),
+      }, caixaDeAura(raridade, peca.src), img, db.estaCongelada(peca.id) ? seloDeCongelada() : null),
       el('span', { class: 'item-tag' },
         nomeDaPeca(peca),
         r.aura ? el('span', { class: 'raridade', style: { color: r.aura === 'arco-iris' ? '#b8860b' : r.aura } },
@@ -640,6 +672,7 @@ function abrirFicha(peca, raridade, no) {
   acao.textContent = possuida ? 'Já está no seu closet' : 'Pegar';
   acao.disabled = possuida;
   acao.onclick = () => { pegar(peca.id, no); fecharFicha(); };
+  renderCongelar(peca, possuida, no);
 
   // Admin: editar a ficha da peça sem sair da vitrine — útil para arrumar
   // nome, cor ou tamanho de algo que ficou estranho no mural.
@@ -654,6 +687,30 @@ function abrirFicha(peca, raridade, no) {
 
   ficha.hidden = false;
   posicionarFicha(ficha, no);
+}
+
+const seloDeCongelada = () => el('span', { class: 'peca-presa', title: 'Congelada até amanhã' }, ico('floco'));
+
+// Congelar: FICHAS.porCongelar fichas prendem a peça na loja até o fim de
+// amanhã, mesmo que ela seja reposta. Peça que já é sua não tem o que congelar.
+function renderCongelar(peca, possuida, no) {
+  const botao = $('#ficha-congelar');
+  if (!botao) return;
+  botao.hidden = possuida;
+  const presa = db.estaCongelada(peca.id);
+  const sem = !db.podeCongelar();
+  botao.disabled = presa;
+  botao.replaceChildren(ico('floco'), presa ? ' Congelada até amanhã'
+    : sem ? ' Comprar congelamento em Tarefas'
+    : ` Congelar · usar 1 (tem ${db.congelamentos()})`);
+  botao.onclick = () => {
+    if (sem) { irPara('tarefas'); return; }
+    if (!db.congelarPeca(peca.id)) return;
+    no.querySelector('.peca-flutua')?.append(seloDeCongelada());
+    renderCongelar(peca, possuida, no);
+    atualizarBadge();
+    toast('Peça congelada: ela fica na loja até o fim de amanhã, mesmo se a loja for reposta.', 'rare');
+  };
 }
 
 // Encosta a ficha ao lado da peça, virando de lado quando não cabe.
@@ -745,6 +802,7 @@ async function pegar(id, noDOM) {
 
   voarParaOCloset(noDOM);
   sairDaLoja(noDOM);
+  tocar('pegou', nova.raridade);
 
   const r = RARIDADE[nova.raridade];
   if (nova.raridade === 'legendary') falarDe('lendario');
@@ -802,6 +860,7 @@ async function desfazerResgate(peca, foto) {
   if (!db.desfazerResgate(peca.id, foto)) return;
   montarVitrine();
   atualizarBadge();
+  tocar('desfazer');
   toast(`${nomeDaPeca(pecaDoCatalogo(peca.id))} voltou para a loja.`);
 }
 
@@ -875,24 +934,52 @@ export function reporLoja() {
   avisarLojaReposta();
 }
 
-// Ficha de repor a loja (prêmio da trilha de níveis): a mesma arara nova do
-// repor do admin, mas os resgates do dia continuam contados.
-export function reporComFicha() {
-  if (!db.gastarFichaDeRepor()) return;
+// Repor a loja: estoque novo, sorteado fora da semente do dia. Os resgates do
+// dia continuam contados e as peças congeladas ficam na arara.
+function reporNaLoja() {
   db.limparPosicoes();
   db.state.dia.estoque = novaSemente();
   sementeArrumacao = novaSemente();
   db.salvar();
+}
+
+// Ficha de repor a loja (prêmio da trilha de níveis): gasta a ficha e repõe.
+export function reporComFicha() {
+  if (!db.gastarFichaDeRepor()) return;
+  reporNaLoja();
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
   toast('Loja reposta!', 'rare');
 }
 
+// Troca FICHAS.porRepor fichas por uma loja nova. Mora em Tarefas, ao lado das
+// fichas, como o resgate extra. Leva para a vitrine para ver a arara nova.
+export async function trocarFichasPorRepor() {
+  if (!db.podeReporComFichas()) {
+    toast(`Repor a loja custa ${FICHAS.porRepor} fichas. Faltam ${FICHAS.porRepor - db.fichas()}.`);
+    return false;
+  }
+  const presas = db.congeladas().length;
+  const custo = FICHAS.porRepor;
+  if (!await confirmar(`Trocar ${custo} das suas ${db.fichas()} fichas por uma arara nova?`
+    + (presas ? ' As peças congeladas continuam na loja.' : ''),
+    { titulo: 'Repor a loja', sim: `Repor · ${custo} fichas` })) return false;
+  if (!db.gastarFichasNoRepor()) return false;
+  reporNaLoja();
+  irPara('vitrine');
+  montarVitrine({ entrada: true });
+  falarDe('boasVindas');
+  toast('Loja reposta!', 'rare');
+  return true;
+}
+
 function renderFichaDeRepor() {
+  // Só o prêmio da trilha aparece aqui; a troca por fichas mora em Tarefas.
   const botao = $('#btn-repor-ficha');
   if (!botao) return;
   const n = db.fichasDeRepor();
   botao.hidden = !n;
+  botao.classList.remove('com-fichas', 'pronto');
   botao.querySelector('b').textContent = n;
   botao.onclick = reporComFicha;
 }

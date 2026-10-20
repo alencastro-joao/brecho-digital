@@ -20,6 +20,9 @@ import { imagemDoFeed, imagemDoFeedColagem } from './render.js';
 let posts = [];                 // a última leitura do servidor, mais novos primeiro
 let lidoEm = null;              // quando — null enquanto nunca deu certo
 let lendo = null;               // a leitura em andamento, para não pedir duas
+let proximo = null;             // o cursor da página seguinte (null: acabou)
+let maisLidas = false;          // já leu páginas além da primeira
+let lendoMais = null;
 
 const ouvintes = new Set();
 export const aoMudarPublicacoes = (fn) => { ouvintes.add(fn); return () => ouvintes.delete(fn); };
@@ -27,6 +30,7 @@ const avisar = () => ouvintes.forEach(fn => fn());
 
 export const publicacoes = () => posts;
 export const feedLidoEm = () => lidoEm;
+export const temMaisNoFeed = () => !!proximo;
 
 async function chamar(rota, opcoes = {}) {
   const r = await fetch(rota, {
@@ -59,10 +63,21 @@ function trocar(post) {
 }
 
 // ------------------------------- Ler ---------------------------------------
+// O servidor manda o feed de página em página (feed.py, listar): a primeira
+// vem aqui, as seguintes em carregarMaisFeed, quando o mural chega ao fim.
 export function carregarFeed() {
   lendo ??= chamar('/api/feed')
     .then(dados => {
-      posts = receber(dados);
+      const novos = receber(dados);
+      // Já tinha rolado além da primeira página: os mais velhos que ela ficam,
+      // senão o mural encolheria a cada atualização.
+      const ultimo = novos.at(-1);
+      const ids = new Set(novos.map(p => p.id));
+      const velhos = maisLidas && ultimo && dados.proximo
+        ? posts.filter(p => !ids.has(p.id) && new Date(p.criadoEm) < new Date(ultimo.criadoEm))
+        : [];
+      posts = [...novos, ...velhos];
+      if (!velhos.length) { proximo = dados.proximo || null; maisLidas = false; }
       lidoEm = new Date();
       avisar();
       migrarPostsLocais();
@@ -76,13 +91,35 @@ export function carregarFeed() {
   return lendo;
 }
 
+export function carregarMaisFeed() {
+  if (!proximo) return Promise.resolve(false);
+  lendoMais ??= chamar('/api/feed?depois=' + encodeURIComponent(proximo))
+    .then(dados => {
+      const ids = new Set(posts.map(p => p.id));
+      posts = [...posts, ...receber(dados).filter(p => !ids.has(p.id))];
+      proximo = dados.proximo || null;
+      maisLidas = true;
+      avisar();
+      return true;
+    })
+    .catch(e => {
+      console.warn('não consegui ler mais do feed.', e.message);
+      return false;
+    })
+    .finally(() => { lendoMais = null; });
+  return lendoMais;
+}
+
 // ------------------------------- Publicar ---------------------------------
 // A chave é o look ou a colagem de origem: o servidor monta o id do post a
-// partir dela, então publicar de novo o mesmo look devolve o mesmo post.
-export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }) {
+// partir dela, então publicar de novo o mesmo look devolve o mesmo post — a
+// não ser que venha `atualizar` (o dono editou e quer a versão nova no feed).
+// Sem mandar o `atualizar`, o servidor devolvia o post antigo e a tela dizia
+// "atualizado".
+export async function publicarNoFeed({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm, atualizar }) {
   const dados = await chamar('/api/feed', {
     method: 'POST',
-    body: JSON.stringify({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm }),
+    body: JSON.stringify({ chave, tipo, nome, thumb, pecas, camadas, origem, criadoEm, atualizar: atualizar === true }),
   });
   return trocar(receber(dados)[0]);
 }
@@ -94,6 +131,8 @@ export async function gerarNoServidor(quantos = 3) {
     method: 'POST', body: JSON.stringify({ quantos }),
   });
   posts = receber(dados);
+  proximo = dados.proximo || null;
+  maisLidas = false;
   lidoEm = new Date();
   avisar();
   return (dados.publicados || []).length;

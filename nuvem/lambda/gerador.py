@@ -29,20 +29,28 @@ quem posta por eles é a nuvem, no mesmo feed das contas de verdade:
 
 O administrador também pode pedir posts na hora (o botão de teste do perfil):
 `POST /api/feed/gerar { quantos }`.
+
+* **Renovação.** Subir VERSAO_POSTS apaga todos os posts gerados e semeia o
+  feed de novo, uma vez, na primeira leitura depois do deploy (renovar). Só
+  sai o que é comprovadamente de exemplo: `gerado` marcado e autor da lista
+  PERFIS. Antes, o backup dos itens vai para `backups/posts-ficticios-<quando>/`
+  no bucket de dados; se o backup falhar, nada é apagado.
 """
 
+import gzip
 import json
 import os
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import boto3
 from botocore.exceptions import ClientError
 
 import feed
-from contas import TABELA, _dynamo, agora, iso
+from contas import TABELA, _dynamo, agora, iso, pegar_varios
 
 BUCKET_SITE = os.environ.get('BD_BUCKET_SITE') or ''
+BUCKET_DADOS = os.environ.get('BD_BUCKET_DADOS') or ''
 _s3 = boto3.client('s3')
 
 INTERVALO_HORAS = 3             # de quanto em quanto tempo sai uma rodada (em_dia)
@@ -50,6 +58,7 @@ ATRASO_MAX = 8                  # rodadas perdidas que ainda são repostas
 MAX_GERADOS = 80                # posts dos perfis de exemplo que ficam no feed
 ANIMAR_HORAS = 72               # até que idade um post ainda ganha curtida e conversa
 QUANTOS_MAX = 12                # o que o admin pode pedir de uma vez
+VERSAO_POSTS = 2                # subir apaga os posts gerados e semeia de novo (renovar)
 
 # Espelho de PERFIS_MOCK (App/js/config.js): só o id e o @, que é o que o
 # servidor precisa — o resto do perfil a tela tira da semente do id.
@@ -204,20 +213,9 @@ def _texto_de_comentario(rnd, pecas):
 
 # --- Os posts gerados que já existem ---------------------------------------
 def _gerados():
-    args = {
-        'TableName': TABELA,
-        'FilterExpression': 'begins_with(pk, :p) AND gerado = :sim',
-        'ExpressionAttributeValues': {':p': {'S': 'POST#'}, ':sim': {'BOOL': True}},
-    }
-    itens = []
-    while True:
-        r = _dynamo.scan(**args)
-        itens.extend(feed._item(b) for b in r.get('Items', []))
-        if 'LastEvaluatedKey' not in r:
-            break
-        args['ExclusiveStartKey'] = r['LastEvaluatedKey']
-    itens.sort(key=lambda i: i['criado_em'], reverse=True)
-    return itens
+    """Os posts gerados, mais novos primeiro, como a linha do tempo os guarda:
+    { id, em, autor }. Sem varrer a tabela (feed.linha_do_tempo)."""
+    return feed.linha_do_tempo(so_gerados=True)
 
 
 def _quem_posta(rnd, recentes):
@@ -260,6 +258,7 @@ def criar_post(rnd, acervo, autor, quando):
     _dynamo.put_item(TableName=TABELA,
                      Item={k: feed._ser.serialize(v) for k, v in item.items()},
                      ConditionExpression='attribute_not_exists(pk)')
+    feed.indexar(item)
     return item
 
 
@@ -329,13 +328,17 @@ def rodar(quantos=None, espalhar_horas=0, rnd=None, em=None):
             if espalhar_horas else agora_
         publicados.append(criar_post(rnd, acervo, autor, quando)['id'])
 
-    # Os que já estavam ganham vida; os novos acabaram de nascer.
+    # Os que já estavam ganham vida; os novos acabaram de nascer. Só os
+    # recentes são lidos da tabela (em paralelo).
     acervo_por_id = {p['id']: p for p in acervo}
     limite = iso(agora_ - timedelta(hours=ANIMAR_HORAS))
+    recentes_ids = ['POST#' + e['id'] for e in existentes if e['em'] >= limite]
+    lidos = pegar_varios(recentes_ids)
     animados = 0
-    for item in existentes:
-        if item['criado_em'] < limite:
-            break
+    for pk in recentes_ids:
+        item = lidos.get(pk)
+        if not item:
+            continue
         try:
             animados += bool(_animar(rnd, item, acervo_por_id, agora_))
         except ClientError as e:                 # post apagado no meio do caminho
@@ -343,8 +346,9 @@ def rodar(quantos=None, espalhar_horas=0, rnd=None, em=None):
 
     # Teto: os mais velhos saem (a lista está do mais novo para o mais velho).
     sobrando = existentes[max(0, MAX_GERADOS - len(publicados)):]
-    for item in sobrando:
-        _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': item['pk']}})
+    for e in sobrando:
+        _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': 'POST#' + e['id']}})
+    feed.desindexar([e['id'] for e in sobrando])
 
     return {'publicados': publicados, 'animados': animados, 'apagados': len(sobrando)}
 
@@ -357,6 +361,7 @@ def rodar(quantos=None, espalhar_horas=0, rnd=None, em=None):
 # (gerador.yaml), quando ligada, só adianta o que a leitura faria.
 #
 #     GERADOR#relogio   ultima   ISO da última rodada
+#                       versao   VERSAO_POSTS da última renovação
 #
 # A troca do `ultima` é condicional: com duas leituras ao mesmo tempo, só uma
 # ganha a vez, e a outra segue sem gerar nada.
@@ -385,17 +390,111 @@ def _marcar(ultima, antes):
         raise
 
 
+def _ficticio(item):
+    """Só é de exemplo o post que o gerador marcou e cujo autor é um perfil dele."""
+    return bool(item.get('gerado')) and item.get('autor') in HANDLE
+
+
+def _posts_ficticios():
+    """Os posts de exemplo na tabela, crus (para o backup) — uma varredura."""
+    args = {'TableName': TABELA, 'FilterExpression': 'begins_with(pk, :p)',
+            'ExpressionAttributeValues': {':p': {'S': 'POST#'}}}
+    achados = []
+    while True:
+        r = _dynamo.scan(**args)
+        for bruto in r.get('Items', []):
+            item = feed._item(bruto)
+            if _ficticio(item):
+                achados.append(bruto)
+        if 'LastEvaluatedKey' not in r:
+            return achados
+        args['ExclusiveStartKey'] = r['LastEvaluatedKey']
+
+
+def _marcar_versao(antes):
+    """Pega a vez da renovação: só uma leitura grava a versão nova."""
+    args = {
+        'TableName': TABELA,
+        'Key': {'pk': {'S': CHAVE_RELOGIO}},
+        'UpdateExpression': 'SET versao = :nova',
+        'ExpressionAttributeValues': {':nova': {'N': str(VERSAO_POSTS)}},
+    }
+    if antes is None:
+        args['ConditionExpression'] = 'attribute_not_exists(versao)'
+    else:
+        args['ConditionExpression'] = 'versao = :antes'
+        args['ExpressionAttributeValues'][':antes'] = {'N': antes}
+    try:
+        _dynamo.update_item(**args)
+        return True
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            return False
+        raise
+
+
+def renovar():
+    """Backup, apaga os posts de exemplo (tabela e linha do tempo) e semeia
+    o feed de novo. Posts de conta de verdade não entram em nenhum passo."""
+    brutos = _posts_ficticios()
+    ids = [feed._item(b)['id'] for b in brutos]
+    # Entradas de exemplo que a linha do tempo ainda aponta sem post por trás.
+    ids += [e['id'] for e in feed.linha_do_tempo(so_gerados=True)
+            if e['autor'] in HANDLE and e['id'] not in ids]
+
+    quando = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+    chave = 'backups/posts-ficticios-%s/posts.json.gz' % quando
+    if brutos:
+        if not BUCKET_DADOS:
+            raise RuntimeError('sem BD_BUCKET_DADOS: sem backup, nada é apagado')
+        corpo = gzip.compress(json.dumps({'tabela': TABELA, 'itens': brutos},
+                                         ensure_ascii=False).encode('utf-8'))
+        _s3.put_object(Bucket=BUCKET_DADOS, Key=chave, Body=corpo,
+                       ContentType='application/json', ContentEncoding='gzip')
+
+    for b in brutos:
+        _dynamo.delete_item(TableName=TABELA, Key={'pk': b['pk']})
+    feed.desindexar(ids)
+    print('gerador: renovação apagou %d posts de exemplo (backup s3://%s/%s)'
+          % (len(brutos), BUCKET_DADOS, chave))
+
+    feito = rodar(12, espalhar_horas=72)
+    feito['apagados'] += len(brutos)
+    feito['backup'] = 's3://%s/%s' % (BUCKET_DADOS, chave) if brutos else None
+    return feito
+
+
 def em_dia():
-    """Faz as rodadas que faltam desde a última. A primeira vez semeia o feed."""
+    """Faz as rodadas que faltam desde a última. A primeira vez semeia o feed;
+    VERSAO_POSTS nova renova os posts de exemplo (renovar)."""
     agora_ = agora()
     item = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': CHAVE_RELOGIO}},
                             ConsistentRead=True).get('Item') or {}
     antes = (item.get('ultima') or {}).get('S')
+    versao = (item.get('versao') or {}).get('N')
+
+    if antes is not None and versao != str(VERSAO_POSTS):
+        if not _marcar_versao(versao):
+            return None                     # outra leitura está renovando
+        try:
+            feito = renovar()
+        except Exception:
+            # Volta a versão de antes: a próxima leitura tenta de novo.
+            volta = {'UpdateExpression': 'REMOVE versao'} if versao is None else {
+                'UpdateExpression': 'SET versao = :v',
+                'ExpressionAttributeValues': {':v': {'N': versao}}}
+            _dynamo.update_item(TableName=TABELA, Key={'pk': {'S': CHAVE_RELOGIO}}, **volta)
+            raise
+        _dynamo.update_item(TableName=TABELA, Key={'pk': {'S': CHAVE_RELOGIO}},
+                            UpdateExpression='SET ultima = :nova',
+                            ExpressionAttributeValues={':nova': {'S': iso(agora_)}})
+        return feito
     passo = timedelta(hours=INTERVALO_HORAS)
 
     if antes is None:
         if not _marcar(iso(agora_), None):
             return None
+        _marcar_versao(versao)
         return rodar(12, espalhar_horas=72)
 
     try:

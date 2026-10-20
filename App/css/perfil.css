@@ -76,6 +76,39 @@ button.pf-foto:hover { transform: scale(1.02); }
 .pf-menu button:hover { border-color: var(--wii); }
 .pf-menu .ico { font-size: 17px; }
 
+/* Volume dos sons: alto-falante (silencia) + barra. */
+.pf-menu-volume {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 14px 6px 6px; border-radius: 12px;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.pf-menu .pf-menu-volume button {
+  flex: none; padding: 6px; border: 0; box-shadow: none; background: none;
+}
+.pf-menu-volume label {
+  flex: 1; display: flex; flex-direction: column; gap: 4px;
+  font-size: 13.5px; font-weight: 600; color: var(--tinta);
+}
+.pf-menu-volume input[type="range"] {
+  width: 100%; height: 22px; margin: 0; background: none; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.pf-menu-volume input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 6px;
+  background: linear-gradient(to right, var(--wii) var(--cheio, 70%), var(--wii-borda) 0);
+}
+.pf-menu-volume input[type="range"]::-moz-range-track { height: 6px; border-radius: 6px; background: var(--wii-borda); }
+.pf-menu-volume input[type="range"]::-moz-range-progress { height: 6px; border-radius: 6px; background: var(--wii); }
+.pf-menu-volume input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--wii); box-shadow: 0 2px 4px rgba(0, 0, 0, .15);
+}
+.pf-menu-volume input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--wii); box-shadow: 0 2px 4px rgba(0, 0, 0, .15);
+}
+
 .pf-stats { grid-area: stats; display: flex; gap: 36px; }
 .pf-stat {
   display: flex; align-items: baseline; gap: 5px;

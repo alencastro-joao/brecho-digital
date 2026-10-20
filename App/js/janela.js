@@ -6,6 +6,7 @@
 // O visual fica em css/janelas.css.
 
 import { el } from './util.js';
+import { tocar } from './sons.js';
 
 function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', perigo = false, campo = false, valor = '', max = null } = {}) {
   return new Promise((resolve) => {
@@ -23,6 +24,7 @@ function abrir(mensagem, { titulo = '', sim = 'Confirmar', nao = 'Cancelar', per
     const tinhaModal = document.body.classList.contains('com-modal');
     document.body.append(fundo);
     document.body.classList.add('com-modal');
+    tocar('janela');
     (entrada || botaoSim).focus();
     entrada?.select();
 

@@ -32,6 +32,7 @@ import { renderPessoas, atualizarPessoas } from './busca.js';
 import { ehFicticio, seguirNoServidor, perfilDe, roupasDoPerfil } from './pessoas.js';
 import {
   publicacoes, feedLidoEm, carregarFeed, aoMudarPublicacoes, apagarPublicacao, gerarNoServidor,
+  temMaisNoFeed, carregarMaisFeed,
   curtirPublicacao, comentarPublicacao, apagarComentarioPublicado,
 } from './publicacoes.js';
 import { festejar } from './animacoes.js';
@@ -76,6 +77,7 @@ export const aoAtualizarFeed = (fn) => { ouvintes.add(fn); return () => ouvintes
 const avisar = () => ouvintes.forEach(fn => fn());
 function repintar() {
   if (viewAtual() === 'social') renderFeed();
+  else precarregarFeed();
   avisar();
 }
 aoMudarPublicacoes(repintar);
@@ -138,7 +140,7 @@ async function criarPostFicticio(rnd = Math.random, idadeHoras = null, quem = nu
 
 // Versão da semente: subindo o número, quem já tinha o feed antigo (só looks no
 // avatar, antes das colagens) recebe o novo — sem perder o que você publicou.
-const VERSAO_SEED = 5;
+const VERSAO_SEED = 6;
 
 function acervoParaLooks() {
   return catalogo.itens.filter(i => !COLLAB.itens.includes(i.id));
@@ -146,6 +148,8 @@ function acervoParaLooks() {
 
 // Versão 5: os perfis de exemplo passaram a postar no servidor, iguais para
 // todo mundo. Os doze que cada navegador sorteava saem do save — ficam os seus.
+// Versão 6: junto com a renovação dos posts de exemplo no servidor
+// (VERSAO_POSTS em gerador.py), os de exemplo que ainda moravam no save saem.
 async function semearFeed() {
   if (db.state.feedSemeado === VERSAO_SEED) return;
   db.state.feed = db.state.feed.filter(p => sou(p.autor));
@@ -235,9 +239,11 @@ export async function montarSocial() {
 async function atualizarFeed() {
   const botao = $('#feed-atualizar');
   botao?.classList.add('girando');
-  await carregarFeed();
+  const deu = await carregarFeed();
   botao?.classList.remove('girando');
-  if (viewAtual() === 'social') renderFeed();
+  // Quando a leitura dá certo, o aviso de publicacoes.js já repintou o feed;
+  // repintar de novo aqui era montar o mural inteiro duas vezes.
+  if (!deu && viewAtual() === 'social') renderFeed();
 }
 
 // Voltar para a aba do navegador com o feed aberto traz o que saiu enquanto isso.
@@ -274,7 +280,7 @@ function renderAbas() {
     caixa.replaceChildren(...ABAS.map(([id, rotulo, dica]) => el('button', {
       class: 'feed-aba' + (aba === id ? ' ativa' : ''),
       title: dica,
-      onclick: () => { aba = id; render(); },
+      onclick: () => { aba = id; mostrando = LOTE; render(); },
     }, rotulo)));
   }
 }
@@ -318,16 +324,60 @@ const proporcaoDaImagem = (post) => post.tipo === 'board'
 // O card inteiro: a imagem e o rodapé, que soma um pouco.
 const alturaEstimada = (post) => proporcaoDaImagem(post) + 0.16;
 
-function montarMural(posts, colunas) {
+function montarMural(colunas) {
   const cols = Array.from({ length: colunas }, (_, i) => ({
     altura: i % 2 ? DESNIVEL_COLUNA_PAR : 0, no: el('div', { class: 'mural-coluna' }),
   }));
+  return { cols, no: el('div', { class: 'mural' }, ...cols.map(c => c.no)) };
+}
+
+function porNoMural({ cols }, posts) {
   for (const post of posts) {
     const c = cols.reduce((a, b) => (b.altura < a.altura ? b : a));
     c.no.append(cardDoPost(post));
     c.altura += alturaEstimada(post);
   }
-  return el('div', { class: 'mural' }, ...cols.map(c => c.no));
+}
+
+// O mural não monta os 120 cards de uma vez: cada card tem dois retratos (SVG
+// com máscara, medido na tela) e as peças por cima, e montar tudo a cada
+// curtida travava a rolagem. Entra um lote, e o próximo quando a rolagem
+// chega perto do fim. Repintar (curtida, comentário) mantém quantos já
+// estavam à vista, para a rolagem não voltar para o alto.
+const LOTE = 18;
+let mostrando = LOTE;
+let muralAtual = null;                   // { cols, no, posts, feitos, fim }
+let vigiaDoFim = null;
+
+function vigiarFim(fim) {
+  vigiaDoFim?.disconnect();
+  vigiaDoFim = null;
+  if (!fim || !('IntersectionObserver' in window)) return;
+  vigiaDoFim = new IntersectionObserver(entradas => {
+    if (entradas.some(e => e.isIntersecting)) mostrarMais();
+  }, { root: caixaQueRola(fim), rootMargin: '1200px 0px' });
+  vigiaDoFim.observe(fim);
+}
+
+function mostrarMais() {
+  const m = muralAtual;
+  if (!m?.no.isConnected) return;
+  // Acabou o que já veio: pede a página seguinte ao servidor. Quando ela
+  // chega, o aviso de publicacoes.js repinta o mural com os novos no fim.
+  if (m.feitos >= m.posts.length) { if (temMaisNoFeed()) carregarMaisFeed(); return; }
+  porNoMural(m, m.posts.slice(m.feitos, m.feitos + LOTE));
+  m.feitos = Math.min(m.posts.length, m.feitos + LOTE);
+  mostrando = m.feitos;
+  cascataDoFeed($('#feed'));
+  if (m.feitos >= m.posts.length && !temMaisNoFeed()) {
+    m.fim.remove();
+    vigiarFim(null);
+  } else {
+    // O vigia só avisa quando muda: se o fim continua perto, observa de novo
+    // para ele avisar outra vez.
+    vigiaDoFim?.unobserve(m.fim);
+    vigiaDoFim?.observe(m.fim);
+  }
 }
 
 function renderFeed() {
@@ -358,7 +408,14 @@ function renderFeed() {
   }
 
   colunasDesenhadas = colunasDoMural(feed);
-  feed.replaceChildren(montarMural(posts, colunasDesenhadas));
+  const mural = montarMural(colunasDesenhadas);
+  const feitos = Math.min(posts.length, Math.max(mostrando, LOTE));
+  porNoMural(mural, posts.slice(0, feitos));
+  const fim = feitos < posts.length || temMaisNoFeed()
+    ? el('div', { class: 'mural-fim', 'aria-hidden': 'true' }) : null;
+  muralAtual = { ...mural, posts, feitos, fim };
+  feed.replaceChildren(mural.no, ...(fim ? [fim] : []));
+  vigiarFim(fim);
   cascataDoFeed(feed);
 
   if (escrevendo) {
@@ -371,7 +428,7 @@ function renderFeed() {
 function mensagemVazia() {
   const u = db.state.usuario;
   const ir = (rotulo, destino) => el('button', {
-    class: 'link-btn', onclick: () => { aba = destino; render(); },
+    class: 'link-btn', onclick: () => { aba = destino; mostrando = LOTE; render(); },
   }, rotulo);
 
   if (aba === 'seguindo') {
@@ -536,7 +593,74 @@ function estourarCoracao(alvo) {
 // cabelo, os posts antigos acompanham. Por isso a aparência entra na chave.
 // Post do servidor traz as camadas desde que elas passaram a subir junto; o
 // seu de antes disso usa o look salvo de origem, se ainda tem as mesmas peças.
-const imagensGrandes = new Map();        // post.id + aparência → Promise<dataURL | null>
+//
+// Desenhar é caro (canvas + webp), e o feed traz até 120 posts — os dos perfis
+// de exemplo nem têm imagem, são todos desenhados aqui. Desenhar todos de uma
+// vez, ao abrir o feed, travava a tela (no celular, por segundos). Agora cada
+// imagem só é desenhada quando o card chega perto da tela, e uma de cada vez
+// (filaDeDesenho), com um respiro entre elas para a rolagem não engasgar.
+//
+// A chave leva a versão do post (o caminho da imagem do servidor muda quando o
+// dono edita): sem ela, o post editado continuava com o desenho antigo até
+// recarregar a página.
+const imagensGrandes = new Map();        // chave → Promise<dataURL | null>
+const imagensProntas = new Map();        // chave → dataURL, para repintar sem piscar
+
+const fila = [];
+let desenhando = false;
+function filaDeDesenho(desenhar) {
+  return new Promise(pronto => {
+    fila.push(() => desenhar().then(pronto, () => pronto(null)));
+    andarFila();
+  });
+}
+async function andarFila() {
+  if (desenhando) return;
+  desenhando = true;
+  while (fila.length) {
+    // Fora do feed (o pré-carregamento), só desenha quando a tela está à toa,
+    // para não engasgar a loja ou o closet.
+    if (viewAtual() !== 'social') await quandoAToa();
+    await fila.shift()();
+    await new Promise(r => setTimeout(r, 0));
+  }
+  desenhando = false;
+}
+
+const quandoAToa = () => new Promise(r => window.requestIdleCallback
+  ? requestIdleCallback(() => r(), { timeout: 1500 })
+  : setTimeout(r, 50));
+
+// ============================ Pré-carregar ================================
+// Os posts que aparecem primeiro quando você abre o feed já ficam prontos
+// antes: assim que a leitura do feed chega (avisos.js lê no boot), as imagens
+// do primeiro lote entram na fila de desenho, e as do servidor são baixadas.
+// Abrir o feed depois mostra tudo na hora, sem a imagem surgir aos poucos.
+const baixadas = new Map();              // caminho → Image, para o cache não soltar
+
+export function precarregarFeed() {
+  if (!aba) aba = db.state.usuario.seguindo.length ? 'seguindo' : 'tudo';
+  for (const post of postsVisiveis().slice(0, LOTE)) {
+    post.comentarios ??= [];
+    prepararGerado(post);
+    const desenho = desenhoDoPost(post);
+    if (desenho) imagemGrande(desenho);
+    // A colagem do servidor aparece com a imagem dele enquanto é redesenhada;
+    // o look, só depois do desenho.
+    const thumb = String(post.thumb || '');
+    if (thumb && !thumb.startsWith('data:') && (!desenho || post.tipo === 'board') && !baixadas.has(thumb)) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = thumb;
+      baixadas.set(thumb, img);
+    }
+  }
+}
+
+// O caminho da imagem no site (assets/posts/<id>-<hash>.webp) muda a cada
+// edição; a miniatura em data URL dos posts do save não entra (é enorme e não
+// muda).
+const versaoDoPost = (post) => String(post.thumb || '').startsWith('data:') ? '' : (post.thumb || '');
 
 function camadasDoPost(post) {
   if (post.camadas?.length) return post.camadas;
@@ -548,21 +672,90 @@ function camadasDoPost(post) {
   return mesmas(doLook, [...new Set(post.pecas || [])]) ? look.camadas : null;
 }
 
-function imagemGrande(post) {
+// O que desenhar para este post, sem desenhar ainda: { chave, desenhar } ou null.
+function desenhoDoPost(post) {
   if (post.colagem?.itens?.length) {
-    if (!imagensGrandes.has(post.id)) {
-      imagensGrandes.set(post.id, imagemDoFeedColagem(post.colagem).catch(() => null));
-    }
-    return imagensGrandes.get(post.id);
+    const colagem = post.colagem;
+    return { chave: post.id + '|' + versaoDoPost(post), desenhar: () => imagemDoFeedColagem(colagem) };
   }
   const camadas = camadasDoPost(post);
   if (!camadas) return null;
   const aparencia = aparenciaDe(post.autor);
-  const chave = post.id + JSON.stringify(aparencia);
+  return {
+    chave: post.id + '|' + versaoDoPost(post) + '|' + JSON.stringify(aparencia),
+    desenhar: () => imagemDoFeed(camadas, aparencia),
+  };
+}
+
+function imagemGrande({ chave, desenhar }) {
   if (!imagensGrandes.has(chave)) {
-    imagensGrandes.set(chave, imagemDoFeed(camadas, aparencia).catch(() => null));
+    imagensGrandes.set(chave, filaDeDesenho(desenhar).then(url => {
+      if (url) imagensProntas.set(chave, url);
+      return url;
+    }));
   }
   return imagensGrandes.get(chave);
+}
+
+// Avisa quando a imagem está a uma tela de distância, e aí ela entra na fila.
+// A margem tem de ser medida na caixa que rola (no PC é .feed-wrapper, no
+// celular outra), senão a imagem só entra na fila quando já está à vista:
+// um vigia por caixa que rola.
+const aoChegarPerto = new WeakMap();
+const vigias = new Map();                // caixa que rola (ou null) → vigia
+const DISTANCIA = '700px 0px';
+
+function caixaQueRola(no) {
+  for (let p = no.parentElement; p && p !== document.body; p = p.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(p).overflowY)) return p;
+  }
+  return null;
+}
+
+function vigiaDe(raiz) {
+  if (!vigias.has(raiz)) {
+    const vigia = new IntersectionObserver(entradas => entradas.forEach(e => {
+      if (!e.isIntersecting) return;
+      vigia.unobserve(e.target);
+      const fazer = aoChegarPerto.get(e.target);
+      aoChegarPerto.delete(e.target);
+      fazer?.();
+    }), { root: raiz, rootMargin: DISTANCIA });
+    vigias.set(raiz, vigia);
+  }
+  return vigias.get(raiz);
+}
+
+// O card é montado fora da página e só depois entra: espera o próximo quadro
+// para saber em que caixa ele está. Card que não entrou em alguns quadros foi
+// jogado fora (o feed repintou) e sai da espera.
+let esperando = [];
+function quandoPerto(no, fazer) {
+  if (!('IntersectionObserver' in window)) return fazer();
+  aoChegarPerto.set(no, fazer);
+  esperar(no, 10);
+}
+
+function esperar(no, quadros) {
+  esperando.push([no, quadros]);
+  if (esperando.length === 1) requestAnimationFrame(observarEsperando);
+}
+
+function observarEsperando() {
+  const lote = esperando;
+  esperando = [];
+  const raizes = new Map();              // o mural → a caixa que rola
+  for (const [n, quadros] of lote) {
+    if (!aoChegarPerto.has(n)) continue;
+    if (!n.isConnected) {
+      if (quadros > 0) esperar(n, quadros - 1);
+      else aoChegarPerto.delete(n);
+      continue;
+    }
+    const grupo = n.closest('.mural') || n.parentElement;
+    if (!raizes.has(grupo)) raizes.set(grupo, caixaQueRola(n));
+    vigiaDe(raizes.get(grupo)).observe(n);
+  }
 }
 
 function imagemDoPost(post) {
@@ -572,14 +765,21 @@ function imagemDoPost(post) {
     src: post.thumb || null, alt: post.nome, loading: 'lazy',
     width: 300, height: Math.round(300 * proporcaoDaImagem(post)),
   });
-  const grande = imagemGrande(post);
+  const desenho = desenhoDoPost(post);
+  if (!desenho) return img;
+  // Já desenhada antes (o feed repintou por uma curtida, por exemplo): na hora.
+  const pronta = imagensProntas.get(desenho.chave);
+  if (pronta) {
+    img.src = pronta;
+    return img;
+  }
   // O look redesenhado não mostra antes a imagem do dia: seria o personagem
   // de antes piscando. Se o desenho falhar, ela volta.
-  if (grande && (post.tipo !== 'board' || !post.thumb)) img.style.visibility = 'hidden';
-  grande?.then(url => {
+  if (post.tipo !== 'board' || !post.thumb) img.style.visibility = 'hidden';
+  quandoPerto(img, () => imagemGrande(desenho).then(url => {
     if (url) img.src = url;
     img.style.visibility = '';
-  });
+  }));
   return img;
 }
 
@@ -808,7 +1008,8 @@ async function apagarPost(post) {
 
 async function baixarPost(post) {
   // O post gerado não tem imagem guardada: baixa a que foi desenhada aqui.
-  const src = post.thumb || await imagemGrande(post);
+  const desenho = !post.thumb && desenhoDoPost(post);
+  const src = post.thumb || (desenho ? await imagemGrande(desenho) : null);
   if (!src) return toast('Esse post não tem imagem guardada.', 'aviso');
   const ext = /webp/.test(src) ? 'webp' : /jpe?g/.test(src) ? 'jpg' : 'png';
   const a = document.createElement('a');

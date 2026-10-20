@@ -97,6 +97,8 @@ function estadoInicial() {
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
     fichas: 0,                 // ganhas nos marcos das missões, trocadas por resgate
     fichasDeRepor: 0,          // prêmio da trilha de níveis: trocam a arara do dia
+    congeladas: [],            // peças presas na loja com fichas: { id, ate } (ate = último dia, ISO)
+    congelamentos: 0,          // compras de congelar feitas em Tarefas, ainda não usadas na loja
     baus: [],                  // baús ganhos esperando abrir (tela de Baús)
     semanasFechadas: 0,        // semanas carimbadas desde o último baú semanal
     collab: { mes: COLLAB.mes, liberada: false },

@@ -343,6 +343,13 @@ kbd {
 .toast.legendary { background: #9a7b13; }
 
 /* ------------------------------ Celular -------------------------------- */
+/* Sem o contorno vermelho em volta da peça no molde: a barra e as alças já
+   mostram qual é. */
+@media (max-width: 900px) {
+  .es-peca { outline: 0; }
+  /* Barra deitada de posição embaixo do molde, da largura dele mais as barras. */
+  .es-molde-linha + .barra-pos-x { width: calc(min(640px, calc(100vh - 280px)) / 2 + 96px); max-width: 100%; }
+}
 @media (max-width: 640px) {
   .es-topo { padding: 10px 16px; }
   .es-main { padding: 14px 16px 50px; }

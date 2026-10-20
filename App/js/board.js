@@ -15,7 +15,8 @@ import { item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
 import { assinaturaDoUsuario } from './assinaturas.js';
 import * as db from './db.js';
 import { alturaDe, margemDe, posAssinatura, fonteCss, caixaDoItem, areaUtil } from './boardgeo.js';
-import { miniaturaBoard, baixarBoard } from './render.js';
+import { miniaturaBoard, imagemDoBoard } from './render.js';
+import { abrirCompartilhar } from './compartilhar.js';
 import { publicarOuGuardar, publicarNoFeed, pacoteDaColagem, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, colagemAleatoria } from './sorteio.js';
 import { el, $, $$, clamp, toast, teclaLivre, anguloNormal, ehToque, soltarCampo } from './util.js';
@@ -978,6 +979,18 @@ function ligarControles() {
     alvos.forEach(a => posicionarItem(a));
     agendarFerramentas();
   });
+  // A barra em pé do celular conversa com o slider do painel: mexer nela é
+  // mexer nele. + e − crescem 10% da seleção de cada vez.
+  const escala = $('#bd-escala');
+  const mudarEscala = (v) => {
+    escala.value = clamp(Math.round(v), Number(escala.min), Number(escala.max));
+    escala.dispatchEvent(new Event('input'));
+  };
+  on('#bd-escala-vert', 'input', (e) => mudarEscala(Number(e.target.value)));
+  $$('#bd-tamanho .barra-tam-btn').forEach(b => b.addEventListener('click', () => {
+    const v = Number(escala.value);
+    mudarEscala(v + Number(b.dataset.tam) * Math.max(1, Math.round(v * 0.1)));
+  }));
   on('#bd-rot', 'input', (e) => {
     const alvos = livres();
     if (!alvos.length) return;
@@ -1041,20 +1054,16 @@ function ligarControles() {
   on('#bd-nova', 'click', comecarNova);
   on('#bd-limpar-guias', 'click', () => { mudanca(); board.guias = { h: [], v: [] }; renderGuias(); });
 
-  $$('[data-bd-export]').forEach(b => b.addEventListener('click', async () => {
-    if (!board.itens.length) return toast('Solte alguma peça antes de exportar.', 'aviso');
-    const tipo = b.dataset.bdExport;
-    b.disabled = true;
-    try {
-      await baixarBoard(board, { escala: tipo === 'alta' ? 2 : 1, story: tipo === 'story' });
-      toast('PNG gerado. Confere os downloads.');
-    } catch (err) {
-      console.warn('exportar colagem', err);
-      toast('Não consegui gerar o PNG agora. Tente de novo.', 'aviso');
-    } finally {
-      b.disabled = false;
-    }
-  }));
+  on('#bd-compartilhar', 'click', () => {
+    if (!board.itens.length) return toast('Solte alguma peça antes de compartilhar.', 'aviso');
+    abrirCompartilhar({
+      formatos: [
+        { id: 'formato', rotulo: 'Post 1080×1350' },
+        { id: 'story', rotulo: 'Story 1080×1920' },
+      ],
+      gerar: (tipo) => imagemDoBoard(board, { story: tipo === 'story' }),
+    });
+  });
 }
 
 // Ordem das camadas. Subir e descer trocam a peça de lugar com a vizinha de
@@ -1261,7 +1270,8 @@ function atualizarFerramentas() {
   travar?.setAttribute('aria-pressed', String(tem && alvos.every(i => i.travado)));
   if (!tem) { atualizarBarra(); return; }
   const it = alvos[0];
-  $('#bd-escala').value = Math.round((ehTexto(it) ? it.tamanho * 6 : it.w) / W * 100);
+  $('#bd-escala').value = $('#bd-escala-vert').value =
+    Math.round((ehTexto(it) ? it.tamanho * 6 : it.w) / W * 100);
   $('#bd-rot').value = Math.round(it.rot);
   $('#bd-opacidade').value = Math.round(it.opacidade ?? 100);
   $('#bd-sombra').checked = !!it.sombra;
@@ -1376,7 +1386,18 @@ async function salvarBoard({ silencioso = false } = {}) {
   fotoSalva = fotoDaMesa();
   db.salvar();
   renderLista();
-  if (!silencioso) toast(`"${nome}" salva.`);
+  if (silencioso) return salvo;
+  // Já está no feed: salvar leva a versão nova para o post também.
+  if (salvo.publicado && jaPublicado('boardId', salvo.id)) {
+    try {
+      await publicarNoFeed({ ...await pacoteDaColagem(salvo), atualizar: true });
+      toast(`"${nome}" salva e atualizada no feed.`);
+    } catch (e) {
+      toast(`"${nome}" salva, mas o post do feed não mudou: ${e.message || 'sem conexão'}.`, 'aviso');
+    }
+    return salvo;
+  }
+  toast(`"${nome}" salva.`);
   return salvo;
 }
 

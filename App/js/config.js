@@ -959,6 +959,8 @@ export function faixasDeTroca(faixa) {
 // quantas vezes quiser no dia (pedido do João, 2026-10-17).
 export const FICHAS = {
   porResgate: 6,       // quantas fichas valem um resgate a mais
+  porRepor: 12,        // repor a loja: arara nova, resgates do dia continuam contados
+  porCongelar: 2,      // congelar uma peça: ela fica na loja até o fim do dia seguinte
 };
 
 // ------------------------------- Níveis -----------------------------------
@@ -1054,7 +1056,7 @@ export const PREMIOS_DE_NIVEL = Array.from({ length: NIVEL.MAX - 1 }, (_, i) => 
 //
 // O logo da marca fica em assets/marcas/<id>.webp, todos no mesmo molde
 // (tools/logos.py). Coleção fora de MARCAS_COM_LOGO usa a foto de uma peça.
-export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike']);
+export const MARCAS_COM_LOGO = new Set(['puma', 'adidas', 'swear-london', 'jnco', 'ecko', 'borra', 'tapout', 'true-religion', 'nike', 'alex-clayton']);
 // Tema usa o `icone` dele em ESTILOS: bandeira redonda do circle-flags (MIT,
 // github.com/HatScripts/circle-flags; licença em assets/temas).
 export const logoDaColecao = (c) => c.icone
@@ -1114,6 +1116,14 @@ export const COLECOES = [
       'corta-vento-oakley': ['corta-vento', 'Corta-vento Oakley', '#3d4a3a'],
     },
     efeito: { tipo: 'mais-raras', texto: 'Chance de uma peça rara a mais na sua arara' } },
+  { id: 'alex-clayton', marca: 'Alex Clayton',
+    itens: ['camiseta-alex-clayton', 'gorro-alex-clayton', 'corrente-alex-clayton'],
+    variantes: {
+      'camiseta-alex-clayton': ['camiseta', 'Camiseta Alex Clayton', '#f4f1ea'],
+      'gorro-alex-clayton': ['gorro', 'Gorro Alex Clayton', '#1f1f1f'],
+      'corrente-alex-clayton': ['corrente', 'Corrente Alex Clayton', '#c9c9c9'],
+    },
+    efeito: { tipo: 'fichas', texto: 'Chance de ganhar 1 ficha a cada garimpo' } },
 ];
 export const colecao = (id) => COLECOES.find(c => c.id === id) || null;
 export const normalizarMarca = (m) => String(m || '').trim().toLowerCase();
