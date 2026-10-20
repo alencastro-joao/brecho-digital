@@ -13,7 +13,8 @@ import { grupoDe, gruposDoInventario, seletorDeAgrupamento } from './agrupamento
 import { ordenar, preencherComGrupos, seletorDeOrdem } from './ordenacao.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
-import { miniaturaAtual, miniaturaPronta, baixarLook } from './render.js';
+import { miniaturaAtual, miniaturaPronta, imagemDoLook } from './render.js';
+import { abrirCompartilhar } from './compartilhar.js';
 import { publicarOuGuardar, publicarNoFeed, pacoteDoLook, jaPublicado } from './publicacoes.js';
 import { sortearConjunto, camadasParaAvatar } from './sorteio.js';
 import { el, $, $$, clamp, toast, teclaLivre, anguloNormal, ehToque, soltarCampo } from './util.js';
@@ -605,19 +606,13 @@ function ligarFerramentas() {
   ligarMenusDaBarra();
   $('#btn-salvar').addEventListener('click', () => salvarLook());
   $('#btn-publicar').addEventListener('click', () => publicarLook());
-  $$('[data-export]').forEach(b => b.addEventListener('click', async () => {
-    if (!camadas.length) return toast('Monte um look antes de exportar.', 'aviso');
-    b.disabled = true;
-    try {
-      await baixarLook(estruturaLimpa(), b.dataset.export, $('#outfit-nome').value.trim());
-      toast('PNG gerado. Confere os downloads.');
-    } catch (err) {
-      console.warn('exportar look', err);
-      toast('Não consegui gerar o PNG agora. Tente de novo.', 'aviso');
-    } finally {
-      b.disabled = false;
-    }
-  }));
+  $('#btn-compartilhar').addEventListener('click', () => {
+    if (!camadas.length) return toast('Monte um look antes de compartilhar.', 'aviso');
+    abrirCompartilhar({
+      formatos: [{ id: 'story', rotulo: 'Story 1080×1920' }, { id: 'post', rotulo: 'Post 1080×1350' }],
+      gerar: (formato) => imagemDoLook(estruturaLimpa(), formato, $('#outfit-nome').value.trim()),
+    });
+  });
 }
 
 // Os menus da barra do look (Exportar e ⋯): um aberto por vez, e qualquer
