@@ -23,7 +23,7 @@ import { cabeca, aparenciaAtual } from './avatar.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import { el, $, shuffle, toast } from './util.js';
 import { confirmar, pedirTexto } from './janela.js';
-import { sonsLigados, ligarSons } from './sons.js';
+import { volume, mudarVolume, tocar, VOLUME_PADRAO } from './sons.js';
 import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
@@ -349,15 +349,35 @@ function montarAjustes() {
     b.addEventListener('click', () => { mostrarMenu(false); abrirAjustes(b.dataset.ajuste); }));
   // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
   $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
-  // Sons: liga e desliga ali mesmo, sem fechar o menu, para ouvir a diferença.
-  const sons = $('#pf-menu-sons');
-  const pintarSons = () => {
-    const sim = sonsLigados();
-    sons.replaceChildren(ico(sim ? 'som' : 'mudo'), sim ? ' Sons ligados' : ' Sons desligados');
-    sons.setAttribute('aria-pressed', String(sim));
+  // Volume: muda ali mesmo, sem fechar o menu, tocando um "tic" para ouvir a
+  // altura. O alto-falante silencia e, mudo, volta ao volume de antes.
+  const barra = $('#pf-volume');
+  const mudo = $('#pf-volume-mudo');
+  let antesDoMudo = volume() || VOLUME_PADRAO;
+  const pintarVolume = () => {
+    const v = volume();
+    barra.value = String(v);
+    barra.style.setProperty('--cheio', v + '%');
+    barra.setAttribute('aria-valuetext', v ? `${v}%` : 'Sem som');
+    // Troca o ícone escondendo, não substituindo: o svg tocado precisa
+    // continuar dentro do menu, senão o "tocar fora fecha" acha que saiu.
+    if (!mudo.children.length) mudo.append(ico('som'), ico('mudo'));
+    mudo.children[0].style.display = v ? '' : 'none';
+    mudo.children[1].style.display = v ? 'none' : '';
+    mudo.setAttribute('aria-label', v ? 'Silenciar' : 'Ligar o som');
   };
-  sons.addEventListener('click', () => { ligarSons(!sonsLigados()); pintarSons(); });
-  pintarSons();
+  barra.addEventListener('input', () => {
+    mudarVolume(Number(barra.value));
+    if (volume()) antesDoMudo = volume();
+    pintarVolume();
+  });
+  barra.addEventListener('change', () => tocar('ok'));
+  mudo.addEventListener('click', () => {
+    mudarVolume(volume() ? 0 : antesDoMudo);
+    pintarVolume();
+    tocar('ok');
+  });
+  pintarVolume();
 
   $('#aj-fechar').addEventListener('click', fecharAjustes);
   // Clique no fundo escuro fecha; clique dentro da caixa, não.
