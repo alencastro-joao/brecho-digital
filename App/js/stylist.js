@@ -409,15 +409,20 @@ function iniciarManipulacao(e, c, no) {
   const desenhar = () => {
     quadroMov = 0;
     if (!ultimo) return;
-    if (alca === 'esc' || alca === 'rot') posicionar(c, no);
-    else {
-      const dx = (c.x - inicial.x) / CONFIG.STAGE_W * rect.width;
-      const dy = (c.y - inicial.y) / CONFIG.STAGE_H * rect.height;
-      no.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%) rotate(${c.rot}deg)`;
-    }
     ultimo = null;
-    atualizarFerramentas();
+    if (alca === 'esc' || alca === 'rot') {
+      posicionar(c, no);
+      atualizarFerramentas();
+      return;
+    }
+    // Só andar: a peça, a moldura e a alça de mover vão juntas pelo mesmo
+    // deslocamento, sem medir nada na página (medir a cada quadro travava).
+    const dx = (c.x - inicial.x) / CONFIG.STAGE_W * rect.width;
+    const dy = (c.y - inicial.y) / CONFIG.STAGE_H * rect.height;
+    no.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%) rotate(${c.rot}deg)`;
+    for (const n of junto) n.style.translate = `${dx}px ${dy}px`;
   };
+  const junto = [alcas?.camada, alcaMov?.botao].filter(Boolean);
 
   const mover = (ev) => {
     if (pinca?.ativa()) return;
@@ -445,6 +450,7 @@ function iniciarManipulacao(e, c, no) {
     clearTimeout(segurar);
     cancelAnimationFrame(quadroMov);
     quadroMov = 0;
+    for (const n of junto) n.style.translate = '';
     posicionar(c, no);
     no.classList.remove('manipulando');
     no.removeEventListener('pointermove', mover);
