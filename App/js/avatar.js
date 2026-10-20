@@ -18,7 +18,7 @@
 // roupinhas é quem mostra a pessoa: perfil, retrato e página pública.
 
 import {
-  CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS, ORDEM_CABELOS,
+  CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
   CORES_CABELO, NARIZES,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
@@ -43,6 +43,24 @@ export const catalogoCorpos = () => corpoDesenhado?.corpos || CORPOS;
 export const catalogoNarizes = () => (corpoDesenhado
   ? { nenhum: NARIZES.nenhum, ...corpoDesenhado.narizes }
   : NARIZES);
+// Os cortes, do mesmo jeito: os da artista com ela no palco, senão os de
+// código. O raspado é o mesmo nos dois.
+export const catalogoCabelos = () => (corpoDesenhado?.cabelos
+  ? { nenhum: CABELOS.nenhum, ...corpoDesenhado.cabelos }
+  : CABELOS);
+
+// Corte de código que a artista não desenhou → o desenhado mais parecido, para
+// quem escolheu um deles continuar com cabelo parecido (o perfil guarda o id).
+const CORTE_PARECIDO = {
+  chanel: 'franja', longo: 'coque', moicano: 'espetado', topete: 'curto',
+  dreads: 'trancas', rabo: 'coque', chiquinhas: 'coque', cortina: 'ondulado',
+  coques: 'coque', chifres: 'espetado',
+};
+const corteDoCatalogo = (id) => {
+  const cortes = catalogoCabelos();
+  if (cortes[id]) return id;
+  return cortes[CORTE_PARECIDO[id]] ? CORTE_PARECIDO[id] : 'curto';
+};
 
 // De ids (pele: 'clara') para cores prontas de desenhar.
 export function resolverAparencia(cfg = {}) {
@@ -51,7 +69,7 @@ export function resolverAparencia(cfg = {}) {
     pele: pele.cor,
     traco: pele.traco,
     corpo: catalogoCorpos()[cfg.corpo] ? cfg.corpo : 'masculino',
-    cabelo: CABELOS[cfg.cabelo] ? cfg.cabelo : 'curto',
+    cabelo: corteDoCatalogo(cfg.cabelo),
     corCabelo: cfg.corCabelo || '#3d2519',
     nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
   };
@@ -73,7 +91,7 @@ export function aparenciaSorteada(chave) {
   return {
     corpo: escolher(Object.keys(catalogoCorpos()), rnd),
     pele: escolher(PELES.filter(p => p.grupo === grupo), rnd).id,
-    cabelo: escolher(ORDEM_CABELOS.filter(c => c !== 'nenhum'), rnd),
+    cabelo: escolher(Object.keys(catalogoCabelos()).filter(c => c !== 'nenhum'), rnd),
     corCabelo: escolher(CORES_CABELO, rnd),
     nariz: escolher(Object.keys(catalogoNarizes()).filter(n => n !== 'nenhum' && n !== 'focinho'), rnd),
   };
@@ -217,7 +235,7 @@ export function svgAvatar({
 } = {}) {
   const ap = aparencia || aparenciaAtual();
   const veste = partesDasRoupas(roupas, ap.corpo, soCabeca || roupaSoNaCabeca);
-  const corte = CABELOS[ap.cabelo] || CABELOS.curto;
+  const corte = catalogoCabelos()[ap.cabelo] || CABELOS.curto;
 
   // Chapéu na cabeça corta o cabelo na altura que ele mandar (roupinhas.js:
   // `cabelo` na peça). O que sobra é o que apareceria por baixo da aba — e o
@@ -232,11 +250,22 @@ export function svgAvatar({
     ? svg
     : `<g clip-path="url(#${idCorte})">${svg}</g>`;
 
-  const cabelo = (parte) => cortado(
-    comVolume((corte[parte] || '').replaceAll('{cor}', ap.corCabelo), ap.corCabelo));
+  // O corte da artista já está no palco (como o corpo dela) e tem a linha do
+  // chapéu passada para o palco; o de código é desenhado na cabeça do molde.
+  const cabelo = (parte) => (typeof corte[parte] === 'object'
+    ? cortadoNoPalco(daArtista(idCorte + parte, corte[parte], ap.corCabelo,
+      escurecerTraco(ap.corCabelo, 0.55)))
+    : naRegiao('cabeca', cortado(
+      comVolume((corte[parte] || '').replaceAll('{cor}', ap.corCabelo), ap.corCabelo))));
+  const cortadoNoPalco = (svg) => (veste.corteDoCabelo == null || !svg)
+    ? svg
+    : `<g clip-path="url(#${idCorte}-palco)">${svg}</g>`;
   // O nariz da artista é desenhado com o corpo dela, mais abaixo.
   const nariz = corpoDesenhado ? ''
     : (NARIZES[ap.nariz] || NARIZES.botao).arte.replaceAll('{traco}', ap.traco);
+  // O afro e o coque da artista passam do alto do palco: no corpo inteiro o
+  // SVG deixa o desenho sair da caixa em vez de cortá-los retos. Com recorte
+  // não, que ali a caixa é a moldura (retrato, miniatura).
   const [vx, vy, vw, vh] = recorte || [0, 0, CONFIG.STAGE_W, CONFIG.STAGE_H];
 
   const pontos = guia ? Object.entries(CATEGORIAS).map(([cat, c]) => {
@@ -254,16 +283,20 @@ export function svgAvatar({
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}"
-     width="${vw}" height="${vh}">
+     width="${vw}" height="${vh}"${recorte ? '' : ' overflow="visible"'}>
   <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="${fundo}"/>
   ${soCabeca ? esmaecerEmbaixo(idCorte, vy + vh) : ''}
   ${veste.corteDoCabelo == null ? '' : `<clipPath id="${idCorte}">
     <rect x="0" y="${veste.corteDoCabelo}" width="${CONFIG.STAGE_W}"
           height="${CONFIG.STAGE_H}"/>
+  </clipPath>
+  <clipPath id="${idCorte}-palco">
+    <rect x="0" y="${recorteNaRegiao('cabeca', [0, veste.corteDoCabelo, 0, 0])[1]}"
+          width="${CONFIG.STAGE_W}" height="${CONFIG.STAGE_H * 2}"/>
   </clipPath>`}
 
-  <!-- cabelo que fica atrás do corpo (chanel, longo) -->
-  ${naRegiao('cabeca', cabelo('atras'))}
+  <!-- cabelo que fica atrás do corpo (o da artista vai inteiro aqui) -->
+  ${cabelo('atras')}
 
   <!-- roupinha que fica atrás do corpo: capa, mochila, asas, capuz caído -->
   ${veste.atras}
@@ -277,7 +310,7 @@ export function svgAvatar({
   ${veste.frente}
 
   <!-- cabelo por cima da cabeça -->
-  ${naRegiao('cabeca', cabelo('frente'))}
+  ${cabelo('frente')}
 
   <!-- rosto por último: só o nariz, e o cabelo nunca o cobre. O traço é
        dividido pela escala da cabeça para não engrossar junto com ela. -->
@@ -335,9 +368,10 @@ function cortadoNaCabeca(id, soCabeca, svg) {
 }
 
 // O traço do desenho é fino: na cor exata do contorno de código ele some.
-function escurecerTraco(hex) {
+// O do cabelo é bem mais escuro que ele, como a artista desenhou (`fator`).
+function escurecerTraco(hex, fator = 0.72) {
   const n = parseInt(String(hex).slice(1), 16);
-  const f = (c) => Math.round(c * 0.72);
+  const f = (c) => Math.round(c * fator);
   return '#' + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)]
     .map(v => v.toString(16).padStart(2, '0')).join('');
 }

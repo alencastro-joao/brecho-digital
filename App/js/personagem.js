@@ -7,11 +7,13 @@
 // silhueta, e uma pele verde ou um focinho não viram uma careta.
 
 import {
-  PELES, CABELOS, ORDEM_CABELOS, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
+  PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import * as db from './db.js';
-import { svgAvatar, catalogoCorpos, catalogoNarizes } from './avatar.js';
+import {
+  svgAvatar, resolverAparencia, catalogoCorpos, catalogoNarizes, catalogoCabelos,
+} from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
 import { irPara } from './router.js';
@@ -33,10 +35,11 @@ const aparenciaDoRascunho = () => {
 };
 
 // Enquadramentos das miniaturas, no sistema do palco (600×1200): o corte
-// precisa da cabeça com folga para os cabelos longos; o nariz, da cara. Os
+// precisa da cabeça com folga para os cabelos longos e para o afro e o coque,
+// que passam do alto do palco; o nariz, da cara. Os
 // dois da cabeça são medidos no molde e seguem a cabeça na proporção de agora.
 const CROP_CORPO = [148, 18, 304, 716];
-const CROP_CABELO = recorteNaRegiao('cabeca', [190, 2, 220, 236]);
+const CROP_CABELO = recorteNaRegiao('cabeca', [180, -12, 240, 258]);
 const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
 
 function renderPrevia() {
@@ -44,7 +47,7 @@ function renderPrevia() {
   $('#pg-resumo').textContent =
     `${catalogoCorpos()[rascunho.corpo]?.nome ?? '—'} · ` +
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
-    `${CABELOS[rascunho.cabelo]?.nome ?? '—'} · ` +
+    `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
     `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}`;
 }
 
@@ -108,11 +111,11 @@ function renderFavoritas() {
 function renderTudo() {
   renderFavoritas();
   renderPrevia();
-  const corpos = catalogoCorpos(), narizes = catalogoNarizes();
+  const corpos = catalogoCorpos(), narizes = catalogoNarizes(), cortes = catalogoCabelos();
   renderMiniaturas('#pg-corpos', Object.keys(corpos), corpos, 'corpo', CROP_CORPO);
   renderPeles();
   renderCores();
-  renderMiniaturas('#pg-cortes', ORDEM_CABELOS, CABELOS, 'cabelo', CROP_CABELO);
+  renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
 }
 
@@ -157,6 +160,8 @@ function irParaRoupas() {
 
 export function aoEntrarNoPersonagem() {
   rascunho = { ...APARENCIA_PADRAO, ...db.state.usuario.avatar };
+  // Corte de código que saiu do catálogo já abre marcado no parecido.
+  rascunho.cabelo = resolverAparencia(rascunho).cabelo;
   corFavorita = db.state.usuario.corFavorita || null;
   $('#pg-abas [data-aba="roupas"]').hidden = db.introAtiva();
   renderTudo();
