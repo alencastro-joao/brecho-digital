@@ -65,9 +65,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.13' }
-      - run: pip install pyflakes
+      - run: pip install pyflakes moto
       - name: Python sem nome indefinido nem import morto
-        run: python -m pyflakes nuvem/lambda nuvem/esteira App/tools
+        run: python -m pyflakes nuvem/lambda nuvem/esteira App/tools nuvem/testes
+      - name: Testes da API (DynamoDB e S3 de mentira, sem AWS)
+        run: python -m unittest discover -s nuvem/testes -v
       - name: JS sem erro de sintaxe
         run: for f in App/js/*.js App/sw.js; do node --check "$f" || exit 1; done
 

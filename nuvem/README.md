@@ -212,7 +212,7 @@ POST#<id>   id, autor, tipo, nome, criado_em, thumb, pecas, origem,
 
 | Rota | O que faz |
 |---|---|
-| `GET /api/feed[?autor=]` | os posts, mais novos primeiro, com os cartões de quem aparece |
+| `GET /api/feed[?autor=][&limite=][&depois=]` | uma página de posts (até 120), mais novos primeiro, com os cartões de quem aparece e `proximo`, o cursor da seguinte |
 | `POST /api/feed` | publica `{ chave, tipo, nome, thumb, pecas, origem }` |
 | `DELETE /api/feed/<id>` | o dono apaga |
 | `POST /api/feed/<id>/curtir` | `{ curte }` |
@@ -224,9 +224,16 @@ POST#<id>   id, autor, tipo, nome, criado_em, thumb, pecas, origem,
 - **Publicar é idempotente**: o id sai de (autor, look ou colagem de origem).
   Os posts antigos, que só existiam no save, sobem sozinhos na primeira leitura
   do feed — com a data original.
-- **A listagem é um `Scan`**, como a busca de pessoas. Nenhuma permissão nova:
-  o papel já tinha `Scan`, `PutItem`/`UpdateItem`/`DeleteItem` e escrita em
-  `assets/*` do site.
+- **A listagem lê a linha do tempo `FEED#indice`** (20/10/2026), um item com o
+  mapa `id → data|autor` de todos os posts, e busca só os posts da página, em
+  paralelo. Antes era um `Scan` da tabela inteira a cada abertura do feed. O
+  índice se monta sozinho na primeira leitura (uma varredura, sem mexer nos
+  posts) e se conserta quando aponta para post que sumiu. Cabe uns 5 mil posts;
+  o log avisa perto do limite. Nenhuma permissão nova: `GetItem`/`UpdateItem`/
+  `PutItem` e o `Scan` (só para montar o índice) o papel já tinha.
+- **A resposta vem em gzip** quando o navegador aceita (`app.comprimir`).
+- **Testes**: `nuvem/testes/test_feed.py`, com moto (DynamoDB e S3 de
+  mentira); o CI roda.
 - Os perfis de exemplo postam no servidor também: ver a seção abaixo.
 
 ## O gerador de posts — 13/10/2026

@@ -150,6 +150,27 @@ def responder(codigo, dados, cookies=None):
     return r
 
 
+COMPRIMIR_DE = 1400         # bytes: abaixo disso o gzip não paga o cabeçalho
+
+
+def comprimir(resposta, pedido):
+    """gzip no JSON grande quando o navegador aceita. A página do feed (posts,
+    camadas, comentários e cartões) passa fácil de 100 KB e encolhe uns 85%;
+    as respostas da API não são guardadas pelo CloudFront, então quem
+    comprime é a Lambda."""
+    corpo = resposta.get('body')
+    if (not isinstance(corpo, str) or len(corpo) < COMPRIMIR_DE or resposta.get('isBase64Encoded')
+            or 'gzip' not in pedido.cabecalhos.get('accept-encoding', '')):
+        return resposta
+    import base64 as b64
+    import gzip
+    resposta['body'] = b64.b64encode(gzip.compress(corpo.encode('utf-8'), 6, mtime=0)).decode('ascii')
+    resposta['isBase64Encoded'] = True
+    resposta['headers'] = {**resposta.get('headers', {}), 'Content-Encoding': 'gzip',
+                           'Vary': 'Accept-Encoding'}
+    return resposta
+
+
 def mandar_para(endereco):
     """302: a navegação segue para outro endereço (o login de uma rede, ou
     a volta para o app)."""
@@ -302,14 +323,18 @@ def rotas_de_feed(pedido):
         return responder(200, {**gerador.rodar(quantos), **feed.listar(eu)})
     if not post_id:
         if metodo == 'GET':
+            consulta = pedido.consulta
             # A leitura do feed é o relógio do gerador (ver gerador.em_dia):
             # se já passou a hora, os perfis de exemplo postam antes da lista.
-            try:
-                import gerador
-                gerador.em_dia()
-            except Exception as e:              # noqa: BLE001 — o feed abre mesmo assim
-                print('gerador falhou: %r' % (e,))
-            return responder(200, feed.listar(eu, pedido.consulta.get('autor')))
+            # Só na primeira página: rolar o mural não precisa conferir a hora.
+            if not consulta.get('depois'):
+                try:
+                    import gerador
+                    gerador.em_dia()
+                except Exception as e:          # noqa: BLE001 — o feed abre mesmo assim
+                    print('gerador falhou: %r' % (e,))
+            return responder(200, feed.listar(eu, consulta.get('autor'),
+                                              consulta.get('limite'), consulta.get('depois')))
         if metodo == 'POST':
             return responder(201, feed.publicar(eu, pedido.corpo(LIMITE_POST)))
         return None
@@ -526,4 +551,4 @@ def handler(evento, _contexto):
         print('falha em %s %s: %r' % (pedido.metodo, pedido.rota, e))
         return responder(500, {'erro': 'falha no servidor'})
 
-    return resposta or responder(404, {'erro': 'rota desconhecida'})
+    return comprimir(resposta or responder(404, {'erro': 'rota desconhecida'}), pedido)

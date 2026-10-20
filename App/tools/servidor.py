@@ -276,8 +276,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         try:
             if not post_id and metodo == 'GET':
-                autor = parse_qs(consulta).get('autor', [None])[0]
-                self.responder(200, feed.listar(eu, autor))
+                q = {k: v[0] for k, v in parse_qs(consulta).items()}
+                self.responder(200, feed.listar(eu, q.get('autor'), q.get('limite'), q.get('depois')))
             elif not post_id and metodo == 'POST':
                 corpo = self.ler_corpo(LIMITE_POST)
                 if corpo is not None:

@@ -44,6 +44,7 @@ import os
 import re
 import secrets
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import boto3
@@ -104,6 +105,27 @@ def _pegar(pk, consistente=True):
                          ConsistentRead=consistente)
     item = r.get('Item')
     return {k: _des.deserialize(v) for k, v in item.items()} if item else None
+
+
+# Leituras em paralelo. O cliente do boto3 aguenta várias threads, e o pool de
+# conexões dele é de 10: mais do que isso só faria fila dentro do botocore. As
+# threads ficam vivas entre uma chamada e outra da Lambda (é o mesmo processo).
+PARALELO = 10
+_grupo = ThreadPoolExecutor(max_workers=PARALELO)
+
+
+def pegar_varios(pks, consistente=True):
+    """{pk: item} dos que existem, GetItem em paralelo. Não é BatchGetItem de
+    propósito: o papel da Lambda não tem essa permissão (nuvem/README.md), e
+    dez GetItem ao mesmo tempo custam o mesmo tempo de um."""
+    pks = list(dict.fromkeys(pks))
+    if not pks:
+        return {}
+    if len(pks) == 1:
+        item = _pegar(pks[0], consistente)
+        return {pks[0]: item} if item else {}
+    achados = _grupo.map(lambda pk: _pegar(pk, consistente), pks)
+    return {pk: item for pk, item in zip(pks, achados) if item}
 
 
 def _transacao(itens):
