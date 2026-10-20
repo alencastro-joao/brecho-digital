@@ -80,6 +80,13 @@ if [ -d "$APP/assets/marcas" ]; then
     --cache-control 'public, max-age=86400' --content-type 'image/webp' --exclude '*' --include '*.webp'
 fi
 
+# As roupas base das coleções de cor (tools/roupas_base.py): nome fixo, e
+# podem ser regeradas, então um dia no cache, como os logos.
+if [ -d "$APP/assets/roupas" ]; then
+  aws s3 sync "$APP/assets/roupas" "s3://$SITE/assets/roupas" --delete \
+    --cache-control 'public, max-age=86400' --content-type 'image/webp' --exclude '*' --include '*.webp'
+fi
+
 # Ícones dos temas (bandeiras redondas em SVG), mesma regra dos logos.
 if [ -d "$APP/assets/temas" ]; then
   aws s3 sync "$APP/assets/temas" "s3://$SITE/assets/temas" --delete \
