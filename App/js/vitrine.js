@@ -698,14 +698,13 @@ function renderCongelar(peca, possuida, no) {
   if (!botao) return;
   botao.hidden = possuida;
   const presa = db.estaCongelada(peca.id);
-  const custo = FICHAS.porCongelar;
+  const sem = !db.podeCongelar();
   botao.disabled = presa;
-  botao.replaceChildren(ico('cadeado'), presa ? ' Congelada até amanhã' : ` Congelar · ${custo} fichas`);
+  botao.replaceChildren(ico('cadeado'), presa ? ' Congelada até amanhã'
+    : sem ? ' Comprar congelamento em Tarefas'
+    : ` Congelar · usar 1 (tem ${db.congelamentos()})`);
   botao.onclick = () => {
-    if (!db.podeCongelar()) {
-      toast(`Congelar custa ${custo} fichas. Faltam ${custo - db.fichas()}.`);
-      return;
-    }
+    if (sem) { irPara('tarefas'); return; }
     if (!db.congelarPeca(peca.id)) return;
     no.querySelector('.peca-flutua')?.append(seloDeCongelada());
     renderCongelar(peca, possuida, no);

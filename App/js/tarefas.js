@@ -125,6 +125,15 @@ function renderCartaoBaus() {
 // ---------------------------------- Topo ----------------------------------
 // Nível e fichas numa fileira. Tocar nas fichas troca por um resgate quando
 // dá; quando não dá, diz quanto falta.
+function comprarCongelamentoAqui() {
+  if (!db.comprarCongelamento()) {
+    toast(`Congelamento custa ${FICHAS.porCongelar} fichas. Faltam ${FICHAS.porCongelar - db.fichas()}.`);
+    return;
+  }
+  toast('+1 congelamento. Use na ficha de uma peça da loja.', 'rare');
+  renderTopo();
+}
+
 function renderTopo() {
   const p = db.progresso();
   const n = db.fichas();
@@ -148,6 +157,13 @@ function renderTopo() {
       onclick: () => trocarFichasPorRepor(),
     }, ico('atualizar'), 'Repor',
       el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(FICHAS.porRepor))),
+    el('button', {
+      type: 'button', class: 'tf-repor tf-repor-troca' + (db.podeComprarCongelamento() ? ' pronto' : ''),
+      title: `${FICHAS.porCongelar} fichas = 1 congelamento (segura uma peça na loja até amanhã)`,
+      onclick: () => comprarCongelamentoAqui(),
+    }, ico('cadeado'), 'Congelar',
+      el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(FICHAS.porCongelar)),
+      db.congelamentos() ? el('small', { class: 'tf-tem' }, String(db.congelamentos())) : null),
     el('button', {
       type: 'button', class: 'tf-fichas' + (pode ? ' pronto' : ''),
       title: `${troca} fichas = 1 resgate`,
