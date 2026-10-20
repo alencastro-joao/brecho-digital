@@ -8,7 +8,7 @@ import { el, $ } from './util.js';
 
 const ORIGENS = {
   vitrine: 'Loja do dia', presente: 'Boas-vindas', missao: 'Missões', semana: 'Baú dos dias',
-  'bau-especial': 'Baú semanal', nivel: 'Trilha de níveis', collab: 'Cápsula', teste: 'Teste',
+  'bau-especial': 'Baú mensal', nivel: 'Trilha de níveis', collab: 'Cápsula', teste: 'Teste',
 };
 
 export async function renderPainel() {

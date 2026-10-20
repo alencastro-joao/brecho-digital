@@ -70,7 +70,7 @@ export function renderTarefas() {
 let aba = null;
 const premioNoDia = () => !!db.marcoDoDiaPronto() || db.bauDosDiasPronto();
 const premioNaSemana = () =>
-  db.carimboDaSemanaPronto() || db.fichasDaSemanaProntas() || db.bauEspecialPronto();
+  db.carimboDaSemanaPronto() || db.bauEspecialPronto();
 
 // O ícone de cada pedido, pelo evento que ele conta.
 const ICONE = {
@@ -241,9 +241,7 @@ function renderDia() {
   $('#tf-lista').replaceChildren(...MISSOES.map(m => pedido(m, db.progressoMissao(m.id))));
 
   const pronto = db.marcoDoDiaPronto();
-  $('#tf-rodape').replaceChildren(...(pronto === 'carimbo'
-    ? [botaoPremio('Carimbar o dia', resgatarDia)]
-    : pronto === 'ficha' ? [botaoPremio(`Pegar ${MARCOS_DIA.ficha.fichas} ficha`, resgatarDia)] : []));
+  $('#tf-rodape').replaceChildren(...(pronto ? [botaoPremio('Carimbar o dia', resgatarDia)] : []));
 
   // A trilha: os 7 dias da semana e o Baú dos dias na ponta.
   const carimbados = db.carimbosDaSemana();
@@ -268,9 +266,7 @@ function renderDia() {
 function resgatarDia() {
   const r = db.resgatarMarcoDoDia();
   if (!r) return;
-  toast(r.marco === 'carimbo'
-    ? `Dia carimbado! +${r.fichas} ${r.fichas === 1 ? 'ficha' : 'fichas'}.`
-    : `+${r.fichas} ficha.`, r.marco === 'carimbo' ? 'rare' : undefined);
+  toast(`Dia carimbado! ${BAUS[r.bau].nome} guardado em Baús.`, 'rare');
 }
 
 // -------------------------------- Semana ----------------------------------
@@ -278,29 +274,23 @@ function renderSemana() {
   $('#tf-lista').replaceChildren(
     ...MISSOES_SEMANA.map(m => pedido(m, db.progressoSemanal(m.id))));
 
-  const { fichas } = MARCOS_SEMANA;
   let rodape = [];
   if (db.carimboDaSemanaPronto()) {
     rodape = [botaoPremio('Carimbar a semana', () => {
       const r = db.carimbarSemana();
-      if (r) toast(`Semana carimbada!${r.fichas ? ` +${r.fichas} fichas.` : ''}`, 'rare');
-    })];
-  } else if (db.fichasDaSemanaProntas()) {
-    rodape = [botaoPremio(`Pegar ${fichas.fichas} fichas`, () => {
-      const n = db.resgatarFichasDaSemana();
-      if (n) toast(`+${n} fichas da semana.`, 'rare');
+      if (r) toast(`Semana carimbada! ${BAUS[r.bau].nome} guardado em Baús.`, 'rare');
     })];
   }
   $('#tf-rodape').replaceChildren(...rodape);
 
-  // A trilha: as semanas carimbadas e o Baú semanal na ponta.
+  // A trilha: as semanas carimbadas e o Baú mensal na ponta.
   const total = BAU_ESPECIAL.semanas;
   const n = Math.min(db.semanasFechadas(), total);
   const selos = Array.from({ length: total }, (_, i) =>
     el('span', { class: 'tf-selo' + (i < n ? ' on' : ''), title: `Semana ${i + 1}` },
       i < n ? ico('ok') : String(i + 1)));
   trilha(selos, {
-    nome: 'Baú semanal', bau: BAU_ESPECIAL, icone: 'coroa', dourado: true,
+    nome: 'Baú mensal', bau: BAU_ESPECIAL, icone: 'coroa', dourado: true,
     pronto: db.bauEspecialPronto(), abrir: abrirEspecial,
   });
 }
