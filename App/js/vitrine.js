@@ -615,6 +615,10 @@ function ligarPeca(no, peca, raridade) {
 
 // --------------------------------- Ficha ---------------------------------
 let pecaNaFicha = null;
+// Quando a ficha abre, o toque que a abriu ainda pode virar um clique no botão
+// Pegar, que fica no mesmo lugar (no celular). Esse toque tardio é ignorado.
+let fichaAbertaEm = 0;
+const TOQUE_TARDIO_MS = 500;
 
 export function fecharFicha() {
   const ficha = $('#ficha-peca');
@@ -629,6 +633,7 @@ function abrirFicha(peca, raridade, no) {
   if (!ficha) return;
   const r = RARIDADE[raridade];
   pecaNaFicha = peca.id;
+  fichaAbertaEm = performance.now();
 
   // 116 px de altura é o teto da imagem na ficha (vitrine.css).
   trocarImagem($('#ficha-img'), peca, 116 * proporcao(peca));
@@ -671,7 +676,11 @@ function abrirFicha(peca, raridade, no) {
   $('#ficha-desejo')?.replaceChildren(...(possuida ? [] : [botaoDesejo(peca)]));
   acao.textContent = possuida ? 'Já está no seu closet' : 'Pegar';
   acao.disabled = possuida;
-  acao.onclick = () => { pegar(peca.id, no); fecharFicha(); };
+  acao.onclick = () => {
+    if (performance.now() - fichaAbertaEm < TOQUE_TARDIO_MS) return;
+    pegar(peca.id, no);
+    fecharFicha();
+  };
   renderCongelar(peca, possuida, no);
 
   // Admin: editar a ficha da peça sem sair da vitrine — útil para arrumar
