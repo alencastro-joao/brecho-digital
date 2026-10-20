@@ -386,4 +386,4 @@
 /* O (i) que explica fichas, carimbos e baús */
 .tf-abas .tf-info-btn { flex: none; width: 42px; font-style: italic; font-family: Georgia, serif; font-size: 18px; }
 .tf-info-txt p { margin: 0 0 10px; text-align: left; font-size: 14px; }
-.tf-item > .btn-premio { flex: none; padding: 6px 10px; font-size: 13px; }
+.tf-painel .tf-item > .btn-premio { flex: none; width: auto; margin-left: auto; padding: 8px 12px; font-size: 13px; white-space: nowrap; animation: none; }
