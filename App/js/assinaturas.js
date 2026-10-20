@@ -1,5 +1,5 @@
 // Assinatura da pessoa: ela digita um texto ou envia uma imagem (fundo
-// branco). A imagem é usada do jeito que veio, só reduzida para caber no save.
+// branco). A imagem enviada perde o fundo branco (fica só a tinta, que pode mudar de cor) e é reduzida para caber no save.
 // Passa a assinar as colagens novas e os looks exportados, no lugar do nome da
 // conta. O visual fica em css/perfil.css.
 
@@ -15,6 +15,24 @@ export function assinaturaDoUsuario() {
   return { texto: u.assinaturaTexto || '', imagem: u.assinaturaImagem || '' };
 }
 
+// Pinta a tinta de outra cor mantendo a transparência.
+function recolorir(src, cor) {
+  return new Promise((ok) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = cor;
+      ctx.fillRect(0, 0, c.width, c.height);
+      ok(c.toDataURL('image/png'));
+    };
+    img.src = src;
+  });
+}
+
 function lerImagem(arquivo) {
   return new Promise((ok, erro) => {
     const url = URL.createObjectURL(arquivo);
@@ -24,11 +42,21 @@ function lerImagem(arquivo) {
       const c = document.createElement('canvas');
       c.width = Math.round(img.naturalWidth * k);
       c.height = Math.round(img.naturalHeight * k);
-      const ctx = c.getContext('2d');
+      const ctx = c.getContext('2d', { willReadFrequently: true });
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, c.width, c.height);
       ctx.drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
+      // Tira o fundo branco: quanto mais escuro o pixel, mais opaco. A tinta
+      // fica preta e transparente em volta; a cor vem depois (recolorir).
+      const dados = ctx.getImageData(0, 0, c.width, c.height);
+      const px = dados.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const v = 255 - Math.min(px[i], px[i + 1], px[i + 2]);
+        px[i] = px[i + 1] = px[i + 2] = 0;
+        px[i + 3] = v < 25 ? 0 : Math.min(255, (v - 25) * 255 / 150);
+      }
+      ctx.putImageData(dados, 0, 0);
       ok(c.toDataURL('image/png'));
     };
     img.onerror = () => { URL.revokeObjectURL(url); erro(new Error('imagem inválida')); };
@@ -44,6 +72,9 @@ export function abrirAssinaturas(aoMudar = () => {}) {
     class: 'pergunta-campo', type: 'text', autocomplete: 'off', maxlength: MAX_CARACTERES,
     placeholder: 'Digite a sua assinatura', value: u.assinaturaTexto || '',
   });
+  const cor = el('input', { type: 'color', value: '#1a1a1a', title: 'Cor da tinta' });
+  const rotuloCor = el('label', { class: 'ass-cor' }, 'Cor da tinta ', cor);
+  cor.addEventListener('input', async () => { if (imagem) { imagem = await recolorir(imagem, cor.value); desenhar(); } });
   const previa = el('img', { class: 'ass-previa', alt: 'Assinatura enviada' });
   const remover = el('button', { class: 'btn-ghost', type: 'button' }, 'Remover imagem');
   const arquivo = el('input', { type: 'file', accept: 'image/*', hidden: true });
@@ -52,7 +83,7 @@ export function abrirAssinaturas(aoMudar = () => {}) {
   const salvar = el('button', { class: 'btn-dark', type: 'button' }, 'Salvar');
 
   const desenhar = () => {
-    previa.hidden = remover.hidden = !imagem;
+    previa.hidden = remover.hidden = rotuloCor.hidden = !imagem;
     if (imagem) previa.src = imagem;
     campo.disabled = !!imagem;
   };
@@ -62,7 +93,7 @@ export function abrirAssinaturas(aoMudar = () => {}) {
     arquivo.value = '';
     if (!f) return;
     try {
-      imagem = await lerImagem(f);
+      imagem = await recolorir(await lerImagem(f), cor.value);
       campo.value = '';
       desenhar();
     } catch {
@@ -75,9 +106,9 @@ export function abrirAssinaturas(aoMudar = () => {}) {
     el('div', { class: 'modal-caixa pergunta-caixa ass-caixa', role: 'dialog', 'aria-modal': 'true' },
       el('h2', { class: 'pergunta-titulo' }, 'Minha assinatura'),
       el('p', { class: 'pergunta-texto' },
-        'Digite o texto ou envie uma imagem em fundo branco. Ela assina as colagens novas e os looks que você compartilha.'),
+        'Digite o texto ou envie uma imagem em fundo branco: o branco some e a assinatura combina com o fundo da colagem ou do look. Ela assina as colagens novas e os looks que você compartilha.'),
       campo,
-      el('div', { class: 'ass-linha' }, enviar, remover, arquivo),
+      el('div', { class: 'ass-linha' }, enviar, remover, rotuloCor, arquivo),
       previa,
       el('div', { class: 'pergunta-botoes' }, cancelar, salvar)));
 
