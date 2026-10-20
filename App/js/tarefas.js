@@ -123,37 +123,57 @@ function renderCartaoBaus() {
 }
 
 // ---------------------------------- Topo ----------------------------------
-// Nível e fichas numa fileira. Tocar nas fichas troca por um resgate quando
-// dá; quando não dá, diz quanto falta.
-// Tudo que se troca com fichas, numa janela só: a ficha de repor (prêmio, da
-// vitrine), repor a loja e congelar. O resgate extra segue no contador de fichas.
-const podeAlgumaTroca = () => db.fichasDeRepor() > 0 || db.podeReporComFichas() || db.podeComprarCongelamento();
+// Nível e fichas numa fileira. As fichas mostram só quantas você tem; tocar
+// nelas abre as Trocas.
+
+// Tudo que se compra com fichas, numa janela só. A ficha de repor (prêmio da
+// trilha) não é troca: só um lembrete, porque ela se usa na vitrine.
+const TROCAS = [
+  { id: 'resgate', nome: 'Resgate extra', texto: 'Mais uma peça na loja. Fica guardado até usar.',
+    icone: () => ico('sacola'), preco: () => FICHAS.porResgate,
+    acao: () => { if (db.trocarFichasPorResgate()) toast('+1 resgate. Ele fica guardado até você usar.', 'rare'); } },
+  { id: 'repor', nome: 'Repor a loja', texto: 'Arara nova agora. Os resgates do dia continuam.',
+    icone: () => ico('atualizar'), preco: () => FICHAS.porRepor,
+    acao: () => trocarFichasPorRepor() },
+  { id: 'congelar', nome: 'Congelamento', texto: 'Segura uma peça na loja até amanhã. Use na ficha dela.',
+    icone: () => '❄️', preco: () => FICHAS.porCongelar,
+    acao: () => { if (db.comprarCongelamento()) toast('+1 congelamento. Use na ficha de uma peça da loja.', 'rare'); },
+    guardados: () => db.congelamentos() },
+];
 
 function abrirTrocas() {
   const fechar = () => {
     fundo.remove();
     document.body.classList.remove('com-modal');
     document.removeEventListener('keydown', tecla);
+    renderTopo();
   };
-  // Fecha a janela antes de agir: as trocas abrem as suas próprias perguntas.
-  const agir = (f) => () => { fechar(); f(); };
-  const linha = (rotulo, detalhe, pode, f) => el('button', {
-    type: 'button', class: 'btn-ghost tf-troca-linha' + (pode ? ' pronto' : ''),
-    disabled: pode ? null : true, onclick: agir(f),
-  }, el('span', {}, rotulo), el('small', {}, detalhe));
+  const n = db.fichas();
+  const opcao = (t) => {
+    const preco = t.preco();
+    const pode = n >= preco;
+    const tem = t.guardados?.();
+    return el('button', {
+      type: 'button', class: 'tf-troca' + (pode ? ' pronto' : ''),
+      disabled: pode ? null : true,
+      // Fecha antes de agir: o repor abre a própria pergunta.
+      onclick: () => { fechar(); t.acao(); },
+    },
+      el('span', { class: 'tf-troca-ico', 'aria-hidden': 'true' }, t.icone()),
+      el('span', { class: 'tf-troca-txt' },
+        el('b', {}, t.nome, tem ? el('small', { class: 'tf-tem' }, `${tem} guardado${tem > 1 ? 's' : ''}`) : null),
+        el('small', {}, pode ? t.texto : `Faltam ${preco - n} fichas.`)),
+      el('span', { class: 'tf-preco' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), String(preco)));
+  };
 
-  const linhas = [
-    db.fichasDeRepor() ? linha('Ficha de repor a loja', `Você tem ${db.fichasDeRepor()}. Usa na vitrine.`,
-      true, () => irPara('vitrine')) : null,
-    linha('Repor a loja', `${FICHAS.porRepor} fichas. Os resgates do dia continuam.`,
-      db.podeReporComFichas(), () => trocarFichasPorRepor()),
-    linha('❄️ Congelamento', `${FICHAS.porCongelar} fichas. Você tem ${db.congelamentos()} guardado(s).`,
-      db.podeComprarCongelamento(), () => comprarCongelamentoAqui()),
-  ];
-  const caixa = el('div', { class: 'modal-caixa pergunta-caixa', role: 'dialog', 'aria-modal': 'true' },
+  const premio = db.fichasDeRepor();
+  const caixa = el('div', { class: 'modal-caixa pergunta-caixa tf-trocas-caixa', role: 'dialog', 'aria-modal': 'true' },
     el('h2', { class: 'pergunta-titulo' }, 'Trocas'),
-    el('p', { class: 'pergunta-texto' }, `Você tem ${db.fichas()} fichas.`),
-    el('div', { class: 'tf-trocas-lista' }, ...linhas),
+    el('p', { class: 'tf-trocas-saldo' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }),
+      el('b', {}, String(n)), n === 1 ? ' ficha' : ' fichas'),
+    el('div', { class: 'tf-trocas-lista' }, ...TROCAS.map(opcao)),
+    premio ? el('p', { class: 'tf-trocas-nota' },
+      `Você também tem ${premio} ficha${premio > 1 ? 's' : ''} de repor da trilha: use no ↻ da vitrine.`) : null,
     el('div', { class: 'pergunta-botoes' },
       el('button', { type: 'button', class: 'btn-ghost', onclick: fechar }, 'Fechar')));
   const fundo = el('div', { class: 'modal pergunta' }, caixa);
@@ -164,20 +184,10 @@ function abrirTrocas() {
   document.body.classList.add('com-modal');
 }
 
-function comprarCongelamentoAqui() {
-  if (!db.comprarCongelamento()) {
-    toast(`Congelamento custa ${FICHAS.porCongelar} fichas. Faltam ${FICHAS.porCongelar - db.fichas()}.`);
-    return;
-  }
-  toast('+1 congelamento. Use na ficha de uma peça da loja.', 'rare');
-  renderTopo();
-}
-
 function renderTopo() {
   const p = db.progresso();
   const n = db.fichas();
-  const troca = FICHAS.porResgate;
-  const pode = db.podeTrocarFichas();
+  const podeAlguma = TROCAS.some(t => n >= t.preco());
 
   $('#tarefas-faixa').replaceChildren(
     el('button', {
@@ -188,22 +198,9 @@ function renderTopo() {
       el('div', { class: 'tf-barra' }, el('span', { style: { width: p.pct + '%' } })),
       el('small', {}, p.maximo ? `${p.xpTotal} XP` : `${p.xpNoNivel}/${p.xpDoNivel}`)),
     el('button', {
-      type: 'button', class: 'tf-repor tf-trocas' + (podeAlgumaTroca() ? ' pronto' : ''),
-      title: 'Trocar fichas: repor a loja, congelar peças', onclick: abrirTrocas,
-    }, ico('atualizar'), 'Trocas',
-      db.fichasDeRepor() ? el('small', { class: 'tf-tem' }, String(db.fichasDeRepor())) : null),
-    el('button', {
-      type: 'button', class: 'tf-fichas' + (pode ? ' pronto' : ''),
-      title: `${troca} fichas = 1 resgate`,
-      onclick: () => {
-        if (pode) {
-          if (db.trocarFichasPorResgate()) toast('+1 resgate. Ele fica guardado até você usar.', 'rare');
-          return;
-        }
-        toast(`${troca} fichas = 1 resgate. Faltam ${troca - n}.`);
-      },
-    }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }),
-      el('b', {}, pode ? `${n} · Trocar` : `${n}/${troca}`)));
+      type: 'button', class: 'tf-fichas' + (podeAlguma ? ' pronto' : ''),
+      title: 'Fichas: toque para ver as trocas', onclick: abrirTrocas,
+    }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(n))));
 }
 
 // ---------------------------------- Abas -----------------------------------
