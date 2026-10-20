@@ -57,8 +57,8 @@ function estadoInicial() {
       criadoEm: new Date().toISOString(),
       seguindo: [],
       assinatura: { ...ASSINATURA_PADRAO },   // padrão de quem assina as colagens
-      assinaturas: [],          // textos lidos de imagens enviadas pela pessoa
-      assinaturaAtiva: 0,       // qual deles assina; sem nenhum, vale o nome
+      assinaturaTexto: '',      // assinatura digitada pela pessoa (vazio = o nome)
+      assinaturaImagem: '',     // ou imagem enviada, usada como veio (data URL)
       preferencias: {
         sombra: true,               // padrão da sombra nas peças da colagem
         agrupamento: 'tipo',        // telas de roupa por 'tipo' de peça ou parte do 'corpo'

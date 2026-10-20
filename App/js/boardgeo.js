@@ -34,7 +34,7 @@ export function posAssinatura(board, W, H) {
 export function areaUtil(board, W, H) {
   const m = margemDe(board);
   const a = board.assinatura;
-  const faixa = a?.visivel && a.texto?.trim() ? a.tamanho * 1.5 : 0;
+  const faixa = a?.visivel && (a.imagem || a.texto?.trim()) ? a.tamanho * 1.5 : 0;
   const folga = 26;
   return {
     x0: m + folga,

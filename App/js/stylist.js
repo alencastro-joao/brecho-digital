@@ -611,7 +611,10 @@ function ligarFerramentas() {
     if (!camadas.length) return toast('Monte um look antes de compartilhar.', 'aviso');
     abrirCompartilhar({
       formatos: [{ id: 'story', rotulo: 'Story 1080×1920' }, { id: 'post', rotulo: 'Post 1080×1350' }],
-      gerar: (formato) => imagemDoLook(estruturaLimpa(), formato, assinaturaDoUsuario() || $('#outfit-nome').value.trim()),
+      gerar: (formato) => {
+        const ass = assinaturaDoUsuario();
+        return imagemDoLook(estruturaLimpa(), formato, ass.texto || $('#outfit-nome').value.trim(), ass.imagem);
+      },
     });
   });
 }
