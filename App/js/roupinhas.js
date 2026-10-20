@@ -42,7 +42,7 @@ export const SLOTS = {
   pernas:    { nome: 'Pernas',    icone: '👖', z: 20 },
   acessorio: { nome: 'Acessório', icone: '🕶️', z: 62 },
   cintura:   { nome: 'Cintura',   icone: '🎒', z: 34 },
-  pes:       { nome: 'Pés',       icone: '👟', z: 28 },
+  pes:       { nome: 'Pés',       icone: '👟', z: 19 },   // abaixo das pernas (20): a calça cai por cima do tênis
 };
 
 // A ordem é a das duas colunas do inventário, de cima para baixo: a primeira
