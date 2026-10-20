@@ -14,6 +14,7 @@ import {
 } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
+import { mostrar } from './janela.js';
 import * as estoque from './estoque.js';
 import {
   el, $, toast, hojeISO, msAteMeiaNoite, msAteSegunda, formatarContagem, formatarDias,
@@ -211,6 +212,7 @@ function renderAbas() {
     onclick: () => { if (aba !== id) { aba = id; renderTarefas(); } },
   }, nome, el('small', {}, `${feitas}/${total}`));
   $('#tf-abas').replaceChildren(
+    el('button', { type: 'button', class: 'tf-info-btn', 'aria-label': 'Como funcionam as missões', title: 'Como funcionam as missões', onclick: infoMissoes }, 'i'),
     botao('hoje', 'Hoje', db.missoesFeitas(), MISSOES.length, db.naoVistas(db.novidadesDoDia()).length > 0,
       `Zeram em ${formatarContagem(msAteMeiaNoite())}`),
     botao('semana', 'Semana', db.semanaisFeitas(), MISSOES_SEMANA.length, db.naoVistas(db.novidadesDaSemana()).length > 0,
@@ -218,16 +220,29 @@ function renderAbas() {
 }
 
 // ------------------------------- Pedidos ----------------------------------
-function pedido(m, atual) {
+function pedido(m, atual, { resgatada, fichas, resgatar }) {
   const feito = Math.min(atual, m.meta);
   const ok = feito >= m.meta;
-  return el('div', { class: 'tf-item' + (ok ? ' ok' : '') },
-    el('span', { class: 'tf-ico' }, ico(ok ? 'ok' : (ICONE[m.evento] || 'estrela'))),
+  return el('div', { class: 'tf-item' + (ok && resgatada ? ' ok' : '') },
+    el('span', { class: 'tf-ico' }, ico(ok && resgatada ? 'ok' : (ICONE[m.evento] || 'estrela'))),
     el('div', { class: 'tf-info' },
       el('strong', {}, m.nome),
       ok ? null : el('div', { class: 'tf-barra' },
         el('span', { style: { width: (feito / m.meta * 100) + '%' } }))),
-    el('small', {}, ok ? '' : `${feito}/${m.meta}`));
+    ok && !resgatada
+      ? el('button', { type: 'button', class: 'btn-premio', onclick: () => {
+        if (resgatar(m.id)) toast(`+${fichas} fichas.`, 'rare');
+      } }, `Resgatar +${fichas}`)
+      : el('small', {}, ok ? '' : `${feito}/${m.meta}`));
+}
+
+// O (i): onde achar cada coisa e como os prêmios funcionam.
+function infoMissoes() {
+  mostrar(el('div', { class: 'tf-info-txt' },
+    el('p', {}, el('b', {}, 'Fichas: '), 'ao concluir uma missão, toque em "Resgatar" para guardar as fichas: 2 por missão do dia e 4 por missão da semana. As fichas ficam no topo desta tela, junto do nível.'),
+    el('p', {}, el('b', {}, 'Carimbo: '), 'com as 5 missões resgatadas, o botão "Carimbar" aparece embaixo da lista. Dia carimbado guarda um Baú incomum; semana carimbada, um Baú épico.'),
+    el('p', {}, el('b', {}, 'Baús: '), '5 dias carimbados na semana dão um Baú raro; 4 semanas carimbadas, um Baú lendário. Todos vão para a tela de Baús, onde são abertos.')),
+  { titulo: 'Como funcionam as missões' });
 }
 
 function botaoPremio(texto, acao) {
@@ -238,7 +253,7 @@ function botaoPremio(texto, acao) {
 const DIAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
 
 function renderDia() {
-  $('#tf-lista').replaceChildren(...MISSOES.map(m => pedido(m, db.progressoMissao(m.id))));
+  $('#tf-lista').replaceChildren(...MISSOES.map(m => pedido(m, db.progressoMissao(m.id), { resgatada: db.missaoResgatada(m.id), fichas: MARCOS_DIA.fichasPorMissao, resgatar: db.resgatarMissao })));
 
   const pronto = db.marcoDoDiaPronto();
   $('#tf-rodape').replaceChildren(...(pronto ? [botaoPremio('Carimbar o dia', resgatarDia)] : []));
@@ -272,7 +287,7 @@ function resgatarDia() {
 // -------------------------------- Semana ----------------------------------
 function renderSemana() {
   $('#tf-lista').replaceChildren(
-    ...MISSOES_SEMANA.map(m => pedido(m, db.progressoSemanal(m.id))));
+    ...MISSOES_SEMANA.map(m => pedido(m, db.progressoSemanal(m.id), { resgatada: db.semanalResgatada(m.id), fichas: MARCOS_SEMANA.fichasPorMissao, resgatar: db.resgatarSemanal })));
 
   let rodape = [];
   if (db.carimboDaSemanaPronto()) {

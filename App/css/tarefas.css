@@ -382,3 +382,8 @@
 @keyframes tarefas-recebe {
   0% { transform: scale(1); } 35% { transform: scale(1.22) rotate(-6deg); } 100% { transform: scale(1); }
 }
+
+/* O (i) que explica fichas, carimbos e baús */
+.tf-abas .tf-info-btn { flex: none; width: 42px; font-style: italic; font-family: Georgia, serif; font-size: 18px; }
+.tf-info-txt p { margin: 0 0 10px; text-align: left; font-size: 14px; }
+.tf-item > .btn-premio { flex: none; padding: 6px 10px; font-size: 13px; }
