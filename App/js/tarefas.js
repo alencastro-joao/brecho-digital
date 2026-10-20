@@ -23,6 +23,7 @@ import { irPara, viewAtual } from './router.js';
 import { todasAsColecoes, abrirColecao } from './colecoes.js';
 import { abrirFichaDePeca } from './usuario.js';
 import { animarBau, animando } from './movimento.js';
+import { tocar } from './sons.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -456,6 +457,7 @@ export function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {})
   document.body.classList.add('com-modal');
   void modal.offsetWidth;            // reinicia a animação se abrir dois seguidos
   modal.classList.add('abrindo');
+  tocar('bau');
   if (animando()) {
     modal.classList.add('com-gsap');
     animarBau([...modal.querySelectorAll('.bau-item, .bau-extra, .bau-vazio')]);
