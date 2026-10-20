@@ -141,7 +141,6 @@ export function renderPerfil() {
   // mora aqui, em destaque, ao lado de quem você é.
   $('#perfil-acoes').replaceChildren(
     el('button', { class: 'btn-ghost', onclick: abrirEdicao }, 'Editar perfil'),
-    el('button', { class: 'btn-ghost', onclick: () => abrirAssinaturas() }, 'Assinaturas'),
     el('button', { class: 'btn-ghost', onclick: () => irPara('personagem') }, 'Personagem'),
     el('button', { class: 'btn-dark pf-vestir', id: 'perfil-vestir', onclick: () => irPara('vestiario') },
       ico('camiseta'), ' Vestir-se'));
@@ -349,6 +348,7 @@ function montarAjustes() {
   });
   menu.querySelectorAll('[data-ajuste]').forEach(b =>
     b.addEventListener('click', () => { mostrarMenu(false); abrirAjustes(b.dataset.ajuste); }));
+  $('#pf-menu-assinaturas').addEventListener('click', () => { mostrarMenu(false); abrirAssinaturas(); });
   // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
   $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
   // Volume: muda ali mesmo, sem fechar o menu, tocando um "tic" para ouvir a
