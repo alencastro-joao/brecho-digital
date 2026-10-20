@@ -22,6 +22,7 @@ import { ico } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { todasAsColecoes, abrirColecao } from './colecoes.js';
 import { abrirFichaDePeca } from './usuario.js';
+import { trocarFichasPorRepor } from './vitrine.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
 
@@ -141,6 +142,12 @@ function renderTopo() {
     ...(db.fichasDeRepor() ? [el('button', {
       type: 'button', class: 'tf-repor', title: 'Fichas de repor a loja', onclick: () => irPara('vitrine'),
     }, ico('atualizar'), el('b', {}, String(db.fichasDeRepor())))] : []),
+    el('button', {
+      type: 'button', class: 'tf-repor tf-repor-troca' + (db.podeReporComFichas() ? ' pronto' : ''),
+      title: `${FICHAS.porRepor} fichas = repor a loja`,
+      onclick: () => trocarFichasPorRepor(),
+    }, ico('atualizar'), 'Repor',
+      el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(FICHAS.porRepor))),
     el('button', {
       type: 'button', class: 'tf-fichas' + (pode ? ' pronto' : ''),
       title: `${troca} fichas = 1 resgate`,
