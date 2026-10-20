@@ -556,4 +556,5 @@ button.pf-stat:hover small { text-decoration: underline; }
 /* Janela de assinaturas */
 .ass-caixa { max-width: 440px; width: 92vw; }
 .ass-linha { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.ass-previa { display: block; max-width: 100%; max-height: 120px; margin: 8px auto; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+.ass-previa { display: block; max-width: 100%; max-height: 120px; margin: 8px auto; border: 1px dashed #ccc; border-radius: 8px; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 16px 16px; }
+.ass-cor { display: flex; align-items: center; gap: 6px; font-size: .9em; }
