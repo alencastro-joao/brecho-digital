@@ -10,39 +10,51 @@ import { baixarArquivo } from './render.js';
 
 const SITE_INSTAGRAM = 'https://www.instagram.com/';
 
-// `gerar(formato)` devolve { blob, nome }. `formatos`: [{ id, rotulo, dica }].
-export function abrirCompartilhar({ formatos, gerar, vazio }) {
+// Dois passos: 1) baixar ou compartilhar; 2) o formato.
+// `gerar(formato)` devolve { blob, nome }. `formatos`: [{ id, rotulo }].
+export function abrirCompartilhar({ formatos, gerar }) {
+  const caixa = el('div', { class: 'modal-caixa pergunta-caixa', role: 'dialog', 'aria-modal': 'true' });
+  const fundo = el('div', { class: 'modal pergunta' }, caixa);
   const fechar = () => { fundo.remove(); document.body.classList.remove('com-modal'); };
-  const fazer = (acao) => async (e) => {
-    const botao = e.currentTarget;
-    botao.disabled = true;
-    try {
-      const imagem = await gerar(seletor.value);
-      if (acao === 'baixar') {
-        baixarArquivo(imagem.blob, imagem.nome);
-        toast('PNG gerado. Confere os downloads.');
-      } else {
-        await noInstagram(imagem);
-      }
-      fechar();
-    } catch (err) {
-      if (err?.name === 'AbortError') { botao.disabled = false; return; }   // cancelou a folha
-      console.warn('compartilhar', err);
-      toast('Não consegui gerar a imagem agora. Tente de novo.', 'aviso');
-      botao.disabled = false;
-    }
-  };
-  const seletor = el('select', { class: 'pergunta-campo', 'aria-label': 'Formato' },
-    ...formatos.map((f) => el('option', { value: f.id }, f.rotulo)));
-  const fundo = el('div', { class: 'modal pergunta' },
-    el('div', { class: 'modal-caixa pergunta-caixa', role: 'dialog', 'aria-modal': 'true' },
+  const cancelar = el('button', { class: 'btn-ghost', type: 'button', onclick: fechar }, 'Cancelar');
+
+  const passoAcao = () => {
+    caixa.replaceChildren(
       el('h2', { class: 'pergunta-titulo' }, 'Compartilhar'),
-      seletor,
       el('div', { class: 'pergunta-botoes' },
-        el('button', { class: 'btn-ghost', type: 'button', onclick: fazer('baixar') }, 'Baixar imagem'),
-        el('button', { class: 'btn-dark', type: 'button', onclick: fazer('instagram') }, 'Compartilhar no Instagram')),
-      el('button', { class: 'btn-ghost', type: 'button', onclick: fechar }, 'Cancelar')));
+        el('button', { class: 'btn-dark', type: 'button', onclick: () => passoFormato('baixar') }, 'Baixar'),
+        el('button', { class: 'btn-dark', type: 'button', onclick: () => passoFormato('instagram') }, 'Compartilhar')),
+      cancelar);
+  };
+  const passoFormato = (acao) => {
+    const fazer = (formato) => async (e) => {
+      const botoes = caixa.querySelectorAll('button');
+      botoes.forEach((x) => { x.disabled = true; });
+      try {
+        const imagem = await gerar(formato);
+        if (acao === 'baixar') {
+          baixarArquivo(imagem.blob, imagem.nome);
+          toast('PNG gerado. Confere os downloads.');
+        } else {
+          await noInstagram(imagem);
+        }
+        fechar();
+      } catch (err) {
+        botoes.forEach((x) => { x.disabled = false; });
+        if (err?.name === 'AbortError') return;       // cancelou a folha de compartilhar
+        console.warn('compartilhar', err);
+        toast('Não consegui gerar a imagem agora. Tente de novo.', 'aviso');
+      }
+    };
+    caixa.replaceChildren(
+      el('h2', { class: 'pergunta-titulo' }, 'Escolha o formato'),
+      el('div', { class: 'pergunta-botoes' },
+        ...formatos.map((f) => el('button', { class: 'btn-dark', type: 'button', onclick: fazer(f.id) }, f.rotulo))),
+      el('button', { class: 'btn-ghost', type: 'button', onclick: passoAcao }, 'Voltar'));
+  };
+
   fundo.addEventListener('click', (e) => { if (e.target === fundo) fechar(); });
+  passoAcao();
   document.body.append(fundo);
   document.body.classList.add('com-modal');
 }
