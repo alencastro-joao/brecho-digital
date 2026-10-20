@@ -959,6 +959,8 @@ export function faixasDeTroca(faixa) {
 // quantas vezes quiser no dia (pedido do João, 2026-10-17).
 export const FICHAS = {
   porResgate: 6,       // quantas fichas valem um resgate a mais
+  porRepor: 12,        // repor a loja: arara nova, resgates do dia continuam contados
+  porCongelar: 2,      // congelar uma peça: ela fica na loja até o fim do dia seguinte
 };
 
 // ------------------------------- Níveis -----------------------------------
