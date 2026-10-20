@@ -27,6 +27,7 @@ import { ancoraNoMolde, CORPO_EM_TESTE } from './proporcao.js';
 import { el, $, $$, clamp, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { alcaMover } from './alcamover.js';
+import { barrasPosicao } from './barrapos.js';
 
 const MAX_LADO = 512;          // maior lado da miniatura (= MAX_PREVIA da esteira)
 const MAX_GRANDE = 1280;       // maior lado da grande (= MAX_GRANDE da esteira)
@@ -527,10 +528,11 @@ function posicionarPeca() {
   campo.classList.toggle('alerta', fora);
   $('#mp-tam-barra').value = Math.round(medida.w);
   alcaMov?.colocar([no]);
+  barrasPos?.atualizar();
 }
 
 // A alça de quatro setas ao lado da peça: arrastar sem tapar a peça (celular).
-let alcaMov = null;
+let alcaMov = null, barrasPos = null;
 // Dedos no molde (id → ponto) e a pinça em andamento ({ d0, w0 }).
 const dedos = new Map();
 let pinca = null;
@@ -601,6 +603,15 @@ function ligarPalco() {
     if (dedos.size < 2) pinca = null;
   };
   for (const evt of ['pointerup', 'pointercancel']) window.addEventListener(evt, largar, true);
+
+  // Celular: barras de posição, em pé à direita e deitada embaixo do molde.
+  const area = $('#mp-molde-area');
+  barrasPos = barrasPosicao({
+    paiX: area, paiY: area,
+    faixaX: [0, CONFIG.STAGE_W], faixaY: [0, CONFIG.STAGE_H],
+    ler: () => ($('#mp-caixa').classList.contains('medindo') ? medida : null),
+    mudar: ({ x, y }) => { medida.x = x; medida.y = y; posicionarPeca(); },
+  });
 
   // A barra em pé do celular, no lugar das quinas; + e − de 6% em 6%.
   $('#mp-tam-barra').addEventListener('input', (e) => {
