@@ -27,7 +27,6 @@ export function progredirMissao(evento, delta = 1) {
     state.missoes.progresso[missao.id] = Math.min(missao.meta, antes + delta);
     if (!missaoCompleta(missao.id) || state.missoes.pagas.includes(missao.id)) continue;
     state.missoes.pagas.push(missao.id);
-    state.fichas = fichas() + MARCOS_DIA.fichasPorMissao;
     if (missao.xp) ganharXP(xpDeMissao(missao.xp), `missão: ${missao.nome.toLowerCase()}`);
   }
 }
@@ -81,12 +80,26 @@ export const missaoCompleta = (id) =>
 
 export const missoesFeitas = () => MISSOES.filter(m => missaoCompleta(m.id)).length;
 
+// As fichas de uma missão feita só entram com um toque ("resgatar").
+export const missaoResgatada = (id) => Boolean(state.missoes.resgatadas?.includes(id));
+export const missoesResgatadas = () => MISSOES.filter(m => missaoResgatada(m.id)).length;
+export const missoesParaResgatar = () => MISSOES.filter(m => missaoCompleta(m.id) && !missaoResgatada(m.id)).length;
+
+export function resgatarMissao(id) {
+  virarODiaSeNecessario();
+  if (!missaoCompleta(id) || missaoResgatada(id)) return 0;
+  (state.missoes.resgatadas ??= []).push(id);
+  state.fichas = fichas() + MARCOS_DIA.fichasPorMissao;
+  salvar();
+  return MARCOS_DIA.fichasPorMissao;
+}
+
 const marcoDoDiaPego = (marco) => state.missoes.marcos?.includes(marco);
 export const diaCarimbado = () => marcoDoDiaPego('carimbo');
 
 // O carimbo do dia já dá para pegar (as 5 missões feitas)? Devolve 'carimbo' ou null.
 export function marcoDoDiaPronto() {
-  return !marcoDoDiaPego('carimbo') && missoesFeitas() >= MARCOS_DIA.carimbo.missoes ? 'carimbo' : null;
+  return !marcoDoDiaPego('carimbo') && missoesResgatadas() >= MARCOS_DIA.carimbo.missoes ? 'carimbo' : null;
 }
 
 // Carimba o dia: guarda o baú incomum. Devolve { marco, bau } ou null.
@@ -128,7 +141,6 @@ export function progredirSemana(evento, delta = 1, chave = null) {
     s.progresso[missao.id] = Math.min(missao.meta, antes + delta);
     if (s.progresso[missao.id] < missao.meta || s.pagas.includes(missao.id)) continue;
     s.pagas.push(missao.id);
-    state.fichas = fichas() + MARCOS_SEMANA.fichasPorMissao;
     ganharXP(xpDeMissao(missao.xp), `missão da semana: ${missao.nome.toLowerCase()}`);
   }
 }
@@ -138,7 +150,20 @@ export const progressoSemanal = (id) => state.semana.progresso[id] ?? 0;
 export const semanalCompleta = (id) =>
   progressoSemanal(id) >= (MISSOES_SEMANA.find(m => m.id === id)?.meta ?? 1);
 
-export const semanaCompleta = () => MISSOES_SEMANA.every(m => semanalCompleta(m.id));
+export const semanalResgatada = (id) => Boolean(state.semana.resgatadas?.includes(id));
+export const semanaisParaResgatar = () =>
+  MISSOES_SEMANA.filter(m => semanalCompleta(m.id) && !semanalResgatada(m.id)).length;
+
+export function resgatarSemanal(id) {
+  virarASemanaSeNecessario();
+  if (!semanalCompleta(id) || semanalResgatada(id)) return 0;
+  (state.semana.resgatadas ??= []).push(id);
+  state.fichas = fichas() + MARCOS_SEMANA.fichasPorMissao;
+  salvar();
+  return MARCOS_SEMANA.fichasPorMissao;
+}
+
+export const semanaCompleta = () => MISSOES_SEMANA.every(m => semanalResgatada(m.id));
 
 export const semanaisFeitas = () => MISSOES_SEMANA.filter(m => semanalCompleta(m.id)).length;
 
@@ -323,7 +348,7 @@ export const temNovidade = () => naoVistas([
 
 // Tem prêmio esperando o toque? Acende o pontinho do botão de Tarefas.
 export const temPremioParaResgatar = () =>
-  Boolean(marcoDoDiaPronto()) || carimboDaSemanaPronto() ||
+  missoesParaResgatar() > 0 || semanaisParaResgatar() > 0 || Boolean(marcoDoDiaPronto()) || carimboDaSemanaPronto() ||
   bauDosDiasPronto() || bauEspecialPronto() || podeTrocarFichas() ||
   premiosDoNivelProntos().length > 0 || bausGuardados().length > 0;
 
