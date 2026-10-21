@@ -831,9 +831,9 @@ export const ORDEM_NARIZES = Object.keys(NARIZES);
 // Cada arte é a sobrancelha da esquerda da tela, numa caixa de 30 de largura:
 // x=0 é a ponta de fora, x=30 a de dentro (perto do nariz), y=0 a linha da
 // sobrancelha. O avatar põe ela na testa do molde e espelha para a direita.
-// Fora do ar por enquanto (pedido do João, 21/10/2026): o avatar não desenha
-// e a aba do Personagem some. Para voltar, é só trocar para true.
-export const SOBRANCELHAS_NO_AR = false;
+// Chave das sobrancelhas: false desliga o desenho no avatar e tira a aba do
+// Personagem (ficaram fora do ar em 21/10/2026 e voltaram no mesmo dia).
+export const SOBRANCELHAS_NO_AR = true;
 
 // Sombra do rosto (escolhida pelo João, 21/10/2026): arco embaixo de cada
 // olho e a sombra do nariz subindo até o olho, sem desenhar olho nem boca. Só
