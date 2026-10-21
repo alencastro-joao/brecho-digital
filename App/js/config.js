@@ -827,9 +827,99 @@ export const NARIZES = {
 };
 export const ORDEM_NARIZES = Object.keys(NARIZES);
 
+// Sobrancelhas: formas cheias pintadas na cor do cabelo (um pouco mais escura).
+// Cada arte é a sobrancelha da esquerda da tela, numa caixa de 30 de largura:
+// x=0 é a ponta de fora, x=30 a de dentro (perto do nariz), y=0 a linha da
+// sobrancelha. O avatar põe ela na testa do molde e espelha para a direita.
+export const SOBRANCELHAS = {
+  nenhuma: { nome: 'Sem sobrancelha', arte: '' },
+
+  arco: {
+    nome: 'Arco longo',
+    arte: `<path d="M0 6 Q14 -3 30 -1 Q15 0.5 0 6 Z"/>`,
+  },
+
+  pincel: {
+    nome: 'Pincelada',
+    arte: `<path d="M3 -2 L5 -3.5 L7 -2.6 L9 -3.8 L11 -2.4 L13 -3.4 L15 -1.6
+                    L17 -2.6 L19 -0.6 L21 -1.4 L23 0.8 L25.5 2 L26.5 3.4
+                    Q14 1.6 3 -2 Z"/>`,
+  },
+
+  reta: {
+    nome: 'Reta fina',
+    arte: `<path d="M0 0.5 Q15 -1.6 30 0.6 Q15 1.8 0 0.5 Z"/>`,
+  },
+
+  arredondada: {
+    nome: 'Arredondada',
+    arte: `<path d="M0 3 C6 -3 18 -4 28 -1 C31 0 31 3 28 3.4 C20 1.5 10 0.5 0 3 Z"/>`,
+  },
+
+  pontinho: {
+    nome: 'Pontinho',
+    arte: `<path d="M12 -1 C15 -3.5 22 -1.5 25 1.5 C26.5 3 24 4 22 3
+                    C18 1.5 14 1.5 12 -1 Z"/>`,
+  },
+
+  fio: {
+    nome: 'Fio',
+    arte: `<path d="M2 3 Q15 -4 28 3 Q15 -2 2 3 Z"/>`,
+  },
+
+  grossa: {
+    nome: 'Reta grossa',
+    arte: `<path d="M0 0 C8 -2.5 20 -2.5 26 -0.5 C28 0.3 29.5 2 30 3.5
+                    C26 1.5 20 1.8 12 2 C6 2.2 2 2 0 0 Z"/>`,
+  },
+
+  curta: {
+    nome: 'Curta',
+    arte: `<path d="M4 2 C10 -0.5 18 -2.5 26 -2.6 C27.5 -2.6 27.5 0.5 26 0.6
+                    C18 1 10 2 4 2 Z"/>`,
+  },
+
+  suave: {
+    nome: 'Arco suave',
+    arte: `<path d="M1 3 Q15 -5 29 2 Q15 -1.4 1 3 Z"/>`,
+  },
+
+  arqueada: {
+    nome: 'Arqueada',
+    arte: `<path d="M0 0 C8 -5 18 -3 29 4 Q30 5.5 28.5 5.5 C18 0.6 8 -2 0 0 Z"/>`,
+  },
+
+  cheia: {
+    nome: 'Arqueada grossa',
+    arte: `<path d="M0 -1 C8 -6.5 18 -5 29 3 C30.5 4.5 29 6.5 27 5.5
+                    C18 1 9 -1.5 0 -1 Z"/>`,
+  },
+
+  caida: {
+    nome: 'Caída',
+    arte: `<path d="M0 -1 C10 -3 20 0 29 3.5 Q30 5 28 5 C19 2.5 10 0 0 -1 Z"/>`,
+  },
+
+  gancho: {
+    nome: 'Gancho',
+    arte: `<path d="M12 0 C15 -3.5 20 -3.8 24 -1 C26 0.5 27 2.5 27.5 4
+                    C25 2 22 0 18.5 0 C16 0 14 1 12 0 Z"/>`,
+  },
+
+  triangulo: {
+    nome: 'Triângulo',
+    arte: `<path d="M0 -1 L29 1 L27 5 Z"/>`,
+  },
+
+  ponta: {
+    nome: 'Ponta fina',
+    arte: `<path d="M0 0 Q14 1 24 2.4 L29.5 1.2 L27 5.5 Q14 2.4 0 0 Z"/>`,
+  },
+};
+
 export const APARENCIA_PADRAO = {
   corpo: 'masculino', pele: 'clara', cabelo: 'curto',
-  corCabelo: '#3d2519', nariz: 'botao',
+  corCabelo: '#3d2519', nariz: 'botao', sobrancelha: 'nenhuma',
 };
 
 // ----------------------------- Colagem (Board) ----------------------------

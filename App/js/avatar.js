@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES,
+  CORES_CABELO, NARIZES, SOBRANCELHAS,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -43,6 +43,8 @@ export const catalogoCorpos = () => corpoDesenhado?.corpos || CORPOS;
 export const catalogoNarizes = () => (corpoDesenhado
   ? { nenhum: NARIZES.nenhum, ...corpoDesenhado.narizes }
   : NARIZES);
+// As sobrancelhas são de código nos dois corpos.
+export const catalogoSobrancelhas = () => SOBRANCELHAS;
 // Os cortes, do mesmo jeito: os da artista com ela no palco, senão os de
 // código. O raspado é o mesmo nos dois.
 export const catalogoCabelos = () => (corpoDesenhado?.cabelos
@@ -72,6 +74,7 @@ export function resolverAparencia(cfg = {}) {
     cabelo: corteDoCatalogo(cfg.cabelo),
     corCabelo: cfg.corCabelo || '#3d2519',
     nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
+    sobrancelha: SOBRANCELHAS[cfg.sobrancelha] ? cfg.sobrancelha : 'nenhuma',
   };
 }
 
@@ -263,6 +266,16 @@ export function svgAvatar({
   // O nariz da artista é desenhado com o corpo dela, mais abaixo.
   const nariz = corpoDesenhado ? ''
     : (NARIZES[ap.nariz] || NARIZES.botao).arte.replaceAll('{traco}', ap.traco);
+  // Sobrancelha: a arte é a da esquerda; a da direita é ela espelhada no meio
+  // da cara (x=300). Fica na testa do molde, de x=262 a 292, um pouco esticada
+  // na altura para o traço acompanhar o da artista; a franja passa
+  // por cima dela.
+  const arteSobrancelha = (SOBRANCELHAS[ap.sobrancelha] || SOBRANCELHAS.nenhuma).arte;
+  const sobrancelhas = arteSobrancelha ? naRegiao('cabeca',
+    `<g fill="${escurecerTraco(ap.corCabelo, 0.8)}" stroke="none">
+      <g transform="translate(262 104) scale(1 1.4)">${arteSobrancelha}</g>
+      <g transform="translate(338 104) scale(-1 1.4)">${arteSobrancelha}</g>
+    </g>`) : '';
   // O afro e o coque da artista passam do alto do palco: no corpo inteiro o
   // SVG deixa o desenho sair da caixa em vez de cortá-los retos. Com recorte
   // não, que ali a caixa é a moldura (retrato, miniatura).
@@ -308,6 +321,9 @@ export function svgAvatar({
 
   <!-- roupinha vestida, por camada: calça, calçado, torso, alça, luva -->
   ${veste.frente}
+
+  <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
+  ${sobrancelhas}
 
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}
