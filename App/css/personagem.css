@@ -39,6 +39,7 @@
   transition: transform .15s, box-shadow .15s;
 }
 .pg-swatch.redonda { width: 32px; height: 32px; border-radius: 50%; border-color: rgba(0, 0, 0, .12); }
+.pg-swatch.igual { border: 2px dashed var(--tinta); }   /* "igual ao cabelo" */
 .pg-swatch:hover { transform: translateY(-2px); }
 .pg-swatch.ativa {
   box-shadow: 0 0 0 2px var(--branco), 0 0 0 4px var(--tinta);

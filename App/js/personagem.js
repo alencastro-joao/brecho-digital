@@ -34,6 +34,7 @@ const aparenciaDoRascunho = () => {
     corCabelo: rascunho.corCabelo,
     nariz: rascunho.nariz,
     sobrancelha: rascunho.sobrancelha,
+    corSobrancelha: rascunho.corSobrancelha,
   };
 };
 
@@ -92,6 +93,22 @@ function renderMiniaturas(seletor, ordem, catalogo, campo, recorte) {
   }
 }
 
+// Cor da sobrancelha: a primeira bolinha é "igual ao cabelo" (vazio), que
+// acompanha o cabelo quando ele muda de cor.
+function renderCoresSobrancelha() {
+  const caixa = $('#pg-cores-sobrancelha');
+  caixa.innerHTML = '';
+  for (const cor of ['', ...CORES_CABELO]) {
+    caixa.append(el('button', {
+      class: 'pg-swatch redonda' + (cor ? '' : ' igual') +
+        (cor === (rascunho.corSobrancelha || '') ? ' ativa' : ''),
+      title: cor ? '' : 'Igual ao cabelo',
+      style: { background: cor || rascunho.corCabelo },
+      onclick: () => { rascunho.corSobrancelha = cor; renderTudo(); },
+    }));
+  }
+}
+
 function renderCores() {
   const caixa = $('#pg-cores');
   caixa.innerHTML = '';
@@ -125,6 +142,7 @@ function renderTudo() {
   const sobrancelhas = catalogoSobrancelhas();
   renderMiniaturas('#pg-sobrancelhas', Object.keys(sobrancelhas), sobrancelhas, 'sobrancelha',
     CROP_SOBRANCELHA);
+  renderCoresSobrancelha();
 }
 
 function abrirAba(aba) {
