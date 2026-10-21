@@ -207,37 +207,35 @@ function piercings(ap, id) {
   <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${partes.join('')}</g>`;
 }
 
-// Sardas (pedido do João, 21/10/2026): pintinhas espalhadas no alto do nariz
-// e nas bochechas, cada uma um borrão torto como as bolinhas dos piercings e
+// Sardas (pedido do João, 21/10/2026): pintinhas espalhadas nas manchas de
+// config.SARDAS, cada uma um borrão torto como as bolinhas dos piercings e
 // com o mesmo filtro granulado, na cor da pele bem mais escura. As posições
 // saem de uma semente fixa (sempre as mesmas) e não deixam duas pintinhas
-// encostarem. Manchas no palco: [cx, cy, rx, ry], a cara no meio em x=300.
-const SARDAS_ONDE = {
-  nariz: [300, 158, 15, 8],
-  bochechas: [[268, 171, 14, 8], [332, 171, 14, 8]],
-};
-function pintinhasNaMancha([cx, cy, rx, ry], n, rnd) {
+// encostarem.
+function pintinhasNaMancha([cx, cy, rx, ry, n], s, rnd) {
+  const [rMin, rMax] = s.raio || [0.85, 1.45], longe = s.afastamento || 3.4;
   const pontos = [];
   for (let tentativa = 0; pontos.length < n && tentativa < n * 40; tentativa++) {
     const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd());
     const x = cx + Math.cos(a) * d * rx, y = cy + Math.sin(a) * d * ry;
-    if (pontos.every(([px, py]) => Math.hypot(px - x, py - y) > 3.4)) pontos.push([x, y]);
+    if (pontos.every(([px, py]) => Math.hypot(px - x, py - y) > longe)) pontos.push([x, y]);
   }
-  return pontos.map(([x, y]) => bolinhaTorta(x, y, 0.85 + rnd() * 0.6, rnd));
+  return pontos.map(([x, y]) => bolinhaTorta(x, y, rMin + rnd() * (rMax - rMin), rnd));
 }
 function sardas(ap, id) {
   const s = SARDAS[ap.sardas];
-  if (!corpoDesenhado || !s || !(s.nariz || s.bochechas)) return '';
+  if (!corpoDesenhado || !s || !(s.manchas || s.fixas)) return '';
   const rnd = mulberry32(17);
   const partes = [
-    ...pintinhasNaMancha(SARDAS_ONDE.nariz, s.nariz, rnd),
-    ...SARDAS_ONDE.bochechas.flatMap(m => pintinhasNaMancha(m, s.bochechas, rnd)),
+    ...(s.manchas || []).flatMap(m => pintinhasNaMancha(m, s, rnd)),
+    ...(s.fixas || []).map(([x, y, r]) => bolinhaTorta(x, y, r, rnd)),
   ];
   return `<filter id="${id}-sardas" x="-30%" y="-30%" width="160%" height="160%">
     <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="9"/>
     <feDisplacementMap in="SourceGraphic" scale=".8" xChannelSelector="R" yChannelSelector="G"/>
   </filter>
-  <g fill="${escurecerTraco(ap.pele, 0.5)}" opacity=".62" filter="url(#${id}-sardas)">${partes.join('')}</g>`;
+  <g fill="${escurecerTraco(ap.pele, 0.5)}" opacity="${s.opacidade ?? 0.62}"
+     filter="url(#${id}-sardas)">${partes.join('')}</g>`;
 }
 
 // Sombra do cabelo na testa (pedido do João, 21/10/2026): o próprio desenho
