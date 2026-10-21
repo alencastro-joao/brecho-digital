@@ -126,6 +126,26 @@
   color: var(--tinta-suave);
 }
 
+/* "Entrar com Google": vale para as duas abas, por isso fica fora dos forms.
+   É link, não botão: o login acontece na página do Google e volta. */
+.auth-google { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.auth-ou {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .74rem; color: var(--tinta-suave);
+}
+.auth-ou::before, .auth-ou::after { content: ''; flex: 1; border-top: 2px solid var(--wii-borda); }
+.auth-google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 11px 12px;
+  border: 2px solid var(--wii-borda);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--tinta);
+  font-size: .95rem; font-weight: 600;
+  text-decoration: none;
+}
+.auth-google-btn:hover { border-color: var(--tinta-suave); }
+
 /* Enquanto o pedido está no ar: o botão vira texto e para de aceitar clique
    (senão dois Enter viram duas contas). */
 .auth-form.enviando .auth-enviar { opacity: .5; pointer-events: none; }

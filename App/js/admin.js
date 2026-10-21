@@ -81,7 +81,8 @@ function revisar(fila, i) {
 }
 
 // ------------------------- Instagram e Pinterest ---------------------------
-// As chaves dos apps criados no Meta for Developers e no Pinterest Developers.
+// As chaves dos apps criados no Meta for Developers e no Pinterest Developers,
+// e as do "Entrar com Google" (Google Cloud, cliente OAuth do tipo Web).
 // O segredo vai para o servidor e nunca volta: o campo só diz se já existe.
 // O endereço de retorno é o que se cadastra no app de cada rede.
 async function renderRedes() {
@@ -95,7 +96,8 @@ async function renderRedes() {
     caixa.replaceChildren(el('p', { class: 'tool-hint' }, 'Não consegui ler: ' + e.message));
     return;
   }
-  caixa.replaceChildren(...Object.entries(SERVICOS).map(([id, s]) => {
+  const chaves = { ...SERVICOS, google: { nome: 'Google (entrar com Google)' } };
+  caixa.replaceChildren(...Object.entries(chaves).map(([id, s]) => {
     const c = cfg[id] || {};
     const appId = el('input', { type: 'text', value: c.appId || '', placeholder: 'App ID', autocomplete: 'off' });
     const segredo = el('input', {

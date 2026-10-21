@@ -9,7 +9,7 @@ import { tratarAssinaturaAntiga } from './assinaturas.js';
 import './icones.js';   // troca os <i data-i>/<i data-e> do HTML antes de tudo
 import { ADMIN, aplicarPapel } from './config.js';
 import * as auth from './auth.js';
-import { pedirConta } from './telaauth.js';
+import { pedirConta, voltaDoGoogle } from './telaauth.js';
 import { carregarCatalogo, catalogo } from './catalog.js';
 import * as db from './db.js';
 import { carregarEstoque, numerarAntigas } from './estoque.js';
@@ -51,11 +51,14 @@ async function entrar() {
   let conta = null;
   let aviso = '';
   let nova = false;               // a conta nasceu agora, nesta abertura
+  const google = voltaDoGoogle(); // voltou agora do login com Google?
   try {
     conta = await auth.carregarSessao();
   } catch (e) {
     aviso = e.message;      // servidor de pé mas reclamando: a tela mostra
   }
+  if (conta && google?.nova) nova = true;
+  if (!conta && google?.erro) aviso = aviso || google.erro;
   if (!conta) ({ conta, nova } = await pedirConta({ aviso }));
 
   aplicarPapel(conta.papel);      // o modo administrador vem da conta, não da URL

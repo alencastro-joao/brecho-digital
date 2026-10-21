@@ -12,6 +12,9 @@ esta função só responde `/api/*`.
     POST /api/auth/sair        encerra a sessão
     POST /api/auth/senha       troca a senha (e derruba as outras sessões)
     PUT  /api/auth/eu          muda nome e @
+    GET  /api/auth/google          o login com Google está configurado?
+    GET  /api/auth/google/entrar   vai para o login do Google (logingoogle.py)
+    GET  /api/auth/google/volta    volta do Google: entra ou cria a conta
     GET  /api/estado           o save do jogo na nuvem
     PUT  /api/estado           grava o save
     GET  /api/usuarios?q=      procura pessoas (ver pessoas.py)
@@ -61,6 +64,7 @@ import contas
 import estado as save
 import estoque
 import feed
+import logingoogle
 import pessoas
 import redes
 
@@ -114,13 +118,16 @@ class Pedido:
         return self.cabecalhos.get('cloudfront-viewer-address', '').rsplit(':', 1)[0]
 
     def token(self):
+        return self.biscoito(contas.COOKIE)
+
+    def biscoito(self, nome):
         for bruto in self.cookies:
             try:
                 biscoito = _cookies.SimpleCookie(bruto)
             except _cookies.CookieError:
                 continue
-            if contas.COOKIE in biscoito:
-                return biscoito[contas.COOKIE].value
+            if nome in biscoito:
+                return biscoito[nome].value
         return None
 
     def corpo(self, limite):
@@ -171,11 +178,14 @@ def comprimir(resposta, pedido):
     return resposta
 
 
-def mandar_para(endereco):
+def mandar_para(endereco, cookies=None):
     """302: a navegação segue para outro endereço (o login de uma rede, ou
     a volta para o app)."""
-    return {'statusCode': 302, 'headers': {'Location': endereco, 'Cache-Control': 'no-store'},
-            'body': ''}
+    r = {'statusCode': 302, 'headers': {'Location': endereco, 'Cache-Control': 'no-store'},
+         'body': ''}
+    if cookies:
+        r['cookies'] = cookies
+    return r
 
 
 def biscoito_de_sessao(token, expira):
@@ -197,9 +207,52 @@ def entregar_sessao(usuario, pedido, codigo=200):
     return responder(codigo, {'usuario': usuario}, biscoito_de_sessao(token, expira))
 
 
+def biscoito_do_google(state):
+    """O `state` do login com Google preso a este navegador (logingoogle.py).
+    Só viaja para /api/auth/google, e some na volta."""
+    return ['%s=%s; Path=/api/auth/google; HttpOnly; SameSite=Lax; Secure; Max-Age=%d'
+            % (logingoogle.COOKIE, state or '', logingoogle.VALIDADE if state else 0)]
+
+
+def rotas_do_google(pedido):
+    """Entrar com Google. Tudo é navegação (302), e a volta para o app diz
+    como foi em ?google=: ok, nova (a conta nasceu agora) ou o erro."""
+    app = redes.SITE + '/?google='
+    if pedido.metodo != 'GET':
+        return None
+    if pedido.rota == '/api/auth/google/entrar':
+        destino, state = logingoogle.endereco_de_entrada()
+        if not destino:
+            return mandar_para(app + 'config')
+        return mandar_para(destino, biscoito_do_google(state))
+    q = pedido.consulta
+    apagar = biscoito_do_google('')
+    if q.get('error') or not q.get('code'):
+        return mandar_para(app + 'recusou', apagar)
+    try:
+        sub, email, nome = logingoogle.concluir(q.get('code'), q.get('state'),
+                                                pedido.biscoito(logingoogle.COOKIE))
+        usuario, nova = contas.entrar_com_google(sub, email, nome, pedido.origem)
+    except contas.ErroDeConta as e:
+        print('google: conta recusada: %s' % e.mensagem)
+        return mandar_para(app + ('limite' if e.codigo == 429 else 'falhou'), apagar)
+    except (ValueError, KeyError) as e:
+        print('google: volta falhou: %r' % e)
+        return mandar_para(app + 'falhou', apagar)
+    token, expira = contas.abrir_sessao(usuario['id'], pedido.agente)
+    return mandar_para(app + ('nova' if nova else 'ok'),
+                       apagar + biscoito_de_sessao(token, expira))
+
+
 # --- Rotas ----------------------------------------------------------------
 def rotas_de_conta(pedido):
     rota, metodo = pedido.rota, pedido.metodo
+
+    if rota == '/api/auth/google' and metodo == 'GET':
+        # A tela de entrada só mostra o botão com as chaves já guardadas.
+        return responder(200, {'pronto': logingoogle._config() is not None})
+    if rota in ('/api/auth/google/entrar', '/api/auth/google/volta'):
+        return rotas_do_google(pedido)
 
     if rota == '/api/auth/eu':
         if metodo == 'GET':
