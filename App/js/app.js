@@ -112,9 +112,9 @@ async function iniciar() {
     sessionStorage.removeItem(AVISO_DE_CONFLITO);
   } catch {}
   if (conflito === 'perdeu' || sync.perdeu) {
-    toast('Seu guarda-roupa mudou em outro aparelho e veio de lá. O que foi feito aqui depois disso não foi guardado.', 'aviso');
+    toast('Save trazido de outro aparelho. O que mudou aqui se perdeu.', 'aviso');
   } else if (sync.estado === 'offline') {
-    toast('Sem conexão com o servidor: jogando no save deste navegador.', 'aviso');
+    toast('Sem conexão. Salvando só neste navegador.', 'aviso');
   }
 
   // Quem você segue, segundo o servidor: seguir de um aparelho tem que valer no

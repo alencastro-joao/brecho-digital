@@ -1003,7 +1003,6 @@ async function apagarPost(post) {
   if (origem) origem.publicado = false;
   db.salvar();
   repintar();
-  toast('Post apagado do feed.');
 }
 
 async function baixarPost(post) {

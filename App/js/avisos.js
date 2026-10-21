@@ -95,7 +95,7 @@ function conferirFeed() {
       avisar({
         tipo: 'curtida', ir: ['social'], junta: 'curtida:' + p.id, qtd: curtidas - antes.c,
         texto: (n) => `${doPost(p)[0].toUpperCase()}${doPost(p).slice(1)} ganhou ` +
-          (n === 1 ? '1 curtida nova.' : `${n} curtidas novas.`),
+          (n === 1 ? '1 curtida.' : `${n} curtidas.`),
       });
     }
     for (const c of comentarios.filter(c => !antes.k.includes(c.id))) {
@@ -129,23 +129,14 @@ function conferirSeguidores(ids) {
 function aoGanharXP(evento) {
   if (evento.motivo.startsWith('missão: ')) {
     avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Missão concluída: ${evento.motivo.slice(8)} (+${evento.xp} XP).` });
-  } else if (evento.motivo === 'dia carimbado') {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Você carimbou o dia (+${evento.xp} XP).` });
+             texto: `${evento.motivo.slice(8)} · +${evento.xp} XP` });
   } else if (evento.motivo.startsWith('missão da semana: ')) {
     avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Missão da semana concluída: ${evento.motivo.slice(18)} (+${evento.xp} XP).` });
-  } else if (evento.motivo === 'baú dos dias') {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Você abriu o baú dos dias (+${evento.xp} XP).` });
-  } else if (evento.motivo === 'baú semanal') {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Você abriu o baú semanal (+${evento.xp} XP).` });
+             texto: `Semana: ${evento.motivo.slice(18)} · +${evento.xp} XP` });
   }
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
-             texto: `Você chegou ao nível ${evento.nivel}. Tem prêmio esperando na trilha.` });
+             texto: `Nível ${evento.nivel}: prêmio na trilha.` });
   }
 }
 
@@ -158,12 +149,12 @@ function conferirDia() {
   a.dia = hoje;
   if (primeira) return gravar();
   avisar({ tipo: 'loja', ir: ['vitrine'],
-           texto: 'Dia novo: a vitrine foi reposta e as missões recomeçaram.' });
+           texto: 'Dia novo: loja e missões renovadas.' });
 }
 
 // O botão de repor do admin: a loja trocou sem o dia virar.
 export function avisarLojaReposta() {
-  avisar({ tipo: 'loja', ir: ['vitrine'], texto: 'A loja foi reposta: estoque novo na vitrine.' });
+  avisar({ tipo: 'loja', ir: ['vitrine'], texto: 'Loja reposta.' });
 }
 
 // Peça da wishlist na loja: só o sino, sem toast nem balão. Cada peça avisa
@@ -183,7 +174,7 @@ export function conferirWishlist() {
     const peca = pecaDoCatalogo(id);
     if (!peca) continue;
     avisar({ tipo: 'wishlist', ir: ['vitrine'],
-             texto: `${nomeDaPeca(peca)}, da sua wishlist, está na sua loja hoje.` });
+             texto: `${nomeDaPeca(peca)}, da wishlist, está na loja.` });
   }
 }
 

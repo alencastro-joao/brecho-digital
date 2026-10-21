@@ -146,7 +146,7 @@ export function abrirAssinaturas(aoMudar = () => {}) {
     db.salvar();
     fechar();
     aoMudar();
-    toast(imagem || u.assinaturaTexto ? 'Assinatura salva.' : 'Assinatura removida: volta o nome da conta.');
+    toast(imagem || u.assinaturaTexto ? 'Assinatura salva.' : 'Assinatura removida.');
   });
 
   document.body.append(fundo);

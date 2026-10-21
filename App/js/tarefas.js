@@ -132,13 +132,13 @@ function renderCartaoBaus() {
 const TROCAS = [
   { id: 'resgate', nome: 'Resgate extra', texto: 'Mais uma peça na loja. Fica guardado até usar.',
     icone: () => ico('sacola'), preco: () => FICHAS.porResgate,
-    acao: () => { if (db.trocarFichasPorResgate()) toast('+1 resgate. Ele fica guardado até você usar.', 'rare'); } },
+    acao: () => { if (db.trocarFichasPorResgate()) toast('+1 resgate.', 'rare'); } },
   { id: 'repor', nome: 'Repor a loja', texto: 'Arara nova agora. Os resgates do dia continuam.',
     icone: () => ico('atualizar'), preco: () => FICHAS.porRepor,
     acao: () => trocarFichasPorRepor() },
   { id: 'congelar', nome: 'Congelar', texto: 'Segura uma peça na loja até amanhã. Use na ficha dela.',
     icone: () => ico('floco'), preco: () => FICHAS.porCongelar,
-    acao: () => { if (db.comprarCongelamento()) toast('+1 congelamento. Use na ficha de uma peça da loja.', 'rare'); },
+    acao: () => { if (db.comprarCongelamento()) toast('+1 congelamento.', 'rare'); },
     guardados: () => db.congelamentos() },
 ];
 
@@ -281,7 +281,7 @@ function renderDia() {
 function resgatarDia() {
   const r = db.resgatarMarcoDoDia();
   if (!r) return;
-  toast(`Dia carimbado! ${BAUS[r.bau].nome} guardado em Baús.`, 'rare');
+  toast(`Dia carimbado! +${BAUS[r.bau].nome}`, 'rare');
 }
 
 // -------------------------------- Semana ----------------------------------
@@ -293,7 +293,7 @@ function renderSemana() {
   if (db.carimboDaSemanaPronto()) {
     rodape = [botaoPremio('Carimbar a semana', () => {
       const r = db.carimbarSemana();
-      if (r) toast(`Semana carimbada! ${BAUS[r.bau].nome} guardado em Baús.`, 'rare');
+      if (r) toast(`Semana carimbada! +${BAUS[r.bau].nome}`, 'rare');
     })];
   }
   $('#tf-rodape').replaceChildren(...rodape);
@@ -320,7 +320,7 @@ function trilha(selos, { nome, bau, icone, dourado, pronto, abrir, aberto }) {
     type: 'button', 'aria-label': nome,
     class: 'tf-bau' + (dourado ? ' ouro' : '') + (pronto ? ' pronto' : '') + (aberto ? ' aberto' : ''),
     title: aberto ? `${nome} aberto` : dica,
-    onclick: () => pronto ? abrir() : toast(aberto ? `Você já pegou o ${nome} desta semana.` : dica),
+    onclick: () => pronto ? abrir() : toast(aberto ? `${nome} já pego esta semana.` : dica),
   }, ico(aberto ? 'ok' : pronto ? 'presente' : icone));
   $('#tf-trilha').className = 'tf-trilha' + (selos.length < 5 ? ' curta' : '');
   $('#tf-trilha').replaceChildren(...selos, botaoBau);
@@ -385,7 +385,7 @@ export function sortearPecas(bauId) {
 function pegarUmBau(pegar) {
   const r = pegar();
   if (!r) return;
-  toast(`${BAUS[r.bau].nome} guardado em Baús. +${r.xp} XP`, 'rare');
+  toast(`+${BAUS[r.bau].nome}`, 'rare');
 }
 
 // As peças que saíram de um baú: tiram do estoque da loja e ganham número.
@@ -455,8 +455,8 @@ function pegarPremio(n, { quieto = false } = {}) {
   const r = db.pegarPremioDoNivel(n);
   if (!r) return null;
   if (!quieto) {
-    toast(r.tipo === 'bau' ? `${BAUS[r.bau].nome} guardado em Baús.`
-      : r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor a loja. Use na Loja.`
+    toast(r.tipo === 'bau' ? `+${BAUS[r.bau].nome}`
+      : r.tipo === 'repor' ? `+${r.qtd} ${r.qtd === 1 ? 'ficha' : 'fichas'} de repor.`
       : `+${r.qtd} fichas.`, 'rare');
   }
   renderTrilha();
@@ -471,8 +471,8 @@ function pegarTodos() {
   const baus = saiu.filter(r => r.tipo === 'bau').length;
   const partes = [
     fichas && `+${fichas} fichas`,
-    repor && `+${repor} ${repor === 1 ? 'ficha' : 'fichas'} de repor a loja`,
-    baus && `${baus} ${baus === 1 ? 'baú guardado' : 'baús guardados'} em Baús`,
+    repor && `+${repor} de repor`,
+    baus && `+${baus} ${baus === 1 ? 'baú' : 'baús'}`,
   ].filter(Boolean);
   toast(partes.join(', ') + '.', 'rare');
 }

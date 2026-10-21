@@ -49,7 +49,7 @@ export const perfilPublico = perfilDe;
 // mesmo cai na tela de perfil, que é esta página com o que só você vê.
 export function abrirPerfilDe(id) {
   if (!id || id === db.state.usuario.id) return irPara('perfil');
-  if (!podeAbrir(id)) return toast('Esse perfil não existe mais.', 'aviso');
+  if (!podeAbrir(id)) return toast('Perfil não encontrado.', 'aviso');
   irPara('usuario', id);
 }
 
@@ -529,7 +529,7 @@ export function botaoDesejo(peca, aoMudar = null, { rotulo = false } = {}) {
       e.stopPropagation();
       const entrou = db.alternarWishlist(peca.id);
       pintar(b);
-      toast(entrou ? 'Na sua wishlist.' : 'Saiu da wishlist.');
+      if (entrou) toast('Na wishlist.');
       aoMudar?.(entrou);
     },
   });

@@ -34,7 +34,7 @@ export function abrirCompartilhar({ formatos, gerar }) {
         const imagem = await gerar(formato);
         if (acao === 'baixar') {
           baixarArquivo(imagem.blob, imagem.nome);
-          toast('PNG gerado. Confere os downloads.');
+          toast('Imagem baixada.');
         } else {
           await noInstagram(imagem);
         }

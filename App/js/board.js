@@ -941,7 +941,7 @@ function ligarControles() {
   on('#bd-salvar-assinatura', 'click', () => {
     db.state.usuario.assinatura = { ...board.assinatura };
     db.salvar();
-    toast('Assinatura salva — novas colagens já nascem com ela.');
+    toast('Assinatura salva.');
   });
 
   on('#bd-margem', 'change', renderMargem);
@@ -1056,7 +1056,7 @@ function ligarControles() {
   on('#bd-limpar-guias', 'click', () => { mudanca(); board.guias = { h: [], v: [] }; renderGuias(); });
 
   on('#bd-compartilhar', 'click', () => {
-    if (!board.itens.length) return toast('Solte alguma peça antes de compartilhar.', 'aviso');
+    if (!board.itens.length) return toast('Coloque uma peça antes.', 'aviso');
     abrirCompartilhar({
       formatos: [
         { id: 'formato', rotulo: 'Post 1080×1350' },
@@ -1113,13 +1113,11 @@ function acaoNaSelecao(acao) {
 function agrupar(juntar) {
   const alvos = selecionados();
   if (juntar) {
-    if (alvos.length < 2) return toast('Escolha duas peças ou mais para agrupar.', 'aviso');
+    if (alvos.length < 2) return toast('Escolha 2 peças ou mais.', 'aviso');
     const g = 'g' + (uidSeq++);
     alvos.forEach(i => { i.grupo = g; });
-    toast(`${alvos.length} peças agrupadas.`);
   } else {
     alvos.forEach(i => { delete i.grupo; });
-    toast('Grupo desfeito.');
   }
 }
 
@@ -1139,7 +1137,7 @@ function alinhar(modo) {
   } : area;
 
   if (modo === 'dist-h' || modo === 'dist-v') {
-    if (alvos.length < 3) { toast('Distribuir pede três peças ou mais.', 'aviso'); return; }
+    if (alvos.length < 3) { toast('Escolha 3 peças ou mais.', 'aviso'); return; }
     const eixo = modo === 'dist-h' ? 'x' : 'y';
     const ord = caixas.sort((a, b) => a.c[eixo] - b.c[eixo]);
     const primeiro = ord[0].c[eixo], ultimo = ord.at(-1).c[eixo];
@@ -1165,7 +1163,7 @@ export function gerarColagem() {
     .filter(Boolean);
 
   if (!acervo.length) {
-    toast('Seu guarda-roupa está vazio. Garimpe na vitrine primeiro.', 'aviso');
+    toast('Guarda-roupa vazio. Garimpe na vitrine.', 'aviso');
     return;
   }
   mudanca();
@@ -1185,7 +1183,6 @@ export function gerarColagem() {
   selecao.clear();
   render();
   espalhar(prancheta(), antes);
-  toast(`Colagem sorteada com ${board.itens.length} peças. ${ehToque() ? '↶ desfaz' : 'Ctrl+Z desfaz'}.`);
 }
 
 // Arruma as peças sozinho: grade certinha ou espalhadas com leve inclinação.
@@ -1392,13 +1389,13 @@ async function salvarBoard({ silencioso = false } = {}) {
   if (salvo.publicado && jaPublicado('boardId', salvo.id)) {
     try {
       await publicarNoFeed({ ...await pacoteDaColagem(salvo), atualizar: true });
-      toast(`"${nome}" salva e atualizada no feed.`);
+      toast('Salva e atualizada no feed.');
     } catch (e) {
-      toast(`"${nome}" salva, mas o post do feed não mudou: ${e.message || 'sem conexão'}.`, 'aviso');
+      toast('Salva. O feed não atualizou.', 'aviso');
     }
     return salvo;
   }
-  toast(`"${nome}" salva.`);
+  toast('Colagem salva.');
   return salvo;
 }
 
@@ -1433,8 +1430,8 @@ async function publicarBoard() {
   db.salvar();
   renderLista();
   toast(onde === 'servidor'
-    ? 'Colagem publicada no feed — seus amigos já podem ver.'
-    : 'Sem conexão: publicada só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
+    ? 'Publicada no feed.'
+    : 'Sem conexão. Publica quando voltar.');
 }
 
 // As colagens salvas moram só no painel "Minhas colagens", aberto pelo
@@ -1484,7 +1481,7 @@ function montarMinhasColagens() {
     pecas: (b) => b.itens?.filter(i => i.tipo !== 'texto').length || 0,
     abrir: abrirBoard,
     novo: async () => {
-      if (await comecarNova()) toast('Mesa limpa: monte a colagem nova e salve.');
+      await comecarNova();
     },
     aoRenomear: (id, nome) => {
       if (id === board.id) { board.nome = nome; $('#board-nome').value = nome; }

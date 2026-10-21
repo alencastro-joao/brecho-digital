@@ -6,32 +6,38 @@
    só muda a pele, nenhum tamanho ou posição. */
 
 /* ------------------------------ Avisos (toast) --------------------------- */
-/* Uma pílula pérola com o degrau embaixo e uma bolinha na cor do aviso. Raro,
-   épico e lendário trocam a borda e a bolinha para a cor da raridade (a mesma
-   do cartão de prêmio) e mantêm o reflexo de animacoes.css por cima. */
+/* Uma pílula pérola com o degrau embaixo e, na frente, um ícone redondo na
+   cor do aviso: ✓ no comum, ! no de atenção, ★ nos de raridade, ▲ no lendário
+   (nível, ferramenta nova). Raro, épico e lendário trocam a borda e o ícone
+   para a cor da raridade (a mesma do cartão de prêmio) e mantêm o reflexo de
+   animacoes.css por cima. */
 html body .toast {
   --cor-aviso: var(--wii);
+  --ico-aviso: '✓';
   display: inline-flex; align-items: center; gap: 9px;
   background: var(--perola); color: var(--tinta);
   border: 2px solid var(--wii-borda);
-  padding: 5px 13px 7px 8px;
+  padding: 5px 16px 7px 6px;
   max-width: min(420px, 100%);
-  font-size: 12px; line-height: 1.3; font-weight: 700;
+  font-size: 13px; line-height: 1.3; font-weight: 700;
   box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau),
     0 6px 16px rgba(30, 50, 65, .18);
 }
 html body .toast::before {
-  content: ''; flex: none; width: 10px; height: 10px; border-radius: 50%;
+  content: var(--ico-aviso); flex: none; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font-size: 12px; font-weight: 800; line-height: 1;
   background: var(--brilho-topo), var(--cor-aviso);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .16), 0 0 0 2px var(--wii-brilho);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18);
 }
 /* Repete o fundo: base.css pinta cada tipo com uma cor chapada. */
 html body .toast:is(.aviso, .uncommon, .rare, .epic, .legendary) { background-color: transparent; background: var(--perola); }
-html body .toast.aviso     { --cor-aviso: #eea52c; }
-html body .toast.uncommon  { --cor-aviso: #2fbf63; border-color: #2fbf63; }
-html body .toast.rare      { --cor-aviso: #2f7ff0; border-color: #2f7ff0; }
-html body .toast.epic      { --cor-aviso: #9b46f0; border-color: #9b46f0; }
-html body .toast.legendary { --cor-aviso: #d4a514; border-color: #d4a514; }
+html body .toast.aviso     { --cor-aviso: #eea52c; --ico-aviso: '!'; }
+html body .toast.uncommon  { --cor-aviso: #2fbf63; --ico-aviso: '★'; border-color: #2fbf63; }
+html body .toast.rare      { --cor-aviso: #2f7ff0; --ico-aviso: '★'; border-color: #2f7ff0; }
+html body .toast.epic      { --cor-aviso: #9b46f0; --ico-aviso: '★'; border-color: #9b46f0; }
+html body .toast.legendary { --cor-aviso: #d4a514; --ico-aviso: '▲'; border-color: #d4a514; }
+html body .toast.desfazer  { --ico-aviso: '↶'; padding-left: 6px; }
 html body .toast:is(.rare, .epic, .legendary) {
   background-image: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .9) 50%, transparent 62%), var(--perola);
   background-size: 260% 100%, 100% 100%;
