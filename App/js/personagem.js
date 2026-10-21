@@ -16,7 +16,7 @@ import { aplicarPaleta, paletaDaCor } from './paleta.js';
 import * as db from './db.js';
 import {
   svgAvatar, resolverAparencia, catalogoCorpos, catalogoNarizes, catalogoCabelos,
-  catalogoSobrancelhas, piercingsDasOrelhas,
+  catalogoSobrancelhas, piercingsDasOrelhas, tiposDaOrelha, juntarTipos,
 } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
@@ -93,12 +93,13 @@ function enquadrar(svg) {
 
 // "piercings: esquerda bolinhas · bridge spikes", só o que tiver.
 function resumoBrincos() {
+  const nomes = (tipos) => tipos.map(t => PIERCINGS_ORELHA[t].nome.toLowerCase()).join(' e ');
   const partes = [
-    ['esquerda', PIERCINGS_ORELHA, rascunho.orelhaEsq],
-    ['direita', PIERCINGS_ORELHA, rascunho.orelhaDir],
-    ['bridge', PIERCINGS_BRIDGE, rascunho.bridge],
-  ].filter(([, , id]) => id && id !== 'nenhum')
-    .map(([onde, cat, id]) => `${onde} ${(cat[id]?.nome ?? '').toLowerCase()}`);
+    ['esquerda', nomes(tiposDaOrelha(rascunho.orelhaEsq))],
+    ['direita', nomes(tiposDaOrelha(rascunho.orelhaDir))],
+    ['bridge', (PIERCINGS_BRIDGE[rascunho.bridge]?.bolinhas || PIERCINGS_BRIDGE[rascunho.bridge]?.spikes)
+      ? PIERCINGS_BRIDGE[rascunho.bridge].nome.toLowerCase() : ''],
+  ].filter(([, o]) => o).map(([onde, o]) => `${onde} ${o}`);
   return partes.length ? ` · piercings: ${partes.join(', ')}` : '';
 }
 
@@ -150,6 +151,32 @@ function renderMiniaturas(seletor, ordem, catalogo, campo, recorte, extra = {}) 
   }
 }
 
+// Piercings de uma orelha: os tipos se combinam, então cada miniatura liga e
+// desliga o seu (mostrando só ele), e "Nada" tira todos.
+function renderTiposDaOrelha(seletor, campo, recorte) {
+  const caixa = $(seletor);
+  caixa.innerHTML = '';
+  const ligados = tiposDaOrelha(rascunho[campo]);
+  for (const tipo of ['nenhum', ...Object.keys(PIERCINGS_ORELHA)]) {
+    const nome = tipo === 'nenhum' ? 'Nada' : PIERCINGS_ORELHA[tipo].nome;
+    const arte = el('span', { class: 'pg-corte-arte' });
+    arte.innerHTML = svgAvatar({
+      aparencia: { ...aparenciaDoRascunho(), cabelo: 'nenhum', [campo]: tipo },
+      recorte,
+    });
+    const ativa = tipo === 'nenhum' ? !ligados.length : ligados.includes(tipo);
+    caixa.append(el('button', {
+      class: 'pg-corte' + (ativa ? ' ativa' : ''),
+      title: nome,
+      onclick: () => {
+        rascunho[campo] = tipo === 'nenhum' ? 'nenhum'
+          : juntarTipos(ativa ? ligados.filter(t => t !== tipo) : [...ligados, tipo]);
+        renderTudo();
+      },
+    }, arte, el('small', {}, nome)));
+  }
+}
+
 // Cor da sobrancelha: a primeira bolinha é "igual ao cabelo" (vazio), que
 // acompanha o cabelo quando ele muda de cor.
 function renderCoresSobrancelha() {
@@ -198,11 +225,8 @@ function renderTudo() {
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
   // Piercings, todos na mesma aba: sem cabelo na miniatura, que o comprido
   // cobre a orelha e a franja, o bridge.
-  const orelhas = Object.keys(PIERCINGS_ORELHA);
-  renderMiniaturas('#pg-piercing-esq', orelhas, PIERCINGS_ORELHA, 'orelhaEsq',
-    CROP_ORELHA_ESQ, { cabelo: 'nenhum' });
-  renderMiniaturas('#pg-piercing-dir', orelhas, PIERCINGS_ORELHA, 'orelhaDir',
-    CROP_ORELHA_DIR, { cabelo: 'nenhum' });
+  renderTiposDaOrelha('#pg-piercing-esq', 'orelhaEsq', CROP_ORELHA_ESQ);
+  renderTiposDaOrelha('#pg-piercing-dir', 'orelhaDir', CROP_ORELHA_DIR);
   renderMiniaturas('#pg-piercing-bridge', Object.keys(PIERCINGS_BRIDGE), PIERCINGS_BRIDGE,
     'bridge', CROP_BRIDGE, { cabelo: 'nenhum' });
   // Sobrancelha: formato e cor na mesma aba.
