@@ -944,12 +944,21 @@ export const PIERCINGS_BRIDGE = {
   bolinhas: { nome: 'Bolinhas', bolinhas: true },
   spikes: { nome: 'Spikes', spikes: true },
 };
+// Sardas: quantas pintinhas no nariz e em cada bochecha (onde elas ficam está
+// em avatar.js, SARDAS_ONDE). Só na cara da artista.
+export const SARDAS = {
+  nenhuma: { nome: 'Nada', nariz: 0, bochechas: 0 },
+  poucas: { nome: 'Poucas', nariz: 6, bochechas: 0 },
+  nariz: { nome: 'Nariz', nariz: 12, bochechas: 0 },
+  bochechas: { nome: 'Nariz e bochechas', nariz: 9, bochechas: 8 },
+  muitas: { nome: 'Muitas', nariz: 14, bochechas: 15 },
+};
 
 export const APARENCIA_PADRAO = {
   corpo: 'masculino', pele: 'clara', cabelo: 'curto',
   corCabelo: '#3d2519', nariz: 'botao', sobrancelha: 'nenhuma',
   corSobrancelha: '',   // vazio: a do cabelo, um pouco mais escura
-  orelhaEsq: 'nenhum', orelhaDir: 'nenhum', bridge: 'nenhum',
+  orelhaEsq: 'nenhum', orelhaDir: 'nenhum', bridge: 'nenhum', sardas: 'nenhuma',
 };
 
 // ----------------------------- Colagem (Board) ----------------------------
