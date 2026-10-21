@@ -495,7 +495,8 @@ function renderConta() {
 }
 
 // ------------------------- Limpeza de contas (admin) -----------------------
-// Lista todas as contas do app e apaga as que não são a sua. O servidor faz
+// Lista todas as contas do app e apaga as que não ficam (a sua e as marcadas
+// "manter"). O servidor faz
 // backup de tudo antes (lambda/limpeza.py) e só apaga os ids desta lista.
 async function pedirAdmin(rota, corpo) {
   const r = await fetch(rota, {
@@ -514,26 +515,46 @@ function montarLimpeza() {
   const resumo = $('#limpeza-resumo');
   const botaoVer = $('#btn-ver-contas');
   const botaoLimpar = $('#btn-limpar-contas');
-  let saem = [];
+  let contas = [];
+  const ficam = new Set();          // ids marcados "manter" (a sua sempre fica)
+  const saem = () => contas.filter(c => !c.fica && !ficam.has(c.id));
 
   const data = iso => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—');
 
-  async function ver() {
-    botaoVer.disabled = true;
-    resumo.textContent = 'Lendo as contas…';
-    try {
-      const { contas, postsDeExemplo } = await pedirAdmin('/api/admin/contas');
-      saem = contas.filter(c => !c.fica);
-      lista.replaceChildren(...contas.map(c => el('li', { class: c.fica ? 'fica' : '' },
-        el('b', {}, c.fica ? 'FICA · ' : 'SAI · '),
+  function desenhar() {
+    lista.replaceChildren(...contas.map(c => {
+      const fica = c.fica || ficam.has(c.id);
+      const caixa = el('input', { type: 'checkbox' });
+      caixa.checked = fica;
+      caixa.disabled = c.fica;
+      caixa.addEventListener('change', () => {
+        if (caixa.checked) ficam.add(c.id); else ficam.delete(c.id);
+        desenhar();
+      });
+      return el('li', { class: fica ? 'fica' : '' },
+        el('label', { class: 'limpeza-manter' }, caixa, ' manter'),
+        el('b', {}, fica ? 'FICA · ' : 'SAI · '),
         `${c.email} · ${c.handle}${c.papel === 'admin' ? ' · admin' : ''}`,
         el('br'),
         el('small', {}, `criada ${data(c.criadoEm)} · último acesso ${data(c.ultimoAcesso)} · ` +
           `${c.posts} posts · ${c.comentarios} coment. · ${c.curtidas} curtidas · ` +
-          `${c.seguidores} seguidores · save ${c.save ? 'sim' : 'não'}`))));
-      resumo.textContent = `${contas.length} contas; ${saem.length} sairiam. ` +
-        `Os ${postsDeExemplo} posts dos perfis de exemplo não são de conta e ficam.`;
-      botaoLimpar.hidden = !saem.length;
+          `${c.seguidores} seguidores · save ${c.save ? 'sim' : 'não'}`));
+    }));
+    const n = saem().length;
+    resumo.textContent = `${contas.length} contas; ${contas.length - n} ficam e ${n} sairiam. ` +
+      'Marque "manter" nas que devem ficar. ' +
+      `Os ${postsDeExemplo} posts dos perfis de exemplo não são de conta e ficam.`;
+    botaoLimpar.hidden = !n;
+  }
+
+  let postsDeExemplo = 0;
+  async function ver() {
+    botaoVer.disabled = true;
+    resumo.textContent = 'Lendo as contas…';
+    try {
+      ({ contas, postsDeExemplo } = await pedirAdmin('/api/admin/contas'));
+      for (const id of [...ficam]) if (!contas.some(c => c.id === id)) ficam.delete(id);
+      desenhar();
     } catch (e) {
       resumo.textContent = 'Não consegui ler as contas: ' + e.message;
     } finally {
@@ -542,18 +563,19 @@ function montarLimpeza() {
   }
 
   async function limpar() {
-    if (!saem.length) return;
-    const nomes = saem.map(c => c.email).join('\n');
+    const vao = saem();
+    if (!vao.length) return;
+    const nomes = vao.map(c => c.email).join('\n');
     const escrito = await pedirTexto(
       `${nomes}\n\nAntes é feito um backup. Escreva APAGAR para confirmar.`,
-      { titulo: `Apagar de vez ${saem.length} conta(s), com posts, comentários, curtidas e saves?`,
+      { titulo: `Apagar de vez ${vao.length} conta(s), com posts, comentários, curtidas e saves?`,
         sim: 'Apagar', perigo: true });
     if (escrito !== 'APAGAR') return;
     botaoLimpar.disabled = true;
     resumo.textContent = 'Fazendo o backup e apagando…';
     try {
       const f = await pedirAdmin('/api/admin/contas/limpar',
-        { ids: saem.map(c => c.id), confirmar: 'APAGAR' });
+        { ids: vao.map(c => c.id), confirmar: 'APAGAR' });
       toast(`${f.contas} conta(s) apagada(s).`);
       await ver();
       resumo.textContent = `Apagadas ${f.contas} contas, ${f.posts} posts, ${f.sessoes} sessões ` +
