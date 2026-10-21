@@ -203,6 +203,18 @@ function piercings(ap, id) {
   <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${partes.join('')}</g>`;
 }
 
+// Sombra do cabelo na testa (pedido do João, 21/10/2026): uma mancha
+// esfumada, na cor da pele mais escura, logo abaixo da linha do cabelo. Só na
+// cara da artista e só com cabelo (careca não faz sombra).
+function sombraDaTesta(ap, id) {
+  if (!corpoDesenhado || ap.cabelo === 'nenhum') return '';
+  return `<filter id="${id}-testa" x="-50%" y="-80%" width="200%" height="260%">
+    <feGaussianBlur stdDeviation="5"/>
+  </filter>
+  <ellipse cx="300" cy="82" rx="50" ry="13" fill="${escurecerTraco(ap.pele, 0.55)}"
+           opacity=".24" filter="url(#${id}-testa)"/>`;
+}
+
 export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar || {});
 
 // Aparência sorteada a partir de um texto (o id do perfil). Mesma semente,
@@ -450,6 +462,9 @@ export function svgAvatar({
 
   <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
   ${sobrancelhas}
+
+  <!-- sombra que o cabelo faz na testa, embaixo dele -->
+  ${sombraDaTesta(ap, idCorte)}
 
   <!-- piercings, também embaixo do cabelo da frente -->
   ${piercings(ap, idCorte)}
