@@ -186,3 +186,21 @@ html body :is(.menu-compartilhar, #ficha-peca) {
 }
 html body .menu-item:hover { background: var(--perola); box-shadow: inset 0 0 0 2px var(--wii-borda); }
 html body .menu-item.perigo { border-top: 2px solid var(--wii-borda); }
+
+/* Salvar é sempre verde e Publicar sempre laranja-amarelado, em qualquer
+   paleta: são as duas ações que a pessoa precisa achar de olho. Este arquivo
+   carrega por último; a pérola de icones.css deixa estes ids de fora, e o
+   `html:root` mais o `[id]` ganham das cores de cada tela (mobile.css). */
+html:root body :is(#btn-salvar, #bd-salvar, #pg-salvar, #mp-salvar)[id] {
+  background: var(--brilho-topo), #3fa34d; border-color: #2f8a3c; color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .16), 0 0 0 3px rgba(63, 163, 77, .25);
+}
+html:root body :is(#btn-publicar, #bd-publicar)[id] {
+  background: var(--brilho-topo), #f5a524; border-color: #d98a0f; color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .16), 0 0 0 3px rgba(245, 165, 36, .25);
+}
+html:root body :is(#btn-salvar, #bd-salvar, #pg-salvar, #mp-salvar, #btn-publicar, #bd-publicar)[id]:hover:not(:disabled) {
+  filter: brightness(1.05); border-color: rgba(0, 0, 0, .25);
+}

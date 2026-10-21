@@ -1307,6 +1307,8 @@ export const FERRAMENTAS = [
 // `pecas` é uma faixa por peça (sem peça na faixa, desce: ver faixasDeTroca).
 // `bau` é um baú de BAUS: a quantidade e as raridades seguem a mesma regra
 // dos baús de Tarefas (CHANCE_NO_BAU).
+// `dicaCelular` (opcional) troca a dica no celular, quando o gesto é outro.
+// `demo: 'peca'` abre uma peça da pessoa na tela do passo, para mostrar.
 // `lugar` é onde o cartão fica no celular enquanto a missão é feita: em cima
 // (sobre o cabeçalho) quando o que se toca na tela está embaixo — a mochila,
 // a paleta, a ficha da peça — e embaixo quando está em cima.
@@ -1323,18 +1325,17 @@ export const INTRO = [
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
     dica: 'Você ganhou um baú! Todo baú fica guardado aqui, na tela de Baús, dentro de Tarefas. Toque nele para abrir.',
     premio: { xp: 20 } },
-  { ir: 'closet', lugar: 'cima', nome: 'O seu closet',
+  { ir: 'closet', demo: 'peca', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
       'Toque numa peça para ver a ficha com marca, cor e estilo.' },
-  // {cor} é a cor do trio do presente, a favorita (state.presenteCor, ver presente.js).
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
-    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças você libera um item para o avatar, e com mais, libera mais. ' +
-      'O seu presente trouxe 3 peças {cor}, então esta coleção já tem um item esperando.' },
+    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças você libera um item para o avatar, e com mais, libera mais.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
     dica: 'Toque no item liberado para levá-lo ao seu inventário.',
     premio: { xp: 20 } },
   { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista o seu personagem',
-    dica: 'Este é o Inventário, com as roupinhas do avatar. Toque duas vezes no item que você resgatou (ou arraste para o corpo) para vestir.',
+    dica: 'Este é o Inventário, com as roupinhas do avatar. Clique no item que você resgatou (ou arraste para o corpo) para vestir.',
+    dicaCelular: 'Este é o Inventário, com as roupinhas do avatar. Toque no item que você resgatou para vestir.',
     premio: { xp: 20, fichas: 1 } },
   { ir: 'vestiario', lugar: 'cima', nome: 'Combos',
     dica: 'Itens vestidos com a mesma marca, cor ou estilo fazem combo: 2 ativam um efeito, 3 ou mais reforçam. ' +
@@ -1346,18 +1347,15 @@ export const INTRO = [
     dica: 'Arraste as peças pelo fundo branco do jeito que quiser e salve.',
     premio: { bau: 'incomum', xp: 20 } },
   { evento: 'publicar', ir: 'stylist', lugar: 'cima', nome: 'Publique no feed',
-    dica: 'Publique o look ou a colagem que você salvou. É o que os outros veem de você.',
+    dica: 'Publique um look ou uma colagem.',
     premio: { bau: 'raro', xp: 30 } },
   { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
     dica: 'Aqui ficam os looks de todo mundo. Toque em Seguir em quem você curtir. Para achar amigos, busque pelo nome ou @.',
     premio: { fichas: 2 } },
   { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
-    dica: 'Aqui ficam as missões do dia, e cada uma paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um Baú incomum. ' +
-      '5 dias carimbados na semana abrem o Baú raro.',
-    premio: { fichas: 1, xp: 20 } },
-  { evento: 'favoritar', ir: 'closet', lugar: 'cima', nome: 'Escolha uma peça favorita',
-    dica: 'Abra uma peça e toque na estrela. As favoritas aparecem na vitrine do seu perfil.',
-    premio: { bau: 'epico', xp: 50 } },
+    dica: 'Aqui ficam as missões do dia, e cada uma paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um baú. ' +
+      '5 dias carimbados na semana dão mais um baú.',
+    premio: { bau: 'epico', fichas: 1, xp: 50 } },
 ];
 
 export const ferramenta = (id) => FERRAMENTAS.find(f => f.id === id);

@@ -1,7 +1,6 @@
 // Missões de introdução: o tutorial de conta nova, guiado e em forma de missão.
 //
-// Abre numa tela em branco que avisa que o tutorial vai começar e, dali, leva a
-// pessoa por um passo de cada vez (INTRO em config.js): personagem, a loja e
+// Abre direto no primeiro passo e leva a pessoa por um passo de cada vez (INTRO em config.js): personagem, a loja e
 // as regras dela, pegar a primeira roupa, o closet e as raridades, coleções e
 // o resgate do item, vestir o avatar, combos, e o resto do app. Cada passo
 // abre sozinho a tela de que fala. Passo que só explica segue no "Entendi";
@@ -12,9 +11,9 @@
 // Cumprir a missão entrega o prêmio na hora (num aviso) e já passa para o
 // próximo passo, sem tela de prêmio no meio.
 //
-// O cartão não pode ficar na frente do que a missão pede: a faixa fica em cima
-// ou embaixo conforme a missão (`lugar`, em INTRO), qualquer toque fora dela a
-// recolhe numa bolinha no canto, e tanto a faixa quanto a bolinha se arrastam.
+// O cartão não pode ficar na frente do que a missão pede: ele fica em cima ou
+// embaixo conforme a missão (`lugar`, em INTRO), e qualquer toque fora dele o
+// recolhe numa bolinha, que se arrasta. Ou está aberto, ou é a bolinha.
 //
 // Começa sozinho na conta nova. Para testar de novo: Perfil › Testes ›
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
@@ -28,13 +27,14 @@ import { montarVitrine } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
+import { abrirPecaNoCloset } from './closet.js';
+import { tocar } from './sons.js';
 
 let caixa = null;
-let modo = 'barra';       // 'aberta' | 'barra' | 'bolha'
+let modo = 'aberta';      // 'aberta' | 'bolha'
 let concluindo = false;
-// Onde a pessoa arrastou: a faixa só sobe e desce (y), a bolinha vai a
-// qualquer lugar. null = o lugar padrão da missão (CSS).
-const posicao = { barra: null, bolha: null };
+// Onde a pessoa arrastou a bolinha. null = o lugar padrão (CSS).
+let posicao = null;
 let arrasto = null;
 let acabouDeArrastar = false;
 
@@ -53,7 +53,7 @@ export function montarTutorial() {
   // ele se recolhe. Em captura e sem impedir nada, então o toque segue para
   // onde foi dado. Passo que só explica não se recolhe: ele espera o Entendi.
   document.addEventListener('pointerdown', (e) => {
-    if (caixa && !caixa.contains(e.target) && (modo === 'barra' || modo === 'aberta') && passoAtual()?.evento) {
+    if (caixa && !caixa.contains(e.target) && modo === 'aberta' && passoAtual()?.evento) {
       modo = 'bolha';
       desenhar();
     }
@@ -226,7 +226,25 @@ function enfileirar(cartao) {
   if (!premioNaTela) proximoPremio();
 }
 
+// Um baú abrindo (a janela dos baús, tarefas.js) fica na frente de tudo: o
+// cartão da missão espera ela fechar. Enquanto espera, premioNaTela segura o
+// próximo passo.
+function esperarOBau() {
+  const modal = $('#modal-bau');
+  if (!modal || modal.hidden) return false;
+  premioNaTela = 'esperando';
+  const obs = new MutationObserver(() => {
+    if (!modal.hidden) return;
+    obs.disconnect();
+    premioNaTela = null;
+    proximoPremio();
+  });
+  obs.observe(modal, { attributes: true, attributeFilter: ['hidden'] });
+  return true;
+}
+
 function proximoPremio() {
+  if (filaDePremios.length && esperarOBau()) return;
   const vez = filaDePremios.shift();
   if (!vez) { premioNaTela = null; seguir(); return; }
   const { sobre, titulo, pecas = [], xp = 0, fichas = 0, bau = null, texto = '', tempo = 0, marcar = null } = vez;
@@ -243,7 +261,8 @@ function proximoPremio() {
       el('span', { class: 'premio-nome' }, nomeDaPeca(item)));
   });
   const bonus = [
-    fichas && el('span', { class: 'premio-bonus ficha' }, `+${fichas} ${fichas === 1 ? 'ficha' : 'fichas'}`),
+    fichas && el('span', { class: 'premio-bonus ficha' },
+      el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), `+${fichas} ${fichas === 1 ? 'ficha' : 'fichas'}`),
     xp && el('span', { class: 'premio-bonus xp' }, `+${xp} XP`),
   ].filter(Boolean);
 
@@ -258,7 +277,15 @@ function proximoPremio() {
   const btnAbrir = fechado
     ? el('button', { type: 'button', class: 'btn-dark premio-abrir' }, `Abrir ${nomeDoBau?.toLowerCase() ?? 'baú'}`)
     : null;
+  // Só fichas (sem peça nem baú): as fichinhas no meio, uma por ficha ganha.
+  const soFichas = fichas && !fotos.length && !caixaDoBau;
+  const moedas = soFichas
+    ? el('div', { class: 'premio-fichas', 'aria-hidden': 'true' },
+      Array.from({ length: Math.min(fichas, 5) }, (_, i) =>
+        el('span', { class: 'ficha-moeda', style: { animationDelay: `${.15 + i * .12}s` } })))
+    : null;
   const conteudo = el('div', { class: 'premio-conteudo' },
+    moedas,
     fotos.length ? el('div', { class: 'premio-pecas' + (fotos.length > 3 ? ' muitas' : '') }, fotos) : null,
     bonus.length ? el('div', { class: 'premio-bonus-linha' }, bonus) : null,
     texto ? el('p', { class: 'premio-fim' }, texto) : null,
@@ -301,6 +328,7 @@ function proximoPremio() {
   if (!fechado) contar();
   premioNaTela = cartao;
   document.body.append(cartao);
+  if (sobre === 'Missão completa' || sobre === 'Fim') tocar('missao');
 }
 const ordem = (f) => RARIDADES.findIndex(r => r.id === f);
 
@@ -321,13 +349,24 @@ function pontos(passo) {
     `<i class="${i < passo ? 'feito' : i === passo ? 'ativo' : ''}"></i>`).join('')}</div>`;
 }
 
-// A missão das coleções fala da cor que veio no presente.
-const comCor = (texto) => texto.replaceAll('{cor}', (db.state.presenteCor || '').toLowerCase() || 'da mesma cor');
+// No celular o gesto pode ser outro (dicaCelular).
+const celular = () => matchMedia('(max-width: 900px)').matches;
+const dicaDe = (m) => (celular() && m.dicaCelular) || m.dica;
 
-// "Ir para lá": a missão da coleção abre direto a coleção da cor do presente.
+// A peça para mostrar no passo do closet: a que a pessoa pegou na loja, ou a
+// primeira que tiver.
+function pecaParaMostrar() {
+  const inv = db.state.inventario;
+  return (inv.find(p => p.origem !== 'presente') || inv[0])?.id;
+}
+
+// "Ir para lá": a missão da coleção abre direto a coleção da cor do presente,
+// e o passo do closet já abre uma peça da pessoa.
 function irParaMissao(m) {
   const cor = db.state.presenteCor;
+  const peca = m.demo === 'peca' && pecaParaMostrar();
   if (m.ir === 'colecoes' && cor) abrirColecao(idDaCor(cor));
+  else if (peca) abrirPecaNoCloset(peca);
   else irPara(m.ir);
 }
 
@@ -339,29 +378,19 @@ function htmlAberta(m, passo) {
       ${missao ? '<button class="intro-min" data-acao="minimizar" type="button" aria-label="Minimizar">–</button>' : ''}
     </div>
     <h2>${m.nome}</h2>
-    <div class="intro-balao" data-digitar><p class="intro-dica">${comCor(m.dica)}</p></div>
+    <div class="intro-balao" data-digitar><p class="intro-dica">${dicaDe(m)}</p></div>
     ${missao ? `<p class="intro-premio">${emoHtml('🎁')} ${rotuloDoPremio(m.premio)}</p>` : ''}
     ${pontos(passo)}
     <div class="intro-acoes">
       <button class="btn-ghost" data-acao="pular" type="button">Pular tutorial</button>
       ${missao
-        ? '<button class="btn-dark" data-acao="minimizar" type="button">Bora!</button>'
+        ? '<button class="btn-dark" data-acao="ir" type="button">Bora!</button>'
         : '<button class="btn-dark" data-acao="entendi" type="button">Entendi</button>'}
     </div>`;
 }
 
-function htmlBarra(m, passo) {
-  const sub = m.evento ? `${emoHtml('🎁')} ${rotuloDoPremio(m.premio)}` : 'toque para ler';
-  return `
-    <button class="intro-faixa" data-acao="abrir" type="button">
-      <span class="intro-num">${passo + 1}/${INTRO.length}</span>
-      <span class="intro-texto"><b>${m.nome}</b><small>${sub}</small></span>
-    </button>
-    <button class="btn-dark" data-acao="ir" type="button">Ir</button>`;
-}
-
 function htmlBolha(passo) {
-  return `<button class="intro-bolha" data-acao="barra" type="button"
+  return `<button class="intro-bolha" data-acao="abrir" type="button"
     aria-label="Missão ${passo + 1} de ${INTRO.length}: mostrar">${passo + 1}/${INTRO.length}</button>`;
 }
 
@@ -383,9 +412,7 @@ function desenhar() {
   caixa.dataset.lugar = m.lugar;
   document.body.classList.toggle('intro-embaixo', caixa.dataset.lugar === 'baixo' && modo !== 'bolha');
   caixa.innerHTML =
-    modo === 'aberta' ? htmlAberta(m, passo) :
-    modo === 'bolha' ? htmlBolha(passo) :
-    htmlBarra(m, passo);
+    modo === 'bolha' ? htmlBolha(passo) : htmlAberta(m, passo);
   digitar(modo === 'aberta' ? `${modo}:${passo}` : null);
   posicionar();
 }
@@ -440,6 +467,8 @@ function digitar(chave) {
     pintar();
     if (digitando.mostradas >= total) { terminar(); return; }
     const letra = letraEm(nos, digitando.mostradas - 1);
+    // O tique da tecla, de duas em duas letras (uma por letra vira zumbido).
+    if (/\S/.test(letra) && digitando.mostradas % 2) tocar('tecla');
     digitando.timer = setTimeout(passo, /[.!?:]/.test(letra) ? MS_POR_LETRA * 8 : MS_POR_LETRA);
   };
   const terminar = () => {
@@ -478,21 +507,19 @@ function fechar() {
 }
 
 // --------------------------------- Arrastar -------------------------------
-const tipoDePosicao = () => (modo === 'bolha' ? 'bolha' : modo === 'barra' ? 'barra' : null);
-
 function posicionar() {
-  const tipo = tipoDePosicao();
-  const p = tipo && posicao[tipo];
+  const p = modo === 'bolha' && posicao;
   const s = caixa.style;
   s.top = s.left = s.right = s.bottom = '';
   if (!p) return;
   s.top = `${p.y}px`;
   s.bottom = 'auto';
-  if (tipo === 'bolha') { s.left = `${p.x}px`; s.right = 'auto'; }
+  s.left = `${p.x}px`;
+  s.right = 'auto';
 }
 
 function comecarArrasto(e) {
-  if (!tipoDePosicao() || e.button > 0) return;
+  if (modo !== 'bolha' || e.button > 0) return;
   const r = caixa.getBoundingClientRect();
   arrasto = { x0: e.clientX, y0: e.clientY, top: r.top, left: r.left, w: r.width, h: r.height, movendo: false };
   window.addEventListener('pointermove', moverArrasto);
@@ -515,10 +542,9 @@ function moverArrasto(e) {
   const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
   if (!a.movendo && Math.hypot(dx, dy) < 6) return;   // abaixo disso é toque
   a.movendo = true;
-  const tipo = tipoDePosicao();
   const y = Math.min(Math.max(4, a.top + dy), innerHeight - a.h - 4);
   const x = Math.min(Math.max(4, a.left + dx), innerWidth - a.w - 4);
-  posicao[tipo] = tipo === 'bolha' ? { x, y } : { y };
+  posicao = { x, y };
   posicionar();
 }
 
@@ -536,8 +562,7 @@ function clique(e) {
   if (!acao) { if (digitando && e.target.closest('[data-digitar]')) digitando.terminar(); return; }
   if (acao === 'entendi') entendi();
   else if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
-  else if (acao === 'barra') { modo = 'barra'; desenhar(); }
-  else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
-  else if (acao === 'ir') { modo = passoAtual()?.evento ? 'barra' : 'aberta'; irParaMissao(passoAtual()); desenhar(); }
-  else if (acao === 'pular') { modo = 'barra'; db.pularIntro(); }
+  else if (acao === 'minimizar') { modo = 'bolha'; desenhar(); }
+  else if (acao === 'ir') { modo = 'bolha'; irParaMissao(passoAtual()); desenhar(); }
+  else if (acao === 'pular') { modo = 'aberta'; db.pularIntro(); }
 }
