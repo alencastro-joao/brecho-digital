@@ -85,14 +85,37 @@ export function resolverAparencia(cfg = {}) {
 // As bolinhas são as da orelha da esquerda da tela, no palco, da do lóbulo
 // para cima, medidas no desenho dela; a da direita é espelhada em x=300, como
 // o desenho. Ficam embaixo do cabelo da frente: cabelo comprido as cobre.
+// Nada de círculo perfeito: cada bolinha é um borrão torto (sempre o mesmo,
+// pela semente) e o filtro esfarela a borda, como o traço granulado dela.
 const BOLINHAS_BRINCO = [[223.5, 168, 2.6], [219.5, 161.5, 2.2], [217.5, 155, 1.8]];
-function brincos(ap) {
+function bolinhaTorta(cx, cy, r, rnd) {
+  const n = 9;
+  const pts = Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2 + rnd() * 0.4;
+    const k = r * (0.82 + rnd() * 0.3);
+    return [cx + Math.cos(a) * k, cy + Math.sin(a) * k * (0.9 + rnd() * 0.15)];
+  });
+  // Curva pelos meios dos lados, com os pontos de controle: fecha redonda.
+  const meio = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const f = (p) => p.map(v => v.toFixed(2)).join(' ');
+  let d = `M${f(meio(pts[n - 1], pts[0]))}`;
+  for (let i = 0; i < n; i++) d += ` Q${f(pts[i])} ${f(meio(pts[i], pts[(i + 1) % n]))}`;
+  return `<path d="${d}Z"/>`;
+}
+function brincos(ap, id) {
   const qtd = BRINCOS[ap.brincos]?.qtd || 0;
   if (!qtd || !corpoDesenhado) return '';
   const lados = ap.ladoBrincos === 'esquerda' ? [1] : ap.ladoBrincos === 'direita' ? [-1] : [1, -1];
-  const bolinhas = BOLINHAS_BRINCO.slice(0, qtd).flatMap(([x, y, r]) =>
-    lados.map(l => `<circle cx="${l === 1 ? x : 600 - x}" cy="${y}" r="${r}"/>`));
-  return `<g fill="#26222a">${bolinhas.join('')}</g>`;
+  const bolinhas = lados.flatMap((l) => {
+    const rnd = mulberry32(l === 1 ? 7 : 11);
+    return BOLINHAS_BRINCO.slice(0, qtd).map(([x, y, r]) =>
+      bolinhaTorta(l === 1 ? x : 600 - x, y, r, rnd));
+  });
+  return `<filter id="${id}-grao" x="-30%" y="-30%" width="160%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="4"/>
+    <feDisplacementMap in="SourceGraphic" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${bolinhas.join('')}</g>`;
 }
 
 export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar || {});
@@ -344,7 +367,7 @@ export function svgAvatar({
   ${sobrancelhas}
 
   <!-- brincos, também embaixo do cabelo da frente -->
-  ${brincos(ap)}
+  ${brincos(ap, idCorte)}
 
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}

@@ -55,8 +55,42 @@ const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
 const CROP_BRINCO = [198, 126, 52, 56];
 const CROP_LADO_BRINCO = [200, 100, 200, 100];
 
+// Zoom no rosto: mexendo em nariz, sobrancelha ou brincos, a prévia chega
+// perto da cabeça (no palco, já na cabeça da artista) para ver o detalhe.
+// O SVG é o mesmo; só o viewBox desliza de um enquadramento para o outro.
+const ABAS_DO_ROSTO = new Set(['nariz', 'sobrancelha', 'brincos']);
+const PALCO_INTEIRO = [0, 0, 600, 1200];
+const CROP_ROSTO = [170, -20, 260, 300];
+let noRosto = false;
+let caixaDaPrevia = null;   // o viewBox de agora, para o próximo zoom partir dele
+let animacao = 0;
+
+function enquadrar(svg) {
+  const alvo = noRosto ? CROP_ROSTO : PALCO_INTEIRO;
+  const de = caixaDaPrevia || alvo;
+  const aplicar = (caixa) => {
+    caixaDaPrevia = caixa;
+    svg.setAttribute('viewBox', caixa.map(v => v.toFixed(1)).join(' '));
+    // No corpo inteiro o cabelo alto pode sair da caixa; de perto, o resto
+    // do corpo não pode vazar para fora da moldura.
+    svg.setAttribute('overflow', caixa === PALCO_INTEIRO ? 'visible' : 'hidden');
+  };
+  $('#pg-previa').classList.toggle('de-perto', noRosto);
+  cancelAnimationFrame(animacao);
+  if (de === alvo) { aplicar(alvo); return; }
+  const inicio = performance.now();
+  const passo = (agora) => {
+    const t = Math.min(1, (agora - inicio) / 280);
+    const k = 1 - (1 - t) ** 3;
+    aplicar(t === 1 ? alvo : de.map((v, i) => v + (alvo[i] - v) * k));
+    if (t < 1) animacao = requestAnimationFrame(passo);
+  };
+  animacao = requestAnimationFrame(passo);
+}
+
 function renderPrevia() {
   $('#pg-previa').innerHTML = svgAvatar({ aparencia: aparenciaDoRascunho() });
+  enquadrar($('#pg-previa svg'));
   $('#pg-resumo').textContent =
     `${catalogoCorpos()[rascunho.corpo]?.nome ?? '—'} · ` +
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
@@ -170,6 +204,8 @@ function abrirAba(aba) {
   const painel = $('.pg-painel');
   painel.dataset.aba = aba;
   for (const x of $('#pg-abas').children) x.classList.toggle('ativa', x.dataset.aba === aba);
+  noRosto = ABAS_DO_ROSTO.has(aba);
+  renderPrevia();
 }
 
 function salvar() {
@@ -214,6 +250,8 @@ export function aoEntrarNoPersonagem() {
   // Corte de código que saiu do catálogo já abre marcado no parecido.
   rascunho.cabelo = resolverAparencia(rascunho).cabelo;
   corFavorita = db.state.usuario.corFavorita || null;
+  noRosto = ABAS_DO_ROSTO.has($('.pg-painel').dataset.aba);
+  caixaDaPrevia = null;
   $('#pg-abas [data-aba="roupas"]').hidden = db.introAtiva();
   renderTudo();
 }
@@ -227,6 +265,14 @@ export function montarPersonagem() {
   // Abas do celular: o painel mostra só a parte escolhida (ver mobile.css).
   const painel = $('.pg-painel');
   painel.dataset.aba = 'corpo';
+  // No computador não tem aba: o zoom segue o bloco em que a pessoa clicou.
+  // Na captura, antes do botão redesenhar o painel e sair da página.
+  painel.addEventListener('click', (e) => {
+    const bloco = e.target.closest('.pg-bloco');
+    if (!bloco || noRosto === ABAS_DO_ROSTO.has(bloco.dataset.aba)) return;
+    noRosto = !noRosto;
+    renderPrevia();
+  }, true);
   $('#pg-abas').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-aba]');
     if (!b) return;
