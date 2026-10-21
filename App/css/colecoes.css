@@ -349,6 +349,15 @@
 .col-escolha-item.trancado .col-escolha-arte svg { filter: grayscale(1); opacity: .5; }
 .col-escolha-item.trancado strong { color: #8a8170; }
 .col-tranca { position: absolute; top: 6px; right: 8px; font-size: 13px; }
+.col-lupa {
+  position: absolute; top: 4px; left: 6px; width: 26px; height: 26px; display: grid; place-items: center;
+  background: #fff; border: 1px solid #ddd6c6; border-radius: 50%; font-size: 13px; cursor: pointer; padding: 0;
+}
+.col-lupa:hover { border-color: #8a8170; }
+.col-item-grande-caixa { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.col-item-grande { width: min(260px, 70vw); aspect-ratio: 1; display: grid; place-items: center; }
+.col-item-grande svg { width: 100%; height: 100%; }
+.col-item-grande-caixa p { font-size: 13px; color: #8a8170; text-align: center; }
 
 .col-album { display: flex; flex-direction: column; gap: 10px; }
 .col-album h3 {

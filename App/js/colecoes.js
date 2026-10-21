@@ -18,6 +18,7 @@ import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { irPara, viewAtual } from './router.js';
+import { mostrar } from './janela.js';
 import { abrirPecaNoCloset } from './closet.js';
 import { flutuarTexto } from './animacoes.js';
 
@@ -450,8 +451,18 @@ function itensTrancados(c) {
       const arte = el('span', { class: 'col-escolha-arte' });
       arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
       return el('div', { class: 'col-escolha-item trancado', title: `${r.nome} · ainda trancado` },
-        arte, el('span', { class: 'col-tranca' }, emo('🔒')), el('strong', {}, r.nome));
+        arte, el('span', { class: 'col-tranca' }, emo('🔒')), el('strong', {}, r.nome),
+        el('button', { type: 'button', class: 'col-lupa', title: 'Ver maior', 'aria-label': `Ver ${r.nome} maior`,
+          onclick: () => verItemMaior(r) }, emo('🔍')));
     })));
+}
+
+// O item trancado em tamanho grande, só para ver de perto.
+function verItemMaior(r) {
+  const arte = el('div', { class: 'col-item-grande' });
+  arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+  mostrar(el('div', { class: 'col-item-grande-caixa' }, arte,
+    el('p', {}, emo('🔒'), ' Ainda trancado. Junte peças desta coleção para escolher.')), { titulo: r.nome });
 }
 
 // Uma casa do álbum: a peça, ou a silhueta dela quando ainda falta.
