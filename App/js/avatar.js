@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, BRINCOS, SPIKES,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -76,27 +76,30 @@ export function resolverAparencia(cfg = {}) {
     nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
     sobrancelha: SOBRANCELHAS[cfg.sobrancelha] ? cfg.sobrancelha : 'nenhuma',
     corSobrancelha: cfg.corSobrancelha || '',
-    ...brincosDasOrelhas(cfg),
-    spikeEsq: SPIKES[cfg.spikeEsq] ? cfg.spikeEsq : 'nenhum',
-    spikeDir: SPIKES[cfg.spikeDir] ? cfg.spikeDir : 'nenhum',
+    ...piercingsDasOrelhas(cfg),
+    bridge: PIERCINGS_BRIDGE[cfg.bridge] ? cfg.bridge : 'nenhum',
   };
 }
 
-// Brinco de cada orelha. O primeiro formato (21/10/2026, poucos minutos no
-// ar) guardava quantos (`brincos`) e em que lado (`ladoBrincos`): quem salvou
-// nele abre com o mesmo nas orelhas de agora.
-export function brincosDasOrelhas(cfg = {}) {
-  const ok = (id) => (BRINCOS[id] ? id : 'nenhum');
-  if (cfg.brincoEsq || cfg.brincoDir || !cfg.brincos) {
-    return { brincoEsq: ok(cfg.brincoEsq), brincoDir: ok(cfg.brincoDir) };
+// Piercing de cada orelha. Os formatos de antes (21/10/2026, minutos no ar
+// cada um) guardavam quantos brincos e spikes; quem salvou neles abre com o
+// mesmo tipo, agora sempre três.
+export function piercingsDasOrelhas(cfg = {}) {
+  if (cfg.orelhaEsq || cfg.orelhaDir) {
+    const ok = (id) => (PIERCINGS_ORELHA[id] ? id : 'nenhum');
+    return { orelhaEsq: ok(cfg.orelhaEsq), orelhaDir: ok(cfg.orelhaDir) };
   }
+  const tem = (id) => !!id && id !== 'nenhum';
+  const lado = (brinco, spike) => (tem(brinco) && tem(spike) ? 'ambos'
+    : tem(brinco) ? 'bolinhas' : tem(spike) ? 'spikes' : 'nenhum');
+  const antigo = (l) => (tem(cfg.brincos) && cfg.ladoBrincos !== l ? cfg.brincos : '');
   return {
-    brincoEsq: cfg.ladoBrincos === 'direita' ? 'nenhum' : ok(cfg.brincos),
-    brincoDir: cfg.ladoBrincos === 'esquerda' ? 'nenhum' : ok(cfg.brincos),
+    orelhaEsq: lado(cfg.brincoEsq || antigo('direita'), cfg.spikeEsq),
+    orelhaDir: lado(cfg.brincoDir || antigo('esquerda'), cfg.spikeDir),
   };
 }
 
-// Brincos de bolinha na orelha da artista (o corpo de código não tem orelha).
+// Piercings na cara da artista (o corpo de código não tem orelha).
 // As bolinhas são as da orelha da esquerda da tela, no palco, da do lóbulo
 // para cima, medidas no desenho dela; a da direita é espelhada em x=300, como
 // o desenho. Ficam embaixo do cabelo da frente: cabelo comprido as cobre.
@@ -134,27 +137,40 @@ function spikeTorto(x, y, dx, dy, rnd) {
   return `<path d="M${p[0]} L${p[1]} L${p[2]} Z" stroke="#2b2522" stroke-width=".6"
     stroke-linejoin="round"/>`;
 }
-// `qual`: bolinhas ou spikes, cada um com o seu filtro. Os dois ficam embaixo
-// do cabelo da frente (pedido do João): cabelo que cobre a orelha os cobre.
-function brincos(ap, id, qual) {
+// Bridge: as duas pontas da barrinha, uma de cada lado do alto do nariz,
+// entre os olhos (no palco, na cara da artista). Os spikes apontam para fora.
+const BRIDGE = { y: 143, meio: 3.8, r: 1.7 };
+
+// Todos os piercings, embaixo do cabelo da frente (pedido do João): cabelo
+// que cobre a orelha ou a franja comprida os cobre. Um filtro só esfarela a
+// borda de todos.
+function piercings(ap, id) {
   if (!corpoDesenhado) return '';
-  const bolinhas = [[1, ap.brincoEsq, ap.spikeEsq], [-1, ap.brincoDir, ap.spikeDir]]
-    .flatMap(([l, b, s]) => {
-      const rnd = mulberry32(l === 1 ? 7 : 11);
-      const lado = (x) => (l === 1 ? x : 600 - x);
-      return qual === 'spikes'
-        ? PONTOS_SPIKE.slice(0, SPIKES[s]?.qtd || 0).map(([x, y, dx, dy]) =>
-          spikeTorto(lado(x), y, dx * l, dy, rnd))
-        : BOLINHAS_BRINCO.slice(0, BRINCOS[b]?.qtd || 0).map(([x, y, r]) =>
-          bolinhaTorta(lado(x), y, r, rnd));
-    });
-  if (!bolinhas.length) return '';
-  id += '-' + qual;
+  const partes = [[1, ap.orelhaEsq], [-1, ap.orelhaDir]].flatMap(([l, escolha]) => {
+    const p = PIERCINGS_ORELHA[escolha] || {};
+    const rnd = mulberry32(l === 1 ? 7 : 11);
+    const lado = (x) => (l === 1 ? x : 600 - x);
+    return [
+      ...(p.bolinhas ? BOLINHAS_BRINCO.map(([x, y, r]) => bolinhaTorta(lado(x), y, r, rnd)) : []),
+      ...(p.spikes ? PONTOS_SPIKE.map(([x, y, dx, dy]) => spikeTorto(lado(x), y, dx * l, dy, rnd)) : []),
+    ];
+  });
+  const b = PIERCINGS_BRIDGE[ap.bridge] || {};
+  if (b.bolinhas || b.spikes) {
+    const rnd = mulberry32(13);
+    for (const l of [1, -1]) {
+      const x = 300 - l * BRIDGE.meio;
+      partes.push(b.bolinhas
+        ? bolinhaTorta(x, BRIDGE.y, BRIDGE.r, rnd)
+        : spikeTorto(x + l * 0.9, BRIDGE.y, -l, 0, rnd));
+    }
+  }
+  if (!partes.length) return '';
   return `<filter id="${id}-grao" x="-30%" y="-30%" width="160%" height="160%">
     <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="4"/>
     <feDisplacementMap in="SourceGraphic" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
   </filter>
-  <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${bolinhas.join('')}</g>`;
+  <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${partes.join('')}</g>`;
 }
 
 export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar || {});
@@ -405,9 +421,8 @@ export function svgAvatar({
   <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
   ${sobrancelhas}
 
-  <!-- brincos, também embaixo do cabelo da frente -->
-  ${brincos(ap, idCorte, 'bolinhas')}
-  ${brincos(ap, idCorte, 'spikes')}
+  <!-- piercings, também embaixo do cabelo da frente -->
+  ${piercings(ap, idCorte)}
 
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}

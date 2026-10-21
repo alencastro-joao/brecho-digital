@@ -921,29 +921,28 @@ export const SOBRANCELHAS = {
   },
 };
 
-// Brincos de bolinha (pedido do João, 21/10/2026): bolinhas escuras na borda
-// de baixo da orelha, da maior (no lóbulo) para a menor, subindo. Cada orelha
-// tem a sua escolha (`qtd`); o lado é o da tela, como num espelho.
-export const BRINCOS = {
-  nenhum: { nome: 'Sem brinco', qtd: 0 },
-  um: { nome: 'Um', qtd: 1 },
-  dois: { nome: 'Dois', qtd: 2 },
-  tres: { nome: 'Três', qtd: 3 },
+// Piercings (pedidos do João, 21/10/2026), no traço granulado da artista.
+// Orelha: três bolinhas na borda de baixo (da maior, no lóbulo, para cima)
+// e/ou três spikes na borda de cima; o lado é o da tela, como num espelho.
+export const PIERCINGS_ORELHA = {
+  nenhum: { nome: 'Nada' },
+  bolinhas: { nome: 'Bolinhas', bolinhas: true },
+  spikes: { nome: 'Spikes', spikes: true },
+  ambos: { nome: 'Os dois', bolinhas: true, spikes: true },
 };
-// Spikes: espinhos na borda de cima da orelha, apontando para fora. Os mesmos
-// ids e quantidades dos brincos de bolinha, cada orelha com a sua escolha.
-export const SPIKES = {
-  nenhum: { nome: 'Sem spike', qtd: 0 },
-  um: { nome: 'Um', qtd: 1 },
-  dois: { nome: 'Dois', qtd: 2 },
-  tres: { nome: 'Três', qtd: 3 },
+// Bridge: a barrinha que atravessa o alto do nariz, entre os olhos; aparecem
+// as duas pontas, bolinhas ou spikes.
+export const PIERCINGS_BRIDGE = {
+  nenhum: { nome: 'Nada' },
+  bolinhas: { nome: 'Bolinhas', bolinhas: true },
+  spikes: { nome: 'Spikes', spikes: true },
 };
 
 export const APARENCIA_PADRAO = {
   corpo: 'masculino', pele: 'clara', cabelo: 'curto',
   corCabelo: '#3d2519', nariz: 'botao', sobrancelha: 'nenhuma',
   corSobrancelha: '',   // vazio: a do cabelo, um pouco mais escura
-  brincoEsq: 'nenhum', brincoDir: 'nenhum', spikeEsq: 'nenhum', spikeDir: 'nenhum',
+  orelhaEsq: 'nenhum', orelhaDir: 'nenhum', bridge: 'nenhum',
 };
 
 // ----------------------------- Colagem (Board) ----------------------------
