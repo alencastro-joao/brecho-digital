@@ -1396,7 +1396,7 @@ export const ROUPAS_BASE = [
 // [x, y, w, h] no palco 600×1200, na frente dos olhos.
 export const OCULOS_ESPINHOS = {
   id: 'oculos-espinhos', slot: 'acessorio', z: 62, versao: 'v1',
-  caixa: [234, 110, 132, 75.2],
+  caixa: [212, 110, 172, 82],
   cores: { Preto: 'pretos', Verde: 'verdes', Azul: 'azuis', Vermelho: 'vermelhos', Rosa: 'rosa', Roxo: 'roxos' },
 };
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
