@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, SOMBRA_OLHOS_BOCA, PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -231,6 +231,30 @@ function sombraDoNariz(ap, id) {
   <ellipse cx="${(x + w * 0.22).toFixed(1)}" cy="${(y + h * 0.5).toFixed(1)}"
            rx="${Math.max(4.2, w * 0.22).toFixed(1)}" ry="${Math.max(10, h * 0.55).toFixed(1)}"
            fill="${escurecerTraco(ap.pele, 0.55)}" opacity=".3" filter="url(#${id}-nariz)"/>`;
+}
+
+// Sombra de olhos e boca (teste, liga em config.SOMBRA_OLHOS_BOCA): duas
+// manchas esfumadas, uma de cada lado do alto do nariz, na altura do bridge
+// (os olhos), e uma mais achatada abaixo do nariz (a boca). Mesma cor da
+// sombra do nariz, mais fraca. Medidas no molde, a cara no meio em x=300.
+const SOMBRA_ROSTO = {
+  olhos: { y: 145, meio: 27, rx: 11, ry: 5.5, opacidade: 0.18 },
+  boca: { y: 199, rx: 13, ry: 4, opacidade: 0.16 },
+  borrao: 3.2,
+};
+function sombraDosOlhosEBoca(ap, id) {
+  if (!SOMBRA_OLHOS_BOCA || !corpoDesenhado) return '';
+  const { olhos, boca, borrao } = SOMBRA_ROSTO;
+  const cor = escurecerTraco(ap.pele, 0.55);
+  const olho = (cx) => `<ellipse cx="${cx}" cy="${olhos.y}" rx="${olhos.rx}" ry="${olhos.ry}"
+           opacity="${olhos.opacidade}"/>`;
+  return `<filter id="${id}-rosto" x="-100%" y="-150%" width="300%" height="400%">
+    <feGaussianBlur stdDeviation="${borrao}"/>
+  </filter>
+  <g fill="${cor}" filter="url(#${id}-rosto)">
+    ${olho(300 - olhos.meio)}${olho(300 + olhos.meio)}
+    <ellipse cx="300" cy="${boca.y}" rx="${boca.rx}" ry="${boca.ry}" opacity="${boca.opacidade}"/>
+  </g>`;
 }
 
 export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar || {});
@@ -483,6 +507,9 @@ export function svgAvatar({
 
   <!-- sombra que o cabelo faz na testa, embaixo dele -->
   ${sombraDaTesta(ap, idCorte)}
+
+  <!-- sombra de teste onde ficariam os olhos e a boca (desligada por padrão) -->
+  ${sombraDosOlhosEBoca(ap, idCorte)}
 
   <!-- piercings, também embaixo do cabelo da frente -->
   ${piercings(ap, idCorte)}
