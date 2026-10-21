@@ -1,0 +1,8 @@
+regiao,descricao,original,Preto,Branco,Cinza,Bege,Marrom,Vermelho,Rosa,Laranja,Amarelo,Verde,Azul,Roxo
+sombra_lente,Sombra escura da lente (cantos e reflexo curvo),#124407,#161513,#ada392,#3f3c38,#6e5e45,#312012,#56110e,#7e3252,#6e310a,#6b520d,#124407,#10264b,#2a1a4b
+armacao,Contorno da armação e lado escuro dos espinhos,#135504,#191511,#988c76,#51473a,#8e7347,#392311,#680e0b,#a1325f,#883704,#846308,#135504,#0d295b,#2f185c
+lente,Miolo da lente,#1b4d10,#1c1a18,#cfc9bf,#4f4b46,#8a7656,#3d2817,#6b1512,#9e3f66,#8a3d0c,#866710,#1b4d10,#142f5e,#35205e
+meio_escuro,"Transição escura (borda interna, base dos espinhos)",#3c782b,#3e3c38,#d8d3cb,#6c6863,#a08e70,#5e4835,#883834,#b25e80,#a25d2d,#a08430,#407135,#38527e,#58447e
+meio,Meio-tom dos espinhos,#76aa66,#615d59,#e2ded6,#8a8680,#b6a68a,#806852,#a65a56,#c67e9b,#bb7d4e,#baa150,#66955a,#5c769f,#7c689e
+meio_claro,Transição clara dos espinhos,#acd1a1,#837e7a,#ebe8e2,#a7a39d,#ccbda4,#a18870,#c37d77,#d99eb5,#d49c70,#d3be71,#8bba80,#7f9ac0,#a08dbf
+espinho,Lado claro dos espinhos,#cbf8bf,#a5a09a,#f4f2ed,#c4c0ba,#e2d5be,#c2a88e,#e1a099,#edbdcf,#ecbc91,#eddb91,#b1dea5,#a3bde0,#c3b1df
