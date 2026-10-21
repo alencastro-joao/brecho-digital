@@ -10,6 +10,7 @@ import {
   PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
+import { aplicarPaleta, paletaDaCor } from './paleta.js';
 import * as db from './db.js';
 import {
   svgAvatar, resolverAparencia, catalogoCorpos, catalogoNarizes, catalogoCabelos,
@@ -134,6 +135,10 @@ function salvar() {
     return;
   }
   db.state.usuario.avatar = { ...rascunho };
+  // Cor favorita nova pinta o site com a paleta dela (dá para trocar no Perfil).
+  if (corFavorita !== (db.state.usuario.corFavorita || null)) {
+    db.state.usuario.preferencias.paleta = aplicarPaleta(paletaDaCor(corFavorita));
+  }
   db.state.usuario.corFavorita = corFavorita;
   // As três peças da cor favorita (o primeiro marco da coleção dela). Na conta
   // nova é aqui que elas entram; no tutorial recomeçado, entram de novo se a

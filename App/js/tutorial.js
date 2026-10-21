@@ -372,6 +372,7 @@ function desenhar() {
     caixa = el('div', { class: 'intro', role: 'region', 'aria-label': 'Missões de introdução' });
     caixa.addEventListener('click', clique);
     caixa.addEventListener('pointerdown', comecarArrasto);
+    caixa.addEventListener('touchmove', barrarRolagem, { passive: false });
     document.body.append(caixa);
     document.body.classList.add('com-intro');
   }
@@ -497,6 +498,15 @@ function comecarArrasto(e) {
   window.addEventListener('pointermove', moverArrasto);
   window.addEventListener('pointerup', soltarArrasto, { once: true });
   window.addEventListener('pointercancel', soltarArrasto, { once: true });
+  // Arrastar o cartão para baixo no celular não pode virar o "puxar para
+  // recarregar" do navegador.
+  document.documentElement.classList.add('intro-arrastando');
+}
+
+// O touchmove é o único jeito de barrar o puxar-para-recarregar no Safari: o
+// touch-action do CSS não chega lá. Só enquanto o cartão está sendo arrastado.
+function barrarRolagem(e) {
+  if (arrasto) e.preventDefault();
 }
 
 function moverArrasto(e) {
@@ -517,6 +527,7 @@ function soltarArrasto() {
   // O click que vem depois de um arrasto não é toque: não abre nem vai.
   if (arrasto?.movendo) acabouDeArrastar = true;
   arrasto = null;
+  document.documentElement.classList.remove('intro-arrastando');
 }
 
 function clique(e) {

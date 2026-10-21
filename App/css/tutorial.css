@@ -104,6 +104,9 @@ body.com-modal .intro { display: none; }
 
 /* Arrastar: a faixa e a bolinha se movem com o dedo, sem rolar a página. */
 .intro[data-modo="barra"], .intro[data-modo="bolha"] { touch-action: none; cursor: grab; user-select: none; }
+.intro-bolha { touch-action: none; }
+/* Enquanto o cartão é arrastado, puxar para baixo não recarrega a página. */
+html.intro-arrastando, html.intro-arrastando body { overscroll-behavior: none; }
 
 /* Recolhido: uma bolinha no canto com a missão da vez. Toque abre de novo. */
 .intro[data-modo="bolha"] {
