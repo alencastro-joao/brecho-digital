@@ -1,8 +1,8 @@
 """Corpos, narizes e cabelos desenhados pela artista → js/corpo-artista.js.
 
     python tools/corpo.py masculino=corpo-m.png feminino=corpo-f.png \
-        botao=n1.png pontudo=n2.png redondo=n3.png reto=n4.png curvo=n5.png \
-        largo=n6.png curto=c1.png afro=c2.png ...
+        botao=n1.png pontudo=n2.png reto=n4.png curvo=n5.png largo=n6.png \
+        curto=c1.png afro=c2.png ...
 
 Cada execução gera o arquivo inteiro: passe todos os desenhos de novo.
 
@@ -41,7 +41,7 @@ from PIL import Image, ImageFilter
 
 NOMES_CORPOS = {'masculino': 'Masculino', 'feminino': 'Feminino'}
 NOMES_NARIZES = {
-    'botao': 'Botão', 'pontudo': 'Pontudo', 'redondo': 'Redondo',
+    'botao': 'Botão', 'pontudo': 'Pontudo',
     'reto': 'Reto', 'curvo': 'Curvo', 'largo': 'Largo',
 }
 NOMES_CABELOS = {
