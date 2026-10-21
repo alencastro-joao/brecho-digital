@@ -22,11 +22,18 @@ export function lerAcervo() {
 }
 
 // Rede lenta não segura a abertura: sem resposta em 5 s, o jogo abre sem elas.
-const lista = await Promise.race([
-  primeiro.then(d => d?.roupasAvatar),
-  new Promise(ok => setTimeout(ok, 5000)),
-]);
+const dados = await Promise.race([primeiro, new Promise(ok => setTimeout(ok, 5000))]);
+const lista = dados?.roupasAvatar;
 
 export const ROUPAS_AVATAR = (Array.isArray(lista) ? lista : [])
   .filter(r => r?.id && r.src && Array.isArray(r.caixa) && r.caixa.length === 4
     && Array.isArray(r.colecoes));
+
+// Tamanho e posição (e, nos óculos, as cores) das roupas que estão no código,
+// ajustados no admin: { 'oculos-espinhos': { caixa: [x, y, w, h], cores: [...] } }.
+const ajustes = dados?.ajustesRoupas;
+export const AJUSTES_ROUPAS = ajustes && typeof ajustes === 'object' ? ajustes : {};
+export const caixaAjustada = (id, caixa) => {
+  const c = AJUSTES_ROUPAS[id]?.caixa;
+  return Array.isArray(c) && c.length === 4 ? c : caixa;
+};

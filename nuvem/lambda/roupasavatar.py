@@ -17,6 +17,13 @@ O acervo.json já é o arquivo que só a Lambda escreve e que o jogo lê na
 abertura; a imagem vai para `assets/cloths/`, com o relógio no nome (trocar a
 imagem gera outro nome, e o cache de um ano do CloudFront nunca serve a
 antiga). O jogo monta uma peça por coleção marcada (roupinhas.js).
+
+As roupas que já estão no código (ROUPAS_BASE e OCULOS_DESENHADOS) não são
+regravadas: o admin só ajusta tamanho, posição e, nos óculos, em quais cores
+eles entram. Isso vai em outra chave, por id da roupa do código:
+
+    "ajustesRoupas": {"oculos-espinhos": {"caixa": [212, 110, 172, 82],
+                                          "cores": ["Preto", "Azul"]}}
 """
 
 import re
@@ -81,8 +88,42 @@ def ficha(corpo, anterior=None):
     return item
 
 
+COR_OK = re.compile(r'^[A-Za-zÀ-ú]{1,20}$')
+
+
+def ajustar(corpo):
+    """Ajuste de uma roupa do código; `restaurar` volta ao que o código diz."""
+    item_id = str(corpo.get('id') or '').strip().lower()
+    if not ID_OK.match(item_id):
+        raise ValueError('id inválido')
+    ajuste = None
+    if not corpo.get('restaurar'):
+        ajuste = {'caixa': _caixa(corpo.get('caixa'))}
+        cores = corpo.get('cores')
+        if cores is not None:
+            if not isinstance(cores, list) or not cores or not all(COR_OK.match(str(c)) for c in cores):
+                raise ValueError('marque pelo menos uma cor')
+            ajuste['cores'] = list(dict.fromkeys(str(c) for c in cores))[:MAX_COLECOES]
+        ajuste['editadoEm'] = _agora()
+    for _ in range(5):
+        acervo, etag = ler_acervo()
+        ajustes = acervo.get('ajustesRoupas')
+        ajustes = dict(ajustes) if isinstance(ajustes, dict) else {}
+        if ajuste:
+            ajustes[item_id] = ajuste
+        else:
+            ajustes.pop(item_id, None)
+        acervo['ajustesRoupas'] = ajustes
+        if gravar_acervo(acervo, etag):
+            print('roupa do código ajustada: %s %r' % (item_id, ajuste))
+            return {'id': item_id, 'ajuste': ajuste}
+    raise RuntimeError('o acervo está sendo escrito por outra aba; tente de novo')
+
+
 def gravar(corpo):
     """Cria ou substitui a roupa com esse id."""
+    if corpo.get('tipo') == 'ajuste':
+        return ajustar(corpo)
     item_id = str(corpo.get('id') or '').strip().lower()
     anterior = next((r for r in ler_acervo()[0].get('roupasAvatar') or []
                      if r.get('id') == item_id), None)

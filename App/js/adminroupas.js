@@ -2,10 +2,15 @@
 // coleções (e por elas dão o efeito da coleção), sem mexer no código. Escolhe
 // a imagem, o tamanho, a posição no palco 600×1200 e as coleções; a Lambda
 // grava em acervo.json › roupasAvatar (nuvem/lambda/roupasavatar.py) e o jogo
-// monta uma peça por coleção marcada (roupinhas.js). Os óculos que já estão no
-// código (OCULOS_DESENHADOS) continuam lá e não aparecem aqui.
+// monta uma peça por coleção marcada (roupinhas.js). As roupas que já estão no
+// código (ROUPAS_BASE e OCULOS_DESENHADOS) aparecem em "Já no jogo": nelas o
+// admin só ajusta tamanho, posição e, nos óculos, as cores (acervo.json ›
+// ajustesRoupas).
 
-import { CONFIG, COLECOES, COLECOES_DE_COR, ROUPAS_BASE, OCULOS_ESPINHOS, hexDaCor, idDaCor } from './config.js';
+import {
+  CONFIG, COLECOES, COLECOES_DE_COR, ROUPAS_BASE, ROUPAS_BASE_VERSAO, OCULOS_DESENHADOS, OCULOS_ESPINHOS,
+  hexDaCor, idDaCor,
+} from './config.js';
 import { SLOTS, ROUPINHA } from './roupinhas.js';
 import { lerAcervo } from './roupasavatar.js';
 import { svgAvatar } from './avatar.js';
@@ -34,11 +39,26 @@ const COLECOES_DA_TELA = [
 const nomeDaColecao = (id) => COLECOES_DA_TELA.find(c => c.id === id)?.nome ?? id;
 
 let lista = [];
+let ajustes = {};
+
+// As roupas do código, com a imagem da cor preta para a lista e a prévia.
+// `cores` são as cores que têm desenho (só os óculos escolhem entre elas).
+const DO_CODIGO = [
+  ...ROUPAS_BASE.map(b => ({ id: b.id, nome: b.nome, slot: b.slot, caixa: b.caixa,
+    src: `assets/roupas/${b.id}-preto-${ROUPAS_BASE_VERSAO}.webp`, cores: null })),
+  ...OCULOS_DESENHADOS.map(o => ({ id: o.id, nome: o.nome, slot: o.slot, caixa: o.caixa,
+    src: `assets/roupas/${o.id}-preto-${o.versao}.webp`, cores: Object.keys(o.cores) })),
+];
+const ajustada = (c) => {
+  const a = ajustes[c.id];
+  return { ...c, caixa: a?.caixa || c.caixa, coresMarcadas: a?.cores || c.cores, ajustada: !!a };
+};
 
 export async function renderRoupasAvatar() {
   const caixa = $('#adm-roupas');
   const dados = await lerAcervo();
   lista = Array.isArray(dados?.roupasAvatar) ? dados.roupasAvatar : [];
+  ajustes = dados?.ajustesRoupas && typeof dados.ajustesRoupas === 'object' ? dados.ajustesRoupas : {};
   caixa.replaceChildren(
     el('p', { class: 'tool-hint' },
       'As roupas desenhadas das coleções. Cada coleção marcada ganha a peça, e quem completa a coleção ganha o efeito dela. Aparece no jogo ao recarregar a página.'),
@@ -50,7 +70,24 @@ export async function renderRoupasAvatar() {
       el('button', { class: 'btn-ghost', onclick: () => editar(r) }, 'Editar'),
       el('button', { class: 'btn-ghost danger', onclick: () => apagar(r) }, 'Apagar')))),
     el('div', { class: 'tool-row' },
-      el('button', { class: 'btn-dark', onclick: () => editar(null) }, '+ Nova roupa')));
+      el('button', { class: 'btn-dark', onclick: () => editar(null) }, '+ Nova roupa')),
+    el('h3', { class: 'adm-sub' }, 'Já no jogo'),
+    el('ul', { class: 'adm-roupas-lista' }, ...DO_CODIGO.map(ajustada).map(c => el('li', {},
+      el('img', { src: c.src, alt: '' }),
+      el('div', {},
+        el('strong', {}, c.nome + (c.ajustada ? ' · ajustada' : '')),
+        el('small', {}, c.cores ? c.coresMarcadas.join(', ') : 'Todas as cores')),
+      el('button', { class: 'btn-ghost', onclick: () => editar(null, c) }, 'Editar')))));
+}
+
+async function enviar(corpo) {
+  const resp = await fetch('/api/roupas-avatar', {
+    method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(corpo),
+  });
+  const d = await resp.json();
+  if (!resp.ok) throw new Error(d.erro || 'HTTP ' + resp.status);
+  return d;
 }
 
 async function apagar(r) {
@@ -90,12 +127,15 @@ function lerImagem(arquivo) {
   });
 }
 
-function editar(r) {
-  const nova = !r;
+// `doCodigo`: uma roupa de "Já no jogo" (só tamanho, posição e cores).
+function editar(r, doCodigo = null) {
+  const nova = !r && !doCodigo;
+  r = r || doCodigo;
   // O que é editado: centro e largura; a altura segue a proporção da imagem.
   const ed = {
     nome: r?.nome || '', id: r?.id || '', slot: r?.slot || 'acessorio',
     src: r?.src || '', imagem: '', colecoes: new Set(r?.colecoes || []),
+    cores: new Set(doCodigo?.coresMarcadas || []),
   };
   let [x, y, w, h] = r?.caixa || CAIXA_INICIAL[ed.slot];
   let cx = x + w / 2, cy = y + h / 2, largura = w, proporcao = h / w;
@@ -134,6 +174,12 @@ function editar(r) {
       return el('label', { class: 'adm-colecao', title: c.efeito || '' }, caixinha,
         c.hex ? el('i', { style: { background: c.hex } }) : null, c.nome);
     }));
+
+  const chipsDeCor = () => el('div', { class: 'adm-colecoes' }, ...doCodigo.cores.map(n => {
+    const caixinha = el('input', { type: 'checkbox', ...(ed.cores.has(n) ? { checked: true } : {}) });
+    caixinha.addEventListener('change', () => { if (caixinha.checked) ed.cores.add(n); else ed.cores.delete(n); });
+    return el('label', { class: 'adm-colecao' }, caixinha, el('i', { style: { background: hexDaCor(n) } }), n);
+  }));
 
   const opcao = (rotulo, valor, mudou) => {
     const i = el('input', { type: 'checkbox', ...(valor ? { checked: true } : {}) });
@@ -207,6 +253,21 @@ function editar(r) {
   });
 
   const salvar = el('button', { class: 'btn-dark', onclick: async () => {
+    if (doCodigo) {
+      if (doCodigo.cores && !ed.cores.size) { toast('Marque pelo menos uma cor.', 'aviso'); return; }
+      salvar.disabled = true;
+      try {
+        await enviar({ tipo: 'ajuste', id: doCodigo.id, caixa: caixa(),
+          ...(doCodigo.cores ? { cores: doCodigo.cores.filter(n => ed.cores.has(n)) } : {}) });
+        toast(`${doCodigo.nome} ajustada. Recarregue a página para ver no jogo.`);
+        delete ROUPINHA[PREVIA];
+        renderRoupasAvatar();
+      } catch (e) {
+        toast(e.message, 'aviso');
+        salvar.disabled = false;
+      }
+      return;
+    }
     const corpo = {
       id: id.value.trim(), nome: nome.value.trim(), slot: ed.slot, caixa: caixa(),
       colecoes: [...ed.colecoes], ...(ed.imagem ? { imagem: ed.imagem } : { src: ed.src }),
@@ -217,12 +278,7 @@ function editar(r) {
     if (nova && lista.some(o => o.id === corpo.id)) { toast('Já existe roupa com esse id.', 'aviso'); return; }
     salvar.disabled = true;
     try {
-      const resp = await fetch('/api/roupas-avatar', {
-        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(corpo),
-      });
-      const d = await resp.json();
-      if (!resp.ok) throw new Error(d.erro || 'HTTP ' + resp.status);
+      const d = await enviar(corpo);
       toast(`${d.item.nome} salva. Recarregue a página para ver no jogo.`);
       delete ROUPINHA[PREVIA];
       renderRoupasAvatar();
@@ -235,6 +291,14 @@ function editar(r) {
     delete ROUPINHA[PREVIA];
     renderRoupasAvatar();
   } }, 'Cancelar');
+  const original = doCodigo?.ajustada && el('button', { class: 'btn-ghost', onclick: async () => {
+    try {
+      await enviar({ tipo: 'ajuste', id: doCodigo.id, restaurar: true });
+      toast(`${doCodigo.nome} voltou ao original.`);
+      delete ROUPINHA[PREVIA];
+      renderRoupasAvatar();
+    } catch (e) { toast(e.message, 'aviso'); }
+  } }, 'Voltar ao original');
 
   $('#adm-roupas').replaceChildren(el('div', { class: 'adm-roupa-editor' },
     el('div', { class: 'adm-roupa-lado' },
@@ -242,7 +306,14 @@ function editar(r) {
       el('div', { class: 'adm-opcoes' },
         opcao('Aproximar', perto, v => { perto = v; }),
         opcao('Com roupa base', vestido, v => { vestido = v; }))),
-    el('div', { class: 'adm-roupa-campos' },
+    el('div', { class: 'adm-roupa-campos' }, ...(doCodigo ? [
+      el('strong', {}, doCodigo.nome),
+      fTam, fX, fY,
+      doCodigo.cores
+        ? el('div', { class: 'tool-campo' }, 'Cores em que entra', chipsDeCor())
+        : el('p', { class: 'tool-hint' }, 'Entra em todas as coleções de cor; o ajuste vale para todas.'),
+      el('div', { class: 'tool-row' }, cancelar, original, salvar),
+    ] : [
       el('label', { class: 'tool-campo' }, 'Nome', nome),
       el('label', { class: 'tool-campo' }, 'Id', id),
       el('label', { class: 'tool-campo' }, 'Lugar do corpo', slot),
@@ -250,6 +321,7 @@ function editar(r) {
       fTam, fX, fY,
       el('div', { class: 'tool-campo' }, 'Coleções de cor', chips('Cores')),
       el('div', { class: 'tool-campo' }, 'Coleções de marca', chips('Marcas')),
-      el('div', { class: 'tool-row' }, cancelar, salvar))));
+      el('div', { class: 'tool-row' }, cancelar, salvar),
+    ]))));
   desenhar();
 }

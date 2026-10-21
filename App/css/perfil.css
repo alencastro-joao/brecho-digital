@@ -551,6 +551,7 @@ button.pf-stat:hover small { text-decoration: underline; }
 #adm-revisar[hidden], #adm-revisar-resumo[hidden] { display: none; }
 
 /* Admin › Roupas do avatar (js/adminroupas.js) */
+.adm-sub { margin: 16px 0 0; font-size: 12px; font-weight: 800; color: var(--tinta-suave); }
 .adm-roupas-lista { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .adm-roupas-lista li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
 .adm-roupas-lista li + li { border-top: 1px solid var(--wii-borda); }
