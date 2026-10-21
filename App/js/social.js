@@ -66,7 +66,7 @@ const ABAS = [
   ['tudo', 'Tudo', 'Contas de verdade e perfis de exemplo'],
 ];
 
-let aba = null;                           // escolhida na primeira entrada
+let aba = null;                           // na primeira entrada abre em Tudo
 let expandidos = new Set();               // posts com a conversa aberta
 const rascunhos = new Map();              // comentário meio escrito, por post
 
@@ -228,7 +228,7 @@ export function garantirFeed() {
 // ================================= Feed ===================================
 export async function montarSocial() {
   await semearFeed();
-  if (!aba) aba = db.state.usuario.seguindo.length ? 'seguindo' : 'tudo';
+  if (!aba) aba = 'tudo';
   render();
   // Quem entrou no brechó desde a última vez aparece na coluna sem ninguém
   // digitar nada.
@@ -639,7 +639,7 @@ const quandoAToa = () => new Promise(r => window.requestIdleCallback
 const baixadas = new Map();              // caminho → Image, para o cache não soltar
 
 export function precarregarFeed() {
-  if (!aba) aba = db.state.usuario.seguindo.length ? 'seguindo' : 'tudo';
+  if (!aba) aba = 'tudo';
   for (const post of postsVisiveis().slice(0, LOTE)) {
     post.comentarios ??= [];
     prepararGerado(post);
