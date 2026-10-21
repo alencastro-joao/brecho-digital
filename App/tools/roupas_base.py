@@ -22,10 +22,12 @@ SAIDA = Path(__file__).resolve().parent.parent / 'assets' / 'roupas'
 K, DX, DY = 0.65125, 300 - 0.65125 * 1004.5, 1147 - 0.65125 * 1866
 ESCALA = 0.75                  # pixels do arquivo por pixel do desenho
 
+# Tons suaves (poeira) das cores das coleções: o hex vivo da paleta do jogo
+# ficava berrante em cima do desenho, então a peça usa uma versão mais calma.
 CORES = {
-    'preto': '#1c1a18', 'branco': '#f7f5f1', 'cinza': '#9b958c', 'bege': '#ddcbab',
-    'marrom': '#6b4a2f', 'vermelho': '#c8342f', 'rosa': '#e78fae', 'laranja': '#e2813a',
-    'amarelo': '#e8c24a', 'verde': '#4f8f5c', 'azul': '#3c6fb4', 'roxo': '#7d5bb0',
+    'preto': '#2f2c2a', 'branco': '#f0ece5', 'cinza': '#a9a49b', 'bege': '#d8c8ab',
+    'marrom': '#7b5d45', 'vermelho': '#b9645c', 'rosa': '#dba7b5', 'laranja': '#d9a073',
+    'amarelo': '#dfc983', 'verde': '#7f9c80', 'azul': '#7592b6', 'roxo': '#917fa9',
 }
 
 # Papéis de cada desenho: cor de origem (RGB), e como ela vira na coleção.
@@ -55,11 +57,11 @@ def alvo(papel, cor):
     escura = colorsys.rgb_to_hls(*(cor / 255))[1] < 0.5
     return {
         'corpo': cor,
-        'sombra': luz(cor, 0.12 if escura else -0.22),
-        'sola': luz(cor, 0.22 if escura else -0.14),
-        'cadarco': luz(cor, 0.62 if escura else -0.55),
-        'detalhe': luz(cor, 0.5 if escura else -0.38),
-        'luz': luz(cor, 0.16 if escura else 0.12),
+        'sombra': luz(cor, 0.08 if escura else -0.14),
+        'sola': luz(cor, 0.14 if escura else -0.10),
+        'cadarco': luz(cor, 0.38 if escura else -0.34),
+        'detalhe': luz(cor, 0.26 if escura else -0.22),
+        'luz': luz(cor, 0.10 if escura else 0.08),
     }[papel]
 
 
