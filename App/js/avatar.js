@@ -132,10 +132,10 @@ function bolinhaTorta(cx, cy, r, rnd) {
 // fora dela, do de trás para o de cima. A base entra um pouco na borda, para
 // o espinho sair do traço e não flutuar ao lado dele.
 const PONTOS_SPIKE = [[214.4, 138.2, -0.8, -0.6], [211.4, 146, -1, -0.15], [219.6, 133, -0.3, -1]];
-function spikeTorto(x, y, dx, dy, rnd) {
+function spikeTorto(x, y, dx, dy, rnd, escala = 1) {
   const n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n;   // para fora
   const bx = x - ux * 0.9, by = y - uy * 0.9;               // base, já na borda
-  const meia = 1.6 + rnd() * 0.4, alto = 4.6 + rnd() * 1.2;
+  const meia = (1.6 + rnd() * 0.4) * escala, alto = (4.6 + rnd() * 1.2) * escala;
   const torto = (rnd() - 0.5) * 1.2;                         // ponta meio de lado
   const p = [
     [bx - uy * meia, by + ux * meia],
@@ -165,7 +165,9 @@ function argolaTorta(x, y, dx, dy, rnd) {
 
 // Bridge: as duas pontas da barrinha, uma de cada lado do alto do nariz,
 // entre os olhos (no palco, na cara da artista). Os spikes apontam para fora.
-const BRIDGE = { y: 143, meio: 5.6, r: 1.7 };
+// Maiores que os da orelha para aparecer no rosto, mas com mais espaço entre
+// as duas pontas para não lembrarem um par de olhos.
+const BRIDGE = { y: 143, meio: 6.6, r: 2.2, spike: 1.35 };
 
 // Todos os piercings, embaixo do cabelo da frente (pedido do João): cabelo
 // que cobre a orelha ou a franja comprida os cobre. Um filtro só esfarela a
@@ -192,7 +194,7 @@ function piercings(ap, id) {
       const x = 300 - l * BRIDGE.meio;
       partes.push(b.bolinhas
         ? bolinhaTorta(x, BRIDGE.y, BRIDGE.r, rnd)
-        : spikeTorto(x + l * 0.9, BRIDGE.y, -l, 0, rnd));
+        : spikeTorto(x + l * 0.9, BRIDGE.y, -l, 0, rnd, BRIDGE.spike));
     }
   }
   if (!partes.length) return '';
