@@ -131,14 +131,11 @@ function spikeTorto(x, y, dx, dy, rnd) {
     [bx + ux * alto - uy * torto, by + uy * alto + ux * torto],
     [bx + uy * meia, by - ux * meia],
   ].map(([a, b]) => `${a.toFixed(2)} ${b.toFixed(2)}`);
-  // Um contorno claro por baixo: em cima de cabelo escuro, o spike escuro
-  // sumiria nele. Na pele clara o contorno quase não aparece.
-  const d = `M${p[0]} L${p[1]} L${p[2]} Z`;
-  return `<path d="${d}" fill="#efe8de" stroke="#efe8de" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="${d}" stroke="#2b2522" stroke-width=".6" stroke-linejoin="round"/>`;
+  return `<path d="M${p[0]} L${p[1]} L${p[2]} Z" stroke="#2b2522" stroke-width=".6"
+    stroke-linejoin="round"/>`;
 }
-// `qual`: as bolinhas vão embaixo do cabelo da frente; os spikes, no alto da
-// orelha, ficariam quase sempre escondidos por ele e vão por cima.
+// `qual`: bolinhas ou spikes, cada um com o seu filtro. Os dois ficam embaixo
+// do cabelo da frente (pedido do João): cabelo que cobre a orelha os cobre.
 function brincos(ap, id, qual) {
   if (!corpoDesenhado) return '';
   const bolinhas = [[1, ap.brincoEsq, ap.spikeEsq], [-1, ap.brincoDir, ap.spikeDir]]
@@ -408,14 +405,12 @@ export function svgAvatar({
   <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
   ${sobrancelhas}
 
-  <!-- brincos de bolinha, também embaixo do cabelo da frente -->
+  <!-- brincos, também embaixo do cabelo da frente -->
   ${brincos(ap, idCorte, 'bolinhas')}
+  ${brincos(ap, idCorte, 'spikes')}
 
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}
-
-  <!-- spikes por cima do cabelo: no alto da orelha, ele os cobriria -->
-  ${brincos(ap, idCorte, 'spikes')}
 
   <!-- rosto por último: só o nariz, e o cabelo nunca o cobre. O traço é
        dividido pela escala da cabeça para não engrossar junto com ela. -->
