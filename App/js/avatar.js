@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -271,7 +271,8 @@ export function svgAvatar({
   // da cara (x=300). Fica na testa do molde, de x=262 a 292, um pouco esticada
   // na altura para o traço acompanhar o da artista; a franja passa
   // por cima dela.
-  const arteSobrancelha = (SOBRANCELHAS[ap.sobrancelha] || SOBRANCELHAS.nenhuma).arte;
+  const arteSobrancelha = SOBRANCELHAS_NO_AR
+    ? (SOBRANCELHAS[ap.sobrancelha] || SOBRANCELHAS.nenhuma).arte : '';
   const sobrancelhas = arteSobrancelha ? naRegiao('cabeca',
     `<g fill="${ap.corSobrancelha || escurecerTraco(ap.corCabelo, 0.8)}" stroke="none">
       <g transform="translate(262 104) scale(1 1.4)">${arteSobrancelha}</g>
