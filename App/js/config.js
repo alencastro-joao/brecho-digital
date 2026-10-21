@@ -944,14 +944,18 @@ export const PIERCINGS_BRIDGE = {
   bolinhas: { nome: 'Bolinhas', bolinhas: true },
   spikes: { nome: 'Spikes', spikes: true },
 };
-// Sardas: quantas pintinhas no nariz e em cada bochecha (onde elas ficam está
-// em avatar.js, SARDAS_ONDE). Só na cara da artista.
+// Sardas: manchas no palco [cx, cy, rx, ry, quantas] onde as pintinhas se
+// espalham (a cara no meio em x=300: nariz em y≈158, bochechas em y≈171),
+// o raio de cada uma [mín, máx], o espaço mínimo entre elas e a força. Ou
+// `fixas`: pintinhas postas à mão [x, y, r]. Só na cara da artista; o desenho
+// fica em avatar.js.
+const NARIZ = [300, 158, 15, 8], BOCH_E = [268, 171, 14, 8], BOCH_D = [332, 171, 14, 8];
+const com = ([cx, cy, rx, ry], n) => [cx, cy, rx, ry, n];
 export const SARDAS = {
-  nenhuma: { nome: 'Nada', nariz: 0, bochechas: 0 },
-  poucas: { nome: 'Poucas', nariz: 6, bochechas: 0 },
-  nariz: { nome: 'Nariz', nariz: 12, bochechas: 0 },
-  bochechas: { nome: 'Nariz e bochechas', nariz: 9, bochechas: 8 },
-  muitas: { nome: 'Muitas', nariz: 14, bochechas: 15 },
+  nenhuma: { nome: 'Nada' },
+  muitas: { nome: 'Muitas', manchas: [com(NARIZ, 14), com(BOCH_E, 15), com(BOCH_D, 15)] },
+  grandes: { nome: 'Pintas grandes', raio: [1.5, 2.1], afastamento: 6, opacidade: 0.55,
+    manchas: [com(NARIZ, 4), com(BOCH_E, 5), com(BOCH_D, 5)] },
 };
 
 export const APARENCIA_PADRAO = {

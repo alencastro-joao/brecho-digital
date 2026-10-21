@@ -114,7 +114,7 @@ function renderPrevia() {
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
     `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}` +
-    (SARDAS[rascunho.sardas]?.nariz ? ` · sardas ${SARDAS[rascunho.sardas].nome.toLowerCase()}` : '') +
+    (SARDAS[rascunho.sardas]?.manchas || SARDAS[rascunho.sardas]?.fixas ? ` · sardas ${SARDAS[rascunho.sardas].nome.toLowerCase()}` : '') +
     resumoBrincos() +
     (SOBRANCELHAS_NO_AR ? ` · ${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}` : '');
 }
