@@ -1182,7 +1182,7 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
     ROUPINHAS.push({
       id, nome: nomeDaRoupaBase(b, nomeDaCor), slot: b.slot, raridade: 'common',
       cor: hex, corNome: nomeDaCor,
-      imagem: { href: `assets/roupas/${b.id}-${slug}.webp`, caixa: b.caixa },
+      imagem: { href: `assets/roupas/${b.id}-${slug}-${ROUPAS_BASE_VERSAO}.webp`, caixa: b.caixa },
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total, item: id },
     });
   });

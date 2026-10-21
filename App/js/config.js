@@ -1252,6 +1252,7 @@ export const idDaCor = (nome) => 'cor-' + semAcento(nome);
 // As três primeiras peças de toda coleção de cor: roupas desenhadas pela
 // artista (tools/roupas_base.py), recoloridas em assets/roupas/<id>-<cor>.webp.
 // `caixa` é [x, y, w, h] no palco 600×1200; `feminino` é a cor concordando.
+export const ROUPAS_BASE_VERSAO = 'v3';   // igual a VERSAO em tools/roupas_base.py
 export const ROUPAS_BASE = [
   { id: 'tenis',    nome: 'Tênis',    slot: 'pes',    caixa: [179.2, 988.7, 241.6, 160.2], fem: false },
   { id: 'camiseta', nome: 'Camiseta', slot: 'torso',  caixa: [147.3, 241.1, 305.4, 229.2], fem: true },
