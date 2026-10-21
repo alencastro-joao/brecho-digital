@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, SOMBRA_OLHOS_BOCA, PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, SOMBRA_ROSTO_NO_AR, PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -205,16 +205,33 @@ function piercings(ap, id) {
   <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${partes.join('')}</g>`;
 }
 
-// Sombra do cabelo na testa (pedido do João, 21/10/2026): uma mancha
-// esfumada, na cor da pele mais escura, logo abaixo da linha do cabelo. Só na
-// cara da artista e só com cabelo (careca não faz sombra).
+// Sombra do cabelo na testa (pedido do João, 21/10/2026): o próprio desenho
+// da franja, descido um pouco e esfumado, na cor da pele mais escura. Assim
+// ela acompanha a linha de cada corte, em vez de uma faixa reta. Fica presa à
+// pele da cara (não vaza no fundo nem nas orelhas). Só na cara da artista e
+// só com cabelo (careca não faz sombra).
 function sombraDaTesta(ap, id) {
-  if (!corpoDesenhado || ap.cabelo === 'nenhum') return '';
-  return `<filter id="${id}-testa" x="-50%" y="-80%" width="200%" height="260%">
-    <feGaussianBlur stdDeviation="5"/>
+  const franja = corpoDesenhado?.cabelos?.[ap.cabelo]?.frente;
+  const corpo = corpoDesenhado?.corpos[ap.corpo];
+  if (!franja?.pele || !corpo) return '';
+  const mascara = (nome, [x, y, w, h], img) => `<mask id="${nome}" maskUnits="userSpaceOnUse"
+      x="0" y="-200" width="600" height="1400">
+    <image href="${img}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>
+  </mask>`;
+  const [x, y, w, h] = franja.caixa;
+  return `${mascara(`${id}-testa-pele`, corpo.caixa, corpo.pele)}
+  ${mascara(`${id}-testa-franja`, franja.caixa, franja.pele)}
+  <filter id="${id}-testa" x="-20%" y="-30%" width="140%" height="160%">
+    <feGaussianBlur stdDeviation="3"/>
   </filter>
-  <ellipse cx="300" cy="82" rx="50" ry="13" fill="${escurecerTraco(ap.pele, 0.55)}"
-           opacity=".24" filter="url(#${id}-testa)"/>`;
+  <g mask="url(#${id}-testa-pele)">
+    <g filter="url(#${id}-testa)" opacity=".3">
+      <g transform="translate(0 6)">
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${escurecerTraco(ap.pele, 0.55)}"
+              mask="url(#${id}-testa-franja)"/>
+      </g>
+    </g>
+  </g>`;
 }
 
 // Nariz da artista (pedido do João, 21/10/2026): uma sombra esfumada do lado
@@ -233,27 +250,36 @@ function sombraDoNariz(ap, id) {
            fill="${escurecerTraco(ap.pele, 0.55)}" opacity=".3" filter="url(#${id}-nariz)"/>`;
 }
 
-// Sombra de olhos e boca (teste, liga em config.SOMBRA_OLHOS_BOCA): duas
-// manchas esfumadas, uma de cada lado do alto do nariz, na altura do bridge
-// (os olhos), e uma mais achatada abaixo do nariz (a boca). Mesma cor da
-// sombra do nariz, mais fraca. Medidas no molde, a cara no meio em x=300.
-const SOMBRA_ROSTO = {
-  olhos: { y: 145, meio: 27, rx: 11, ry: 5.5, opacidade: 0.18 },
-  boca: { y: 199, rx: 13, ry: 4, opacidade: 0.16 },
-  borrao: 3.2,
-};
-function sombraDosOlhosEBoca(ap, id) {
-  if (!SOMBRA_OLHOS_BOCA || !corpoDesenhado) return '';
-  const { olhos, boca, borrao } = SOMBRA_ROSTO;
+// Sombra do rosto (escolhida pelo João, 21/10/2026, a "17" das ideias;
+// liga em config.SOMBRA_ROSTO_NO_AR): sem desenhar olho, um arco de sombra
+// embaixo de cada olho e, do lado esquerdo, a sombra do nariz subindo até o
+// olho, como no mangá. O claro que sobra em cima do arco lê como o olho.
+// Medidas no palco, a cara no meio em x=300.
+const OLHEIRA = { y: 151, meio: 28, largura: 13, fundo: 10, opacidade: 0.32 };
+function sombraDoRosto(ap, id) {
+  if (!SOMBRA_ROSTO_NO_AR || !corpoDesenhado) return '';
   const cor = escurecerTraco(ap.pele, 0.55);
-  const olho = (cx) => `<ellipse cx="${cx}" cy="${olhos.y}" rx="${olhos.rx}" ry="${olhos.ry}"
-           opacity="${olhos.opacidade}"/>`;
-  return `<filter id="${id}-rosto" x="-100%" y="-150%" width="300%" height="400%">
-    <feGaussianBlur stdDeviation="${borrao}"/>
+  const { y, meio, largura: l, fundo, opacidade } = OLHEIRA;
+  const arco = (cx) => `<path d="M${cx - l} ${y} Q${cx} ${y + fundo} ${cx + l} ${y}
+    Q${cx} ${y + fundo * 0.6} ${cx - l} ${y}Z"/>`;
+  // A linha do nariz sai da base dele, do lado esquerdo, e sobe até o canto
+  // de dentro do olho esquerdo.
+  const nariz = corpoDesenhado.narizes[ap.nariz];
+  const [nx, ny, nw, nh] = nariz ? nariz.caixa : [290, 160, 20, 20];
+  const olho = 300 - meio;
+  const subida = `<path d="M${(nx + nw * 0.15).toFixed(1)} ${(ny + nh - 6).toFixed(1)}
+    Q${(nx - 4).toFixed(1)} ${y + 1} ${olho - 4} ${y - 5}
+    Q${olho + 12} ${y - 5} ${(nx + nw * 0.3).toFixed(1)} ${(ny + nh * 0.4).toFixed(1)}Z"
+    opacity=".3" filter="url(#${id}-manga)"/>`;
+  return `<filter id="${id}-olheira" x="-50%" y="-100%" width="200%" height="300%">
+    <feGaussianBlur stdDeviation="2.6"/>
   </filter>
-  <g fill="${cor}" filter="url(#${id}-rosto)">
-    ${olho(300 - olhos.meio)}${olho(300 + olhos.meio)}
-    <ellipse cx="300" cy="${boca.y}" rx="${boca.rx}" ry="${boca.ry}" opacity="${boca.opacidade}"/>
+  <filter id="${id}-manga" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="2.2"/>
+  </filter>
+  <g fill="${cor}">
+    <g opacity="${opacidade}" filter="url(#${id}-olheira)">${arco(300 - meio)}${arco(300 + meio)}</g>
+    ${subida}
   </g>`;
 }
 
@@ -506,10 +532,10 @@ export function svgAvatar({
   ${sobrancelhas}
 
   <!-- sombra que o cabelo faz na testa, embaixo dele -->
-  ${sombraDaTesta(ap, idCorte)}
+  ${cortadoNoPalco(sombraDaTesta(ap, idCorte))}
 
-  <!-- sombra de teste onde ficariam os olhos e a boca -->
-  ${sombraDosOlhosEBoca(ap, idCorte)}
+  <!-- sombra embaixo dos olhos e a do nariz subindo até o olho -->
+  ${sombraDoRosto(ap, idCorte)}
 
   <!-- piercings, também embaixo do cabelo da frente -->
   ${piercings(ap, idCorte)}
