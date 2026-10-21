@@ -1,5 +1,7 @@
 """Três roupas base desenhadas (tênis, camiseta, calça) recoloridas para cada
-coleção de cor → assets/roupas/<base>-<cor>.webp.
+coleção de cor → assets/roupas/<base>-<cor>-<VERSAO>.webp.
+Troque VERSAO aqui e em ROUPAS_BASE_VERSAO (js/config.js) a cada arte nova: o
+CloudFront e o navegador guardam a imagem por um dia, e nome novo fura o cache.
 
     python tools/roupas_base.py tenis=tenis.png camiseta=camiseta.png calca=calca.png
 
@@ -20,6 +22,7 @@ SAIDA = Path(__file__).resolve().parent.parent / 'assets' / 'roupas'
 # Mesma conta do corpo (tools/corpo.py): escala, e o chão (sola) em y=1147 e o
 # meio em x=300, medidos no desenho de 2048 (sola em 1866, meio em 1004,5).
 K, DX, DY = 0.65125, 300 - 0.65125 * 1004.5, 1147 - 0.65125 * 1866
+VERSAO = 'v3'
 ESCALA = 0.75                  # pixels do arquivo por pixel do desenho
 
 # Tons suaves (poeira) das cores das coleções: o hex vivo da paleta do jogo
@@ -87,6 +90,8 @@ def recolorir(rgba, base, cor):
 
 def main(args):
     SAIDA.mkdir(parents=True, exist_ok=True)
+    for velho in SAIDA.glob('*.webp'):
+        velho.unlink()
     for arg in args:
         base, caminho = arg.split('=')
         rgba = np.asarray(Image.open(caminho).convert('RGBA'))
@@ -100,7 +105,7 @@ def main(args):
         for nome, hx in CORES.items():
             img = Image.fromarray(recolorir(corte, base, hex_rgb(hx)), 'RGBA')
             img.resize(tam, Image.LANCZOS).save(
-                SAIDA / f'{base}-{nome}.webp', 'WEBP', quality=88, method=6)
+                SAIDA / f'{base}-{nome}-{VERSAO}.webp', 'WEBP', quality=88, method=6)
 
 
 if __name__ == '__main__':
