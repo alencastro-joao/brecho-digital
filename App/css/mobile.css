@@ -985,6 +985,7 @@
   .view-personagem .pg-painel[data-aba="cor"] .pg-bloco[data-aba="cor"],
   .view-personagem .pg-painel[data-aba="nariz"] .pg-bloco[data-aba="nariz"],
   .view-personagem .pg-painel[data-aba="sobrancelha"] .pg-bloco[data-aba="sobrancelha"],
+  .view-personagem .pg-painel[data-aba="brincos"] .pg-bloco[data-aba="brincos"],
   .view-personagem .pg-painel[data-aba="favorita"] .pg-bloco[data-aba="favorita"] { display: block; }
 
   .view-personagem .pg-cortes { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
