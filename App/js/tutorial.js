@@ -1,7 +1,8 @@
 // Missões de introdução: o tutorial de conta nova, guiado e em forma de missão.
 //
 // Abre direto no primeiro passo e leva a pessoa por um passo de cada vez (INTRO em config.js): personagem, a loja e
-// as regras dela, pegar a primeira roupa, o closet e as raridades, coleções e
+// as regras dela, congelar uma peça e repor a loja (com um de cada de brinde),
+// pegar a primeira roupa, o closet e as raridades, coleções e
 // o resgate do item, vestir o avatar, combos, e o resto do app. Cada passo
 // abre sozinho a tela de que fala. Passo que só explica segue no "Entendi";
 // passo com ação é missão e paga um prêmio que cresce com a cadeia — XP,
@@ -23,7 +24,7 @@ import { catalogo, nomeDaPeca, imagemDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { irPara } from './router.js';
-import { montarVitrine } from './vitrine.js';
+import { montarVitrine, atualizarBadge } from './vitrine.js';
 import { abrirColecao } from './colecoes.js';
 import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
@@ -79,6 +80,8 @@ function passoNovo() {
   const m = passoAtual();
   if (!m) return;
   modo = 'aberta';
+  // Passo de item de recarga: o item vem de brinde, e a vitrine mostra o ↻.
+  if (m.brinde && db.darBrindeDaIntro(m.brinde)) atualizarBadge();
   irParaMissao(m);
 }
 
