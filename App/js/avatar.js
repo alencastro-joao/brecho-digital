@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, BRINCOS,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, BRINCOS, SPIKES,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -77,6 +77,8 @@ export function resolverAparencia(cfg = {}) {
     sobrancelha: SOBRANCELHAS[cfg.sobrancelha] ? cfg.sobrancelha : 'nenhuma',
     corSobrancelha: cfg.corSobrancelha || '',
     ...brincosDasOrelhas(cfg),
+    spikeEsq: SPIKES[cfg.spikeEsq] ? cfg.spikeEsq : 'nenhum',
+    spikeDir: SPIKES[cfg.spikeDir] ? cfg.spikeDir : 'nenhum',
   };
 }
 
@@ -115,14 +117,42 @@ function bolinhaTorta(cx, cy, r, rnd) {
   for (let i = 0; i < n; i++) d += ` Q${f(pts[i])} ${f(meio(pts[i], pts[(i + 1) % n]))}`;
   return `<path d="${d}Z"/>`;
 }
-function brincos(ap, id) {
+// Spikes: [x, y] na borda de fora da orelha da esquerda e a direção para
+// fora dela, do de trás para o de cima. A base entra um pouco na borda, para
+// o espinho sair do traço e não flutuar ao lado dele.
+const PONTOS_SPIKE = [[214.4, 138.2, -0.8, -0.6], [211.4, 146, -1, -0.15], [219.6, 133, -0.3, -1]];
+function spikeTorto(x, y, dx, dy, rnd) {
+  const n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n;   // para fora
+  const bx = x - ux * 0.9, by = y - uy * 0.9;               // base, já na borda
+  const meia = 1.6 + rnd() * 0.4, alto = 4.6 + rnd() * 1.2;
+  const torto = (rnd() - 0.5) * 1.2;                         // ponta meio de lado
+  const p = [
+    [bx - uy * meia, by + ux * meia],
+    [bx + ux * alto - uy * torto, by + uy * alto + ux * torto],
+    [bx + uy * meia, by - ux * meia],
+  ].map(([a, b]) => `${a.toFixed(2)} ${b.toFixed(2)}`);
+  // Um contorno claro por baixo: em cima de cabelo escuro, o spike escuro
+  // sumiria nele. Na pele clara o contorno quase não aparece.
+  const d = `M${p[0]} L${p[1]} L${p[2]} Z`;
+  return `<path d="${d}" fill="#efe8de" stroke="#efe8de" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="${d}" stroke="#2b2522" stroke-width=".6" stroke-linejoin="round"/>`;
+}
+// `qual`: as bolinhas vão embaixo do cabelo da frente; os spikes, no alto da
+// orelha, ficariam quase sempre escondidos por ele e vão por cima.
+function brincos(ap, id, qual) {
   if (!corpoDesenhado) return '';
-  const bolinhas = [[1, ap.brincoEsq], [-1, ap.brincoDir]].flatMap(([l, b]) => {
-    const rnd = mulberry32(l === 1 ? 7 : 11);
-    return BOLINHAS_BRINCO.slice(0, BRINCOS[b]?.qtd || 0).map(([x, y, r]) =>
-      bolinhaTorta(l === 1 ? x : 600 - x, y, r, rnd));
-  });
+  const bolinhas = [[1, ap.brincoEsq, ap.spikeEsq], [-1, ap.brincoDir, ap.spikeDir]]
+    .flatMap(([l, b, s]) => {
+      const rnd = mulberry32(l === 1 ? 7 : 11);
+      const lado = (x) => (l === 1 ? x : 600 - x);
+      return qual === 'spikes'
+        ? PONTOS_SPIKE.slice(0, SPIKES[s]?.qtd || 0).map(([x, y, dx, dy]) =>
+          spikeTorto(lado(x), y, dx * l, dy, rnd))
+        : BOLINHAS_BRINCO.slice(0, BRINCOS[b]?.qtd || 0).map(([x, y, r]) =>
+          bolinhaTorta(lado(x), y, r, rnd));
+    });
   if (!bolinhas.length) return '';
+  id += '-' + qual;
   return `<filter id="${id}-grao" x="-30%" y="-30%" width="160%" height="160%">
     <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="4"/>
     <feDisplacementMap in="SourceGraphic" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
@@ -378,11 +408,14 @@ export function svgAvatar({
   <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
   ${sobrancelhas}
 
-  <!-- brincos, também embaixo do cabelo da frente -->
-  ${brincos(ap, idCorte)}
+  <!-- brincos de bolinha, também embaixo do cabelo da frente -->
+  ${brincos(ap, idCorte, 'bolinhas')}
 
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}
+
+  <!-- spikes por cima do cabelo: no alto da orelha, ele os cobriria -->
+  ${brincos(ap, idCorte, 'spikes')}
 
   <!-- rosto por último: só o nariz, e o cabelo nunca o cobre. O traço é
        dividido pela escala da cabeça para não engrossar junto com ela. -->

@@ -930,12 +930,20 @@ export const BRINCOS = {
   dois: { nome: 'Dois', qtd: 2 },
   tres: { nome: 'Três', qtd: 3 },
 };
+// Spikes: espinhos na borda de cima da orelha, apontando para fora. Os mesmos
+// ids e quantidades dos brincos de bolinha, cada orelha com a sua escolha.
+export const SPIKES = {
+  nenhum: { nome: 'Sem spike', qtd: 0 },
+  um: { nome: 'Um', qtd: 1 },
+  dois: { nome: 'Dois', qtd: 2 },
+  tres: { nome: 'Três', qtd: 3 },
+};
 
 export const APARENCIA_PADRAO = {
   corpo: 'masculino', pele: 'clara', cabelo: 'curto',
   corCabelo: '#3d2519', nariz: 'botao', sobrancelha: 'nenhuma',
   corSobrancelha: '',   // vazio: a do cabelo, um pouco mais escura
-  brincoEsq: 'nenhum', brincoDir: 'nenhum',
+  brincoEsq: 'nenhum', brincoDir: 'nenhum', spikeEsq: 'nenhum', spikeDir: 'nenhum',
 };
 
 // ----------------------------- Colagem (Board) ----------------------------
