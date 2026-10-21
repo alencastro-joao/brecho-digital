@@ -1391,6 +1391,14 @@ export const ROUPAS_BASE = [
   { id: 'camiseta', nome: 'Camiseta', slot: 'torso',  caixa: [147.3, 241.1, 305.4, 229.2], fem: true },
   { id: 'calca',    nome: 'Calça',    slot: 'pernas', caixa: [168.8, 497.7, 263.1, 572.4], fem: true },
 ];
+// Óculos de espinhos da artista (tools/oculos_espinhos.py), recolorido só em
+// algumas coleções de cor; entra logo depois das três roupas base. `caixa` é
+// [x, y, w, h] no palco 600×1200, na frente dos olhos.
+export const OCULOS_ESPINHOS = {
+  id: 'oculos-espinhos', slot: 'acessorio', z: 62, versao: 'v1',
+  caixa: [234, 110, 132, 75.2],
+  cores: { Preto: 'pretos', Verde: 'verdes', Azul: 'azuis', Vermelho: 'vermelhos', Rosa: 'rosa', Roxo: 'roxos' },
+};
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
 // Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
 // as de código ficam ocultas, sem apagar nada dos saves. false desfaz.

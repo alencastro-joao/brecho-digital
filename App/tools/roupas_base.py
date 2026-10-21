@@ -90,7 +90,7 @@ def recolorir(rgba, base, cor):
 
 def main(args):
     SAIDA.mkdir(parents=True, exist_ok=True)
-    for velho in SAIDA.glob('*.webp'):
+    for velho in [v for b in ('tenis', 'camiseta', 'calca') for v in SAIDA.glob(f'{b}-*.webp')]:
         velho.unlink()
     for arg in args:
         base, caminho = arg.split('=')

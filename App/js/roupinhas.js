@@ -17,7 +17,7 @@
 // bermuda do corpo estreito não fica larga, e a manga cai no mesmo pulso.
 
 import {
-  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, ROUPAS_BASE_VERSAO, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
+  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, OCULOS_ESPINHOS, ROUPAS_BASE_VERSAO, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
@@ -1174,9 +1174,11 @@ export const VESTIARIO_PADRAO = SO_ROUPAS_DESENHADAS ? {} : {
 for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   const hex = hexDaCor(nomeDaCor);
   const slug = idDaCor(nomeDaCor).slice(4);
-  const total = ROUPAS_BASE.length + itens.length;
-  // As três primeiras são desenhos da artista na cor da coleção (`imagem`);
-  // os de código seguem logo depois.
+  const oculos = OCULOS_ESPINHOS.cores[nomeDaCor];
+  const desenhadas = ROUPAS_BASE.length + (oculos ? 1 : 0);
+  const total = desenhadas + itens.length;
+  // As três primeiras são desenhos da artista na cor da coleção (`imagem`),
+  // mais o óculos de espinhos nas cores que têm; os de código seguem depois.
   ROUPAS_BASE.forEach((b, ordem) => {
     const id = `${b.id}-base-${slug}`;
     ROUPINHAS.push({
@@ -1186,8 +1188,17 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total, item: id },
     });
   });
+  if (oculos) {
+    const o = OCULOS_ESPINHOS, id = `${o.id}-${slug}`;
+    ROUPINHAS.push({
+      id, nome: `Óculos de espinhos ${oculos}`, slot: o.slot, z: o.z, raridade: 'common',
+      cor: hex, corNome: nomeDaCor,
+      imagem: { href: `assets/roupas/${o.id}-${slug}-${o.versao}.webp`, caixa: o.caixa },
+      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem: ROUPAS_BASE.length, de: total, item: id },
+    });
+  }
   itens.forEach(([base, nome], i) => {
-    const ordem = ROUPAS_BASE.length + i;
+    const ordem = desenhadas + i;
     const r = ROUPINHAS.find(x => x.id === base);
     if (!r || !hex) return;
     ROUPINHAS.push({
