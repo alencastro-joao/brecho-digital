@@ -168,8 +168,20 @@ function argolaTorta(x, y, dx, dy, rnd) {
 // Bridge: as duas pontas da barrinha, uma de cada lado do alto do nariz,
 // entre os olhos (no palco, na cara da artista). Os spikes apontam para fora.
 // Maiores que os da orelha para aparecer no rosto, mas com mais espaço entre
-// as duas pontas para não lembrarem um par de olhos.
-const BRIDGE = { y: 143, meio: 6.6, r: 2.2, spike: 1.35 };
+// as duas pontas para não lembrarem um par de olhos. As pontas são 20% maiores
+// que as primeiras (pedido do João, 21/10/2026), e uma sombra fina e esfumada
+// liga uma à outra por baixo da pele: lê como a barrinha atravessando, não
+// como dois olhos.
+const BRIDGE = { y: 143, meio: 6.6, r: 2.64, spike: 1.62, sombra: 0.3 };
+
+// O rosto (pedido do João, 21/10/2026): olhos, nariz, sombras, sobrancelhas e
+// o bridge 15% maiores, crescendo juntos em volta do meio da cara, sem mexer
+// no contorno da cabeça (nem nas orelhas e nos brincos dela).
+const ROSTO = { x: 300, y: 155, escala: 1.15 };
+const noRosto = (svg) => (svg && svg.trim()
+  ? `<g transform="translate(${ROSTO.x} ${ROSTO.y}) scale(${ROSTO.escala})
+       translate(${-ROSTO.x} ${-ROSTO.y})">${svg}</g>`
+  : '');
 
 // Todos os piercings, embaixo do cabelo da frente (pedido do João): cabelo
 // que cobre a orelha ou a franja comprida os cobre. Um filtro só esfarela a
@@ -190,21 +202,29 @@ function piercings(ap, id) {
     ];
   });
   const b = PIERCINGS_BRIDGE[ap.bridge] || {};
+  const pontas = [];
   if (b.bolinhas || b.spikes) {
     const rnd = mulberry32(13);
     for (const l of [1, -1]) {
       const x = 300 - l * BRIDGE.meio;
-      partes.push(b.bolinhas
+      pontas.push(b.bolinhas
         ? bolinhaTorta(x, BRIDGE.y, BRIDGE.r, rnd)
         : spikeTorto(x + l * 0.9, BRIDGE.y, -l, 0, rnd, BRIDGE.spike));
     }
   }
-  if (!partes.length) return '';
+  if (!partes.length && !pontas.length) return '';
+  const sombraDoBridge = pontas.length ? `<filter id="${id}-barra" x="-50%" y="-200%" width="200%" height="500%">
+    <feGaussianBlur stdDeviation=".9"/>
+  </filter>
+  <ellipse cx="300" cy="${BRIDGE.y}" rx="${BRIDGE.meio}" ry="1.3"
+           fill="${escurecerTraco(ap.pele, 0.55)}" opacity="${BRIDGE.sombra}"
+           filter="url(#${id}-barra)"/>` : '';
   return `<filter id="${id}-grao" x="-30%" y="-30%" width="160%" height="160%">
     <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="4"/>
     <feDisplacementMap in="SourceGraphic" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
   </filter>
-  <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${partes.join('')}</g>`;
+  ${noRosto(sombraDoBridge)}
+  <g fill="#2b2522" opacity=".92" filter="url(#${id}-grao)">${partes.join('')}${noRosto(pontas.join(''))}</g>`;
 }
 
 // Sardas (pedido do João, 21/10/2026): pintinhas espalhadas nas manchas de
@@ -269,7 +289,7 @@ function sombraDaTesta(ap, id) {
 
 // Nariz da artista (pedido do João, 21/10/2026): uma sombra esfumada do lado
 // esquerdo, do tamanho do nariz, e o miolo pintado com a pele um pouco mais
-// escura. Só os de contorno fechado (pontudo, redondo, largo) têm miolo: nos
+// escura. Só os de contorno fechado (pontudo, largo) têm miolo: nos
 // de traço aberto, como o botão, fica só a sombra.
 function sombraDoNariz(ap, id) {
   const nariz = corpoDesenhado?.narizes[ap.nariz];
@@ -350,8 +370,10 @@ const [, RETRATO_Y, , RETRATO_H] = recorteNaRegiao('cabeca', [225, 43, 150, 150]
 // `quadro` abre o enquadramento: 1 é cabeça e ombros; mais que isso desce o
 // centro e pega mais do corpo, como um busto, com uma folga acima da cabeça.
 // `desce` é quanto do que abriu vai para baixo: menos que isso sobra mais
-// espaço em cima, para o cabelo alto. `semRoupa` deixa só chapéu e óculos.
-export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1, desce = 0.38, semRoupa = false) {
+// espaço em cima, para o cabelo alto. `soCabeca` desenha só a cabeça, como a
+// cabecinha da vitrine (sem pescoço nem corpo; da roupa, só chapéu e óculos):
+// o cabelo comprido some num degradê no fim do quadro.
+export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1, desce = 0.38, soCabeca = false) {
   const janela = RETRATO_H * quadro;
   const centro = RETRATO_Y + RETRATO_H / 2 + (janela - RETRATO_H) * desce;
   const k = tamanho / janela;
@@ -359,13 +381,20 @@ export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, qu
     class: 'retrato',
     style: { width: tamanho + 'px', height: tamanho + 'px', background: cor },
   });
-  caixa.innerHTML = svgAvatar({ aparencia, roupas, roupaSoNaCabeca: semRoupa });
+  // Só a cabeça: o desenho vai até o fim do quadro (é ali que o degradê
+  // termina), com folga em cima para o afro e o chapéu.
+  const [vy, vh] = soCabeca
+    ? [-CONFIG.STAGE_H, CONFIG.STAGE_H + centro + janela / 2] : [0, CONFIG.STAGE_H];
+  caixa.innerHTML = svgAvatar({
+    aparencia, roupas, soCabeca,
+    recorte: soCabeca ? [0, vy, CONFIG.STAGE_W, vh] : null,
+  });
   Object.assign(caixa.querySelector('svg').style, {
     position: 'absolute',
     width: (CONFIG.STAGE_W * k) + 'px',
     height: 'auto',
     left: (tamanho / 2 - 300 * k) + 'px',
-    top: (tamanho / 2 - centro * k) + 'px',
+    top: (tamanho / 2 - (centro - vy) * k) + 'px',
   });
   return caixa;
 }
@@ -468,14 +497,12 @@ const comVolume = (arte, cor) => (arte.trim()
 // sem existir um segundo desenho para manter em dia.
 // `soCabeca` desenha só a cabeça: cabelo, rosto, chapéu e óculos, sem pescoço,
 // corpo nem a roupa dele.
-// `roupaSoNaCabeca` desenha o corpo inteiro, mas só com chapéu e óculos: é a
-// foto do perfil, em que o corpo aparece sem roupa nenhuma.
 export function svgAvatar({
   guia = false, fundo = 'none', aparencia = null, recorte = null, roupas = null,
-  soCabeca = false, roupaSoNaCabeca = false,
+  soCabeca = false,
 } = {}) {
   const ap = aparencia || aparenciaAtual();
-  const veste = partesDasRoupas(roupas, ap.corpo, soCabeca || roupaSoNaCabeca);
+  const veste = partesDasRoupas(roupas, ap.corpo, soCabeca);
   const corte = catalogoCabelos()[ap.cabelo] || CABELOS.curto;
 
   // Chapéu na cabeça corta o cabelo na altura que ele mandar (roupinhas.js:
@@ -562,13 +589,13 @@ export function svgAvatar({
   ${veste.frente}
 
   <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
-  ${sobrancelhas}
+  ${noRosto(sobrancelhas)}
 
   <!-- sombra que o cabelo faz na testa, embaixo dele -->
   ${cortadoNoPalco(sombraDaTesta(ap, idCorte))}
 
   <!-- sombra embaixo dos olhos e a do nariz subindo até o olho -->
-  ${sombraDoRosto(ap, idCorte)}
+  ${noRosto(sombraDoRosto(ap, idCorte))}
 
   <!-- piercings, também embaixo do cabelo da frente -->
   ${piercings(ap, idCorte)}
@@ -578,14 +605,14 @@ export function svgAvatar({
 
   <!-- rosto por último: só o nariz, e o cabelo nunca o cobre. O traço é
        dividido pela escala da cabeça para não engrossar junto com ela. -->
-  ${nariz ? naRegiao('cabeca', `<g fill="none" stroke="${ap.traco}"
+  ${noRosto(nariz ? naRegiao('cabeca', `<g fill="none" stroke="${ap.traco}"
        stroke-width="${(3.2 / escalaDe('cabeca')).toFixed(2)}"
-       stroke-linecap="round" stroke-linejoin="round" opacity=".78">${nariz}</g>`) : ''}
+       stroke-linecap="round" stroke-linejoin="round" opacity=".78">${nariz}</g>`) : '')}
 
-  ${sombraDoNariz(ap, idCorte)}
-  ${corpoDesenhado ? daArtista(idCorte + 'n', corpoDesenhado.narizes[ap.nariz],
+  ${noRosto(sombraDoNariz(ap, idCorte))}
+  ${noRosto(corpoDesenhado ? daArtista(idCorte + 'n', corpoDesenhado.narizes[ap.nariz],
     escurecerTraco(ap.pele, 0.9),
-    escurecerTraco(ap.traco)) : ''}
+    escurecerTraco(ap.traco)) : '')}
 
   <!-- sardas por cima do nariz, como ele: o cabelo não as cobre -->
   ${sardas(ap, idCorte)}
