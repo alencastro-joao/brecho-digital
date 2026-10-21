@@ -182,3 +182,4 @@
 .limpeza-lista li small { opacity: .7; }
 .limpeza-lista li.fica b { color: #2e7d32; }
 .limpeza-lista li:not(.fica) b { color: #c62828; }
+.limpeza-manter { float: right; font-size: 12px; cursor: pointer; margin-left: 8px; }
