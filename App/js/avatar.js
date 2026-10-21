@@ -275,10 +275,10 @@ function sombraDaTesta(ap, id) {
   return `${mascara(`${id}-testa-pele`, corpo.caixa, corpo.pele)}
   ${mascara(`${id}-testa-franja`, franja.caixa, franja.pele)}
   <filter id="${id}-testa" x="-20%" y="-30%" width="140%" height="160%">
-    <feGaussianBlur stdDeviation="3"/>
+    <feGaussianBlur stdDeviation="2.4"/>
   </filter>
   <g mask="url(#${id}-testa-pele)">
-    <g filter="url(#${id}-testa)" opacity=".3">
+    <g filter="url(#${id}-testa)" opacity=".5">
       <g transform="translate(0 6)">
         <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${escurecerTraco(ap.pele, 0.55)}"
               mask="url(#${id}-testa-franja)"/>
@@ -300,7 +300,7 @@ function sombraDoNariz(ap, id) {
   </filter>
   <ellipse cx="${(x + w * 0.22).toFixed(1)}" cy="${(y + h * 0.5).toFixed(1)}"
            rx="${Math.max(4.2, w * 0.22).toFixed(1)}" ry="${Math.max(10, h * 0.55).toFixed(1)}"
-           fill="${escurecerTraco(ap.pele, 0.55)}" opacity=".3" filter="url(#${id}-nariz)"/>`;
+           fill="${escurecerTraco(ap.pele, 0.55)}" opacity=".5" filter="url(#${id}-nariz)"/>`;
 }
 
 // Sombra do rosto (escolhida pelo João, 21/10/2026, a "17" das ideias;
@@ -308,7 +308,7 @@ function sombraDoNariz(ap, id) {
 // embaixo de cada olho e, do lado esquerdo, a sombra do nariz subindo até o
 // olho, como no mangá. O claro que sobra em cima do arco lê como o olho.
 // Medidas no palco, a cara no meio em x=300.
-const OLHEIRA = { y: 151, meio: 28, largura: 13, fundo: 10, opacidade: 0.32 };
+const OLHEIRA = { y: 151, meio: 28, largura: 13, fundo: 10, opacidade: 0.58 };
 function sombraDoRosto(ap, id) {
   if (!SOMBRA_ROSTO_NO_AR || !corpoDesenhado) return '';
   const cor = escurecerTraco(ap.pele, 0.55);
@@ -323,9 +323,9 @@ function sombraDoRosto(ap, id) {
   const subida = `<path d="M${(nx + nw * 0.15).toFixed(1)} ${(ny + nh - 6).toFixed(1)}
     Q${(nx - 4).toFixed(1)} ${y + 1} ${olho - 4} ${y - 5}
     Q${olho + 12} ${y - 5} ${(nx + nw * 0.3).toFixed(1)} ${(ny + nh * 0.4).toFixed(1)}Z"
-    opacity=".3" filter="url(#${id}-manga)"/>`;
+    opacity=".52" filter="url(#${id}-manga)"/>`;
   return `<filter id="${id}-olheira" x="-50%" y="-100%" width="200%" height="300%">
-    <feGaussianBlur stdDeviation="2.6"/>
+    <feGaussianBlur stdDeviation="2.1"/>
   </filter>
   <filter id="${id}-manga" x="-50%" y="-50%" width="200%" height="200%">
     <feGaussianBlur stdDeviation="2.2"/>
