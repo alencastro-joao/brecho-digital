@@ -827,10 +827,6 @@ export const NARIZES = {
 };
 export const ORDEM_NARIZES = Object.keys(NARIZES);
 
-// Sobrancelhas: formas cheias pintadas na cor do cabelo (um pouco mais escura).
-// Cada arte é a sobrancelha da esquerda da tela, numa caixa de 30 de largura:
-// x=0 é a ponta de fora, x=30 a de dentro (perto do nariz), y=0 a linha da
-// sobrancelha. O avatar põe ela na testa do molde e espelha para a direita.
 // Chave das sobrancelhas: false desliga o desenho no avatar e tira a aba do
 // Personagem (ficaram fora do ar em 21/10/2026 e voltaram no mesmo dia).
 export const SOBRANCELHAS_NO_AR = true;
@@ -841,6 +837,10 @@ export const SOBRANCELHAS_NO_AR = true;
 // (OLHEIRA, sombraDoRosto).
 export const SOMBRA_ROSTO_NO_AR = true;
 
+// Sobrancelhas: formas cheias pintadas na cor do cabelo (um pouco mais escura).
+// Cada arte é a sobrancelha da esquerda da tela, numa caixa de 30 de largura:
+// x=0 é a ponta de fora, x=30 a de dentro (perto do nariz), y=0 a linha da
+// sobrancelha. O avatar põe ela na testa do molde e espelha para a direita.
 export const SOBRANCELHAS = {
   nenhuma: { nome: 'Sem sobrancelha', arte: '' },
 
