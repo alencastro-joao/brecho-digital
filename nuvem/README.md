@@ -154,6 +154,25 @@ Para conferir quem é admin:
 aws dynamodb scan --table-name brecho --filter-expression "papel = :p" --expression-attribute-values '{":p":{"S":"admin"}}' --query "Items[].{id:id.S,email:email.S}"
 ```
 
+### Entrar com Google — 21/10/2026
+
+O botão "Entrar com Google" da tela de entrada só aparece depois que as chaves
+estão guardadas (`GET /api/auth/google` diz `pronto`). O fluxo está em
+`nuvem/lambda/logingoogle.py`; a conta, em `contas.entrar_com_google`.
+
+1. No [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
+   configure a tela de consentimento (tipo Externo, escopos `openid`, `email`,
+   `profile`) e crie um **ID do cliente OAuth** do tipo **Aplicativo da Web**.
+2. Em "URIs de redirecionamento autorizados", ponha o endereço de retorno que a
+   Administração mostra (`<site>/api/auth/google/volta`).
+3. Na Administração do jogo, bloco "Instagram, Pinterest e Google", cole o
+   Client ID e o segredo e salve. Fica em `REDECFG#google`, fora do repositório
+   e fora das variáveis de ambiente da Lambda.
+
+E-mail que já tem conta: o Google passa a abrir essa mesma conta (e a senha
+continua valendo). E-mail novo: nasce uma conta sem senha, com o e-mail já
+confirmado.
+
 ## Pessoas: achar gente, seguir, o perfil público
 
 `lambda/pessoas.py` (espelho de `App/tools/pessoas.py`, em SQLite). Sem índice

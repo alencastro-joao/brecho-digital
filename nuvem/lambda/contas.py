@@ -226,17 +226,30 @@ def _publico(item):
     }
 
 
-def criar_conta(email, senha, nome=None, handle=None, origem=''):
+def _freio_de_cadastro(origem):
     freio = 'cadastro|' + hashlib.sha256(str(origem or '').encode('utf-8')).hexdigest()[:32]
     espera = _bloqueado(freio, CADASTROS_MAX, CADASTROS_JANELA)
     if espera:
         raise ErroDeConta('Muitas contas criadas daqui. Espere %d minutos.'
                           % max(1, espera // 60), 429)
+    return freio
+
+
+def criar_conta(email, senha, nome=None, handle=None, origem=''):
+    freio = _freio_de_cadastro(origem)
     email = limpar_email(email)
     senha = limpar_senha(senha)
     digitado = bool(str(handle or '').strip())
     handle = limpar_handle(handle, email)
     nome = limpar_nome(nome, handle)
+    usuario_id = _gravar_conta(email, picar_senha(senha), nome, handle, digitado)
+    _errou(freio, CADASTROS_JANELA)
+    return _publico(_pegar('USER#' + usuario_id))
+
+
+def _gravar_conta(email, senha_picada, nome, handle, digitado, extra=None, vinculo=None):
+    """A conta, o e-mail e o @ numa transação só. `vinculo` é mais um item de
+    unicidade (o GOOGLE#<sub> de quem entrou pelo Google). Devolve o id."""
     usuario_id = 'u-' + secrets.token_hex(8)
     email_normal = email.lower()
 
@@ -245,7 +258,6 @@ def criar_conta(email, senha, nome=None, handle=None, origem=''):
     # antes, um cadastro que falhasse depois (e-mail repetido) gastaria a vaga
     # de admin e ninguém mais poderia ser.
     primeiro = _pegar('META#instalacao') is None
-    senha_picada = picar_senha(senha)
     base, n = handle, 2
 
     for _ in range(12):
@@ -263,12 +275,17 @@ def criar_conta(email, senha, nome=None, handle=None, origem=''):
                 'papel': 'admin' if primeiro else 'usuario',
                 'criado_em': iso(agora()),
                 'versao_senha': 1,
+                **(extra or {}),
             }), ConditionExpression='attribute_not_exists(pk)')},
             {'Put': dict(_put({'pk': 'EMAIL#' + email_normal, 'uid': usuario_id}),
                          ConditionExpression='attribute_not_exists(pk)')},
             {'Put': dict(_put({'pk': 'HANDLE#' + handle, 'uid': usuario_id}),
                          ConditionExpression='attribute_not_exists(pk)')},
         ]
+        if vinculo:
+            itens.append({'Put': dict(_put({'pk': vinculo, 'uid': usuario_id}),
+                                      ConditionExpression='attribute_not_exists(pk)')})
+        meta = len(itens)
         if primeiro:
             itens.append({'Put': dict(_put({'pk': 'META#instalacao',
                                             'criado_em': iso(agora())}),
@@ -276,7 +293,7 @@ def criar_conta(email, senha, nome=None, handle=None, origem=''):
 
         falhou = _transacao(itens)
         if falhou is None:
-            break
+            return usuario_id
         if falhou == 1:
             raise ErroDeConta('Já existe uma conta com esse e-mail.', 409)
         if falhou == 2:
@@ -287,15 +304,83 @@ def criar_conta(email, senha, nome=None, handle=None, origem=''):
             sufixo = str(n)
             handle, n = base[:20 - len(sufixo)] + sufixo, n + 1
             continue
-        if falhou == 3:
+        if falhou == meta:
             # Alguém criou a primeira conta entre a leitura e a transação.
             primeiro = False
             continue
         raise ErroDeConta('Não consegui criar a conta. Tente de novo.', 500)
-    else:
-        raise ErroDeConta('Esse @ já está em uso.', 409)
+    raise ErroDeConta('Esse @ já está em uso.', 409)
 
+
+# --- Entrar com Google ----------------------------------------------------
+# Quem garante a pessoa é o Google (ver logingoogle.py): aqui chega só o `sub`
+# (o id fixo da conta Google) e um e-mail que o Google já confirmou.
+#
+#     GOOGLE#<sub>   -> uid     a conta Google ligada a esta conta
+#
+# Sem ligação ainda, o e-mail decide: se já existe conta com ele, a conta
+# Google passa a abrir essa mesma conta (nada do jogo muda); se não existe,
+# nasce uma conta sem senha. Conta sem senha não entra pelo formulário: o
+# `conferir_senha` de um hash vazio é sempre falso.
+SUB_OK = re.compile(r'^[0-9]{1,64}$')
+
+
+def entrar_com_google(sub, email, nome=None, origem=''):
+    """Devolve (usuario, nova) ou levanta ErroDeConta."""
+    sub = str(sub or '')
+    if not SUB_OK.match(sub):
+        raise ErroDeConta('O Google não mandou uma conta válida.')
+    ligado = _pegar('GOOGLE#' + sub)
+    item = _pegar('USER#' + ligado['uid']) if ligado else None
+    if item:
+        _dynamo.update_item(TableName=TABELA, Key={'pk': {'S': 'USER#' + item['id']}},
+                            UpdateExpression='SET ultimo_acesso = :quando',
+                            ExpressionAttributeValues={':quando': {'S': iso(agora())}})
+        return _publico(item), False
+    if ligado:
+        # A conta que ela abria foi apagada: a ligação velha não vale mais.
+        _dynamo.delete_item(TableName=TABELA, Key={'pk': {'S': 'GOOGLE#' + sub}})
+
+    email = limpar_email(email)
+    aponta = _pegar('EMAIL#' + email.lower())
+    if aponta:
+        return _ligar_google(aponta['uid'], sub), False
+
+    freio = _freio_de_cadastro(origem)
+    try:
+        handle = limpar_handle(None, email)
+    except ErroDeConta:
+        # "jo@..." daria um @ de 2 letras: sem @ digitado, inventa um.
+        handle = 'pessoa' + secrets.token_hex(3)
+    nome = limpar_nome(nome, handle)
+    usuario_id = _gravar_conta(email, '', nome, handle, False,
+                               extra={'google': sub, 'email_confirmado': True},
+                               vinculo='GOOGLE#' + sub)
     _errou(freio, CADASTROS_JANELA)
+    return _publico(_pegar('USER#' + usuario_id)), True
+
+
+def _ligar_google(usuario_id, sub):
+    """Liga a conta Google a uma conta que já existia. O Google acabou de
+    provar que a pessoa é dona do e-mail, então ele fica confirmado. Se ainda
+    não estava, a senha foi escolhida por quem cadastrou sem provar o e-mail:
+    as sessões abertas antes caem (sobe o `versao_senha`)."""
+    item = _pegar('USER#' + usuario_id)
+    if not item:
+        raise ErroDeConta('Não consegui entrar. Tente de novo.', 500)
+    mudanca = 'SET google = :sub, email_confirmado = :sim, ultimo_acesso = :quando'
+    valores = {':sub': {'S': sub}, ':sim': {'BOOL': True}, ':quando': {'S': iso(agora())}}
+    if not item.get('email_confirmado'):
+        mudanca += ', versao_senha = :versao'
+        valores[':versao'] = {'N': str(int(item.get('versao_senha') or 1) + 1)}
+    falhou = _transacao([
+        {'Put': dict(_put({'pk': 'GOOGLE#' + sub, 'uid': usuario_id}),
+                     ConditionExpression='attribute_not_exists(pk)')},
+        {'Update': {'TableName': TABELA, 'Key': {'pk': {'S': 'USER#' + usuario_id}},
+                    'UpdateExpression': mudanca, 'ExpressionAttributeValues': valores}},
+    ])
+    if falhou is not None:
+        raise ErroDeConta('Não consegui entrar. Tente de novo.', 409)
     return _publico(_pegar('USER#' + usuario_id))
 
 

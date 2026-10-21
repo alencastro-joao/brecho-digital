@@ -56,8 +56,16 @@ SERVICOS = {
 }
 
 
+# As chaves que a Administração guarda. O Google não é rede do perfil: é o
+# "Entrar com Google" da tela de login (ver logingoogle.py), mas as chaves
+# (Client ID e segredo) moram no mesmo lugar, REDECFG#google.
+CONFIGURAVEIS = list(SERVICOS) + ['google']
+
+
 def volta(servico):
     """O endereço de retorno que vai cadastrado no app de cada rede."""
+    if servico == 'google':
+        return '%s/api/auth/google/volta' % SITE
     return '%s/api/redes/%s/volta' % (SITE, servico)
 
 
@@ -79,7 +87,7 @@ def _config(servico):
 # --- Administração --------------------------------------------------------
 def ver_config():
     saida = {}
-    for s in SERVICOS:
+    for s in CONFIGURAVEIS:
         c = _get('REDECFG#' + s) or {}
         saida[s] = {'appId': c.get('app_id', ''), 'temSegredo': bool(c.get('segredo')),
                     'volta': volta(s)}
@@ -87,7 +95,7 @@ def ver_config():
 
 
 def gravar_config(servico, app_id, segredo):
-    if servico not in SERVICOS:
+    if servico not in CONFIGURAVEIS:
         raise ValueError('rede desconhecida')
     app_id = str(app_id or '').strip()[:100]
     segredo = str(segredo or '').strip()[:200]

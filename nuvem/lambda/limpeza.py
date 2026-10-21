@@ -13,6 +13,7 @@ falhar, a limpeza para antes de apagar qualquer coisa.
 O que sai com cada conta:
 
     USER#, EMAIL#, HANDLE#     a conta e as marcas de unicidade
+    GOOGLE#                    a conta Google ligada a ela
     SESSAO#                    as sessões abertas dela
     POST# dela                 e a miniatura do post no site
     estado/<uid>.json.gz       o save
@@ -217,7 +218,8 @@ def limpar(eu, corpo):
         c = contas[uid]
         _apagar_item('USER#' + uid)
         for pk in ('EMAIL#' + str(c.get('email_normal') or ''),
-                   'HANDLE#' + str(c.get('handle_normal') or '')):
+                   'HANDLE#' + str(c.get('handle_normal') or ''),
+                   'GOOGLE#' + str(c.get('google') or '')):
             marca = next((i for i in itens if i['pk'] == pk), None)
             if marca and marca.get('uid') == uid:
                 _apagar_item(pk)

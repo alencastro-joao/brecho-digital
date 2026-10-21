@@ -49,6 +49,35 @@ function conferirRepetidos() {
   return { email, senha };
 }
 
+// A volta do Google: /?google=ok|nova|<erro>. O servidor já abriu a sessão
+// quando deu certo; aqui só sobra dizer o erro, que só a tela de entrada mostra.
+const ERROS_DO_GOOGLE = {
+  config: 'O login com Google ainda não está ligado.',
+  recusou: 'O login com Google foi cancelado.',
+  limite: 'Muitas contas criadas daqui. Espere um pouco e tente de novo.',
+  falhou: 'Não deu para entrar com o Google. Tente de novo.',
+};
+
+export function voltaDoGoogle() {
+  const q = new URLSearchParams(location.search);
+  const google = q.get('google');
+  if (!google) return null;
+  q.delete('google');
+  const resto = q.toString();
+  history.replaceState(null, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
+  if (google === 'ok' || google === 'nova') return { nova: google === 'nova' };
+  return { erro: ERROS_DO_GOOGLE[google] || ERROS_DO_GOOGLE.falhou };
+}
+
+// O botão só aparece com o Google configurado no servidor. No servidor local
+// a rota não existe e o botão fica escondido.
+async function mostrarGoogle() {
+  try {
+    const r = await fetch('/api/auth/google', { credentials: 'include' });
+    if (r.ok && (await r.json()).pronto) $('#auth-google').hidden = false;
+  } catch { /* sem servidor, sem botão */ }
+}
+
 function mostrarErro(id, mensagem) {
   const alvo = $(id);
   alvo.textContent = mensagem;
@@ -122,6 +151,7 @@ export function pedirConta({ aviso = '' } = {}) {
       if (conta) pronto(conta, true);
     });
 
+    mostrarGoogle();
     $('#entrar-email').focus();
   });
 }
