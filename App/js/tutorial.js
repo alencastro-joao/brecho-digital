@@ -29,6 +29,7 @@ import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
 import { abrirPecaNoCloset } from './closet.js';
 import { tocar } from './sons.js';
+import { sugerirInstalar } from './instalar.js';
 
 let caixa = null;
 let modo = 'aberta';      // 'aberta' | 'bolha'
@@ -199,6 +200,8 @@ function anunciar(m, r, ultima) {
     enfileirar({
       sobre: 'Fim', titulo: 'O tutorial acabou!', tempo: 7000,
       texto: 'Agora as missões do dia, em Tarefas, continuam dando prêmio. Boas garimpadas!',
+      // Fechou o cartão do fim: a primeira coisa é sugerir instalar (só no celular).
+      depois: sugerirInstalar,
     });
   }
 }
@@ -247,7 +250,7 @@ function proximoPremio() {
   if (filaDePremios.length && esperarOBau()) return;
   const vez = filaDePremios.shift();
   if (!vez) { premioNaTela = null; seguir(); return; }
-  const { sobre, titulo, pecas = [], xp = 0, fichas = 0, bau = null, texto = '', tempo = 0, marcar = null } = vez;
+  const { sobre, titulo, pecas = [], xp = 0, fichas = 0, bau = null, texto = '', tempo = 0, marcar = null, depois = null } = vez;
   const melhor = pecas.map(p => p.peca.raridade)
     .sort((a, b) => ordem(b) - ordem(a))[0] || 'nenhuma';
 
@@ -309,7 +312,7 @@ function proximoPremio() {
     saindo = true;
     clearTimeout(timer);
     cartao.classList.add('saindo');
-    setTimeout(() => { cartao.remove(); proximoPremio(); }, 250);
+    setTimeout(() => { cartao.remove(); proximoPremio(); depois?.(); }, 250);
   };
   const contar = () => { timer = setTimeout(fechar, (tempo || TEMPO_NA_TELA) + fotos.length * 700); };
   const abrir = () => {
