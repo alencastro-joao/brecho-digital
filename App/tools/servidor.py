@@ -104,7 +104,7 @@ def repassar(handler, metodo):
     return None
 
 
-SO_NA_NUVEM = re.compile(r'^/api/(pecas|esteira|fundo)(/|$)')
+SO_NA_NUVEM = re.compile(r'^/api/(pecas|esteira|fundo|roupas-avatar)(/|$)')
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

@@ -28,6 +28,8 @@ esta função só responde `/api/*`.
     POST /api/pecas            admin: peça nova no acervo
     PUT  /api/pecas/<id>       admin: edita a peça
     DELETE /api/pecas/<id>     admin: apaga a peça de vez
+    PUT  /api/roupas-avatar    admin: cria/edita roupa do avatar (ver roupasavatar.py)
+    DELETE /api/roupas-avatar/<id>  admin: tira a roupa das coleções
     GET  /api/estoque          quantas cópias de cada peça já saíram (ver estoque.py)
     POST /api/estoque/levar    reserva uma cópia (409 se esgotou)
     POST /api/estoque/devolver admin: a cópia volta para a loja
@@ -78,6 +80,7 @@ LIMITE_POST = 1536 * 1024           # a miniatura em base64 e um pouco de texto
 LIMITE_PERFIL = 32 * 1024           # bio, rosto, roupa e os ids dos favoritos
 
 ROTA_PECA = re.compile(r'^/api/pecas/([^/]+)$')
+ROTA_ROUPA = re.compile(r'^/api/roupas-avatar(?:/([^/]+))?$')
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
 ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$')
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil',
@@ -425,6 +428,22 @@ def rotas_de_acervo(pedido):
     return None
 
 
+def rotas_de_roupas(pedido):
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    if usuario['papel'] != 'admin':
+        return responder(403, {'erro': 'só o administrador mexe nas roupas do avatar'})
+
+    import roupasavatar
+    item_id = ROTA_ROUPA.match(pedido.rota).group(1)
+    if not item_id and pedido.metodo == 'PUT':
+        return responder(200, {'item': roupasavatar.gravar(pedido.corpo(LIMITE_PECA))})
+    if item_id and pedido.metodo == 'DELETE':
+        return responder(200, roupasavatar.apagar(item_id))
+    return None
+
+
 def rotas_de_esteira(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -562,6 +581,8 @@ def despachar(pedido):
         return rotas_de_feed(pedido)
     if rota == '/api/pecas' or ROTA_PECA.match(rota):
         return rotas_de_acervo(pedido)
+    if ROTA_ROUPA.match(rota):
+        return rotas_de_roupas(pedido)
     if ROTA_ESTEIRA.match(rota):
         return rotas_de_esteira(pedido)
 

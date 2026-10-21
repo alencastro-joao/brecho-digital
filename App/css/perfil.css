@@ -550,6 +550,38 @@ button.pf-stat:hover small { text-decoration: underline; }
 .perfil-atalho.recebeu { animation: pulso .7s ease; }
 #adm-revisar[hidden], #adm-revisar-resumo[hidden] { display: none; }
 
+/* Admin › Roupas do avatar (js/adminroupas.js) */
+.adm-roupas-lista { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.adm-roupas-lista li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.adm-roupas-lista li + li { border-top: 1px solid var(--wii-borda); }
+.adm-roupas-lista img { width: 48px; height: 48px; object-fit: contain; flex: none; }
+.adm-roupas-lista div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.adm-roupas-lista small { color: var(--tinta-suave); font-size: 12px; }
+.adm-roupas-lista .btn-ghost { width: auto; margin: 0; padding: 6px 10px; }
+.adm-roupa-editor { display: flex; gap: 16px; align-items: flex-start; }
+.adm-roupa-lado { flex: 0 0 220px; position: sticky; top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.adm-roupa-previa {
+  aspect-ratio: 1 / 2; width: 100%; border: 1.5px solid var(--wii-borda); border-radius: 12px;
+  background: #fff; overflow: hidden; touch-action: none; cursor: grab;
+}
+.adm-roupa-previa.perto { aspect-ratio: 1 / 1; }
+.adm-roupa-previa svg { display: block; width: 100%; height: 100%; }
+.adm-opcoes { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.adm-roupa-campos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.adm-roupa-campos .tool-campo { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.adm-roupa-campos input[type=text], .adm-roupa-campos select {
+  font: inherit; font-size: 13px; padding: 8px 10px; border: 1.5px solid var(--wii-borda);
+  border-radius: 10px; background: #fff; color: var(--tinta);
+}
+.adm-faixa input { width: 100%; }
+.adm-colecoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.adm-colecao { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--tinta); }
+.adm-colecao i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .2); }
+@media (max-width: 760px) {
+  .adm-roupa-editor { flex-direction: column; align-items: stretch; }
+  .adm-roupa-lado { position: static; flex-basis: auto; width: min(240px, 100%); margin: 0 auto; }
+}
+
 /* Janela de assinaturas */
 .ass-caixa { max-width: 440px; width: 92vw; }
 .ass-linha { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }

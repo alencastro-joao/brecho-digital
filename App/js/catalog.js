@@ -9,6 +9,7 @@
 
 import { CONFIG, CATEGORIAS, migrarCategoria } from './config.js';
 import * as db from './db.js';
+import { lerAcervo } from './roupasavatar.js';
 
 const SINGULAR = {
   shoes: 'Sapato', pants: 'Calça', shorts: 'Bermuda', skirts: 'Saia', dresses: 'Vestido',
@@ -40,9 +41,8 @@ export async function carregarCatalogo() {
 
 async function carregarAcervo() {
   try {
-    const resp = await fetch(CONFIG.ACERVO, { cache: 'no-cache' });
-    if (!resp.ok) return [];
-    const data = await resp.json();
+    const data = await lerAcervo();
+    if (!data) return [];
     catalogo.removidas = Array.isArray(data.removidas) ? data.removidas : [];
     const itens = (data.items || []).map(i => ({ ...i, permanente: true }));
     // A imagem editada é regravada com o mesmo nome, e o navegador guarda as
