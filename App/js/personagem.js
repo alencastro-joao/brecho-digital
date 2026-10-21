@@ -1,5 +1,5 @@
-// Editar personagem: tom de pele, corte e cor do cabelo, nariz, sobrancelha,
-// piercings.
+// Editar personagem: tom de pele, corte e cor do cabelo, nariz, sardas,
+// sobrancelha, piercings.
 //
 // O avatar é um SVG desenhado em código (js/avatar.js), então mudar a aparência
 // é mudar quatro valores no perfil. A prévia aqui é o mesmo desenho que o
@@ -9,7 +9,7 @@
 
 import {
   PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
-  PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
+  PIERCINGS_ORELHA, PIERCINGS_BRIDGE, SARDAS,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import { aplicarPaleta, paletaDaCor } from './paleta.js';
@@ -40,6 +40,7 @@ const aparenciaDoRascunho = () => {
     orelhaEsq: rascunho.orelhaEsq,
     orelhaDir: rascunho.orelhaDir,
     bridge: rascunho.bridge,
+    sardas: rascunho.sardas,
   };
 };
 
@@ -57,6 +58,8 @@ const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
 const CROP_ORELHA_ESQ = [196, 120, 56, 64];
 const CROP_ORELHA_DIR = [600 - 196 - 56, 120, 56, 64];
 const CROP_BRIDGE = [272, 112, 56, 64];
+// Sardas: o nariz e as duas bochechas, no palco.
+const CROP_SARDAS = [246, 132, 108, 66];
 
 // Zoom no rosto: mexendo em nariz, sobrancelha ou piercings, a prévia chega
 // perto da cabeça (no palco, já na cabeça da artista) para ver o detalhe.
@@ -111,6 +114,7 @@ function renderPrevia() {
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
     `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}` +
+    (SARDAS[rascunho.sardas]?.nariz ? ` · sardas ${SARDAS[rascunho.sardas].nome.toLowerCase()}` : '') +
     resumoBrincos() +
     (SOBRANCELHAS_NO_AR ? ` · ${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}` : '');
 }
@@ -223,6 +227,7 @@ function renderTudo() {
   renderCores();
   renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
+  renderMiniaturas('#pg-sardas', Object.keys(SARDAS), SARDAS, 'sardas', CROP_SARDAS);
   // Piercings, todos na mesma aba: sem cabelo na miniatura, que o comprido
   // cobre a orelha e a franja, o bridge.
   renderTiposDaOrelha('#pg-piercing-esq', 'orelhaEsq', CROP_ORELHA_ESQ);
