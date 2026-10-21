@@ -1,5 +1,5 @@
 // Editar personagem: tom de pele, corte e cor do cabelo, nariz, sobrancelha,
-// brincos.
+// brincos e spikes.
 //
 // O avatar é um SVG desenhado em código (js/avatar.js), então mudar a aparência
 // é mudar quatro valores no perfil. A prévia aqui é o mesmo desenho que o
@@ -9,7 +9,7 @@
 
 import {
   PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
-  BRINCOS,
+  BRINCOS, SPIKES,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import { aplicarPaleta, paletaDaCor } from './paleta.js';
@@ -39,6 +39,8 @@ const aparenciaDoRascunho = () => {
     corSobrancelha: rascunho.corSobrancelha,
     brincoEsq: rascunho.brincoEsq,
     brincoDir: rascunho.brincoDir,
+    spikeEsq: rascunho.spikeEsq,
+    spikeDir: rascunho.spikeDir,
   };
 };
 
@@ -54,6 +56,9 @@ const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
 // eles ficam (a direita é a esquerda espelhada em x=300).
 const CROP_ORELHA_ESQ = [198, 126, 52, 56];
 const CROP_ORELHA_DIR = [600 - 198 - 52, 126, 52, 56];
+// Os spikes ficam no alto da orelha e saem dela: o quadro sobe um pouco.
+const CROP_SPIKE_ESQ = [198, 120, 52, 56];
+const CROP_SPIKE_DIR = [600 - 198 - 52, 120, 52, 56];
 
 // Zoom no rosto: mexendo em nariz, sobrancelha ou orelhas, a prévia chega
 // perto da cabeça (no palco, já na cabeça da artista) para ver o detalhe.
@@ -88,10 +93,14 @@ function enquadrar(svg) {
   animacao = requestAnimationFrame(passo);
 }
 
-// "brincos 2 + 1": esquerda e direita, como na tela.
+// "brincos 2 + 1 · spikes 0 + 3": esquerda e direita, como na tela.
 function resumoBrincos() {
-  const esq = BRINCOS[rascunho.brincoEsq]?.qtd || 0, dir = BRINCOS[rascunho.brincoDir]?.qtd || 0;
-  return esq || dir ? ` · brincos ${esq} + ${dir}` : '';
+  const par = (nome, cat, esq, dir) => {
+    const e = cat[rascunho[esq]]?.qtd || 0, d = cat[rascunho[dir]]?.qtd || 0;
+    return e || d ? ` · ${nome} ${e} + ${d}` : '';
+  };
+  return par('brincos', BRINCOS, 'brincoEsq', 'brincoDir') +
+    par('spikes', SPIKES, 'spikeEsq', 'spikeDir');
 }
 
 function renderPrevia() {
@@ -194,6 +203,10 @@ function renderTudo() {
     CROP_ORELHA_ESQ, { cabelo: 'nenhum' });
   renderMiniaturas('#pg-brincos-dir', Object.keys(BRINCOS), BRINCOS, 'brincoDir',
     CROP_ORELHA_DIR, { cabelo: 'nenhum' });
+  renderMiniaturas('#pg-spikes-esq', Object.keys(SPIKES), SPIKES, 'spikeEsq',
+    CROP_SPIKE_ESQ, { cabelo: 'nenhum' });
+  renderMiniaturas('#pg-spikes-dir', Object.keys(SPIKES), SPIKES, 'spikeDir',
+    CROP_SPIKE_DIR, { cabelo: 'nenhum' });
   // Sobrancelha: formato e cor na mesma aba.
   if (!SOBRANCELHAS_NO_AR) return;
   const sobrancelhas = catalogoSobrancelhas();
