@@ -16,8 +16,15 @@
   border: 1px solid var(--linha); border-radius: 20px;
   padding: 22px; width: 100%;
 }
-.pg-previa { height: min(560px, 62vh); }
-.pg-previa svg { height: 100%; width: auto; display: block; }
+/* A prévia ocupa a largura da moldura e o SVG a preenche, centrado: o zoom no
+   rosto só troca o viewBox, sem a prévia mudar de tamanho (ver personagem.js). */
+.pg-previa { height: min(560px, 62vh); width: 100%; }
+/* De perto, o corpo sai pela borda de baixo: some num degradê, não numa reta. */
+.pg-previa.de-perto {
+  -webkit-mask-image: linear-gradient(#000 80%, transparent);
+  mask-image: linear-gradient(#000 80%, transparent);
+}
+.pg-previa svg { height: 100%; width: 100%; display: block; }
 .pg-resumo { font-size: 12.5px; color: var(--tinta-suave); }
 
 .pg-painel {
