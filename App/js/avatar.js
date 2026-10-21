@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, BRINCOS, LADOS_BRINCO,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, BRINCOS,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -76,8 +76,21 @@ export function resolverAparencia(cfg = {}) {
     nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
     sobrancelha: SOBRANCELHAS[cfg.sobrancelha] ? cfg.sobrancelha : 'nenhuma',
     corSobrancelha: cfg.corSobrancelha || '',
-    brincos: BRINCOS[cfg.brincos] ? cfg.brincos : 'nenhum',
-    ladoBrincos: LADOS_BRINCO[cfg.ladoBrincos] ? cfg.ladoBrincos : 'ambos',
+    ...brincosDasOrelhas(cfg),
+  };
+}
+
+// Brinco de cada orelha. O primeiro formato (21/10/2026, poucos minutos no
+// ar) guardava quantos (`brincos`) e em que lado (`ladoBrincos`): quem salvou
+// nele abre com o mesmo nas orelhas de agora.
+export function brincosDasOrelhas(cfg = {}) {
+  const ok = (id) => (BRINCOS[id] ? id : 'nenhum');
+  if (cfg.brincoEsq || cfg.brincoDir || !cfg.brincos) {
+    return { brincoEsq: ok(cfg.brincoEsq), brincoDir: ok(cfg.brincoDir) };
+  }
+  return {
+    brincoEsq: cfg.ladoBrincos === 'direita' ? 'nenhum' : ok(cfg.brincos),
+    brincoDir: cfg.ladoBrincos === 'esquerda' ? 'nenhum' : ok(cfg.brincos),
   };
 }
 
@@ -103,14 +116,13 @@ function bolinhaTorta(cx, cy, r, rnd) {
   return `<path d="${d}Z"/>`;
 }
 function brincos(ap, id) {
-  const qtd = BRINCOS[ap.brincos]?.qtd || 0;
-  if (!qtd || !corpoDesenhado) return '';
-  const lados = ap.ladoBrincos === 'esquerda' ? [1] : ap.ladoBrincos === 'direita' ? [-1] : [1, -1];
-  const bolinhas = lados.flatMap((l) => {
+  if (!corpoDesenhado) return '';
+  const bolinhas = [[1, ap.brincoEsq], [-1, ap.brincoDir]].flatMap(([l, b]) => {
     const rnd = mulberry32(l === 1 ? 7 : 11);
-    return BOLINHAS_BRINCO.slice(0, qtd).map(([x, y, r]) =>
+    return BOLINHAS_BRINCO.slice(0, BRINCOS[b]?.qtd || 0).map(([x, y, r]) =>
       bolinhaTorta(l === 1 ? x : 600 - x, y, r, rnd));
   });
+  if (!bolinhas.length) return '';
   return `<filter id="${id}-grao" x="-30%" y="-30%" width="160%" height="160%">
     <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="4"/>
     <feDisplacementMap in="SourceGraphic" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>

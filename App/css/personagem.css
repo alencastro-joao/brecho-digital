@@ -37,6 +37,8 @@
 .pg-painel .tool-label { margin-bottom: 2px; }
 .pg-bloco { display: flex; flex-direction: column; gap: 10px; }
 .pg-abas { display: none; }
+/* O ícone de orelha é o da direita da tela; a da esquerda é ele virado. */
+.pg-abas .espelhado .ico { transform: scaleX(-1); }
 
 /* Amostras de cor */
 .pg-swatches { display: flex; flex-wrap: wrap; gap: 8px; }

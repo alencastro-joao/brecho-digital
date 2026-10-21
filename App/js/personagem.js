@@ -9,14 +9,14 @@
 
 import {
   PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
-  BRINCOS, LADOS_BRINCO,
+  BRINCOS,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import { aplicarPaleta, paletaDaCor } from './paleta.js';
 import * as db from './db.js';
 import {
   svgAvatar, resolverAparencia, catalogoCorpos, catalogoNarizes, catalogoCabelos,
-  catalogoSobrancelhas,
+  catalogoSobrancelhas, brincosDasOrelhas,
 } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
@@ -37,8 +37,8 @@ const aparenciaDoRascunho = () => {
     nariz: rascunho.nariz,
     sobrancelha: rascunho.sobrancelha,
     corSobrancelha: rascunho.corSobrancelha,
-    brincos: rascunho.brincos,
-    ladoBrincos: rascunho.ladoBrincos,
+    brincoEsq: rascunho.brincoEsq,
+    brincoDir: rascunho.brincoDir,
   };
 };
 
@@ -50,15 +50,15 @@ const CROP_CORPO = [148, 18, 304, 716];
 const CROP_CABELO = recorteNaRegiao('cabeca', [180, -12, 240, 258]);
 const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
 const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
-// Brincos: a orelha da esquerda de perto (quantos) e as duas (que lado). Já
-// no palco, como a orelha da artista em que eles ficam.
-const CROP_BRINCO = [198, 126, 52, 56];
-const CROP_LADO_BRINCO = [200, 100, 200, 100];
+// Brincos: cada orelha de perto, já no palco, como a orelha da artista em que
+// eles ficam (a direita é a esquerda espelhada em x=300).
+const CROP_ORELHA_ESQ = [198, 126, 52, 56];
+const CROP_ORELHA_DIR = [600 - 198 - 52, 126, 52, 56];
 
-// Zoom no rosto: mexendo em nariz, sobrancelha ou brincos, a prévia chega
+// Zoom no rosto: mexendo em nariz, sobrancelha ou orelhas, a prévia chega
 // perto da cabeça (no palco, já na cabeça da artista) para ver o detalhe.
 // O SVG é o mesmo; só o viewBox desliza de um enquadramento para o outro.
-const ABAS_DO_ROSTO = new Set(['nariz', 'sobrancelha', 'brincos']);
+const ABAS_DO_ROSTO = new Set(['nariz', 'sobrancelha', 'orelha-esq', 'orelha-dir']);
 const PALCO_INTEIRO = [0, 0, 600, 1200];
 const CROP_ROSTO = [170, -20, 260, 300];
 let noRosto = false;
@@ -88,6 +88,12 @@ function enquadrar(svg) {
   animacao = requestAnimationFrame(passo);
 }
 
+// "brincos 2 + 1": esquerda e direita, como na tela.
+function resumoBrincos() {
+  const esq = BRINCOS[rascunho.brincoEsq]?.qtd || 0, dir = BRINCOS[rascunho.brincoDir]?.qtd || 0;
+  return esq || dir ? ` · brincos ${esq} + ${dir}` : '';
+}
+
 function renderPrevia() {
   $('#pg-previa').innerHTML = svgAvatar({ aparencia: aparenciaDoRascunho() });
   enquadrar($('#pg-previa svg'));
@@ -96,10 +102,7 @@ function renderPrevia() {
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
     `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}` +
-    (BRINCOS[rascunho.brincos]?.qtd ? ` · ${BRINCOS[rascunho.brincos].qtd} ` +
-      `brinco${BRINCOS[rascunho.brincos].qtd > 1 ? 's' : ''} ` +
-      (rascunho.ladoBrincos === 'ambos' ? 'em cada orelha'
-        : `na ${LADOS_BRINCO[rascunho.ladoBrincos]?.nome.toLowerCase()}`) : '') +
+    resumoBrincos() +
     (SOBRANCELHAS_NO_AR ? ` · ${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}` : '');
 }
 
@@ -185,13 +188,12 @@ function renderTudo() {
   renderCores();
   renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
-  // Brincos sem cabelo na miniatura, que o comprido cobre a orelha; o lado
-  // mostra três quando ainda não tem nenhum, para dar o que ver.
-  renderMiniaturas('#pg-brincos', Object.keys(BRINCOS), BRINCOS, 'brincos', CROP_BRINCO,
-    { cabelo: 'nenhum' });
-  renderMiniaturas('#pg-lados-brinco', Object.keys(LADOS_BRINCO), LADOS_BRINCO, 'ladoBrincos',
-    CROP_LADO_BRINCO,
-    { cabelo: 'nenhum', ...(BRINCOS[rascunho.brincos]?.qtd ? {} : { brincos: 'tres' }) });
+  // Brincos, uma aba por orelha: sem cabelo na miniatura, que o comprido
+  // cobre a orelha.
+  renderMiniaturas('#pg-brincos-esq', Object.keys(BRINCOS), BRINCOS, 'brincoEsq',
+    CROP_ORELHA_ESQ, { cabelo: 'nenhum' });
+  renderMiniaturas('#pg-brincos-dir', Object.keys(BRINCOS), BRINCOS, 'brincoDir',
+    CROP_ORELHA_DIR, { cabelo: 'nenhum' });
   // Sobrancelha: formato e cor na mesma aba.
   if (!SOBRANCELHAS_NO_AR) return;
   const sobrancelhas = catalogoSobrancelhas();
@@ -247,6 +249,9 @@ function irParaRoupas() {
 
 export function aoEntrarNoPersonagem() {
   rascunho = { ...APARENCIA_PADRAO, ...db.state.usuario.avatar };
+  Object.assign(rascunho, brincosDasOrelhas(db.state.usuario.avatar));
+  delete rascunho.brincos;
+  delete rascunho.ladoBrincos;
   // Corte de código que saiu do catálogo já abre marcado no parecido.
   rascunho.cabelo = resolverAparencia(rascunho).cabelo;
   corFavorita = db.state.usuario.corFavorita || null;
