@@ -508,7 +508,7 @@ export function svgAvatar({
   <!-- sombra que o cabelo faz na testa, embaixo dele -->
   ${sombraDaTesta(ap, idCorte)}
 
-  <!-- sombra de teste onde ficariam os olhos e a boca (desligada por padrão) -->
+  <!-- sombra de teste onde ficariam os olhos e a boca -->
   ${sombraDosOlhosEBoca(ap, idCorte)}
 
   <!-- piercings, também embaixo do cabelo da frente -->
