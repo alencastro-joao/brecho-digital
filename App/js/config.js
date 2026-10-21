@@ -953,25 +953,9 @@ const NARIZ = [300, 158, 15, 8], BOCH_E = [268, 171, 14, 8], BOCH_D = [332, 171,
 const com = ([cx, cy, rx, ry], n) => [cx, cy, rx, ry, n];
 export const SARDAS = {
   nenhuma: { nome: 'Nada' },
-  poucas: { nome: 'Poucas', manchas: [com(NARIZ, 6)] },
-  nariz: { nome: 'Nariz', manchas: [com(NARIZ, 12)] },
-  bochechas: { nome: 'Nariz e bochechas', manchas: [com(NARIZ, 9), com(BOCH_E, 8), com(BOCH_D, 8)] },
   muitas: { nome: 'Muitas', manchas: [com(NARIZ, 14), com(BOCH_E, 15), com(BOCH_D, 15)] },
-  // Variações em teste (21/10/2026), ainda fora da tela de criação.
-  soBochechas: { nome: 'Só bochechas', manchas: [com(BOCH_E, 10), com(BOCH_D, 10)] },
-  salpicadas: { nome: 'Salpicadas', raio: [0.5, 0.85], afastamento: 2.3, opacidade: 0.5,
-    manchas: [[300, 160, 46, 11, 70]] },
-  faixa: { nome: 'Faixa de sol', raio: [0.7, 1.15], afastamento: 2.6,
-    manchas: [[300, 162, 40, 6, 34]] },
   grandes: { nome: 'Pintas grandes', raio: [1.5, 2.1], afastamento: 6, opacidade: 0.55,
     manchas: [com(NARIZ, 4), com(BOCH_E, 5), com(BOCH_D, 5)] },
-  desenho: { nome: 'Desenho', raio: [1.4, 1.4], opacidade: 0.7,
-    fixas: [[263, 168, 1.4], [270, 166, 1.4], [267, 173, 1.4],
-            [337, 168, 1.4], [330, 166, 1.4], [333, 173, 1.4]] },
-  clarinhas: { nome: 'Clarinhas', opacidade: 0.32,
-    manchas: [com(NARIZ, 12), com(BOCH_E, 12), com(BOCH_D, 12)] },
-  densas: { nome: 'Bem cheias', raio: [0.7, 1.3], afastamento: 2.5,
-    manchas: [[300, 157, 18, 10, 30], [266, 170, 17, 11, 30], [334, 170, 17, 11, 30]] },
 };
 
 export const APARENCIA_PADRAO = {
