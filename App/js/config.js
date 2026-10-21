@@ -828,8 +828,8 @@ export const NARIZES = {
 export const ORDEM_NARIZES = Object.keys(NARIZES);
 
 // Chave das sobrancelhas: false desliga o desenho no avatar e tira a aba do
-// Personagem (ficaram fora do ar em 21/10/2026 e voltaram no mesmo dia).
-export const SOBRANCELHAS_NO_AR = true;
+// Personagem (fora do ar de novo desde 21/10/2026, pedido do João).
+export const SOBRANCELHAS_NO_AR = false;
 
 // Sombra do rosto (escolhida pelo João, 21/10/2026): arco embaixo de cada
 // olho e a sombra do nariz subindo até o olho, sem desenhar olho nem boca. Só
