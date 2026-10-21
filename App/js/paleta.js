@@ -23,6 +23,15 @@ export const PALETAS = [
 ];
 export const PALETA_PADRAO = 'bondi';
 
+// A cor favorita (a do personagem) puxa a paleta mais parecida: escolher a
+// cor já pinta o site. Branco não tem tom, fica no padrão.
+const DA_COR_FAVORITA = {
+  Preto: 'graphite', Branco: 'bondi', Cinza: 'graphite', Bege: 'sage', Marrom: 'tangerine',
+  Vermelho: 'ruby', Rosa: 'strawberry', Laranja: 'tangerine', Amarelo: 'tangerine',
+  Verde: 'lime', Azul: 'blueberry', Roxo: 'grape',
+};
+export const paletaDaCor = (nome) => DA_COR_FAVORITA[nome] || PALETA_PADRAO;
+
 // Quem escolheu uma cor da paleta antiga fica com a nova mais parecida.
 const ANTIGAS = {
   azul: 'bondi', turquesa: 'bondi', anil: 'indigo', lilas: 'grape', rosa: 'strawberry',

@@ -104,6 +104,9 @@ body.com-modal .intro { display: none; }
 
 /* Arrastar: a faixa e a bolinha se movem com o dedo, sem rolar a página. */
 .intro[data-modo="barra"], .intro[data-modo="bolha"] { touch-action: none; cursor: grab; user-select: none; }
+.intro-bolha { touch-action: none; }
+/* Enquanto o cartão é arrastado, puxar para baixo não recarrega a página. */
+html.intro-arrastando, html.intro-arrastando body { overscroll-behavior: none; }
 
 /* Recolhido: uma bolinha no canto com a missão da vez. Toque abre de novo. */
 .intro[data-modo="bolha"] {
@@ -123,27 +126,6 @@ body.com-modal .intro { display: none; }
 @media (min-width: 901px) {
   .intro[data-modo="bolha"] { left: auto; right: 120px; top: auto; bottom: 28px; }
 }
-
-/* A abertura: tela em branco por cima de tudo, antes do primeiro passo. */
-.intro[data-modo="boasvindas"] {
-  inset: 0; width: auto; max-width: none; transform: none;
-  display: grid; place-items: center; padding: 24px;
-  border: 0; border-radius: 0; box-shadow: none;
-  background: radial-gradient(120% 70% at 50% 0%, #fff 0%, var(--perola-1) 45%, var(--perola-painel) 100%);
-  z-index: 1100; animation: intro-surge .4s ease;
-}
-@keyframes intro-surge { from { opacity: 0; } }
-.intro-abertura { width: min(380px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
-.intro-abertura h2 { font-size: 24px; margin: 6px 0 0; }
-.intro-abertura .intro-dica { font-size: 15px; }
-.intro-abertura .intro-balao { width: 100%; text-align: left; margin-top: 10px; }
-.intro-abertura .intro-balao::before { left: calc(50% - 7px); }
-.intro-abertura .link-btn { color: var(--tinta-suave); }
-.intro-abertura .btn-dark { margin-top: 10px; padding: 14px 16px; font-size: 15px; }
-.intro-logo { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 22px;
-  background: var(--brilho-topo), var(--wii); border: 2px solid var(--wii); color: #fff;
-  font-weight: 800; font-size: 23px; text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
-  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .16), 0 0 0 4px var(--wii-brilho), 0 12px 28px rgba(30, 50, 65, .2); }
 
 /* Prêmio de missão (anunciar em js/tutorial.js): um cartão no meio da tela
    que comemora e some sozinho. Só o cartão recebe toque; o resto do app segue
