@@ -1,5 +1,5 @@
 // Editar personagem: tom de pele, corte e cor do cabelo, nariz, sobrancelha,
-// brincos e spikes.
+// piercings.
 //
 // O avatar é um SVG desenhado em código (js/avatar.js), então mudar a aparência
 // é mudar quatro valores no perfil. A prévia aqui é o mesmo desenho que o
@@ -9,14 +9,14 @@
 
 import {
   PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
-  BRINCOS, SPIKES,
+  PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import { aplicarPaleta, paletaDaCor } from './paleta.js';
 import * as db from './db.js';
 import {
   svgAvatar, resolverAparencia, catalogoCorpos, catalogoNarizes, catalogoCabelos,
-  catalogoSobrancelhas, brincosDasOrelhas,
+  catalogoSobrancelhas, piercingsDasOrelhas,
 } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
@@ -37,10 +37,9 @@ const aparenciaDoRascunho = () => {
     nariz: rascunho.nariz,
     sobrancelha: rascunho.sobrancelha,
     corSobrancelha: rascunho.corSobrancelha,
-    brincoEsq: rascunho.brincoEsq,
-    brincoDir: rascunho.brincoDir,
-    spikeEsq: rascunho.spikeEsq,
-    spikeDir: rascunho.spikeDir,
+    orelhaEsq: rascunho.orelhaEsq,
+    orelhaDir: rascunho.orelhaDir,
+    bridge: rascunho.bridge,
   };
 };
 
@@ -52,18 +51,17 @@ const CROP_CORPO = [148, 18, 304, 716];
 const CROP_CABELO = recorteNaRegiao('cabeca', [180, -12, 240, 258]);
 const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
 const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
-// Brincos: cada orelha de perto, já no palco, como a orelha da artista em que
-// eles ficam (a direita é a esquerda espelhada em x=300).
-const CROP_ORELHA_ESQ = [198, 126, 52, 56];
-const CROP_ORELHA_DIR = [600 - 198 - 52, 126, 52, 56];
-// Os spikes ficam no alto da orelha e saem dela: o quadro sobe um pouco.
-const CROP_SPIKE_ESQ = [198, 120, 52, 56];
-const CROP_SPIKE_DIR = [600 - 198 - 52, 120, 52, 56];
+// Piercings: cada orelha inteira de perto e o meio da cara (o bridge), já no
+// palco, como a cara da artista em que eles ficam. A orelha da direita é a da
+// esquerda espelhada em x=300.
+const CROP_ORELHA_ESQ = [196, 120, 56, 64];
+const CROP_ORELHA_DIR = [600 - 196 - 56, 120, 56, 64];
+const CROP_BRIDGE = [272, 112, 56, 64];
 
-// Zoom no rosto: mexendo em nariz, sobrancelha ou orelhas, a prévia chega
+// Zoom no rosto: mexendo em nariz, sobrancelha ou piercings, a prévia chega
 // perto da cabeça (no palco, já na cabeça da artista) para ver o detalhe.
 // O SVG é o mesmo; só o viewBox desliza de um enquadramento para o outro.
-const ABAS_DO_ROSTO = new Set(['nariz', 'sobrancelha', 'orelha-esq', 'orelha-dir']);
+const ABAS_DO_ROSTO = new Set(['nariz', 'sobrancelha', 'piercings']);
 const PALCO_INTEIRO = [0, 0, 600, 1200];
 const CROP_ROSTO = [170, -20, 260, 300];
 let noRosto = false;
@@ -93,14 +91,15 @@ function enquadrar(svg) {
   animacao = requestAnimationFrame(passo);
 }
 
-// "brincos 2 + 1 · spikes 0 + 3": esquerda e direita, como na tela.
+// "piercings: esquerda bolinhas · bridge spikes", só o que tiver.
 function resumoBrincos() {
-  const par = (nome, cat, esq, dir) => {
-    const e = cat[rascunho[esq]]?.qtd || 0, d = cat[rascunho[dir]]?.qtd || 0;
-    return e || d ? ` · ${nome} ${e} + ${d}` : '';
-  };
-  return par('brincos', BRINCOS, 'brincoEsq', 'brincoDir') +
-    par('spikes', SPIKES, 'spikeEsq', 'spikeDir');
+  const partes = [
+    ['esquerda', PIERCINGS_ORELHA, rascunho.orelhaEsq],
+    ['direita', PIERCINGS_ORELHA, rascunho.orelhaDir],
+    ['bridge', PIERCINGS_BRIDGE, rascunho.bridge],
+  ].filter(([, , id]) => id && id !== 'nenhum')
+    .map(([onde, cat, id]) => `${onde} ${(cat[id]?.nome ?? '').toLowerCase()}`);
+  return partes.length ? ` · piercings: ${partes.join(', ')}` : '';
 }
 
 function renderPrevia() {
@@ -197,16 +196,15 @@ function renderTudo() {
   renderCores();
   renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
-  // Brincos, uma aba por orelha: sem cabelo na miniatura, que o comprido
-  // cobre a orelha.
-  renderMiniaturas('#pg-brincos-esq', Object.keys(BRINCOS), BRINCOS, 'brincoEsq',
+  // Piercings, todos na mesma aba: sem cabelo na miniatura, que o comprido
+  // cobre a orelha e a franja, o bridge.
+  const orelhas = Object.keys(PIERCINGS_ORELHA);
+  renderMiniaturas('#pg-piercing-esq', orelhas, PIERCINGS_ORELHA, 'orelhaEsq',
     CROP_ORELHA_ESQ, { cabelo: 'nenhum' });
-  renderMiniaturas('#pg-brincos-dir', Object.keys(BRINCOS), BRINCOS, 'brincoDir',
+  renderMiniaturas('#pg-piercing-dir', orelhas, PIERCINGS_ORELHA, 'orelhaDir',
     CROP_ORELHA_DIR, { cabelo: 'nenhum' });
-  renderMiniaturas('#pg-spikes-esq', Object.keys(SPIKES), SPIKES, 'spikeEsq',
-    CROP_SPIKE_ESQ, { cabelo: 'nenhum' });
-  renderMiniaturas('#pg-spikes-dir', Object.keys(SPIKES), SPIKES, 'spikeDir',
-    CROP_SPIKE_DIR, { cabelo: 'nenhum' });
+  renderMiniaturas('#pg-piercing-bridge', Object.keys(PIERCINGS_BRIDGE), PIERCINGS_BRIDGE,
+    'bridge', CROP_BRIDGE, { cabelo: 'nenhum' });
   // Sobrancelha: formato e cor na mesma aba.
   if (!SOBRANCELHAS_NO_AR) return;
   const sobrancelhas = catalogoSobrancelhas();
@@ -262,9 +260,10 @@ function irParaRoupas() {
 
 export function aoEntrarNoPersonagem() {
   rascunho = { ...APARENCIA_PADRAO, ...db.state.usuario.avatar };
-  Object.assign(rascunho, brincosDasOrelhas(db.state.usuario.avatar));
-  delete rascunho.brincos;
-  delete rascunho.ladoBrincos;
+  Object.assign(rascunho, piercingsDasOrelhas(db.state.usuario.avatar));
+  for (const velho of ['brincos', 'ladoBrincos', 'brincoEsq', 'brincoDir', 'spikeEsq', 'spikeDir']) {
+    delete rascunho[velho];
+  }
   // Corte de código que saiu do catálogo já abre marcado no parecido.
   rascunho.cabelo = resolverAparencia(rascunho).cabelo;
   corFavorita = db.state.usuario.corFavorita || null;
