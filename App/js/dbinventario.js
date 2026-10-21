@@ -4,7 +4,7 @@
 
 import { hojeISO, semanaISO, mulberry32, sementeDoDia } from './util.js';
 import { CONFIG, RARIDADES, FICHAS } from './config.js';
-import { bonusDeEfeito, marcasAtivas, bonusDaCor } from './efeitos.js';
+import { bonusDeEfeito, marcasAtivas, coresAtivas } from './efeitos.js';
 import {
   avisarIntro, marcasFixas, missoesDaSemana, missoesDoDia, progredirMissao, roupasEquipadas,
   salvar, state,
@@ -180,9 +180,10 @@ export function sementeDaLoja(iso = hojeISO()) {
 //   peso[raridade]:   multiplica o peso dela no sorteio da raridade do dia
 //   naLoja[raridade]: troca a tabela de quantas vêm na arara (ver config.js)
 //   marcas:           [{ marcas, pct }] — efeito "mais peças da marca na arara"
+//   cores:            [{ cor, pct }] — efeito "mais peças da cor na arara"
 //   maisRaras:        pct do efeito "mais chance de peças raras na arara"
 //
-// Os efeitos de marca valem pelo que estava vestido na primeira olhada do
+// Os efeitos de marca e de cor valem pelo que estava vestido na primeira olhada do
 // dia e ficam gravados em `state.dia.loja`: trocar de roupa não embaralha a
 // arara de hoje, vale para a de amanhã. Antes do acervo carregar ninguém tem
 // coleção liberada, então a foto só é tirada depois dele.
@@ -194,10 +195,11 @@ export function modificadoresDaLoja() {
       marcas: marcasAtivas(eq)
         .filter(m => m.colecao.efeito.tipo === 'mais-da-marca')
         .map(m => ({ marcas: m.colecao.efeito.marcas || [m.colecao.marca], pct: m.pct })),
+      cores: coresAtivas(eq),
       maisRaras: bonusDeEfeito(eq, 'mais-raras'),
     };
   }
-  return { peso: {}, naLoja: {}, marcas: [], maisRaras: 0, ...(d.loja || {}) };
+  return { peso: {}, naLoja: {}, marcas: [], cores: [], maisRaras: 0, ...(d.loja || {}) };
 }
 
 // Os efeitos de marca que agem na hora do garimpo, em pontos percentuais.
@@ -213,9 +215,6 @@ export function efeitosDoGarimpo() {
 export function ganharFicha(n = 1) {
   state.fichas = fichas() + n;
 }
-
-// XP de missão com o efeito das cores vestidas (+5% a +20% por cor).
-export const xpDeMissao = (xp) => Math.round(xp * (1 + bonusDaCor(roupasEquipadas()) / 100));
 
 // Raridade do dia de uma peça: mesma semente da vitrine (a da sua loja), então
 // o que brilha no mural é exatamente o que entra no guarda-roupa.
