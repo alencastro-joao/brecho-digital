@@ -9,6 +9,7 @@
 import { ADMIN, BAUS, SERVICOS, CATEGORIAS, medidaNoCorpoDaArtista } from './config.js';
 import { catalogo } from './catalog.js';
 import { abrirEditar } from './editar.js';
+import { renderRoupasAvatar } from './adminroupas.js';
 import * as db from './db.js';
 import { renderPainel } from './painel.js';
 import { irPara } from './router.js';
@@ -37,6 +38,7 @@ export function aoEntrarNoAdmin() {
   renderPainel();
   renderRedes();
   renderRevisao();
+  renderRoupasAvatar();
 }
 
 // --------------------------- Peças antigas ---------------------------------

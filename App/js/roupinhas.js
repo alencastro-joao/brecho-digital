@@ -19,6 +19,7 @@
 import {
   CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, OCULOS_DESENHADOS, ROUPAS_BASE_VERSAO, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
+import { ROUPAS_AVATAR } from './roupasavatar.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
 
@@ -1169,13 +1170,22 @@ export const VESTIARIO_PADRAO = SO_ROUPAS_DESENHADAS ? {} : {
   torso: 'camiseta', pernas: 'calca', pes: 'tenis',
 };
 
+// Uma roupa cadastrada no admin (roupasavatar.js), já com o id da coleção.
+function roupaDoAdmin(a, id) {
+  return {
+    id, nome: a.nome, slot: a.slot, ...(a.z != null ? { z: a.z } : {}), raridade: 'common',
+    imagem: { href: a.src, caixa: a.caixa },
+  };
+}
+
 // Os itens das coleções de cor: o item de base pintado na cor (config.js).
 // `corNome` fixa a cor do atributo, sem passar pela leitura do tom.
 for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   const hex = hexDaCor(nomeDaCor);
   const slug = idDaCor(nomeDaCor).slice(4);
   const oculos = OCULOS_DESENHADOS.filter(o => o.cores[nomeDaCor]);
-  const desenhadas = ROUPAS_BASE.length + oculos.length;
+  const doAdmin = ROUPAS_AVATAR.filter(a => a.colecoes.includes(idDaCor(nomeDaCor)));
+  const desenhadas = ROUPAS_BASE.length + oculos.length + doAdmin.length;
   const total = desenhadas + itens.length;
   // As três primeiras são desenhos da artista na cor da coleção (`imagem`),
   // mais os óculos desenhados nas cores que têm; os de código seguem depois.
@@ -1197,6 +1207,14 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem: ROUPAS_BASE.length + i, de: total, item: id },
     });
   });
+  doAdmin.forEach((a, i) => {
+    const id = `${a.id}-${slug}`;
+    if (ROUPINHAS.some(x => x.id === id)) return;
+    ROUPINHAS.push({
+      ...roupaDoAdmin(a, id), cor: hex, corNome: nomeDaCor,
+      desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem: ROUPAS_BASE.length + oculos.length + i, de: total, item: id },
+    });
+  });
   itens.forEach(([base, nome], i) => {
     const ordem = desenhadas + i;
     const r = ROUPINHAS.find(x => x.id === base);
@@ -1207,6 +1225,19 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
         item: `${base}-${idDaCor(nomeDaCor).slice(4)}` },
     });
   });
+}
+
+// As roupas do admin marcadas numa marca: uma peça por marca, que a coleção
+// adota logo abaixo (entra no fim dos `itens` dela). A cor do atributo é a da
+// primeira coleção de cor marcada junto; sem nenhuma, sai lida do tom.
+for (const c of COLECOES) {
+  for (const a of ROUPAS_AVATAR.filter(x => x.colecoes.includes(c.id))) {
+    const id = `${a.id}-${c.id}`;
+    if (ROUPINHAS.some(x => x.id === id)) continue;
+    const cor = Object.keys(COLECOES_DE_COR).find(n => a.colecoes.includes(idDaCor(n)));
+    ROUPINHAS.push({ ...roupaDoAdmin(a, id), cor: (cor && hexDaCor(cor)) || '#8a8a8a', corNome: cor, desbloqueio: null });
+    c.itens.push(id);
+  }
 }
 
 // Os itens feitos para uma marca: o item de base com a tinta e o nome dela.
