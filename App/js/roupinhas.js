@@ -19,7 +19,7 @@
 import {
   CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, OCULOS_DESENHADOS, ROUPAS_BASE_VERSAO, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
-import { ROUPAS_AVATAR } from './roupasavatar.js';
+import { ROUPAS_AVATAR, AJUSTES_ROUPAS, caixaAjustada } from './roupasavatar.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
 import { naRegiao, escalaDe, regiaoDaRoupinha } from './proporcao.js';
 
@@ -1183,7 +1183,9 @@ function roupaDoAdmin(a, id) {
 for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   const hex = hexDaCor(nomeDaCor);
   const slug = idDaCor(nomeDaCor).slice(4);
-  const oculos = OCULOS_DESENHADOS.filter(o => o.cores[nomeDaCor]);
+  // O admin pode tirar os óculos de alguma das cores que têm desenho.
+  const oculos = OCULOS_DESENHADOS.filter(o => o.cores[nomeDaCor]
+    && (!Array.isArray(AJUSTES_ROUPAS[o.id]?.cores) || AJUSTES_ROUPAS[o.id].cores.includes(nomeDaCor)));
   const doAdmin = ROUPAS_AVATAR.filter(a => a.colecoes.includes(idDaCor(nomeDaCor)));
   const desenhadas = ROUPAS_BASE.length + oculos.length + doAdmin.length;
   const total = desenhadas + itens.length;
@@ -1194,7 +1196,7 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
     ROUPINHAS.push({
       id, nome: nomeDaRoupaBase(b, nomeDaCor), slot: b.slot, raridade: 'common',
       cor: hex, corNome: nomeDaCor,
-      imagem: { href: `assets/roupas/${b.id}-${slug}-${ROUPAS_BASE_VERSAO}.webp`, caixa: b.caixa },
+      imagem: { href: `assets/roupas/${b.id}-${slug}-${ROUPAS_BASE_VERSAO}.webp`, caixa: caixaAjustada(b.id, b.caixa) },
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total, item: id },
     });
   });
@@ -1203,7 +1205,7 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
     ROUPINHAS.push({
       id, nome: `${o.nome} ${o.cores[nomeDaCor]}`, slot: o.slot, z: o.z, raridade: 'common',
       cor: hex, corNome: nomeDaCor,
-      imagem: { href: `assets/roupas/${o.id}-${slug}-${o.versao}.webp`, caixa: o.caixa },
+      imagem: { href: `assets/roupas/${o.id}-${slug}-${o.versao}.webp`, caixa: caixaAjustada(o.id, o.caixa) },
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem: ROUPAS_BASE.length + i, de: total, item: id },
     });
   });

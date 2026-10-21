@@ -78,6 +78,17 @@ class RoupasDoAvatar(unittest.TestCase):
             with self.assertRaises(ValueError):
                 roupasavatar.gravar(self.corpo(**ruim))
 
+    def test_ajuste_de_roupa_do_codigo(self):
+        roupasavatar.gravar({'tipo': 'ajuste', 'id': 'oculos-espinhos',
+                             'caixa': [210, 108, 180, 86], 'cores': ['Preto', 'Azul']})
+        ajustes = acervo.ler_acervo()[0]['ajustesRoupas']
+        self.assertEqual(ajustes['oculos-espinhos']['cores'], ['Preto', 'Azul'])
+        self.assertEqual(ajustes['oculos-espinhos']['caixa'], [210, 108, 180, 86])
+        roupasavatar.gravar({'tipo': 'ajuste', 'id': 'oculos-espinhos', 'restaurar': True})
+        self.assertEqual(acervo.ler_acervo()[0]['ajustesRoupas'], {})
+        with self.assertRaises(ValueError):
+            roupasavatar.gravar({'tipo': 'ajuste', 'id': 'tenis', 'caixa': [0, 0, 10, 10], 'cores': []})
+
     def test_apagar(self):
         roupasavatar.gravar(self.corpo())
         roupasavatar.apagar('oculos-estrela')
