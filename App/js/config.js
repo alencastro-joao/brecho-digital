@@ -1309,6 +1309,8 @@ export const FERRAMENTAS = [
 // dos baús de Tarefas (CHANCE_NO_BAU).
 // `dicaCelular` (opcional) troca a dica no celular, quando o gesto é outro.
 // `demo: 'peca'` abre uma peça da pessoa na tela do passo, para mostrar.
+// `brinde` ('congelamento' | 'repor') dá um item de recarga de graça quando o
+// passo abre, uma vez só, para a missão poder ser feita com ele.
 // `lugar` é onde o cartão fica no celular enquanto a missão é feita: em cima
 // (sobre o cabeçalho) quando o que se toca na tela está embaixo — a mochila,
 // a paleta, a ficha da peça — e embaixo quando está em cima.
@@ -1318,6 +1320,16 @@ export const INTRO = [
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
     dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia. Você pode pegar 3 peças por dia.' },
+  // Os dois itens de recarga da loja, com um de cada de brinde (`brinde`, dado
+  // quando o passo abre): primeiro congelar, para ver a peça ficar no repor.
+  { evento: 'congelar', ir: 'vitrine', lugar: 'cima', brinde: 'congelamento', nome: 'Congele uma peça',
+    dica: 'Tome um congelamento de presente! Toque numa peça do mural e em Congelar: ela fica na loja até o fim de amanhã. ' +
+      'Mais congelamentos você troca por fichas em Tarefas.',
+    premio: { xp: 20 } },
+  { evento: 'repor', ir: 'vitrine', lugar: 'baixo', brinde: 'repor', nome: 'Reponha a loja',
+    dica: 'E uma ficha de repor! Toque no ↻ ao lado dos resgates para trocar o mural por um novo. ' +
+      'A peça congelada fica, e os resgates de hoje continuam contados.',
+    premio: { xp: 20 } },
   { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Pegue uma roupa',
     dica: 'Toque numa peça do mural e resgate. As mais raras ficam por baixo: arraste as de cima para garimpar.',
     premio: { bau: 'incomum' } },

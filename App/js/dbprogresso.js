@@ -58,6 +58,19 @@ function progredirIntro(evento) {
 export const introPronta = () =>
   introAtiva() && state.intro.feitos.includes(INTRO[state.intro.passo]?.evento);
 
+// Brinde do passo (INTRO `brinde`): um item de recarga de graça, uma vez por
+// introdução, mesmo que o passo abra de novo.
+export function darBrindeDaIntro(tipo) {
+  const i = state.intro;
+  if (!introAtiva() || (i.brindes ?? []).includes(tipo)) return false;
+  if (tipo === 'congelamento') state.congelamentos = (state.congelamentos ?? 0) + 1;
+  else if (tipo === 'repor') state.fichasDeRepor = (state.fichasDeRepor ?? 0) + 1;
+  else return false;
+  i.brindes = [...(i.brindes ?? []), tipo];
+  salvar();
+  return true;
+}
+
 // Avança depois que o prêmio foi entregue; a última fecha a introdução.
 export function avancarIntro() {
   if (!introAtiva()) return;

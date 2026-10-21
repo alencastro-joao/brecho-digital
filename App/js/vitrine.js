@@ -709,12 +709,15 @@ function renderCongelar(peca, possuida, no) {
   const presa = db.estaCongelada(peca.id);
   const sem = !db.podeCongelar();
   botao.disabled = presa;
+  // No celular a ficha só mostra o congelar quando dá para usar (ou já usou).
+  botao.classList.toggle('sem-guardado', sem && !presa);
   botao.replaceChildren(ico('floco'), presa ? ' Congelada até amanhã'
     : sem ? ' Comprar congelamento em Tarefas'
     : ` Congelar · usar 1 (tem ${db.congelamentos()})`);
   botao.onclick = () => {
     if (sem) { irPara('tarefas'); return; }
     if (!db.congelarPeca(peca.id)) return;
+    db.progredirMissao('congelar');
     no.querySelector('.peca-flutua')?.append(seloDeCongelada());
     renderCongelar(peca, possuida, no);
     atualizarBadge();
@@ -955,6 +958,7 @@ function reporNaLoja() {
 export function reporComFicha() {
   if (!db.gastarFichaDeRepor()) return;
   reporNaLoja();
+  db.progredirMissao('repor');
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
 }
@@ -973,6 +977,7 @@ export async function trocarFichasPorRepor() {
     { titulo: 'Repor a loja', sim: `Repor · ${custo} fichas` })) return false;
   if (!db.gastarFichasNoRepor()) return false;
   reporNaLoja();
+  db.progredirMissao('repor');
   irPara('vitrine');
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
