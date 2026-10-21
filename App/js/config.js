@@ -831,6 +831,10 @@ export const ORDEM_NARIZES = Object.keys(NARIZES);
 // Cada arte é a sobrancelha da esquerda da tela, numa caixa de 30 de largura:
 // x=0 é a ponta de fora, x=30 a de dentro (perto do nariz), y=0 a linha da
 // sobrancelha. O avatar põe ela na testa do molde e espelha para a direita.
+// Fora do ar por enquanto (pedido do João, 21/10/2026): o avatar não desenha
+// e a aba do Personagem some. Para voltar, é só trocar para true.
+export const SOBRANCELHAS_NO_AR = false;
+
 export const SOBRANCELHAS = {
   nenhuma: { nome: 'Sem sobrancelha', arte: '' },
 

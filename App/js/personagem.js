@@ -7,7 +7,7 @@
 // silhueta, e uma pele verde ou um focinho não viram uma careta.
 
 import {
-  PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS,
+  PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import { aplicarPaleta, paletaDaCor } from './paleta.js';
@@ -53,8 +53,8 @@ function renderPrevia() {
     `${catalogoCorpos()[rascunho.corpo]?.nome ?? '—'} · ` +
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
-    `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()} · ` +
-    `${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}`;
+    `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}` +
+    (SOBRANCELHAS_NO_AR ? ` · ${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}` : '');
 }
 
 // Humana e fantasia na mesma grade: quem edita está escolhendo uma cor, não
@@ -139,6 +139,8 @@ function renderTudo() {
   renderCores();
   renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
+  // Sobrancelha: formato e cor na mesma aba.
+  if (!SOBRANCELHAS_NO_AR) return;
   const sobrancelhas = catalogoSobrancelhas();
   renderMiniaturas('#pg-sobrancelhas', Object.keys(sobrancelhas), sobrancelhas, 'sobrancelha',
     CROP_SOBRANCELHA);
@@ -199,6 +201,10 @@ export function aoEntrarNoPersonagem() {
 
 export function montarPersonagem() {
   $('#pg-salvar').addEventListener('click', salvar);
+  // Sobrancelhas fora do ar: a aba e o bloco saem da tela (config.js).
+  if (!SOBRANCELHAS_NO_AR) {
+    document.querySelectorAll('.view-personagem [data-aba="sobrancelha"]').forEach(x => x.remove());
+  }
   // Abas do celular: o painel mostra só a parte escolhida (ver mobile.css).
   const painel = $('.pg-painel');
   painel.dataset.aba = 'corpo';
