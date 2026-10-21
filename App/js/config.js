@@ -920,6 +920,7 @@ export const SOBRANCELHAS = {
 export const APARENCIA_PADRAO = {
   corpo: 'masculino', pele: 'clara', cabelo: 'curto',
   corCabelo: '#3d2519', nariz: 'botao', sobrancelha: 'nenhuma',
+  corSobrancelha: '',   // vazio: a do cabelo, um pouco mais escura
 };
 
 // ----------------------------- Colagem (Board) ----------------------------

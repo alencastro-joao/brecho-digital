@@ -75,6 +75,7 @@ export function resolverAparencia(cfg = {}) {
     corCabelo: cfg.corCabelo || '#3d2519',
     nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
     sobrancelha: SOBRANCELHAS[cfg.sobrancelha] ? cfg.sobrancelha : 'nenhuma',
+    corSobrancelha: cfg.corSobrancelha || '',
   };
 }
 
@@ -272,7 +273,7 @@ export function svgAvatar({
   // por cima dela.
   const arteSobrancelha = (SOBRANCELHAS[ap.sobrancelha] || SOBRANCELHAS.nenhuma).arte;
   const sobrancelhas = arteSobrancelha ? naRegiao('cabeca',
-    `<g fill="${escurecerTraco(ap.corCabelo, 0.8)}" stroke="none">
+    `<g fill="${ap.corSobrancelha || escurecerTraco(ap.corCabelo, 0.8)}" stroke="none">
       <g transform="translate(262 104) scale(1 1.4)">${arteSobrancelha}</g>
       <g transform="translate(338 104) scale(-1 1.4)">${arteSobrancelha}</g>
     </g>`) : '';
