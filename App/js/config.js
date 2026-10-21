@@ -1395,10 +1395,20 @@ export const ROUPAS_BASE = [
 // algumas coleções de cor; entra logo depois das três roupas base. `caixa` é
 // [x, y, w, h] no palco 600×1200, na frente dos olhos.
 export const OCULOS_ESPINHOS = {
-  id: 'oculos-espinhos', slot: 'acessorio', z: 62, versao: 'v1',
+  id: 'oculos-espinhos', nome: 'Óculos de espinhos', slot: 'acessorio', z: 62, versao: 'v1',
   caixa: [212, 110, 172, 82],
   cores: { Preto: 'pretos', Verde: 'verdes', Azul: 'azuis', Vermelho: 'vermelhos', Rosa: 'rosa', Roxo: 'roxos' },
 };
+// Óculos máscara da artista (tools/oculos_mascara.py): lente única cinza, sem
+// haste, só no Preto. A armação vai do canto de fora de um olho ao do outro,
+// com a lente cobrindo os dois e o vão de baixo em cima do nariz.
+export const OCULOS_MASCARA = {
+  id: 'oculos-mascara', nome: 'Óculos máscara', slot: 'acessorio', z: 62, versao: 'v1',
+  caixa: [238, 113, 124, 69.8],
+  cores: { Preto: 'pretos' },
+};
+// Os óculos desenhados, na ordem em que entram nas coleções de cor.
+export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
 // Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
 // as de código ficam ocultas, sem apagar nada dos saves. false desfaz.
