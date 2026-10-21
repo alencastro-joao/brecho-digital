@@ -9,7 +9,7 @@ import {
 } from './config.js';
 import {
   adicionarPeca, fichas, podeTrocarFichas, progressoDasColecoes, salvar, state,
-  virarASemanaSeNecessario, virarODiaSeNecessario, xpDeMissao,
+  virarASemanaSeNecessario, virarODiaSeNecessario,
 } from './db.js';
 
 // --- Missões (diárias) ----------------------------------------------------
@@ -27,7 +27,7 @@ export function progredirMissao(evento, delta = 1) {
     state.missoes.progresso[missao.id] = Math.min(missao.meta, antes + delta);
     if (!missaoCompleta(missao.id) || state.missoes.pagas.includes(missao.id)) continue;
     state.missoes.pagas.push(missao.id);
-    if (missao.xp) ganharXP(xpDeMissao(missao.xp), `missão: ${missao.nome.toLowerCase()}`);
+    if (missao.xp) ganharXP(missao.xp, `missão: ${missao.nome.toLowerCase()}`);
   }
 }
 
@@ -155,7 +155,7 @@ export function progredirSemana(evento, delta = 1, chave = null) {
     s.progresso[missao.id] = Math.min(missao.meta, antes + delta);
     if (s.progresso[missao.id] < missao.meta || s.pagas.includes(missao.id)) continue;
     s.pagas.push(missao.id);
-    ganharXP(xpDeMissao(missao.xp), `missão da semana: ${missao.nome.toLowerCase()}`);
+    ganharXP(missao.xp, `missão da semana: ${missao.nome.toLowerCase()}`);
   }
 }
 

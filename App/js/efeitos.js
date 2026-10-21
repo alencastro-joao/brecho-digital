@@ -8,7 +8,7 @@
 //
 // Cada atributo age numa área, para os bônus não se somarem no mesmo número:
 //   marca  → garimpo (o efeito próprio de cada coleção, em config.COLECOES)
-//   cor    → progresso (mais XP nas missões)
+//   cor    → loja (mais peças daquela cor na arara)
 //   estilo → visual (brilho no avatar)
 //
 // Aqui só se calcula o que está ativo; quem aplica cada efeito é a tela dele.
@@ -28,13 +28,13 @@ export const BONUS_COLECAO_COMPLETA = 20;
 
 const TIPOS = {
   marca:  { nome: 'Marca',  area: 'garimpo' },
-  cor:    { nome: 'Cor',    area: 'progresso' },
+  cor:    { nome: 'Cor',    area: 'loja' },
   estilo: { nome: 'Tema',   area: 'visual' },
 };
 
 function textoDoEfeito(tipo, valor, pct) {
   if (tipo === 'marca') return colecao(valor)?.efeito.texto ?? '';
-  if (tipo === 'cor') return `+${pct}% de XP nas missões`;
+  if (tipo === 'cor') return `Mais peças ${valor.toLowerCase()} na sua arara`;
   return `Brilho ${ESTILOS[valor]?.nome ?? valor} no seu avatar`;
 }
 
@@ -99,9 +99,10 @@ export const marcasAtivas = (equipado) => efeitosDoLook(equipado)
   .filter(e => e.ativo && e.tipo === 'marca')
   .map(e => ({ colecao: colecao(e.valor), pct: e.pct }));
 
-export const bonusDaCor = (equipado) => efeitosDoLook(equipado)
+// As cores vestidas com o efeito ativo (o efeito "mais peças da cor na arara").
+export const coresAtivas = (equipado) => efeitosDoLook(equipado)
   .filter(e => e.ativo && e.tipo === 'cor')
-  .reduce((soma, e) => soma + e.pct, 0);
+  .map(e => ({ cor: e.valor, pct: e.pct }));
 
 export const estiloAtivo = (equipado) => efeitosDoLook(equipado)
   .filter(e => e.ativo && e.tipo === 'estilo')

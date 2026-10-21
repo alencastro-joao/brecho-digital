@@ -145,11 +145,11 @@ function sortearArara(iso) {
       Math.max(0, sortearQuantidade(tabela, rnd) - presasDaRaridade)));
   }
 
-  // Efeitos de coleção vestida (ver db.modificadoresDaLoja). Têm sorteio
+  // Efeitos de coleção e de cor vestidas (ver db.modificadoresDaLoja). Têm sorteio
   // próprio, com outra semente: sem efeito nenhum, a arara é exatamente a de
   // sempre. O bônus vestido (+5% a +20%) vale 3× aqui — uma rara a mais ou uma
-  // peça da marca a mais é coisa rara de acontecer com 5%.
-  const { marcas, maisRaras } = db.modificadoresDaLoja();
+  // peça da marca ou da cor a mais é coisa rara de acontecer com 5%.
+  const { marcas, cores, maisRaras } = db.modificadoresDaLoja();
   const sorte = mulberry32(((sementeEstoque() ?? db.sementeDaLoja(iso)) ^ 0x5EED) >>> 0);
   if (maisRaras && grupos.rare.length && sorte() < maisRaras * 3 / 100) arara.push(grupos.rare.shift());
 
@@ -159,10 +159,13 @@ function sortearArara(iso) {
   // de pendurá-la. Tirá-la aqui fazia o recheio puxar uma peça nova para cada
   // resgate, e a arrumação mudava porque o mural tinha menos peças para espalhar.
   let recheio = [...grupos.common, ...grupos.uncommon];
-  if (marcas.length) {
-    const daMarca = (i) => marcas.find(m =>
-      m.marcas.some(x => normalizarMarca(x) === normalizarMarca(i.marca)));
-    const frente = recheio.filter(i => { const m = daMarca(i); return m && sorte() < m.pct * 3 / 100; });
+  if (marcas.length || cores.length) {
+    // Peça da marca e da cor vestidas soma as duas chances.
+    const chance = (i) => marcas.filter(m =>
+      m.marcas.some(x => normalizarMarca(x) === normalizarMarca(i.marca)))
+      .concat(cores.filter(c => normalizarMarca(c.cor) === normalizarMarca(i.cor)))
+      .reduce((soma, e) => soma + e.pct, 0);
+    const frente = recheio.filter(i => { const pct = chance(i); return pct && sorte() < pct * 3 / 100; });
     recheio = [...frente, ...recheio.filter(i => !frente.includes(i))];
   }
   return [...arara, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - arara.length))];

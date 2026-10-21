@@ -38,7 +38,7 @@ const GRUPOS = [
 
 const EXPLICACAO = {
   marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
-  cores: 'Todas as peças da loja de uma mesma cor. Cada cor tem itens do avatar pintados nela. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens da mesma cor dá XP extra nas missões.',
+  cores: 'Todas as peças da loja de uma mesma cor. Cada cor tem itens do avatar pintados nela. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens da mesma cor traz mais peças dessa cor na sua arara; vale pelo que você vestia ao abrir a loja no dia.',
   estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
 };
 
@@ -69,7 +69,7 @@ export function colecoesPorCor() {
   return Object.keys(COLECOES_DE_COR).map(nome => comProgresso({
     id: idDaCor(nome), tipo: 'cor', marca: nome, hex: hexDaCor(nome),
     itens: itensQueLibera(idDaCor(nome)),
-    efeito: { texto: '2 itens da mesma cor vestidos dão XP extra nas missões' },
+    efeito: { texto: '2 itens da mesma cor vestidos trazem mais peças dessa cor na arara' },
   }, prog)).filter(c => c.total > 0);
 }
 
