@@ -1,4 +1,4 @@
-// Editar personagem: tom de pele, corte e cor do cabelo, nariz.
+// Editar personagem: tom de pele, corte e cor do cabelo, nariz, sobrancelha.
 //
 // O avatar é um SVG desenhado em código (js/avatar.js), então mudar a aparência
 // é mudar quatro valores no perfil. A prévia aqui é o mesmo desenho que o
@@ -14,6 +14,7 @@ import { aplicarPaleta, paletaDaCor } from './paleta.js';
 import * as db from './db.js';
 import {
   svgAvatar, resolverAparencia, catalogoCorpos, catalogoNarizes, catalogoCabelos,
+  catalogoSobrancelhas,
 } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
@@ -32,6 +33,7 @@ const aparenciaDoRascunho = () => {
     cabelo: rascunho.cabelo,
     corCabelo: rascunho.corCabelo,
     nariz: rascunho.nariz,
+    sobrancelha: rascunho.sobrancelha,
   };
 };
 
@@ -42,6 +44,7 @@ const aparenciaDoRascunho = () => {
 const CROP_CORPO = [148, 18, 304, 716];
 const CROP_CABELO = recorteNaRegiao('cabeca', [180, -12, 240, 258]);
 const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
+const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
 
 function renderPrevia() {
   $('#pg-previa').innerHTML = svgAvatar({ aparencia: aparenciaDoRascunho() });
@@ -49,7 +52,8 @@ function renderPrevia() {
     `${catalogoCorpos()[rascunho.corpo]?.nome ?? '—'} · ` +
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
-    `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}`;
+    `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()} · ` +
+    `${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}`;
 }
 
 // Humana e fantasia na mesma grade: quem edita está escolhendo uma cor, não
@@ -118,6 +122,9 @@ function renderTudo() {
   renderCores();
   renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
+  const sobrancelhas = catalogoSobrancelhas();
+  renderMiniaturas('#pg-sobrancelhas', Object.keys(sobrancelhas), sobrancelhas, 'sobrancelha',
+    CROP_SOBRANCELHA);
 }
 
 function abrirAba(aba) {
