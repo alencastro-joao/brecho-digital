@@ -137,6 +137,23 @@ function sortearArara(iso) {
   const congeladas = candidatas.filter(i => presas.includes(i.id));
   for (const i of shuffle(candidatas, rnd)) if (!presas.includes(i.id)) grupos[raridade(i)].push(i);
 
+  // Efeitos de coleção e de cor vestidas (ver db.modificadoresDaLoja). Têm sorteio
+  // próprio, com outra semente: sem efeito nenhum, a arara é exatamente a de
+  // sempre. O bônus vestido (+5% a +20%) vale 3× aqui — uma rara a mais ou uma
+  // peça da marca ou da cor a mais é coisa rara de acontecer com 5%.
+  const { marcas, cores, maisRaras } = db.modificadoresDaLoja();
+  const sorte = mulberry32(((sementeEstoque() ?? db.sementeDaLoja(iso)) ^ 0x5EED) >>> 0);
+  // A cor vale em toda raridade: dentro de cada grupo, a peça da cor vestida
+  // pode passar para a frente da fila. Quantas vêm de cada raridade não muda,
+  // muda quais são.
+  const pctDaCor = (i) => cores.filter(c => normalizarMarca(c.cor) === normalizarMarca(i.cor))
+    .reduce((soma, c) => soma + c.pct, 0);
+  const furarFila = (lista, pctDe) => {
+    const frente = lista.filter(i => { const pct = pctDe(i); return pct && sorte() < pct * 3 / 100; });
+    return [...frente, ...lista.filter(i => !frente.includes(i))];
+  };
+  if (cores.length) for (const r of RARIDADES) grupos[r.id] = furarFila(grupos[r.id], pctDaCor);
+
   const arara = [...congeladas];
   for (const r of [...RARIDADES].reverse()) {
     const tabela = naLoja[r.id] ?? r.naLoja;
@@ -145,12 +162,6 @@ function sortearArara(iso) {
       Math.max(0, sortearQuantidade(tabela, rnd) - presasDaRaridade)));
   }
 
-  // Efeitos de coleção e de cor vestidas (ver db.modificadoresDaLoja). Têm sorteio
-  // próprio, com outra semente: sem efeito nenhum, a arara é exatamente a de
-  // sempre. O bônus vestido (+5% a +20%) vale 3× aqui — uma rara a mais ou uma
-  // peça da marca ou da cor a mais é coisa rara de acontecer com 5%.
-  const { marcas, cores, maisRaras } = db.modificadoresDaLoja();
-  const sorte = mulberry32(((sementeEstoque() ?? db.sementeDaLoja(iso)) ^ 0x5EED) >>> 0);
   if (maisRaras && grupos.rare.length && sorte() < maisRaras * 3 / 100) arara.push(grupos.rare.shift());
 
   // Comum completa o resto; faltando comum, a incomum que sobrou. Rara para cima
@@ -159,15 +170,9 @@ function sortearArara(iso) {
   // de pendurá-la. Tirá-la aqui fazia o recheio puxar uma peça nova para cada
   // resgate, e a arrumação mudava porque o mural tinha menos peças para espalhar.
   let recheio = [...grupos.common, ...grupos.uncommon];
-  if (marcas.length || cores.length) {
-    // Peça da marca e da cor vestidas soma as duas chances.
-    const chance = (i) => marcas.filter(m =>
-      m.marcas.some(x => normalizarMarca(x) === normalizarMarca(i.marca)))
-      .concat(cores.filter(c => normalizarMarca(c.cor) === normalizarMarca(i.cor)))
-      .reduce((soma, e) => soma + e.pct, 0);
-    const frente = recheio.filter(i => { const pct = chance(i); return pct && sorte() < pct * 3 / 100; });
-    recheio = [...frente, ...recheio.filter(i => !frente.includes(i))];
-  }
+  if (marcas.length) recheio = furarFila(recheio, (i) => marcas.filter(m =>
+    m.marcas.some(x => normalizarMarca(x) === normalizarMarca(i.marca)))
+    .reduce((soma, m) => soma + m.pct, 0));
   return [...arara, ...recheio.slice(0, Math.max(0, CONFIG.PECAS_NA_VITRINE - arara.length))];
 }
 
