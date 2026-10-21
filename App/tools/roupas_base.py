@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 SAIDA = Path(__file__).resolve().parent.parent / 'assets' / 'roupas'
 # Mesma conta do corpo (tools/corpo.py): escala, e o chão (sola) em y=1147 e o
@@ -74,6 +74,12 @@ def recolorir(rgba, base, cor):
     for i, (centro, papel) in enumerate(PAPEIS[base]):
         m = perto == i
         saida[m] = alvo(papel, cor) + (rgb[m] - centro) * 0.6
+    # Contorno padrão: a borda do desenho (6 px) sempre na sombra da cor, senão
+    # o branco do desenho (calça) aparece como halo em volta da peça.
+    dentro = np.asarray(Image.fromarray(rgba[..., 3]).filter(ImageFilter.MinFilter(13))) > 0
+    borda = (rgba[..., 3] > 0) & ~dentro
+    sombra = alvo('sombra', cor)
+    saida[borda] = sombra + (rgb[borda].mean(-1, keepdims=True) - rgb[borda].mean()) * 0.15
     out = rgba.copy()
     out[..., :3] = np.clip(saida, 0, 255).round().astype('uint8')
     return out
