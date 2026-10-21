@@ -81,17 +81,25 @@ export function resolverAparencia(cfg = {}) {
   };
 }
 
+// Os tipos de uma orelha, na ordem do catálogo ('ambos' é de um formato de
+// minutos antes: bolinhas e spikes).
+export function tiposDaOrelha(valor) {
+  const tem = String(valor || '').replace('ambos', 'bolinhas+spikes').split('+');
+  return Object.keys(PIERCINGS_ORELHA).filter(t => tem.includes(t));
+}
+export const juntarTipos = (tipos) => (tipos.length ? tipos.join('+') : 'nenhum');
+
 // Piercing de cada orelha. Os formatos de antes (21/10/2026, minutos no ar
 // cada um) guardavam quantos brincos e spikes; quem salvou neles abre com o
 // mesmo tipo, agora sempre três.
 export function piercingsDasOrelhas(cfg = {}) {
   if (cfg.orelhaEsq || cfg.orelhaDir) {
-    const ok = (id) => (PIERCINGS_ORELHA[id] ? id : 'nenhum');
+    const ok = (v) => juntarTipos(tiposDaOrelha(v));
     return { orelhaEsq: ok(cfg.orelhaEsq), orelhaDir: ok(cfg.orelhaDir) };
   }
   const tem = (id) => !!id && id !== 'nenhum';
-  const lado = (brinco, spike) => (tem(brinco) && tem(spike) ? 'ambos'
-    : tem(brinco) ? 'bolinhas' : tem(spike) ? 'spikes' : 'nenhum');
+  const lado = (brinco, spike) => juntarTipos([
+    ...(tem(brinco) ? ['bolinhas'] : []), ...(tem(spike) ? ['spikes'] : [])]);
   const antigo = (l) => (tem(cfg.brincos) && cfg.ladoBrincos !== l ? cfg.brincos : '');
   return {
     orelhaEsq: lado(cfg.brincoEsq || antigo('direita'), cfg.spikeEsq),
@@ -137,9 +145,27 @@ function spikeTorto(x, y, dx, dy, rnd) {
   return `<path d="M${p[0]} L${p[1]} L${p[2]} Z" stroke="#2b2522" stroke-width=".6"
     stroke-linejoin="round"/>`;
 }
+// Argolas: as faixas grossas que abraçam a borda de trás da orelha, como na
+// foto. [x, y] no traço da borda da orelha da esquerda e a direção para fora;
+// cada uma atravessa o traço, metade para fora e metade para dentro.
+const PONTOS_ARGOLA = [[211.3, 150.5, -1, 0], [212.3, 157.5, -0.95, 0.3]];
+function argolaTorta(x, y, dx, dy, rnd) {
+  const n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n;
+  const fora = 2.8 + rnd() * 0.4, dentro = 2.4 + rnd() * 0.4;   // ao longo da direção
+  const meia = 1.25 + rnd() * 0.25;                                // espessura / 2
+  const p = [
+    [x + ux * fora - uy * meia, y + uy * fora + ux * meia],
+    [x + ux * fora + uy * meia, y + uy * fora - ux * meia],
+    [x - ux * dentro + uy * meia * 0.9, y - uy * dentro - ux * meia * 0.9],
+    [x - ux * dentro - uy * meia * 0.9, y - uy * dentro + ux * meia * 0.9],
+  ].map(([a, b]) => `${a.toFixed(2)} ${b.toFixed(2)}`);
+  return `<path d="M${p.join(' L')} Z" stroke="#2b2522" stroke-width=".9"
+    stroke-linejoin="round"/>`;
+}
+
 // Bridge: as duas pontas da barrinha, uma de cada lado do alto do nariz,
 // entre os olhos (no palco, na cara da artista). Os spikes apontam para fora.
-const BRIDGE = { y: 143, meio: 3.8, r: 1.7 };
+const BRIDGE = { y: 143, meio: 5.6, r: 1.7 };
 
 // Todos os piercings, embaixo do cabelo da frente (pedido do João): cabelo
 // que cobre a orelha ou a franja comprida os cobre. Um filtro só esfarela a
@@ -147,12 +173,16 @@ const BRIDGE = { y: 143, meio: 3.8, r: 1.7 };
 function piercings(ap, id) {
   if (!corpoDesenhado) return '';
   const partes = [[1, ap.orelhaEsq], [-1, ap.orelhaDir]].flatMap(([l, escolha]) => {
-    const p = PIERCINGS_ORELHA[escolha] || {};
+    const tipos = tiposDaOrelha(escolha);
     const rnd = mulberry32(l === 1 ? 7 : 11);
     const lado = (x) => (l === 1 ? x : 600 - x);
     return [
-      ...(p.bolinhas ? BOLINHAS_BRINCO.map(([x, y, r]) => bolinhaTorta(lado(x), y, r, rnd)) : []),
-      ...(p.spikes ? PONTOS_SPIKE.map(([x, y, dx, dy]) => spikeTorto(lado(x), y, dx * l, dy, rnd)) : []),
+      ...(tipos.includes('bolinhas')
+        ? BOLINHAS_BRINCO.map(([x, y, r]) => bolinhaTorta(lado(x), y, r, rnd)) : []),
+      ...(tipos.includes('spikes')
+        ? PONTOS_SPIKE.map(([x, y, dx, dy]) => spikeTorto(lado(x), y, dx * l, dy, rnd)) : []),
+      ...(tipos.includes('argolas')
+        ? PONTOS_ARGOLA.map(([x, y, dx, dy]) => argolaTorta(lado(x), y, dx * l, dy, rnd)) : []),
     ];
   });
   const b = PIERCINGS_BRIDGE[ap.bridge] || {};

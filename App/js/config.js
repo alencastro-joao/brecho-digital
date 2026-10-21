@@ -922,13 +922,14 @@ export const SOBRANCELHAS = {
 };
 
 // Piercings (pedidos do João, 21/10/2026), no traço granulado da artista.
-// Orelha: três bolinhas na borda de baixo (da maior, no lóbulo, para cima)
-// e/ou três spikes na borda de cima; o lado é o da tela, como num espelho.
+// Cada orelha combina os tipos que quiser (guardados juntos, 'bolinhas+argolas';
+// 'nenhum' é sem nada): três bolinhas na borda de baixo (da maior, no lóbulo,
+// para cima), três spikes na de cima e duas argolas grossas na borda de trás,
+// como na foto de referência. O lado é o da tela, como num espelho.
 export const PIERCINGS_ORELHA = {
-  nenhum: { nome: 'Nada' },
-  bolinhas: { nome: 'Bolinhas', bolinhas: true },
-  spikes: { nome: 'Spikes', spikes: true },
-  ambos: { nome: 'Os dois', bolinhas: true, spikes: true },
+  bolinhas: { nome: 'Bolinhas' },
+  spikes: { nome: 'Spikes' },
+  argolas: { nome: 'Argolas' },
 };
 // Bridge: a barrinha que atravessa o alto do nariz, entre os olhos; aparecem
 // as duas pontas, bolinhas ou spikes.
