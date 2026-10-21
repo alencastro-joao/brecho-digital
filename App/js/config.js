@@ -835,11 +835,11 @@ export const ORDEM_NARIZES = Object.keys(NARIZES);
 // e a aba do Personagem some. Para voltar, é só trocar para true.
 export const SOBRANCELHAS_NO_AR = false;
 
-// Sombra de olhos e boca (TESTE, pedido do João, 21/10/2026): uma sombra bem
-// leve e esfumada onde ficariam os dois olhos e a boca, sem desenhar olho nem
-// boca. Só na cara da artista. Ligada no jogo (João, 21/10/2026); para tirar,
-// troque para false. Posição e força ficam em avatar.js (SOMBRA_ROSTO).
-export const SOMBRA_OLHOS_BOCA = true;
+// Sombra do rosto (escolhida pelo João, 21/10/2026): arco embaixo de cada
+// olho e a sombra do nariz subindo até o olho, sem desenhar olho nem boca. Só
+// na cara da artista. Para tirar, troque para false. Medidas em avatar.js
+// (OLHEIRA, sombraDoRosto).
+export const SOMBRA_ROSTO_NO_AR = true;
 
 export const SOBRANCELHAS = {
   nenhuma: { nome: 'Sem sobrancelha', arte: '' },
