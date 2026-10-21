@@ -362,43 +362,6 @@ export function aparenciaSorteada(chave) {
 export const aparenciaDoPerfil = (perfil) =>
   resolverAparencia(perfil?.aparencia || aparenciaSorteada(perfil?.id || '?'));
 
-// Retrato redondo: o mesmo avatar, recortado na cabeça. 150 unidades de altura
-// (no molde) é o enquadramento que pega cabeça e ombros; ele acompanha a
-// cabeça para onde a proporção a levou.
-const [, RETRATO_Y, , RETRATO_H] = recorteNaRegiao('cabeca', [225, 43, 150, 150]);
-
-// `quadro` abre o enquadramento: 1 é cabeça e ombros; mais que isso desce o
-// centro e pega mais do corpo, como um busto, com uma folga acima da cabeça.
-// `desce` é quanto do que abriu vai para baixo: menos que isso sobra mais
-// espaço em cima, para o cabelo alto. `soCabeca` desenha só a cabeça, como a
-// cabecinha da vitrine (sem pescoço nem corpo; da roupa, só chapéu e óculos):
-// o cabelo comprido some num degradê no fim do quadro.
-export function retrato(aparencia, tamanho = 34, cor = '#eee', roupas = null, quadro = 1, desce = 0.38, soCabeca = false) {
-  const janela = RETRATO_H * quadro;
-  const centro = RETRATO_Y + RETRATO_H / 2 + (janela - RETRATO_H) * desce;
-  const k = tamanho / janela;
-  const caixa = el('span', {
-    class: 'retrato',
-    style: { width: tamanho + 'px', height: tamanho + 'px', background: cor },
-  });
-  // Só a cabeça: o desenho vai até o fim do quadro (é ali que o degradê
-  // termina), com folga em cima para o afro e o chapéu.
-  const [vy, vh] = soCabeca
-    ? [-CONFIG.STAGE_H, CONFIG.STAGE_H + centro + janela / 2] : [0, CONFIG.STAGE_H];
-  caixa.innerHTML = svgAvatar({
-    aparencia, roupas, soCabeca,
-    recorte: soCabeca ? [0, vy, CONFIG.STAGE_W, vh] : null,
-  });
-  Object.assign(caixa.querySelector('svg').style, {
-    position: 'absolute',
-    width: (CONFIG.STAGE_W * k) + 'px',
-    height: 'auto',
-    left: (tamanho / 2 - 300 * k) + 'px',
-    top: (tamanho / 2 - (centro - vy) * k) + 'px',
-  });
-  return caixa;
-}
-
 // Cabecinha: só a cabeça do avatar (cabelo, rosto, chapéu e óculos), sem
 // fundo nem moldura — é o que aparece no lugar das bolinhas (botão do topo,
 // feed, avisos, busca, amigos). O quadrado pega a cabeça com folga para o
@@ -415,8 +378,19 @@ export function cabeca(aparencia, tamanho = 34, roupas = null) {
   caixa.innerHTML = svgAvatar({ aparencia, roupas, recorte: CABECINHA, soCabeca: true });
   const svg = caixa.querySelector('svg');
   Object.assign(svg.style, { width: '100%', height: '100%' });
-  centrarNaCaixa(svg);
+  centrarNaCaixa(svg, larguraDoCabelo(aparencia));
   return caixa;
+}
+
+// O cabelo cheio (afro, cacheado, ondulado) passa dos lados do quadrado e saía
+// da caixa (pedido do João, 21/10/2026): a largura do desenho do corte, nos
+// dois lados do meio da cara (x=300), entra na conta do quadrado.
+function larguraDoCabelo(aparencia) {
+  const corte = catalogoCabelos()[corteDoCatalogo(aparencia?.cabelo)];
+  const caixas = [corte?.atras?.caixa, corte?.frente?.caixa].filter(Array.isArray);
+  if (!caixas.length) return 0;
+  const meia = Math.max(...caixas.map(([x, , w]) => Math.max(300 - x, x + w - 300)));
+  return meia * 2 + 4;
 }
 
 // Cada corte tem uma altura (espetado e afro sobem bem acima do raspado, um
@@ -424,16 +398,16 @@ export function cabeca(aparencia, tamanho = 34, roupas = null) {
 // baixa na caixa. Quando ela já está na tela dá para medir: o quadrado desliza
 // para o meio entre o topo do desenho e o queixo, no mesmo tamanho (a cabeça
 // não muda de escala de um avatar para outro); só cresce se não couber.
-function centrarNaCaixa(svg, tentativas = 20) {
+function centrarNaCaixa(svg, largura = 0, tentativas = 20) {
   if (!svg.isConnected) {
-    if (tentativas > 0) requestAnimationFrame(() => centrarNaCaixa(svg, tentativas - 1));
+    if (tentativas > 0) requestAnimationFrame(() => centrarNaCaixa(svg, largura, tentativas - 1));
     return;
   }
   const desenho = svg.querySelector(':scope > g[mask]');
   if (!desenho) return;
   let topo;
   try { topo = desenho.getBBox().y; } catch { return; }
-  const lado = Math.max(CABECINHA[3], QUEIXO - topo);
+  const lado = Math.max(CABECINHA[3], QUEIXO - topo, largura);
   const y = (topo + QUEIXO) / 2 - lado / 2;
   svg.setAttribute('viewBox', `${300 - lado / 2} ${y} ${lado} ${lado}`);
 }

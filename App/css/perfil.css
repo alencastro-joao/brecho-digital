@@ -23,17 +23,15 @@
   column-gap: 40px; row-gap: 16px; align-items: start;
   padding-bottom: 28px;
 }
-/* O retrato no anel do nível: o anel é a barra de XP (enche com --xp, na cor
-   da paleta) e a moeda perolada embaixo diz o número. */
+/* Só a cabeça, solta no canto: sem anel nem fundo. A moeda perolada embaixo
+   diz o nível. */
 .pf-foto {
   grid-area: foto; justify-self: center; position: relative;
-  padding: 7px; border: 0; border-radius: 50%;
-  background: conic-gradient(var(--wii) var(--xp, 100%), var(--wii-borda) 0);
-  box-shadow: 0 0 0 4px var(--wii-brilho);
+  padding: 0; border: 0; background: none;
 }
 button.pf-foto { cursor: pointer; transition: transform .15s; }
 button.pf-foto:hover { transform: scale(1.02); }
-.pf-foto .retrato { display: block; box-shadow: 0 0 0 5px #fff; }
+.pf-foto .cabecinha { display: block; }
 .pf-nivel {
   position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
   display: flex; align-items: baseline; gap: 3px;
@@ -448,8 +446,7 @@ button.pf-stat:hover small { text-decoration: underline; }
     grid-template-rows: auto;
     column-gap: 20px; row-gap: 18px; align-items: center; padding: 6px 0 18px;
   }
-  .pf-foto { padding: 5px; box-shadow: 0 0 0 3px var(--wii-brilho); }
-  .pf-foto .retrato { zoom: .62; box-shadow: 0 0 0 4px #fff; }
+  .pf-foto .cabecinha { zoom: .62; }
   .pf-nivel { bottom: -10px; padding: 2px 9px 5px; }
   .pf-nivel strong { font-size: 15px; }
   .pf-nome { font-size: 17px; }

@@ -29,7 +29,7 @@ import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
 import {
-  gerarPostsFicticios, aoAtualizarFeed, COR_PROPRIA, postsDoAutor, garantirFeed,
+  gerarPostsFicticios, aoAtualizarFeed, postsDoAutor, garantirFeed,
 } from './social.js';
 import { atualizarBadge, montarVitrine } from './vitrine.js';
 import { abrirLook } from './stylist.js';
@@ -105,10 +105,8 @@ export function renderPerfil() {
   const u = db.state.usuario;
   const curtidas = meusPosts().reduce((soma, post) => soma + (post.curtidas || 0), 0);
 
-  // O busto sem roupa (do vestiário, só chapéu e óculos), no fundo da cor que
-  // assina os seus posts no feed.
-  // O nível mora em volta do retrato: o anel enche com o XP do nível.
-  const foto = retratoDoPerfil(aparenciaAtual(), COR_PROPRIA, db.roupasEquipadas());
+  // Só a cabeça, solta (do vestiário, só chapéu e óculos), com o nível embaixo.
+  const foto = retratoDoPerfil(aparenciaAtual(), db.roupasEquipadas());
   foto.style.filter = brilhoDoEstilo(db.roupasEquipadas());
   const xp = db.progresso();
   pintarFoto($('#perfil-avatar'), {

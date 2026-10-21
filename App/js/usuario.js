@@ -20,7 +20,7 @@ import { PERFIS_MOCK, CATEGORIAS, RARIDADE, escalaGrade, CORES_FAVORITAS } from 
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
-import { aparenciaDoPerfil, retrato, cabeca } from './avatar.js';
+import { aparenciaDoPerfil, cabeca } from './avatar.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
@@ -207,10 +207,10 @@ function renderUsuario() {
   const posts = postsDe(p.id);
   const curtidas = posts.reduce((soma, post) => soma + (post.curtidas || 0), 0);
 
-  // O retrato redondo, na cor da pessoa (a do retrato dela no feed), com o
-  // nível no anel. Conta real não tem nível fora do save dela: anel sem selo.
+  // A cabeça solta, com o nível embaixo. Conta real não tem nível fora do
+  // save dela: sem selo.
   pintarFoto($('#up-avatar'), {
-    foto: retratoDoPerfil(aparenciaDoPerfil(p), p.cor, roupasDoPerfil(p)),
+    foto: retratoDoPerfil(aparenciaDoPerfil(p), roupasDoPerfil(p)),
     nivel: n.nivel,
   });
 
@@ -660,14 +660,11 @@ export const botaoProcurar = (aoFechar) =>
 export const botoesDeOutrosPerfis = (exceto = null, quantos = 6) =>
   PERFIS_MOCK.filter(o => o.id !== exceto).slice(0, quantos).map(botaoDePerfil);
 
-// O retrato grande do topo: a cabeça de perto dentro do anel na cor da
-// paleta (pedido do João, 21/10/2026). O espaço que sobra fica em cima,
-// para o afro e o coque quase caberem inteiros.
-// Só a cabeça, como a cabecinha da vitrine (pedido do João, 21/10/2026): sem
-// pescoço nem corpo; da roupinha, só chapéu e óculos aparecem.
+// A foto do topo: só a cabeça, solta no canto, sem anel nem fundo, como a
+// cabecinha do botão da vitrine (pedido do João, 21/10/2026). Da roupinha,
+// só chapéu e óculos aparecem.
 // Nasce em 150px; no celular o CSS o encolhe (zoom), sem redesenhar.
-export const retratoDoPerfil = (aparencia, cor, roupas) =>
-  retrato(aparencia, 150, cor, roupas, 1.55, 0.04, true);
+export const retratoDoPerfil = (aparencia, roupas) => cabeca(aparencia, 150, roupas);
 
 // O retrato do topo com o nível em volta dele: o anel enche com o XP do
 // nível (`pct`, de 0 a 1; sem ele, o anel vem cheio) e a moeda embaixo diz o
