@@ -19,7 +19,7 @@
 
 import {
   CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
-  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR,
+  CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, BRINCOS, LADOS_BRINCO,
 } from './config.js';
 import { partesDasRoupas } from './roupinhas.js';
 import { naRegiao, escalaDe, ancoraNoCorpo, recorteNaRegiao } from './proporcao.js';
@@ -76,7 +76,23 @@ export function resolverAparencia(cfg = {}) {
     nariz: catalogoNarizes()[cfg.nariz] ? cfg.nariz : 'botao',
     sobrancelha: SOBRANCELHAS[cfg.sobrancelha] ? cfg.sobrancelha : 'nenhuma',
     corSobrancelha: cfg.corSobrancelha || '',
+    brincos: BRINCOS[cfg.brincos] ? cfg.brincos : 'nenhum',
+    ladoBrincos: LADOS_BRINCO[cfg.ladoBrincos] ? cfg.ladoBrincos : 'ambos',
   };
+}
+
+// Brincos de bolinha na orelha da artista (o corpo de código não tem orelha).
+// As bolinhas são as da orelha da esquerda da tela, no palco, da do lóbulo
+// para cima, medidas no desenho dela; a da direita é espelhada em x=300, como
+// o desenho. Ficam embaixo do cabelo da frente: cabelo comprido as cobre.
+const BOLINHAS_BRINCO = [[223.5, 168, 2.6], [219.5, 161.5, 2.2], [217.5, 155, 1.8]];
+function brincos(ap) {
+  const qtd = BRINCOS[ap.brincos]?.qtd || 0;
+  if (!qtd || !corpoDesenhado) return '';
+  const lados = ap.ladoBrincos === 'esquerda' ? [1] : ap.ladoBrincos === 'direita' ? [-1] : [1, -1];
+  const bolinhas = BOLINHAS_BRINCO.slice(0, qtd).flatMap(([x, y, r]) =>
+    lados.map(l => `<circle cx="${l === 1 ? x : 600 - x}" cy="${y}" r="${r}"/>`));
+  return `<g fill="#26222a">${bolinhas.join('')}</g>`;
 }
 
 export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar || {});
@@ -326,6 +342,9 @@ export function svgAvatar({
 
   <!-- sobrancelhas embaixo do cabelo da frente: a franja as cobre -->
   ${sobrancelhas}
+
+  <!-- brincos, também embaixo do cabelo da frente -->
+  ${brincos(ap)}
 
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}

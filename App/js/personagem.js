@@ -1,4 +1,5 @@
-// Editar personagem: tom de pele, corte e cor do cabelo, nariz, sobrancelha.
+// Editar personagem: tom de pele, corte e cor do cabelo, nariz, sobrancelha,
+// brincos.
 //
 // O avatar é um SVG desenhado em código (js/avatar.js), então mudar a aparência
 // é mudar quatro valores no perfil. A prévia aqui é o mesmo desenho que o
@@ -8,6 +9,7 @@
 
 import {
   PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
+  BRINCOS, LADOS_BRINCO,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
 import { aplicarPaleta, paletaDaCor } from './paleta.js';
@@ -35,6 +37,8 @@ const aparenciaDoRascunho = () => {
     nariz: rascunho.nariz,
     sobrancelha: rascunho.sobrancelha,
     corSobrancelha: rascunho.corSobrancelha,
+    brincos: rascunho.brincos,
+    ladoBrincos: rascunho.ladoBrincos,
   };
 };
 
@@ -46,6 +50,10 @@ const CROP_CORPO = [148, 18, 304, 716];
 const CROP_CABELO = recorteNaRegiao('cabeca', [180, -12, 240, 258]);
 const CROP_NARIZ = recorteNaRegiao('cabeca', [234, 34, 132, 162]);
 const CROP_SOBRANCELHA = recorteNaRegiao('cabeca', [248, 72, 104, 60]);
+// Brincos: a orelha da esquerda de perto (quantos) e as duas (que lado). Já
+// no palco, como a orelha da artista em que eles ficam.
+const CROP_BRINCO = [198, 126, 52, 56];
+const CROP_LADO_BRINCO = [200, 100, 200, 100];
 
 function renderPrevia() {
   $('#pg-previa').innerHTML = svgAvatar({ aparencia: aparenciaDoRascunho() });
@@ -54,6 +62,10 @@ function renderPrevia() {
     `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
     `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}` +
+    (BRINCOS[rascunho.brincos]?.qtd ? ` · ${BRINCOS[rascunho.brincos].qtd} ` +
+      `brinco${BRINCOS[rascunho.brincos].qtd > 1 ? 's' : ''} ` +
+      (rascunho.ladoBrincos === 'ambos' ? 'em cada orelha'
+        : `na ${LADOS_BRINCO[rascunho.ladoBrincos]?.nome.toLowerCase()}`) : '') +
     (SOBRANCELHAS_NO_AR ? ` · ${catalogoSobrancelhas()[rascunho.sobrancelha]?.nome ?? '—'}` : '');
 }
 
@@ -75,14 +87,14 @@ function renderPeles() {
 
 // Miniaturas: o próprio avatar recortado, com o resto da aparência do rascunho.
 // Escolher por desenho é mais rápido do que por nome — e o nome fica embaixo
-// para quem quiser conferir.
-function renderMiniaturas(seletor, ordem, catalogo, campo, recorte) {
+// para quem quiser conferir. `extra` muda mais alguma coisa só na miniatura.
+function renderMiniaturas(seletor, ordem, catalogo, campo, recorte, extra = {}) {
   const caixa = $(seletor);
   caixa.innerHTML = '';
   for (const id of ordem) {
     const arte = el('span', { class: 'pg-corte-arte' });
     arte.innerHTML = svgAvatar({
-      aparencia: { ...aparenciaDoRascunho(), [campo]: id },
+      aparencia: { ...aparenciaDoRascunho(), ...extra, [campo]: id },
       recorte,
     });
     caixa.append(el('button', {
@@ -139,6 +151,13 @@ function renderTudo() {
   renderCores();
   renderMiniaturas('#pg-cortes', Object.keys(cortes), cortes, 'cabelo', CROP_CABELO);
   renderMiniaturas('#pg-narizes', Object.keys(narizes), narizes, 'nariz', CROP_NARIZ);
+  // Brincos sem cabelo na miniatura, que o comprido cobre a orelha; o lado
+  // mostra três quando ainda não tem nenhum, para dar o que ver.
+  renderMiniaturas('#pg-brincos', Object.keys(BRINCOS), BRINCOS, 'brincos', CROP_BRINCO,
+    { cabelo: 'nenhum' });
+  renderMiniaturas('#pg-lados-brinco', Object.keys(LADOS_BRINCO), LADOS_BRINCO, 'ladoBrincos',
+    CROP_LADO_BRINCO,
+    { cabelo: 'nenhum', ...(BRINCOS[rascunho.brincos]?.qtd ? {} : { brincos: 'tres' }) });
   // Sobrancelha: formato e cor na mesma aba.
   if (!SOBRANCELHAS_NO_AR) return;
   const sobrancelhas = catalogoSobrancelhas();

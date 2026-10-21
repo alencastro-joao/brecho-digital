@@ -921,10 +921,26 @@ export const SOBRANCELHAS = {
   },
 };
 
+// Brincos de bolinha (pedido do João, 21/10/2026): bolinhas escuras na borda
+// de baixo da orelha, da maior (no lóbulo) para a menor, subindo. Escolhe-se
+// quantas (`qtd`) e em que orelha; o lado é o da tela, como num espelho.
+export const BRINCOS = {
+  nenhum: { nome: 'Sem brinco', qtd: 0 },
+  um: { nome: 'Um', qtd: 1 },
+  dois: { nome: 'Dois', qtd: 2 },
+  tres: { nome: 'Três', qtd: 3 },
+};
+export const LADOS_BRINCO = {
+  ambos: { nome: 'Os dois' },
+  esquerda: { nome: 'Esquerda' },
+  direita: { nome: 'Direita' },
+};
+
 export const APARENCIA_PADRAO = {
   corpo: 'masculino', pele: 'clara', cabelo: 'curto',
   corCabelo: '#3d2519', nariz: 'botao', sobrancelha: 'nenhuma',
   corSobrancelha: '',   // vazio: a do cabelo, um pouco mais escura
+  brincos: 'nenhum', ladoBrincos: 'ambos',
 };
 
 // ----------------------------- Colagem (Board) ----------------------------
