@@ -215,6 +215,22 @@ function sombraDaTesta(ap, id) {
            opacity=".24" filter="url(#${id}-testa)"/>`;
 }
 
+// Nariz da artista (pedido do João, 21/10/2026): uma sombra esfumada do lado
+// esquerdo, do tamanho do nariz, e o miolo pintado com a pele um pouco mais
+// escura. Só os de contorno fechado (pontudo, redondo, largo) têm miolo: nos
+// de traço aberto, como o botão, fica só a sombra.
+function sombraDoNariz(ap, id) {
+  const nariz = corpoDesenhado?.narizes[ap.nariz];
+  if (!nariz) return '';
+  const [x, y, w, h] = nariz.caixa;
+  return `<filter id="${id}-nariz" x="-100%" y="-60%" width="300%" height="220%">
+    <feGaussianBlur stdDeviation="2.6"/>
+  </filter>
+  <ellipse cx="${(x + w * 0.22).toFixed(1)}" cy="${(y + h * 0.5).toFixed(1)}"
+           rx="${Math.max(4.2, w * 0.22).toFixed(1)}" ry="${Math.max(10, h * 0.55).toFixed(1)}"
+           fill="${escurecerTraco(ap.pele, 0.55)}" opacity=".3" filter="url(#${id}-nariz)"/>`;
+}
+
 export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar || {});
 
 // Aparência sorteada a partir de um texto (o id do perfil). Mesma semente,
@@ -478,7 +494,9 @@ export function svgAvatar({
        stroke-width="${(3.2 / escalaDe('cabeca')).toFixed(2)}"
        stroke-linecap="round" stroke-linejoin="round" opacity=".78">${nariz}</g>`) : ''}
 
-  ${corpoDesenhado ? daArtista(idCorte + 'n', corpoDesenhado.narizes[ap.nariz], ap.pele,
+  ${sombraDoNariz(ap, idCorte)}
+  ${corpoDesenhado ? daArtista(idCorte + 'n', corpoDesenhado.narizes[ap.nariz],
+    escurecerTraco(ap.pele, 0.9),
     escurecerTraco(ap.traco)) : ''}
 
   <!-- o que vem depois do rosto: óculos e chapéu, por cima do cabelo -->
