@@ -1312,54 +1312,51 @@ export const FERRAMENTAS = [
 // a paleta, a ficha da peça — e embaixo quando está em cima.
 export const INTRO = [
   { evento: 'personagem', ir: 'personagem', lugar: 'cima', nome: 'Crie o seu personagem',
-    dica: 'Escolha corpo, pele e cabelo, diga qual é a sua cor favorita (na última aba) e toque em Salvar. ' +
-      'É ele que veste os seus looks.',
+    dica: 'Vamos criar o seu personagem! Escolha corpo, pele e cabelo. Na última aba, escolha a sua cor favorita. Depois toque em Salvar.',
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
-    dica: 'Toda manhã o dono repõe o mural: a loja muda todos os dias. ' +
-      'Você pode pegar 3 peças por dia, e as mais raras ficam escondidas por baixo da pilha.' },
+    dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia. Você pode pegar 3 peças por dia.' },
   { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Pegue uma roupa',
-    dica: 'Toque numa peça do mural e resgate. Se uma estiver por cima da outra, arraste para garimpar.',
+    dica: 'Toque numa peça do mural e resgate. As mais raras ficam por baixo: arraste as de cima para garimpar.',
     premio: { bau: 'incomum' } },
   // Logo depois do primeiro baú: a tela onde ele (e todo baú) fica guardado.
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
-    dica: 'Todo baú que você ganha vem fechado para cá, a tela de Baús, que fica em Tarefas. ' +
-      'Toque no baú para abrir.',
+    dica: 'Você ganhou um baú! Todo baú fica guardado aqui, na tela de Baús, dentro de Tarefas. Toque nele para abrir.',
     premio: { xp: 20 } },
   { ir: 'closet', lugar: 'cima', nome: 'O seu closet',
-    dica: 'Tudo o que você pega fica guardado aqui. A cor da borda é a raridade: comum, incomum, ' +
-      'rara, épica ou lendária. Toque numa peça para ver a ficha: cada uma pode ter marca, cor e estilo.' },
+    dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
+      'Toque numa peça para ver a ficha com marca, cor e estilo.' },
   // {cor} é a cor do trio do presente, a favorita (state.presenteCor, ver presente.js).
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
-    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Juntar 3 libera um item do avatar, ' +
-      'e juntar mais libera mais. O seu presente trouxe 3 peças {cor}, a sua cor favorita: esta coleção já tem um item esperando.' },
+    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças você libera um item para o avatar, e com mais, libera mais. ' +
+      'O seu presente trouxe 3 peças {cor}, então esta coleção já tem um item esperando.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
-    dica: 'Toque num dos itens da coleção da cor {cor} para levar para o seu inventário.',
+    dica: 'Toque no item liberado para levá-lo ao seu inventário.',
     premio: { xp: 20 } },
   { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista o seu personagem',
-    dica: 'Aqui você veste o avatar com as roupinhas. Dois toques no item que você resgatou (ou arraste para o corpo) vestem.',
+    dica: 'Este é o Inventário, com as roupinhas do avatar. Toque duas vezes no item que você resgatou (ou arraste para o corpo) para vestir.',
     premio: { xp: 20, fichas: 1 } },
   { ir: 'vestiario', lugar: 'cima', nome: 'Combos',
-    dica: 'Itens com a mesma marca, cor ou estilo se combinam no corpo: 2 iguais ativam um efeito, 3 ou mais reforçam. ' +
-      'Cor dá mais XP nas missões, marca ajuda no garimpo e estilo faz o avatar brilhar. Os ativos aparecem em Efeitos.' },
+    dica: 'Itens vestidos com a mesma marca, cor ou estilo fazem combo: 2 ativam um efeito, 3 ou mais reforçam. ' +
+      'Cor dá mais XP, marca ajuda no garimpo e estilo faz o avatar brilhar. Veja os ativos em Efeitos.' },
   { evento: 'looks', ir: 'stylist', lugar: 'cima', nome: 'Monte e salve um look',
-    dica: 'No Stylist suas peças de verdade vestem o avatar. Toque nelas (ou sorteie um look) e salve.',
+    dica: 'No Stylist, o avatar veste as peças do seu closet. Toque nelas (ou sorteie um look) e salve.',
     premio: { xp: 40 } },
   { evento: 'board', ir: 'board', lugar: 'cima', nome: 'Salve uma colagem',
-    dica: 'Na Colagem, espalhe as peças no fundo branco do jeito que quiser e salve.',
+    dica: 'Arraste as peças pelo fundo branco do jeito que quiser e salve.',
     premio: { bau: 'incomum', xp: 20 } },
   { evento: 'publicar', ir: 'stylist', lugar: 'cima', nome: 'Publique no feed',
-    dica: 'Publique um look do Stylist ou uma colagem: é o que os outros veem de você.',
+    dica: 'Publique o look ou a colagem que você salvou. É o que os outros veem de você.',
     premio: { bau: 'raro', xp: 30 } },
   { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
-    dica: 'No Feed ficam os looks de todo mundo. Toque em Seguir em quem você curtir; dá pra achar amigos pelo nome ou @.',
+    dica: 'Aqui ficam os looks de todo mundo. Toque em Seguir em quem você curtir. Para achar amigos, busque pelo nome ou @.',
     premio: { fichas: 2 } },
   { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
-    dica: 'Cada missão paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um Baú incomum. ' +
+    dica: 'Aqui ficam as missões do dia, e cada uma paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um Baú incomum. ' +
       '5 dias carimbados na semana abrem o Baú raro.',
     premio: { fichas: 1, xp: 20 } },
   { evento: 'favoritar', ir: 'closet', lugar: 'cima', nome: 'Escolha uma peça favorita',
-    dica: 'Abra uma peça e toque na estrela: ela vai para a vitrine do seu perfil.',
+    dica: 'Abra uma peça e toque na estrela. As favoritas aparecem na vitrine do seu perfil.',
     premio: { bau: 'epico', xp: 50 } },
 ];
 

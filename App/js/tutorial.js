@@ -30,7 +30,7 @@ import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
 
 let caixa = null;
-let modo = 'barra';       // 'boasvindas' | 'aberta' | 'barra' | 'bolha'
+let modo = 'barra';       // 'aberta' | 'barra' | 'bolha'
 let concluindo = false;
 // Onde a pessoa arrastou: a faixa só sobe e desce (y), a bolinha vai a
 // qualquer lugar. null = o lugar padrão da missão (CSS).
@@ -98,13 +98,16 @@ export function pediuTutorialNaUrl() {
 export function comecar() {
   // Tira o ?tutorial do endereço: recarregar não recomeça de novo.
   if (pediuTutorialNaUrl()) history.replaceState(null, '', location.pathname + location.hash);
-  modo = 'boasvindas';
   db.comecarIntro();
   // O que já está feito de uma vez por todas conta logo (recomeçar em Testes
   // não pode travar numa escolha que já foi feita, nem no carimbo de hoje).
   const cor = db.state.presenteCor;
   if (cor && db.progressoDasColecoes()[idDaCor(cor)]?.escolhidas.length) db.progredirMissao('colecao');
   if (db.diaCarimbado()) db.progredirMissao('carimbo');
+  // Sem tela de abertura: o primeiro passo já abre (depois do presente, se
+  // ele estiver na tela).
+  passoEsperando = true;
+  seguir();
 }
 
 // ------------------------------- Prêmios ----------------------------------
@@ -195,7 +198,7 @@ function anunciar(m, r, ultima) {
   if (ultima) {
     enfileirar({
       sobre: 'Fim', titulo: 'O tutorial acabou!', tempo: 7000,
-      texto: 'Você já sabe tudo o que dá pra fazer aqui. Agora as missões do dia, em Tarefas, continuam dando prêmio. Boas garimpadas!',
+      texto: 'Agora as missões do dia, em Tarefas, continuam dando prêmio. Boas garimpadas!',
     });
   }
 }
@@ -328,22 +331,6 @@ function irParaMissao(m) {
   else irPara(m.ir);
 }
 
-// A abertura: uma tela em branco, antes de qualquer outra coisa.
-function htmlBoasVindas() {
-  return `
-    <div class="intro-abertura">
-      <span class="intro-logo">BD</span>
-      <h2>Bem-vindo ao Brechó Digital!</h2>
-      <div class="intro-balao" data-digitar>
-        <p class="intro-dica">Vamos começar um tutorial rápido. Você vai criar o seu personagem,
-          pegar a sua primeira roupa e conhecer tudo o que dá pra fazer aqui.</p>
-        <p class="intro-dica">Cada missão dá um prêmio, e a última é um <b>baú épico</b>.</p>
-      </div>
-      <button class="btn-dark" data-acao="comecar" type="button">Começar o tutorial</button>
-      <button class="link-btn" data-acao="pular" type="button">Pular tutorial</button>
-    </div>`;
-}
-
 function htmlAberta(m, passo) {
   const missao = Boolean(m.evento);
   return `
@@ -392,14 +379,13 @@ function desenhar() {
   const passo = db.state.intro.passo;
   const m = INTRO[passo];
   caixa.dataset.modo = modo;
-  caixa.dataset.lugar = modo === 'boasvindas' ? 'baixo' : m.lugar;
+  caixa.dataset.lugar = m.lugar;
   document.body.classList.toggle('intro-embaixo', caixa.dataset.lugar === 'baixo' && modo !== 'bolha');
   caixa.innerHTML =
-    modo === 'boasvindas' ? htmlBoasVindas() :
     modo === 'aberta' ? htmlAberta(m, passo) :
     modo === 'bolha' ? htmlBolha(passo) :
     htmlBarra(m, passo);
-  digitar(modo === 'boasvindas' || modo === 'aberta' ? `${modo}:${passo}` : null);
+  digitar(modo === 'aberta' ? `${modo}:${passo}` : null);
   posicionar();
 }
 
@@ -537,8 +523,7 @@ function clique(e) {
   if (acabouDeArrastar) { acabouDeArrastar = false; return; }
   const acao = e.target.closest('[data-acao]')?.dataset.acao;
   if (!acao) { if (digitando && e.target.closest('[data-digitar]')) digitando.terminar(); return; }
-  if (acao === 'comecar') { passoNovo(); desenhar(); }
-  else if (acao === 'entendi') entendi();
+  if (acao === 'entendi') entendi();
   else if (acao === 'abrir') { modo = 'aberta'; desenhar(); }
   else if (acao === 'barra') { modo = 'barra'; desenhar(); }
   else if (acao === 'minimizar') { modo = 'barra'; desenhar(); }
