@@ -18,6 +18,7 @@ import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { irPara, viewAtual } from './router.js';
+import { mostrar } from './janela.js';
 import { abrirPecaNoCloset } from './closet.js';
 import { flutuarTexto } from './animacoes.js';
 
@@ -382,7 +383,7 @@ function renderDetalhe(c) {
       c.total ? el('p', { class: 'col-hero-sub' }, c.completa ? [emo('✨'), ' Coleção completa!']
         : faltam === 1 ? 'Falta só 1 peça para completar' : `Faltam ${faltam} peças para completar`) : null),
     c.total && c.itens.length ? trilha(c) : null,
-    c.livres > 0 ? blocoDeEscolha(c) : null,
+    c.livres > 0 ? blocoDeEscolha(c) : c.total ? itensTrancados(c) : null,
     c.total ? el('section', { class: 'col-album' },
       el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
       el('div', { class: 'col-album-grade' }, ...emOrdem(c.ids).map((id, _, todas) => casaDoAlbum(id, todas)))) : null,
@@ -436,6 +437,32 @@ function blocoDeEscolha(c) {
         onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} no inventário.`, 'rare'); },
       }, arte, el('strong', {}, r.nome));
     })));
+}
+
+// Os itens do avatar que ainda faltam ganhar, só para ver: em cinza e com
+// cadeado, sem clique. Quando há escolha esperando, quem mostra é a escolha.
+function itensTrancados(c) {
+  const trancados = c.itens.filter(id => roupinha(id) && !db.estadoDaRoupinha(roupinha(id)).liberada);
+  if (!trancados.length) return null;
+  return el('section', { class: 'col-escolha col-trancados' },
+    el('h3', {}, 'Itens para ganhar', el('small', {}, ` ${trancados.length}`)),
+    el('div', { class: 'col-escolha-grade' }, ...trancados.map(id => {
+      const r = roupinha(id);
+      const arte = el('span', { class: 'col-escolha-arte' });
+      arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+      return el('div', { class: 'col-escolha-item trancado', title: `${r.nome} · ainda trancado` },
+        arte, el('span', { class: 'col-tranca' }, emo('🔒')), el('strong', {}, r.nome),
+        el('button', { type: 'button', class: 'col-lupa', title: 'Ver maior', 'aria-label': `Ver ${r.nome} maior`,
+          onclick: () => verItemMaior(r) }, emo('🔍')));
+    })));
+}
+
+// O item trancado em tamanho grande, só para ver de perto.
+function verItemMaior(r) {
+  const arte = el('div', { class: 'col-item-grande' });
+  arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+  mostrar(el('div', { class: 'col-item-grande-caixa' }, arte,
+    el('p', {}, emo('🔒'), ' Ainda trancado. Junte peças desta coleção para escolher.')), { titulo: r.nome });
 }
 
 // Uma casa do álbum: a peça, ou a silhueta dela quando ainda falta.
