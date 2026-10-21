@@ -99,6 +99,9 @@ html body .pergunta-caixa {
   margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-suave);
   white-space: pre-line; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto;
 }
+/* Passo a passo de instalar o app (instalar.js). */
+.instalar-passos { margin-top: 10px; padding-left: 22px; text-align: left; white-space: normal; }
+.instalar-passos li + li { margin-top: 6px; }
 .pergunta-campo {
   width: 100%; margin-top: 14px; padding: 10px 14px;
   border: 2px solid var(--wii-borda); border-radius: 14px; background: #fff;
