@@ -511,8 +511,17 @@ export function svgAvatar({
   // por cima dela.
   const arteSobrancelha = SOBRANCELHAS_NO_AR
     ? (SOBRANCELHAS[ap.sobrancelha] || SOBRANCELHAS.nenhuma).arte : '';
-  const sobrancelhas = arteSobrancelha ? naRegiao('cabeca',
-    `<g fill="${ap.corSobrancelha || escurecerTraco(ap.corCabelo, 0.8)}" stroke="none">
+  // No traço pontilhado da artista (pedido do João, 21/10/2026): o ruído
+  // entorta a borda, como nas sardas, e fura o miolo em grãos.
+  const sobrancelhas = arteSobrancelha ? `<filter id="${idCorte}-sobr" x="-30%" y="-30%" width="160%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="2" seed="6" result="ruido"/>
+    <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.1" xChannelSelector="R" yChannelSelector="G" result="torto"/>
+    <feTurbulence type="fractalNoise" baseFrequency="1" numOctaves="1" seed="11"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 8 -2.6" result="graos"/>
+    <feComposite in="torto" in2="graos" operator="in"/>
+  </filter>` + naRegiao('cabeca',
+    `<g fill="${ap.corSobrancelha || escurecerTraco(ap.corCabelo, 0.8)}" stroke="none"
+        filter="url(#${idCorte}-sobr)">
       <g transform="translate(262 104) scale(1 1.4)">${arteSobrancelha}</g>
       <g transform="translate(338 104) scale(-1 1.4)">${arteSobrancelha}</g>
     </g>`) : '';
