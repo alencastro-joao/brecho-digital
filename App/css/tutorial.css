@@ -1,6 +1,6 @@
 /* Missões de introdução (js/tutorial.js). Um cartão fixo que não escurece o
    app: a pessoa faz a missão na tela de verdade, com ele ali do lado. Aberto
-   mostra a missão inteira; minimizado ("barra") vira uma faixa de uma linha. */
+   mostra a missão inteira; minimizado vira a bolinha. */
 
 .intro {
   position: fixed; z-index: 850;
@@ -72,19 +72,6 @@ body.com-modal .intro { display: none; }
 .intro .btn-dark:hover { filter: brightness(1.05); }
 .intro-min { border-radius: 10px; width: 34px; height: 30px; margin-right: 0; font-size: 18px; }
 
-/* Minimizado: uma faixa de uma linha. */
-.intro[data-modo="barra"] { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 18px; }
-.intro-faixa { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 10px;
-  background: none; border: 0; padding: 0; text-align: left; color: inherit; }
-.intro-num { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
-  background: var(--perola); border: 2px solid var(--wii); font-size: 12px; font-weight: 800;
-  box-shadow: inset 0 -2px 0 var(--perola-degrau); }
-.intro-texto { min-width: 0; display: flex; flex-direction: column; }
-.intro-texto b, .intro-texto small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.intro-texto b { font-size: 14px; }
-.intro-texto small { font-size: 12px; color: var(--tinta-suave); }
-.intro[data-modo="barra"] .btn-dark { flex: none; width: auto; margin: 0; padding: 10px 18px; font-size: 14px; }
-
 /* Celular: logo acima da barra de telas (ou em cima, conforme a missão), e os
    avisos sobem quando o cartão está embaixo para não ficarem atrás dele. */
 @media (max-width: 900px) {
@@ -102,9 +89,8 @@ body.com-modal .intro { display: none; }
   .intro[data-lugar="cima"][data-modo="aberta"] { top: calc(6px + env(safe-area-inset-top)); }
 }
 
-/* Arrastar: a faixa e a bolinha se movem com o dedo, sem rolar a página. */
-.intro[data-modo="barra"], .intro[data-modo="bolha"] { touch-action: none; cursor: grab; user-select: none; }
-.intro-bolha { touch-action: none; }
+/* Arrastar: a bolinha se move com o dedo, sem rolar a página. */
+.intro[data-modo="bolha"], .intro-bolha { touch-action: none; cursor: grab; user-select: none; }
 /* Enquanto o cartão é arrastado, puxar para baixo não recarrega a página. */
 html.intro-arrastando, html.intro-arrastando body { overscroll-behavior: none; }
 
@@ -186,13 +172,20 @@ html.intro-arrastando, html.intro-arrastando body { overscroll-behavior: none; }
 .premio-bonus { background: var(--perola); border: 2px solid var(--wii-borda);
   box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau); }
 .premio-bonus.xp    { color: #7a5a00; }
-.premio-bonus.ficha { color: #1f6a3c; }
+.premio-bonus.ficha { color: #1f6a3c; display: inline-flex; align-items: center; gap: 7px; }
+/* Prêmio só de fichas: as fichinhas grandes no meio, uma encostada na outra. */
+.premio-fichas { display: flex; justify-content: center; margin: 6px 0 14px; padding-left: 16px; }
+.premio-fichas .ficha-moeda {
+  width: 62px; height: 62px; margin-left: -16px; border-width: 3px;
+  box-shadow: inset 0 0 0 6px #f3d98f, inset 0 -4px 0 6px #e0b955, 0 8px 18px rgba(120, 90, 20, .25);
+  animation: premio-peca .5s cubic-bezier(.2, .9, .3, 1.5) backwards;
+}
 
 .premio-fim { margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: var(--tinta-suave); }
 .premio-toque { margin: 12px 0 0; font-size: 11px; color: var(--tinta-suave); opacity: .7; }
 
 @media (prefers-reduced-motion: reduce) {
-  .premio, .premio-peca, .premio-bonus, .premio-brilho { animation: none; }
+  .premio, .premio-peca, .premio-bonus, .premio-brilho, .premio-fichas .ficha-moeda { animation: none; }
 }
 
 /* Baú no cartão de prêmio: fechado, mostra só o baú (no tom da raridade, como

@@ -38,7 +38,8 @@ const ouvintesIntro = new Set();
 export const onIntro = (fn) => { ouvintesIntro.add(fn); return () => ouvintesIntro.delete(fn); };
 export const avisarIntro = () => ouvintesIntro.forEach(fn => fn(state.intro));
 
-export const introAtiva = () => Boolean(state.intro && !state.intro.fim);
+// O passo fora da lista (um passo que saiu do tutorial) também encerra.
+export const introAtiva = () => Boolean(state.intro && !state.intro.fim && state.intro.passo < INTRO.length);
 
 export function comecarIntro() {
   state.intro = { passo: 0, feitos: [], fim: null };

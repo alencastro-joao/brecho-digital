@@ -2,7 +2,7 @@
 // nenhum (nada para baixar, nada de licença de terceiro).
 //
 // Quem toca é quem sabe o que aconteceu: animacoes.js (clique, favoritar,
-// curtir, subir de nível, dado), o baú abrindo, a peça pega na vitrine, a
+// curtir, subir de nível, dado), o baú abrindo, o tutorial (tecla e missão), a peça pega na vitrine, a
 // janela e os avisos. Aqui só se desenha cada som e se guarda o volume (a
 // barra no menu da engrenagem do perfil; 0 é mudo), que vale para o aparelho
 // (localStorage), não para a conta.
@@ -138,6 +138,15 @@ const SONS = {
   aviso: (c) => arpejo(c, [523, 415], 0.09, { dur: 0.14, tipo: 'triangle', vol: 0.05 }),
   // Deu certo.
   ok: (c) => arpejo(c, [784, 1047], 0.07, { dur: 0.14, vol: 0.06 }),
+  // Tecla: o texto do tutorial sendo digitado. Um tique curtinho, cada um
+  // num tom, para não soar como máquina.
+  tecla: (c) => nota(c, 1500 + Math.random() * 600, { ate: 900, dur: 0.025, tipo: 'square', vol: 0.012 }),
+  // Missão do tutorial concluída: fanfarra com brilho no fim.
+  missao: (c) => {
+    arpejo(c, [523, 659, 784], 0.08, { dur: 0.18, tipo: 'triangle', vol: 0.08 });
+    arpejo(c, [1047, 1319], 0.07, { em: 0.26, dur: 0.3, tipo: 'triangle', vol: 0.07 });
+    arpejo(c, [2093, 2637, 3136], 0.05, { em: 0.42, dur: 0.22, vol: 0.03 });
+  },
 };
 
 // Um mesmo som não se repete mais rápido que isso (clique duplo, toasts em
