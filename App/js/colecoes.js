@@ -433,7 +433,7 @@ function blocoDeEscolha(c) {
       arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
       return el('button', {
         type: 'button', class: 'col-escolha-item' + (novaNaVisita === c.id ? ' ponto-novo' : ''),
-        onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} foi para o seu inventário`, 'rare'); },
+        onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} no inventário.`, 'rare'); },
       }, arte, el('strong', {}, r.nome));
     })));
 }
@@ -485,7 +485,7 @@ function itemDaColecao(id, c) {
     title: e.liberada ? `${r.nome}: no seu inventário` : pode ? `Escolher ${r.nome}` : e.rotulo,
     onclick: () => {
       if (e.liberada) irPara('vestiario');
-      else if (pode && db.escolherItem(c.id, id)) toast(`${r.nome} foi para o seu inventário`, 'rare');
+      else if (pode && db.escolherItem(c.id, id)) toast(`${r.nome} no inventário.`, 'rare');
     },
   },
     arte,

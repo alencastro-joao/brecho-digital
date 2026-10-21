@@ -608,7 +608,7 @@ function ligarFerramentas() {
   $('#btn-salvar').addEventListener('click', () => salvarLook());
   $('#btn-publicar').addEventListener('click', () => publicarLook());
   $('#btn-compartilhar').addEventListener('click', () => {
-    if (!camadas.length) return toast('Monte um look antes de compartilhar.', 'aviso');
+    if (!camadas.length) return toast('Monte um look antes.', 'aviso');
     abrirCompartilhar({
       formatos: [{ id: 'story', rotulo: 'Story 1080×1920' }, { id: 'post', rotulo: 'Post 1080×1350' }],
       gerar: (formato) => {
@@ -693,7 +693,7 @@ export async function gerarLook() {
     .filter(Boolean);
 
   if (!acervo.length) {
-    toast('Seu guarda-roupa está vazio. Garimpe na vitrine primeiro.', 'aviso');
+    toast('Guarda-roupa vazio. Garimpe na vitrine.', 'aviso');
     return;
   }
   // Só pergunta se tem trabalho não sorteado no palco e nenhum look aberto.
@@ -717,7 +717,6 @@ export async function gerarLook() {
   renderCamadas();
   atualizarVestidas();
   renderSalvos();
-  toast(`Look sorteado com ${camadas.length} peças. ${ehToque() ? 'Toque' : 'Clique'} de novo para outro.`);
 }
 
 // --- Looks salvos ---------------------------------------------------------
@@ -767,13 +766,13 @@ async function salvarLook({ silencioso = false } = {}) {
   if (look.publicado && jaPublicado('lookId', look.id)) {
     try {
       await publicarNoFeed({ ...await pacoteDoLook(look), atualizar: true });
-      toast(`"${nome}" salvo e atualizado no feed.`);
+      toast('Salvo e atualizado no feed.');
     } catch (e) {
-      toast(`"${nome}" salvo, mas o post do feed não mudou: ${e.message || 'sem conexão'}.`, 'aviso');
+      toast('Salvo. O feed não atualizou.', 'aviso');
     }
     return look;
   }
-  toast(`"${nome}" salvo no seu perfil.`);
+  toast('Look salvo.');
   return look;
 }
 
@@ -816,8 +815,8 @@ async function publicarLook() {
   db.salvar();
   renderSalvos();
   toast(onde === 'servidor'
-    ? 'Publicado no feed — seus amigos já podem ver.'
-    : 'Sem conexão: publicado só aqui por enquanto. Sobe para o feed quando o servidor voltar.');
+    ? 'Publicado no feed.'
+    : 'Sem conexão. Publica quando voltar.');
 }
 
 // Os looks salvos moram só no painel "Meus stylists", aberto pelo botão em
@@ -887,7 +886,6 @@ function montarMeusStylists() {
     abrir: abrirLook,
     novo: async () => {
       limparPalco();
-      toast('Palco limpo: monte o look novo e salve.');
     },
     aoRenomear: (id, nome) => { if (id === lookAtualId) $('#outfit-nome').value = nome; },
     // O palco fica como está, só deixa de ser aquele look: salvar de novo cria outro.

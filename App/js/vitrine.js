@@ -718,7 +718,7 @@ function renderCongelar(peca, possuida, no) {
     no.querySelector('.peca-flutua')?.append(seloDeCongelada());
     renderCongelar(peca, possuida, no);
     atualizarBadge();
-    toast('Peça congelada: ela fica na loja até o fim de amanhã, mesmo se a loja for reposta.', 'rare');
+    toast('Congelada até o fim de amanhã.', 'rare');
   };
 }
 
@@ -764,8 +764,8 @@ async function pegar(id, noDOM) {
   if (db.resgatesRestantes(CONFIG.RESGATES_POR_DIA) <= 0) {
     falarDe('acabou');
     toast(db.podeTrocarFichas()
-      ? `Resgates de hoje esgotados. Dá para trocar ${FICHAS.porResgate} fichas por mais um em Tarefas.`
-      : `Resgates de hoje esgotados. Volta em ${formatarContagem(msAteMeiaNoite())}.`, 'aviso');
+      ? `Sem resgates. Troque ${FICHAS.porResgate} fichas em Tarefas.`
+      : `Sem resgates. Volta em ${formatarContagem(msAteMeiaNoite())}.`, 'aviso');
     $('#picks-badge')?.classList.add('shake');
     setTimeout(() => $('#picks-badge')?.classList.remove('shake'), 500);
     return;
@@ -787,11 +787,11 @@ async function pegar(id, noDOM) {
   const reserva = await estoque.levar([{ id, raridade, origem: 'vitrine' }]);
   pegando.delete(id);
   if (estoque.barradaPelaCota(id, raridade)) {
-    toast('Você já pegou o máximo de peças de hoje.', 'aviso');
+    toast('Limite de peças de hoje.', 'aviso');
     return;
   }
   if (!estoque.conseguiu(reserva, id, raridade)) {
-    toast(`${nomeDaPeca(peca)} esgotou — as ${RARIDADE[raridade].tiragem} cópias já têm dona.`, 'aviso');
+    toast(`${nomeDaPeca(peca)} esgotou.`, 'aviso');
     sairDaLoja(noDOM);
     return;
   }
@@ -820,9 +820,9 @@ async function pegar(id, noDOM) {
 
   avisoComDesfazer(nova.raridade, () => desfazerResgate(nova, foto));
   avisarColecaoDaPeca(id, noDOM);
-  if (subiu) toast(`Efeito ${marcaDoEfeito('raridade-acima')}: a peça veio ${r.nome.toLowerCase()}, uma raridade acima.`, nova.raridade);
-  if (gratis) toast(`Efeito ${marcaDoEfeito('resgate-gratis')}: este resgate não gastou o limite do dia.`, 'rare');
-  if (ficha) toast(`Efeito ${marcaDoEfeito('fichas')}: +1 ficha.`, 'rare');
+  if (subiu) toast(`${marcaDoEfeito('raridade-acima')}: veio ${r.nome.toLowerCase()}!`, nova.raridade);
+  if (gratis) toast(`${marcaDoEfeito('resgate-gratis')}: resgate grátis!`, 'rare');
+  if (ficha) toast(`${marcaDoEfeito('fichas')}: +1 ficha!`, 'rare');
   atualizarBadge();
 }
 
@@ -863,17 +863,16 @@ function avisoComDesfazer(tipo, desfazer) {
 
 async function desfazerResgate(peca, foto) {
   if (!await estoque.desfazer(peca)) {
-    toast('Não deu para desfazer: o tempo acabou.', 'aviso');
+    toast('Tempo de desfazer acabou.', 'aviso');
     return;
   }
   if (!db.desfazerResgate(peca.id, foto)) return;
   montarVitrine();
   atualizarBadge();
   tocar('desfazer');
-  toast(`${nomeDaPeca(pecaDoCatalogo(peca.id))} voltou para a loja.`);
 }
 
-// O nome da marca no aviso do efeito ("Efeito Puma: ...").
+// O nome da marca no aviso do efeito ("Puma: resgate grátis!").
 const marcaDoEfeito = (tipo) =>
   COLECOES.filter(c => c.efeito.tipo === tipo).map(c => c.marca).join(' / ') || 'de coleção';
 
@@ -958,14 +957,13 @@ export function reporComFicha() {
   reporNaLoja();
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
-  toast('Loja reposta!', 'rare');
 }
 
 // Troca FICHAS.porRepor fichas por uma loja nova. Mora em Tarefas, ao lado das
 // fichas, como o resgate extra. Leva para a vitrine para ver a arara nova.
 export async function trocarFichasPorRepor() {
   if (!db.podeReporComFichas()) {
-    toast(`Repor a loja custa ${FICHAS.porRepor} fichas. Faltam ${FICHAS.porRepor - db.fichas()}.`);
+    toast(`Faltam ${FICHAS.porRepor - db.fichas()} fichas para repor.`);
     return false;
   }
   const presas = db.congeladas().length;
@@ -978,7 +976,6 @@ export async function trocarFichasPorRepor() {
   irPara('vitrine');
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
-  toast('Loja reposta!', 'rare');
   return true;
 }
 

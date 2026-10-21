@@ -12,9 +12,9 @@ import { festejar } from './animacoes.js';
 
 // Nome e concordância de cada coisa favoritável, para o aviso sair em português.
 const ROTULO = {
-  peca: ['Peça', 'favoritada'],
-  look: ['Look', 'favoritado'],
-  colagem: ['Colagem', 'favoritada'],
+  peca: 'Peça',
+  look: 'Look',
+  colagem: 'Colagem',
 };
 
 // Quantos de cada um o perfil mostra. Peça não tem teto; look e colagem têm
@@ -24,7 +24,7 @@ export const LIMITE_FAVORITOS = { look: 3, colagem: 3 };
 // `aoMudar` repinta a lista de onde a estrela saiu — ela mesma não sabe
 // desenhar a tela que a contém.
 export function estrelaFavorito(tipo, id, aoMudar) {
-  const [nome, participio] = ROTULO[tipo];
+  const nome = ROTULO[tipo];
   const ligada = db.ehFavorito(tipo, id);
 
   return el('button', {
@@ -40,16 +40,13 @@ export function estrelaFavorito(tipo, id, aoMudar) {
       e.stopPropagation();
       const limite = LIMITE_FAVORITOS[tipo];
       if (!ligada && limite && db.favoritos(tipo).length >= limite) {
-        toast(`Seu perfil já tem ${limite} ${tipo === 'look' ? 'looks' : 'colagens'} ` +
-          'favoritos. Tire a estrela de um para colocar este.', 'aviso');
+        toast(`Máximo de ${limite} ${tipo === 'look' ? 'looks' : 'colagens'} no perfil. Tire uma estrela.`, 'aviso');
         return;
       }
       const agora = db.alternarFavorito(tipo, id);
       // Antes de repintar: depois disso o botão já é outro.
       if (agora) festejar(e.currentTarget);
-      toast(agora
-        ? `${nome} ${participio} — está no seu perfil.`
-        : `${nome} fora do perfil.`);
+      if (agora) toast('No seu perfil.');
       aoMudar?.();
     },
   }, ico(ligada ? 'estrela-cheia' : 'estrela'));

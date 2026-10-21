@@ -300,7 +300,7 @@ function montarEdicao() {
     db.salvar();
     fecharEdicao();
     renderPerfil();
-    toast('Perfil atualizado.');
+    toast('Perfil salvo.');
   });
 
   $('#pf-cancelar').addEventListener('click', fecharEdicao);
@@ -452,7 +452,7 @@ function montarConta() {
     }
     form.reset();
     form.hidden = true;
-    toast('Senha trocada. As outras sessões foram encerradas.');
+    toast('Senha trocada. Outros aparelhos saíram.');
   });
 
   // Recarregar depois de sair não é preguiça: meia dúzia de telas já montadas

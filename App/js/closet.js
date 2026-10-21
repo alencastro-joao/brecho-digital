@@ -125,7 +125,7 @@ export function montarCloset() {
     // A estrelinha do slot acompanha sem repintar a grade inteira.
     document.querySelector(`.item-slot[data-id="${selecionada}"]`)
       ?.classList.toggle('favorita', agora);
-    toast(agora ? 'Peça favoritada — aparece no seu perfil.' : 'Peça desfavoritada.');
+    if (agora) toast('No seu perfil.');
   });
   let t;
   let larguraAntes = window.innerWidth;

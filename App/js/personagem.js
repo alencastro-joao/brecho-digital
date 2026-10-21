@@ -130,7 +130,7 @@ function salvar() {
   if (!corFavorita) {
     abrirAba('favorita');
     $('.pg-bloco[data-aba="favorita"]').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    toast('Escolha a sua cor favorita antes de salvar.', 'aviso');
+    toast('Escolha sua cor favorita.', 'aviso');
     return;
   }
   db.state.usuario.avatar = { ...rascunho };

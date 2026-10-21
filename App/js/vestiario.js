@@ -88,7 +88,6 @@ const estiloDaRaridade = (r) => {
 export function montarVestiario() {
   $('#vs-despir').addEventListener('click', () => {
     db.tirarTudo();
-    toast('Avatar sem roupinha — o Stylist continua igual.');
     renderVestiario();
   });
 
@@ -120,7 +119,7 @@ function anunciarNovidades() {
       if (!r) continue;
       // O tipo do toast é o id da raridade: 'uncommon'..'legendary' já são as
       // cores dele em base.css, e 'common' cai no padrão.
-      toast(`Roupinha nova: ${r.nome}! Está no inventário.`, r.raridade);
+      toast(`Roupinha nova: ${r.nome}!`, r.raridade);
     }
     if (novas.length) piscarBotao();
   } finally {
