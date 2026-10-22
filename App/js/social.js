@@ -24,7 +24,9 @@ import { aparenciaDoPerfil, aparenciaAtual, cabeca } from './avatar.js';
 import { sortearConjunto, camadasParaAvatar, colagemAleatoria } from './sorteio.js';
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
-import { irPara, viewAtual } from './router.js';
+import { irPara, viewAtual, paramAtual } from './router.js';
+// Protótipo do feed como vitrines: só pelo link #/social/vitrine-a|b|c.
+import { renderVitrines } from './vitrines.js';
 // Ciclo de propósito: o feed leva ao perfil de alguém e o perfil mostra os
 // mesmos cards daqui. Os dois lados só se chamam em tempo de execução.
 import { abrirGavetaDe, abrirFichaDePeca, gradeDePecas } from './usuario.js';
@@ -45,7 +47,7 @@ const sou = (id) => id === db.state.usuario.id;
 export const COR_PROPRIA = '#e8e2d8';
 
 // Fictício ou conta real (o cartão veio junto com o feed ou da busca).
-const autorDe = (id) => sou(id)
+export const autorDe = (id) => sou(id)
   ? { nome: db.state.usuario.nome, handle: db.state.usuario.handle, cor: COR_PROPRIA }
   : perfilDe(id) || { id, nome: 'alguém', handle: '@?', cor: '#eee' };
 
@@ -408,6 +410,12 @@ function renderFeed() {
     return;
   }
 
+  const prototipo = /^vitrine-([abc])$/.exec(paramAtual() || '')?.[1];
+  if (prototipo) {
+    feed.replaceChildren(renderVitrines(posts, prototipo, renderFeed));
+    return;
+  }
+
   colunasDesenhadas = colunasDoMural(feed);
   const mural = montarMural(colunasDesenhadas);
   const feitos = Math.min(posts.length, Math.max(mostrando, LOTE));
@@ -759,7 +767,7 @@ function observarEsperando() {
   }
 }
 
-function imagemDoPost(post) {
+export function imagemDoPost(post) {
   // width/height só guardam o lugar enquanto a imagem não chega (o card não
   // nasce achatado e o mural não pula); carregada, vale a proporção dela.
   const img = el('img', {
@@ -919,7 +927,7 @@ function alternarThread(post) {
   repintar();
 }
 
-async function alternarCurtida(post, botao) {
+export async function alternarCurtida(post, botao) {
   // Curtir o look de outra pessoa conta para a missão da semana (uma vez por post).
   const conta = !post.curtido && !sou(post.autor);
   const antes = post.curtidas;
