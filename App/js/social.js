@@ -27,7 +27,7 @@ import { abrirBoard } from './board.js';
 import { irPara, viewAtual } from './router.js';
 // Ciclo de propósito: o feed leva ao perfil de alguém e o perfil mostra os
 // mesmos cards daqui. Os dois lados só se chamam em tempo de execução.
-import { abrirPerfilDe, abrirFichaDePeca, gradeDePecas } from './usuario.js';
+import { abrirGavetaDe, abrirFichaDePeca, gradeDePecas } from './usuario.js';
 import { renderPessoas, atualizarPessoas } from './busca.js';
 import { ehFicticio, seguirNoServidor, perfilDe, roupasDoPerfil } from './pessoas.js';
 import {
@@ -57,9 +57,10 @@ const roupasDe = (id) => sou(id) ? db.roupasEquipadas() : roupasDoPerfil(autorDe
 export const retratoDe = (id, tamanho = 34) =>
   cabeca(aparenciaDe(id), tamanho, roupasDe(id));
 
-// Clicar em quem assina abre o perfil: o seu é a tela de perfil de sempre,
-// o dos outros é a página pública.
-export const abrirAutor = (id) => sou(id) ? irPara('perfil') : abrirPerfilDe(id);
+// Clicar em quem assina abre o perfil: o seu é a tela de perfil de sempre;
+// o dos outros sobe numa gaveta por cima do feed (fora do feed, a página
+// pública inteira).
+export const abrirAutor = (id) => sou(id) ? irPara('perfil') : abrirGavetaDe(id);
 
 const ABAS = [
   ['seguindo', 'Seguindo', 'Você e quem você segue'],

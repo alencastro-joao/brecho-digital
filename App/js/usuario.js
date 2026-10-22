@@ -134,6 +134,7 @@ const doCatalogo = (ids = []) => ids.map(pecaDoCatalogo).filter(Boolean);
 
 // --------------------------------- Tela -----------------------------------
 export function montarUsuario() {
+  montarGaveta();   // primeiro: o Esc dela olha os modais antes que eles fechem
   montarListaDePecas();
   montarFichaDePeca();
   $('#up-voltar').addEventListener('click', () => irPara('social'));
@@ -153,6 +154,7 @@ export function montarUsuario() {
 export async function aoEntrarNoUsuario() {
   const id = paramAtual();
   let p = perfilPublico(id);
+  fecharGaveta();
   fecharPost();
 
   // Conta real que este navegador ainda não viu (link direto, ou um seguido de
@@ -295,6 +297,106 @@ function abaDeRoupasDe(p, favoritas) {
       () => abrirListaDePecas(`Guarda-roupa de ${p.nome.split(' ')[0]}`, todas)),
     vazio: 'Nenhuma roupa ainda',
   };
+}
+
+// ------------------------------- A gaveta ---------------------------------
+// Tocar no avatar ou no nome de alguém no feed não tira você do feed: o perfil
+// sobe numa gaveta por cima (pedido do João, 22/10/2026), com o rosto, os
+// números, o Seguir e os looks e colagens dela. Fechar volta ao mesmo ponto da
+// rolagem; "Ver perfil completo" leva à página inteira. No PC ela vem do lado
+// direito; no celular, de baixo.
+let gavetaAberta = false;
+
+export async function abrirGavetaDe(id) {
+  if (!id || id === db.state.usuario.id || viewAtual() !== 'social') return abrirPerfilDe(id);
+  if (!podeAbrir(id)) return toast('Perfil não encontrado.', 'aviso');
+  fecharPost();
+  if (idAtual !== id) abaAtual = null;
+  idAtual = id;
+  gavetaAberta = true;
+  $('#modal-gaveta').hidden = false;
+  document.body.classList.add('com-modal');
+  $('#gv-corpo').scrollTop = 0;
+
+  let p = perfilPublico(id);
+  if (!p) {
+    $('#gv-corpo').replaceChildren(el('p', { class: 'gv-vazio' }, 'Carregando…'));
+    try { p = await carregarPerfil(id); } catch {
+      fecharGaveta();
+      return toast('Perfil não encontrado.', 'aviso');
+    }
+  }
+  if (!gavetaAberta || idAtual !== id) return;
+  renderGaveta();
+
+  const repintarSeAinda = () => { if (gavetaAberta && idAtual === id) renderGaveta(); };
+  if (p.real) {
+    carregarPerfil(id).then(repintarSeAinda).catch(() => {});
+    return;
+  }
+  // O mesmo da página inteira: perfil de exemplo sem colagens ganha as dele.
+  if (!postsDe(id).length && !gerando) {
+    gerando = true;
+    const fez = await gerarPostsDe(id, 2);
+    gerando = false;
+    if (fez) repintarSeAinda();
+  }
+}
+
+function renderGaveta() {
+  const p = perfilPublico(idAtual);
+  if (!p) return;
+  const n = numerosDe(p);
+  const segue = db.state.usuario.seguindo.includes(p.id);
+  const posts = postsDe(p.id);
+
+  // Os looks e colagens são as mesmas abas da página inteira, numa grade só:
+  // tocar abre o look por cima da gaveta, sem fechá-la.
+  const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
+  const obras = abas.filter(a => a.id === 'looks' || a.id === 'colagens').flatMap(a => a.itens);
+
+  $('#gv-corpo').replaceChildren(
+    el('div', { class: 'gv-topo' },
+      el('div', { class: 'gv-foto' }, cabeca(aparenciaDoPerfil(p), 96, roupasDoPerfil(p))),
+      el('div', { class: 'gv-quem' },
+        el('h2', { class: 'gv-nome' }, p.nome),
+        el('p', { class: 'gv-arroba' }, p.handle,
+          p.real && p.segueVoce ? el('span', { class: 'pf-segue-voce' }, 'segue você') : null),
+        el('div', { class: 'gv-stats' },
+          numeroDoPerfil(posts.length, 'publicações'),
+          numeroDoPerfil(n.seguidores + (!p.real && segue ? 1 : 0), 'seguidores')))),
+    p.bio ? el('p', { class: 'gv-bio' }, p.bio) : null,
+    el('div', { class: 'gv-acoes' },
+      el('button', {
+        class: segue ? 'btn-ghost' : 'btn-dark',
+        onclick: () => alternarSeguir(p.id),
+      }, segue ? 'Seguindo' : 'Seguir'),
+      el('button', { class: 'btn-ghost', onclick: () => irPara('usuario', p.id) }, 'Ver perfil completo')),
+    obras.length
+      ? el('div', { class: 'pf-grade pf-grade-obras gv-grade' }, ...obras)
+      : el('p', { class: 'gv-vazio' }, 'Nenhum look ainda'));
+  if (postAberto) renderPostAberto();
+}
+
+function fecharGaveta() {
+  if (!gavetaAberta) return;
+  gavetaAberta = false;
+  fecharPost();
+  $('#modal-gaveta').hidden = true;
+  $('#gv-corpo').replaceChildren();
+  destravarSeNada();
+}
+
+function montarGaveta() {
+  const modal = $('#modal-gaveta');
+  $('#gv-fechar').addEventListener('click', fecharGaveta);
+  modal.addEventListener('click', (e) => { if (e.target === modal) fecharGaveta(); });
+  // Com um look ou peça aberta por cima, o Esc fecha só ela (o ouvinte dela).
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden
+      && document.querySelectorAll('.modal:not([hidden])').length === 1) fecharGaveta();
+  });
+  aoAtualizarFeed(() => { if (gavetaAberta) renderGaveta(); });
 }
 
 // ------------------------------- A vitrine --------------------------------

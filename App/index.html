@@ -729,6 +729,18 @@
   </section>
   <!-- O guarda-roupa inteiro ou a wishlist de alguém (ou os seus), abertos
        pelos botões embaixo do perfil (js/usuario.js). -->
+  <!-- O perfil de alguém numa gaveta por cima do feed (js/usuario.js). Fica
+       antes dos outros modais: um look aberto daqui sobe por cima dela. -->
+  <div class="modal gaveta" id="modal-gaveta" hidden>
+    <div class="modal-caixa gv-caixa" role="dialog" aria-label="Perfil">
+      <header class="modal-topo">
+        <h2>Perfil</h2>
+        <button class="modal-x" id="gv-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="gv-corpo" id="gv-corpo"></div>
+    </div>
+  </div>
+
   <div class="modal" id="modal-lista" hidden>
     <div class="modal-caixa lp-caixa">
       <header class="modal-topo">
