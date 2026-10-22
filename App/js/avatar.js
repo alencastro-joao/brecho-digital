@@ -18,7 +18,7 @@
 // roupinhas é quem mostra a pessoa: perfil, retrato e página pública.
 
 import {
-  CONFIG, CATEGORIAS, CORPOS, PELES, CABELOS,
+  CONFIG, CATEGORIAS, CORPOS, PELES, peleDe, CABELOS,
   CORES_CABELO, NARIZES, SOBRANCELHAS, SOBRANCELHAS_NO_AR, SOMBRA_ROSTO_NO_AR, PIERCINGS_ORELHA, PIERCINGS_BRIDGE,
   SARDAS,
 } from './config.js';
@@ -67,7 +67,7 @@ const corteDoCatalogo = (id) => {
 
 // De ids (pele: 'clara') para cores prontas de desenhar.
 export function resolverAparencia(cfg = {}) {
-  const pele = PELES.find(p => p.id === cfg.pele) || PELES[1];
+  const pele = peleDe(cfg.pele);
   return {
     pele: pele.cor,
     traco: pele.traco,
@@ -344,11 +344,11 @@ export const aparenciaAtual = () => resolverAparencia(db.state.usuario.avatar ||
 // (A semente vem de util.js: o perfil público sorteia os números dele com a
 // mesma, então a pessoa é coerente da cara aos seguidores.)
 
-// O feed continua parecendo gente: a pele de fantasia entra em uma pessoa a
-// cada cinco, e o focinho fica de fora — esses são escolhas de quem edita.
+// No feed a maioria é colorida: a pele humana entra em uma pessoa a cada
+// cinco, e o focinho fica de fora — esse é escolha de quem edita.
 export function aparenciaSorteada(chave) {
   const rnd = mulberry32(sementeDoTexto(chave));
-  const grupo = rnd() < 0.8 ? 'humana' : 'fantasia';
+  const grupo = rnd() < 0.8 ? 'fantasia' : 'humana';
   return {
     corpo: escolher(Object.keys(catalogoCorpos()), rnd),
     pele: escolher(PELES.filter(p => p.grupo === grupo), rnd).id,
