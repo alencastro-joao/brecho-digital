@@ -1,0 +1,207 @@
+/* Protótipo do feed como vitrines (js/vitrines.js). Só aparece pelo link
+   #/social/vitrine-a, -b ou -c. Toldo na cor de quem posta, vidro perolado,
+   os looks flutuando como as peças da Loja. */
+
+.vt { display: flex; flex-direction: column; gap: 18px; margin-top: 18px; }
+.vt-vazio { color: var(--tinta-suave); font-size: 13px; padding: 40px 0; text-align: center; }
+
+/* O seletor das três ideias, para comparar. */
+.vt-seletor {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px; border-radius: 20px;
+  background: var(--perola-painel); border: 2px solid var(--wii-borda);
+}
+.vt-seletor > span {
+  font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--tinta-suave); padding: 0 6px;
+}
+.vt-modo, .vt-perola {
+  height: 38px; padding: 0 14px; border-radius: 14px;
+  font-size: 13px; font-weight: 700; color: var(--tinta);
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.vt-modo:hover, .vt-perola:hover { border-color: var(--wii); }
+.vt-modo.ativo { border-color: var(--wii); box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), 0 0 0 3px var(--wii-brilho); }
+.vt-perola { height: 46px; padding: 0 18px; border-radius: 16px; }
+
+/* ------------------------------ A vitrine ------------------------------ */
+.vt-vitrine { display: flex; flex-direction: column; }
+.vt-toldo {
+  height: 22px; margin: 0 22px; border-radius: 12px 12px 0 0;
+  background: repeating-linear-gradient(90deg, var(--cor) 0 30px, #fff 30px 60px);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .06);
+  filter: saturate(1.6) brightness(.96);
+}
+.vt-vidro {
+  position: relative;
+  border-radius: var(--raio); border: 2px solid var(--wii-borda);
+  background-color: var(--perola-1);
+  background-image: radial-gradient(var(--perola-2) 1px, transparent 1px);
+  background-size: 28px 28px;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau), var(--sombra);
+  transition: box-shadow .3s;
+}
+.vt-vidro.acesa {
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau),
+    0 0 0 3px rgba(255, 196, 0, .25), 0 10px 34px rgba(255, 190, 0, .28);
+}
+.vt-looks {
+  display: flex; justify-content: center; align-items: flex-end; gap: 16px;
+  padding: 22px 18px 18px;
+}
+.vt-look {
+  flex: 0 1 200px; min-width: 0; padding: 0; border: 0; background: none;
+  border-radius: 14px; overflow: hidden;
+  transform: rotate(calc((var(--i) - 1) * 2deg));
+  box-shadow: 0 12px 18px rgba(0, 0, 0, .14);
+  animation: vt-flutuar 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.4s);
+  transition: box-shadow .25s;
+}
+.vt-look:hover { animation-play-state: paused; box-shadow: 0 18px 26px rgba(0, 0, 0, .22); }
+.vt-look img { display: block; width: 100%; height: auto; }
+@keyframes vt-flutuar {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -7px; }
+}
+@media (prefers-reduced-motion: reduce) { .vt-look, .vt-mini { animation: none; } }
+
+.vt-placa { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.vt-retrato {
+  flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff;
+  display: grid; place-items: center; overflow: hidden; padding: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+}
+.vt-quem { display: flex; flex-direction: column; min-width: 0; }
+.vt-quem strong { font-size: 14px; font-weight: 800; }
+.vt-quem small { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tinta-suave); }
+.vt-luz {
+  width: 8px; height: 8px; border-radius: 50%; background: #ffb300;
+  box-shadow: 0 0 8px 2px rgba(255, 179, 0, .6);
+}
+.vt-curtir {
+  display: flex; align-items: center; gap: 5px;
+  height: 46px; padding: 0 14px; border-radius: 16px;
+  font-weight: 700; font-size: 13px; color: var(--tinta);
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau);
+}
+.vt-curtir .ico { width: 20px; height: 20px; }
+.vt-curtir.on .ico { color: #e8457a; }
+.vt-entrar {
+  height: 46px; padding: 0 20px; border-radius: 40px; border: 0;
+  background: var(--tinta); color: #fff; font-weight: 700; font-size: 13px;
+}
+.vt-entrar:hover { background: #000; }
+
+/* --------------------------------- a) fila ------------------------------ */
+.vt-fila { display: flex; flex-direction: column; gap: 26px; }
+.vt-fila .vt-looks { min-height: 220px; }
+.vt-fila .vt-look { flex-basis: 190px; }
+.vt-rodape {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 12px 12px; padding: 8px 8px 8px 10px;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .05);
+}
+.vt-rodape .vt-placa { flex: 1; }
+
+/* -------------------------------- b) mural ------------------------------ */
+.vt-mural-topo { display: flex; align-items: center; gap: 14px; }
+.vt-mural-topo p { font-size: 13px; color: var(--tinta-suave); }
+.vt-contador {
+  display: flex; flex-direction: column; align-items: center; min-width: 104px;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 16px;
+  padding: 8px 16px; box-shadow: var(--sombra);
+}
+.vt-contador strong { font-size: 20px; font-weight: 800; }
+.vt-contador small { font-size: 11px; color: var(--tinta-suave); }
+.vt-mural-area {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 34px 26px; padding: 30px 6px 60px;
+  border-radius: var(--raio);
+  background-image: radial-gradient(var(--perola-2) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.vt-mini {
+  position: relative; cursor: pointer;
+  transform: rotate(var(--rot)) translateY(var(--desce));
+  transition: transform .4s cubic-bezier(.175, .885, .32, 1.275), opacity .3s;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .12));
+}
+.vt-mini:hover { transform: rotate(0deg) translateY(var(--desce)) scale(1.06); z-index: 2; }
+.vt-mini .vt-toldo { height: 14px; margin: 0 14px; }
+.vt-mini .vt-looks { padding: 12px; }
+.vt-mini .vt-look { flex-basis: 100%; box-shadow: none; animation-delay: var(--atraso); }
+.vt-etiqueta {
+  position: absolute; top: -18px; left: 10px;
+  font-size: 11px; color: var(--tinta-suave); white-space: nowrap;
+  background: rgba(255, 255, 255, .95); border-radius: 20px; padding: 3px 9px;
+}
+.vt-etiqueta b { color: var(--tinta); }
+.vt-mini.vista { opacity: .55; }
+.vt-visto {
+  position: absolute; top: 50%; left: 50%; translate: -50% -50%;
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: #2f7a4a; color: #fff;
+}
+.vt-visto .ico { width: 22px; height: 22px; }
+.vt-balao {
+  flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: 8px;
+  border: 0; background: none; padding: 0; text-align: left; color: var(--tinta);
+}
+.vt-balao-fala {
+  background: var(--branco); border: 1px solid var(--linha);
+  border-radius: 20px 20px 20px 4px; padding: 10px 14px; margin-bottom: 14px;
+  font-size: 13px; line-height: 1.45; box-shadow: var(--sombra);
+}
+.vt-balao-quem {
+  flex: none; width: 52px; height: 52px; border-radius: 50%; border: 2px solid #fff;
+  display: grid; place-items: center; overflow: hidden; box-shadow: var(--sombra);
+}
+
+/* ----------------------------- c) uma por vez --------------------------- */
+.vt-passeio { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.vt-proximas {
+  align-self: stretch; display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px;
+  scrollbar-width: none;
+}
+.vt-prox {
+  flex: none; width: 72px; height: 72px; padding: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  border-radius: 16px; border: 2px solid var(--wii-borda); background: var(--branco);
+}
+.vt-prox .vt-toldo { height: 12px; margin: 0; border-radius: 0; background-size: auto; }
+.vt-prox span { flex: 1; display: grid; place-items: center; font-size: 12px; padding: 0 4px; overflow: hidden; }
+.vt-prox.acesa { box-shadow: 0 0 12px 2px rgba(255, 196, 0, .5); }
+.vt-prox.atual { border-color: var(--tinta); font-weight: 800; }
+.vt-palco { width: 100%; max-width: 760px; }
+.vt-vitrine.grande .vt-toldo { height: 30px; margin: 0 34px; }
+.vt-vitrine.grande .vt-vidro { border-width: 3px; }
+.vt-vitrine.grande .vt-looks { min-height: 320px; padding-top: 30px; }
+.vt-vitrine.grande .vt-look { flex-basis: 230px; }
+.vt-vitrine.grande .vt-placa {
+  margin: 0 14px 14px; padding: 8px 12px; align-self: flex-start;
+  background: var(--branco); border: 1px solid var(--linha); border-radius: 16px;
+}
+.vt-controles { display: flex; align-items: center; gap: 12px; }
+.vt-controles .vt-curtir { height: 60px; width: 60px; justify-content: center; border-radius: 50%; padding: 0; }
+.vt-controles .vt-curtir span { display: none; }
+.vt-entrar.largo { min-width: 220px; }
+
+/* -------------------------------- Celular ------------------------------- */
+@media (max-width: 900px) {
+  .vt { margin-top: 12px; gap: 14px; }
+  .vt-looks { gap: 8px; padding: 16px 10px 12px; }
+  .vt-fila .vt-looks { min-height: 0; }
+  .vt-fila .vt-look { flex-basis: 33%; }
+  .vt-toldo { margin: 0 14px; height: 18px; }
+  .vt-rodape { margin: 0 8px 8px; }
+  .vt-rodape .vt-entrar { display: none; }
+  .vt-mural-area { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 16px; padding: 24px 4px 40px; }
+  .vt-vitrine.grande .vt-looks { min-height: 0; }
+  .vt-vitrine.grande .vt-toldo { margin: 0 20px; height: 24px; }
+  .vt-vitrine.grande .vt-look { flex-basis: 33%; max-width: 220px; }
+  .vt-vitrine.grande .vt-looks:has(.vt-look:only-child) .vt-look { flex-basis: 60%; }
+}
