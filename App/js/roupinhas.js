@@ -1439,14 +1439,15 @@ const desenhar = (arte, m, cor, k = 1) => `
   <g fill="${cor}" stroke="${cor}" stroke-width="0"
      stroke-linejoin="round" stroke-linecap="round">${arte(m, 0)}</g>`;
 
-// As três pilhas em que o avatar encaixa a roupa: o que vai atrás do corpo, o
-// que vai na frente dele (por camada) e o que vai depois do rosto.
+// As pilhas em que o avatar encaixa a roupa: o que vai atrás do corpo, o que
+// vai na frente dele (por camada), os óculos desenhados (embaixo do cabelo da
+// frente, pedido do João, 22/10/2026) e o que vai depois do rosto.
 //
 // `roupas` é um mapa de lugar do corpo para id da peça — { torso: 'camiseta' }.
 // `soCabeca` fica só com o que se veste na cabeça (chapéu, óculos, bandana).
 export function partesDasRoupas(roupas, corpo, soCabeca = false) {
   const m = medidasDoCorpo(corpo);
-  const atras = [], frente = [], rosto = [];
+  const atras = [], frente = [], oculos = [], rosto = [];
   // Peça de cabeça que cobre o cabelo diz a partir de que altura ele ainda
   // aparece (`cabelo`). O avatar corta o cabelo nessa linha: sem isso o
   // espetado atravessa o boné por cima, e cada corte novo teria que ser
@@ -1469,7 +1470,10 @@ export function partesDasRoupas(roupas, corpo, soCabeca = false) {
     const k = escalaDe(regiao);
 
     // Desenho da artista: já está no palco, sem escala de região nem contorno.
-    if (r.imagem) { (z >= 60 ? rosto : frente).push({ z, svg: imagemDaPeca(r) }); continue; }
+    if (r.imagem) {
+      (slot === 'acessorio' ? oculos : z >= 60 ? rosto : frente).push({ z, svg: imagemDaPeca(r) });
+      continue;
+    }
     if (r.atras) atras.push(naRegiao(regiao, desenhar(r.atras, m, cor, k) + (r.arte ? '' : detalhe)));
     if (!r.arte) continue;
     const svg = naRegiao(regiao, desenhar(r.arte, m, cor, k) + detalhe);
@@ -1483,7 +1487,7 @@ export function partesDasRoupas(roupas, corpo, soCabeca = false) {
 
   const ordenado = (lista) => lista.sort((a, b) => a.z - b.z).map(p => p.svg).join('');
   return {
-    atras: atras.join(''), frente: ordenado(frente), rosto: ordenado(rosto),
+    atras: atras.join(''), frente: ordenado(frente), oculos: ordenado(oculos), rosto: ordenado(rosto),
     corteDoCabelo,
   };
 }
