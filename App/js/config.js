@@ -548,32 +548,64 @@ export const CORPOS = {
 };
 export const ORDEM_CORPOS = Object.keys(CORPOS);
 
-// Tom de pele: a cor do corpo e o traço que a acompanha. As humanas vêm
-// primeiro (o avatar cai em PELES[1] quando não conhece o id) e as de fantasia
-// depois — o personagem não precisa ser gente, e a paleta assume isso.
+// Tom de pele: a cor do corpo e o traço que a acompanha. A paleta é a de
+// joias e metais (pedras claras, médias e profundas, ouro, cobre e prata), em
+// degradê de matiz; as humanas ficam no fim, como opção e não como regra.
+// Quem tem uma pele que saiu da lista cai na mais parecida (PELES_ANTIGAS).
 export const PELES = [
-  { id: 'porcelana', nome: 'Porcelana', cor: '#f3ddc9', traco: '#dcc2aa', grupo: 'humana' },
-  { id: 'clara',     nome: 'Clara',     cor: '#e7ded4', traco: '#cfc2b3', grupo: 'humana' },
-  { id: 'bege',      nome: 'Bege',      cor: '#e2c39d', traco: '#c5a075', grupo: 'humana' },
-  { id: 'media',     nome: 'Média',     cor: '#c9935f', traco: '#a5723f', grupo: 'humana' },
-  { id: 'castanha',  nome: 'Castanha',  cor: '#96603a', traco: '#75462a', grupo: 'humana' },
-  { id: 'escura',    nome: 'Escura',    cor: '#5f3c26', traco: '#42281a', grupo: 'humana' },
+  { id: 'rubi',        nome: 'Rubi', cor: '#b0344a', traco: '#852738', grupo: 'fantasia' },
+  { id: 'granada',     nome: 'Granada', cor: '#8a2c3a', traco: '#68212c', grupo: 'fantasia' },
+  { id: 'morganita',   nome: 'Morganita', cor: '#f2c6b4', traco: '#b79688', grupo: 'fantasia' },
+  { id: 'ambar',       nome: 'Âmbar', cor: '#d9893a', traco: '#a4682c', grupo: 'fantasia' },
+  { id: 'cobre',       nome: 'Cobre', cor: '#b87350', traco: '#8b573c', grupo: 'fantasia' },
+  { id: 'perola',      nome: 'Pérola', cor: '#ece6dc', traco: '#b3aea7', grupo: 'fantasia' },
+  { id: 'champanhe',   nome: 'Champanhe', cor: '#e8d8b8', traco: '#b0a48b', grupo: 'fantasia' },
+  { id: 'citrino',     nome: 'Citrino', cor: '#f2d68a', traco: '#b7a268', grupo: 'fantasia' },
+  { id: 'topazio',     nome: 'Topázio', cor: '#e3a45a', traco: '#ac7c44', grupo: 'fantasia' },
+  { id: 'ouro',        nome: 'Ouro', cor: '#d8b45a', traco: '#a48844', grupo: 'fantasia' },
+  { id: 'bronze',      nome: 'Bronze', cor: '#9a7444', traco: '#755833', grupo: 'fantasia' },
+  { id: 'peridoto',    nome: 'Peridoto', cor: '#9fb85a', traco: '#788b44', grupo: 'fantasia' },
+  { id: 'musgo',       nome: 'Musgo', cor: '#6e7038', traco: '#53552a', grupo: 'fantasia' },
+  { id: 'jade',        nome: 'Jade', cor: '#5fa07a', traco: '#48795c', grupo: 'fantasia' },
+  { id: 'turquesa',    nome: 'Turquesa', cor: '#3fa3a3', traco: '#2f7b7b', grupo: 'fantasia' },
+  { id: 'esmeralda',   nome: 'Esmeralda', cor: '#2f8a5f', traco: '#236848', grupo: 'fantasia' },
+  { id: 'malaquita',   nome: 'Malaquita', cor: '#2a6e5a', traco: '#1f5344', grupo: 'fantasia' },
+  { id: 'pinho',       nome: 'Pinho', cor: '#1f4a3a', traco: '#17382c', grupo: 'fantasia' },
+  { id: 'topazioazul', nome: 'Topázio-azul', cor: '#9cc8f0', traco: '#7698b6', grupo: 'fantasia' },
+  { id: 'aguamarinha', nome: 'Água-marinha', cor: '#8ec8d0', traco: '#6b989e', grupo: 'fantasia' },
+  { id: 'petroleo',    nome: 'Petróleo', cor: '#1f5a62', traco: '#17444a', grupo: 'fantasia' },
+  { id: 'safira',      nome: 'Safira', cor: '#3a5fa8', traco: '#2c487f', grupo: 'fantasia' },
+  { id: 'anil',        nome: 'Anil', cor: '#3f3f8a', traco: '#2f2f68', grupo: 'fantasia' },
+  { id: 'marinho',     nome: 'Marinho', cor: '#1f2a5a', traco: '#171f44', grupo: 'fantasia' },
+  { id: 'opala',       nome: 'Opala', cor: '#d9cfe8', traco: '#a49db0', grupo: 'fantasia' },
+  { id: 'ametista',    nome: 'Ametista', cor: '#b896e0', traco: '#8b72aa', grupo: 'fantasia' },
+  { id: 'tanzanita',   nome: 'Tanzanita', cor: '#6a5aa8', traco: '#50447f', grupo: 'fantasia' },
+  { id: 'malva',       nome: 'Malva', cor: '#8a5a7a', traco: '#68445c', grupo: 'fantasia' },
+  { id: 'ameixa',      nome: 'Ameixa', cor: '#4a2348', traco: '#381a36', grupo: 'fantasia' },
+  { id: 'quartzo',     nome: 'Quartzo', cor: '#e3a9b8', traco: '#ac808b', grupo: 'fantasia' },
+  { id: 'rodolita',    nome: 'Rodolita', cor: '#c25a78', traco: '#93445b', grupo: 'fantasia' },
+  { id: 'bordo',       nome: 'Bordô', cor: '#5a1a2a', traco: '#44131f', grupo: 'fantasia' },
+  { id: 'prata',       nome: 'Prata', cor: '#b8bcc4', traco: '#8b8e94', grupo: 'fantasia' },
+  { id: 'grafite',     nome: 'Grafite', cor: '#50545e', traco: '#3c3f47', grupo: 'fantasia' },
+  { id: 'onix',        nome: 'Ônix', cor: '#24232b', traco: '#1b1a20', grupo: 'fantasia' },
 
-  { id: 'menta',    nome: 'Menta',     cor: '#9ed8bb', traco: '#68a68c', grupo: 'fantasia' },
-  { id: 'folha',    nome: 'Folha',     cor: '#7fb069', traco: '#548a44', grupo: 'fantasia' },
-  { id: 'bruma',    nome: 'Bruma',     cor: '#dfe8ef', traco: '#adbcc9', grupo: 'fantasia' },
-  { id: 'ceu',      nome: 'Céu',       cor: '#a9cfeb', traco: '#78a6c8', grupo: 'fantasia' },
-  { id: 'oceano',   nome: 'Oceano',    cor: '#5c8ecb', traco: '#3c6697', grupo: 'fantasia' },
-  { id: 'lavanda',  nome: 'Lavanda',   cor: '#cbb6e8', traco: '#9f89c2', grupo: 'fantasia' },
-  { id: 'ametista', nome: 'Ametista',  cor: '#8a6bb8', traco: '#61458b', grupo: 'fantasia' },
-  { id: 'quartzo',  nome: 'Quartzo',   cor: '#f2b8c6', traco: '#cf889a', grupo: 'fantasia' },
-  { id: 'coral',    nome: 'Coral',     cor: '#ef8f6e', traco: '#c5694b', grupo: 'fantasia' },
-  { id: 'brasa',    nome: 'Brasa',     cor: '#cf4b3c', traco: '#94301f', grupo: 'fantasia' },
-  { id: 'dourado',  nome: 'Dourado',   cor: '#e8c46a', traco: '#bd993c', grupo: 'fantasia' },
-  { id: 'pedra',    nome: 'Pedra',     cor: '#b6b6b2', traco: '#8b8b86', grupo: 'fantasia' },
-  { id: 'grafite',  nome: 'Grafite',   cor: '#5d6168', traco: '#3c4047', grupo: 'fantasia' },
-  { id: 'breu',     nome: 'Breu',      cor: '#2b2a33', traco: '#15141b', grupo: 'fantasia' },
+  { id: 'porcelana', nome: 'Porcelana', cor: '#f3ddc9', traco: '#dcc2aa', grupo: 'humana' },
+  { id: 'clara', nome: 'Clara', cor: '#e7ded4', traco: '#cfc2b3', grupo: 'humana' },
+  { id: 'bege', nome: 'Bege', cor: '#e2c39d', traco: '#c5a075', grupo: 'humana' },
+  { id: 'media', nome: 'Média', cor: '#c9935f', traco: '#a5723f', grupo: 'humana' },
+  { id: 'castanha', nome: 'Castanha', cor: '#96603a', traco: '#75462a', grupo: 'humana' },
+  { id: 'escura', nome: 'Escura', cor: '#5f3c26', traco: '#42281a', grupo: 'humana' },
 ];
+
+// Ids da paleta anterior que saíram, apontando para a pedra mais parecida.
+const PELES_ANTIGAS = {
+  menta: 'jade', folha: 'peridoto', bruma: 'prata', ceu: 'topazioazul', oceano: 'safira',
+  lavanda: 'opala', coral: 'cobre', brasa: 'rubi', dourado: 'ouro', pedra: 'prata', breu: 'onix',
+};
+
+// A pele de um id; sem ele (ou com um desconhecido), a clara.
+export const peleDe = id => PELES.find(p => p.id === (PELES_ANTIGAS[id] || id))
+  || PELES.find(p => p.id === 'clara');
 
 // Cortes de cabelo. `atras` é desenhado antes do corpo (fica por trás da
 // cabeça e dos ombros); `frente` vem depois. {cor} é trocado pela cor escolhida.
@@ -768,19 +800,23 @@ export const CABELOS = {
 export const ORDEM_CABELOS = Object.keys(CABELOS);
 
 // Cor do cabelo em duas famílias: a paleta que existe na cabeça de alguém e a
-// que só existe na do personagem. A lista achatada é o que o sorteio usa.
+// de joias e metais, que só existe na do personagem. A lista achatada é o que
+// a tela e o sorteio usam, com as coloridas primeiro: as naturais são opção.
 export const CORES_CABELO_NATURAIS = [
   '#1b1614', '#3d2519', '#6b4226', '#a86a3d', '#d4a35a', '#ecd79b',
   '#a83b28', '#7a6a5f', '#9a9a9a', '#f0ece6',
 ];
 
 export const CORES_CABELO_FANTASIA = [
-  '#d1345b', '#f06fa8', '#f5a3c7', '#e8552f', '#f2922b', '#ffd23f',
-  '#9ad14a', '#3fbf5f', '#12a58c', '#00c2d1', '#2f7ff0', '#3a3fb8',
-  '#7b4fc4', '#b06ef0', '#c6d3e8', '#2f2a3d',
+  '#e05a7a', '#c2304a', '#9b1b30', '#5a0f1f', '#f8b090', '#f0a06a', '#c9875a', '#d95f2a', '#8a3a1a',
+  '#e8e0d0', '#fff0b0', '#e6cf8a', '#f0c870', '#f0b060', '#c8a870', '#e8a23a', '#c9a24a', '#a8701a',
+  '#8a6a2a', '#c8d87a', '#9ab03a', '#5a6e1f', '#c8f0d8', '#88d4a8', '#5fbf8a', '#c8f0f0', '#6fd0c8',
+  '#3fb0b0', '#2f8a5f', '#1f7a7a', '#1f5f45', '#0f3a3a', '#8ab0e8', '#5a7fd0', '#2a4f9a', '#1f2f6a',
+  '#14244a', '#d8d0ff', '#e0d6ee', '#b08ad8', '#7a4fb0', '#4a2a7a', '#2a1a4a', '#6e1f4a', '#4a1238',
+  '#ffd0dc', '#f8a8bc', '#e07aa8', '#b0306e', '#c0c4cc', '#8a8f99', '#6a5a6a', '#3a2a3a',
 ];
 
-export const CORES_CABELO = [...CORES_CABELO_NATURAIS, ...CORES_CABELO_FANTASIA];
+export const CORES_CABELO = [...CORES_CABELO_FANTASIA, ...CORES_CABELO_NATURAIS];
 
 // Nariz: a única marca do rosto. Tudo aqui é traço (sem preenchimento), salvo
 // quando a arte diz o contrário; {traco} vira a cor de contorno da pele.

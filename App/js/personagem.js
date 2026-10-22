@@ -8,7 +8,7 @@
 // silhueta, e uma pele verde ou um focinho não viram uma careta.
 
 import {
-  PELES, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
+  PELES, peleDe, CORES_CABELO, APARENCIA_PADRAO, CORES_FAVORITAS, SOBRANCELHAS_NO_AR,
   PIERCINGS_ORELHA, PIERCINGS_BRIDGE, SARDAS,
 } from './config.js';
 import { darTrioDaCor } from './presente.js';
@@ -27,7 +27,7 @@ let rascunho = null;
 let corFavorita = null;   // fora do avatar: é da pessoa, não do boneco
 
 const aparenciaDoRascunho = () => {
-  const pele = PELES.find(p => p.id === rascunho.pele) || PELES[1];
+  const pele = peleDe(rascunho.pele);
   return {
     corpo: rascunho.corpo,
     pele: pele.cor,
@@ -111,7 +111,7 @@ function renderPrevia() {
   enquadrar($('#pg-previa svg'));
   $('#pg-resumo').textContent =
     `${catalogoCorpos()[rascunho.corpo]?.nome ?? '—'} · ` +
-    `${PELES.find(p => p.id === rascunho.pele)?.nome ?? '—'} · ` +
+    `${peleDe(rascunho.pele).nome} · ` +
     `${catalogoCabelos()[rascunho.cabelo]?.nome ?? '—'} · ` +
     `nariz ${(catalogoNarizes()[rascunho.nariz]?.nome ?? '—').toLowerCase()}` +
     (SARDAS[rascunho.sardas]?.manchas || SARDAS[rascunho.sardas]?.fixas ? ` · sardas ${SARDAS[rascunho.sardas].nome.toLowerCase()}` : '') +
@@ -293,8 +293,9 @@ export function aoEntrarNoPersonagem() {
   for (const velho of ['brincos', 'ladoBrincos', 'brincoEsq', 'brincoDir', 'spikeEsq', 'spikeDir']) {
     delete rascunho[velho];
   }
-  // Corte de código que saiu do catálogo já abre marcado no parecido.
+  // Corte ou pele que saiu do catálogo já abre marcado no parecido.
   rascunho.cabelo = resolverAparencia(rascunho).cabelo;
+  rascunho.pele = peleDe(rascunho.pele).id;
   corFavorita = db.state.usuario.corFavorita || null;
   noRosto = ABAS_DO_ROSTO.has($('.pg-painel').dataset.aba);
   caixaDaPrevia = null;
