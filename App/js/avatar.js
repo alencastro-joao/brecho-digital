@@ -580,6 +580,9 @@ export function svgAvatar({
   <!-- piercings, também embaixo do cabelo da frente -->
   ${piercings(ap, idCorte)}
 
+  <!-- óculos desenhados, embaixo do cabelo da frente: a franja passa por cima -->
+  ${veste.oculos}
+
   <!-- cabelo por cima da cabeça -->
   ${cabelo('frente')}
 
@@ -597,7 +600,7 @@ export function svgAvatar({
   <!-- sardas por cima do nariz, como ele: o cabelo não as cobre -->
   ${sardas(ap, idCorte)}
 
-  <!-- o que vem depois do rosto: óculos e chapéu, por cima do cabelo -->
+  <!-- o que vem depois do rosto: chapéu e acessório de código, por cima do cabelo -->
   ${veste.rosto}
   ${soCabeca ? '</g>' : ''}
   ${pontos}
