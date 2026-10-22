@@ -549,17 +549,24 @@ export const CORPOS = {
 export const ORDEM_CORPOS = Object.keys(CORPOS);
 
 // Tom de pele: a cor do corpo e o traço que a acompanha. A paleta é a de
-// joias e metais (pedras claras, médias e profundas, ouro, cobre e prata), em
-// degradê de matiz; as humanas ficam no fim, como opção e não como regra.
+// joias e metais (pedras claras, médias e profundas, ouro, cobre e prata), com
+// as humanas misturadas no mesmo degradê de matiz: na tela é tudo uma cor só.
+// O grupo fica para o sorteio dos perfis do feed.
 // Quem tem uma pele que saiu da lista cai na mais parecida (PELES_ANTIGAS).
 export const PELES = [
   { id: 'rubi',        nome: 'Rubi', cor: '#b0344a', traco: '#852738', grupo: 'fantasia' },
   { id: 'granada',     nome: 'Granada', cor: '#8a2c3a', traco: '#68212c', grupo: 'fantasia' },
+  { id: 'porcelana', nome: 'Porcelana', cor: '#f3ddc9', traco: '#dcc2aa', grupo: 'humana' },
   { id: 'morganita',   nome: 'Morganita', cor: '#f2c6b4', traco: '#b79688', grupo: 'fantasia' },
+  { id: 'media', nome: 'Média', cor: '#c9935f', traco: '#a5723f', grupo: 'humana' },
   { id: 'ambar',       nome: 'Âmbar', cor: '#d9893a', traco: '#a4682c', grupo: 'fantasia' },
   { id: 'cobre',       nome: 'Cobre', cor: '#b87350', traco: '#8b573c', grupo: 'fantasia' },
+  { id: 'castanha', nome: 'Castanha', cor: '#96603a', traco: '#75462a', grupo: 'humana' },
+  { id: 'escura', nome: 'Escura', cor: '#5f3c26', traco: '#42281a', grupo: 'humana' },
   { id: 'perola',      nome: 'Pérola', cor: '#ece6dc', traco: '#b3aea7', grupo: 'fantasia' },
+  { id: 'clara', nome: 'Clara', cor: '#e7ded4', traco: '#cfc2b3', grupo: 'humana' },
   { id: 'champanhe',   nome: 'Champanhe', cor: '#e8d8b8', traco: '#b0a48b', grupo: 'fantasia' },
+  { id: 'bege', nome: 'Bege', cor: '#e2c39d', traco: '#c5a075', grupo: 'humana' },
   { id: 'citrino',     nome: 'Citrino', cor: '#f2d68a', traco: '#b7a268', grupo: 'fantasia' },
   { id: 'topazio',     nome: 'Topázio', cor: '#e3a45a', traco: '#ac7c44', grupo: 'fantasia' },
   { id: 'ouro',        nome: 'Ouro', cor: '#d8b45a', traco: '#a48844', grupo: 'fantasia' },
@@ -588,13 +595,6 @@ export const PELES = [
   { id: 'prata',       nome: 'Prata', cor: '#b8bcc4', traco: '#8b8e94', grupo: 'fantasia' },
   { id: 'grafite',     nome: 'Grafite', cor: '#50545e', traco: '#3c3f47', grupo: 'fantasia' },
   { id: 'onix',        nome: 'Ônix', cor: '#24232b', traco: '#1b1a20', grupo: 'fantasia' },
-
-  { id: 'porcelana', nome: 'Porcelana', cor: '#f3ddc9', traco: '#dcc2aa', grupo: 'humana' },
-  { id: 'clara', nome: 'Clara', cor: '#e7ded4', traco: '#cfc2b3', grupo: 'humana' },
-  { id: 'bege', nome: 'Bege', cor: '#e2c39d', traco: '#c5a075', grupo: 'humana' },
-  { id: 'media', nome: 'Média', cor: '#c9935f', traco: '#a5723f', grupo: 'humana' },
-  { id: 'castanha', nome: 'Castanha', cor: '#96603a', traco: '#75462a', grupo: 'humana' },
-  { id: 'escura', nome: 'Escura', cor: '#5f3c26', traco: '#42281a', grupo: 'humana' },
 ];
 
 // Ids da paleta anterior que saíram, apontando para a pedra mais parecida.
@@ -799,24 +799,17 @@ export const CABELOS = {
 };
 export const ORDEM_CABELOS = Object.keys(CABELOS);
 
-// Cor do cabelo em duas famílias: a paleta que existe na cabeça de alguém e a
-// de joias e metais, que só existe na do personagem. A lista achatada é o que
-// a tela e o sorteio usam, com as coloridas primeiro: as naturais são opção.
-export const CORES_CABELO_NATURAIS = [
-  '#1b1614', '#3d2519', '#6b4226', '#a86a3d', '#d4a35a', '#ecd79b',
-  '#a83b28', '#7a6a5f', '#9a9a9a', '#f0ece6',
-];
-
-export const CORES_CABELO_FANTASIA = [
-  '#e05a7a', '#c2304a', '#9b1b30', '#5a0f1f', '#f8b090', '#f0a06a', '#c9875a', '#d95f2a', '#8a3a1a',
-  '#e8e0d0', '#fff0b0', '#e6cf8a', '#f0c870', '#f0b060', '#c8a870', '#e8a23a', '#c9a24a', '#a8701a',
+// Cor do cabelo: a paleta de joias e metais com as naturais misturadas no
+// mesmo degradê de matiz. É o que a tela (cabelo e sobrancelha) e o sorteio usam.
+export const CORES_CABELO = [
+  '#e05a7a', '#c2304a', '#9b1b30', '#5a0f1f', '#f8b090', '#f0a06a', '#c9875a', '#d95f2a', '#a86a3d',
+  '#7a6a5f', '#a83b28', '#8a3a1a', '#6b4226', '#3d2519', '#1b1614', '#f0ece6', '#e8e0d0', '#fff0b0',
+  '#ecd79b', '#e6cf8a', '#f0c870', '#f0b060', '#c8a870', '#d4a35a', '#e8a23a', '#c9a24a', '#a8701a',
   '#8a6a2a', '#c8d87a', '#9ab03a', '#5a6e1f', '#c8f0d8', '#88d4a8', '#5fbf8a', '#c8f0f0', '#6fd0c8',
   '#3fb0b0', '#2f8a5f', '#1f7a7a', '#1f5f45', '#0f3a3a', '#8ab0e8', '#5a7fd0', '#2a4f9a', '#1f2f6a',
-  '#14244a', '#d8d0ff', '#e0d6ee', '#b08ad8', '#7a4fb0', '#4a2a7a', '#2a1a4a', '#6e1f4a', '#4a1238',
-  '#ffd0dc', '#f8a8bc', '#e07aa8', '#b0306e', '#c0c4cc', '#8a8f99', '#6a5a6a', '#3a2a3a',
+  '#14244a', '#d8d0ff', '#e0d6ee', '#b08ad8', '#7a4fb0', '#4a2a7a', '#2a1a4a', '#3a2a3a', '#6e1f4a',
+  '#4a1238', '#ffd0dc', '#f8a8bc', '#e07aa8', '#b0306e', '#c0c4cc', '#9a9a9a', '#8a8f99', '#6a5a6a',
 ];
-
-export const CORES_CABELO = [...CORES_CABELO_FANTASIA, ...CORES_CABELO_NATURAIS];
 
 // Nariz: a única marca do rosto. Tudo aqui é traço (sem preenchimento), salvo
 // quando a arte diz o contrário; {traco} vira a cor de contorno da pele.
