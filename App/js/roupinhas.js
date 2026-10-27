@@ -1372,7 +1372,7 @@ export const METAS = {
     atual: (p) => p.dias, meta: (d) => d.meta,
   },
   // Os itens de uma coleção não abrem sozinhos: você escolhe. A 3ª peça da
-  // coleção dá a primeira escolha e cada 2 peças depois dão mais uma (ver
+  // coleção dá a primeira escolha e os degraus seguintes (+5, +10, +15...) dão mais uma (ver
   // escolhasDaColecao); o item abre quando é escolhido (db.escolherItem).
   colecao: {
     rotulo: (d, p) => {
@@ -1391,14 +1391,13 @@ export const METAS = {
 };
 
 // Os marcos de uma coleção: o 1º item na 3ª peça (ou ao completar, se a
-// coleção tem menos de 3), o último só com a coleção completa, e os do meio
-// espalhados entre os dois. Assim o 1º sai logo (o tutorial depende disso) e o
-// resto pede garimpo de verdade, em vez de vir de 2 em 2 peças.
+// coleção tem menos de 3) e os seguintes em degraus que crescem (3, 8, 18, 33,
+// 53...: +5, +10, +15...), limitados ao total da coleção para nenhum item
+// ficar inalcançável. Os números são fixos: peça nova no acervo não muda marco.
 export function pecasParaEscolha(feitas, total, itens = 1) {
   const primeira = Math.min(3, total);
   if (itens <= 1 || feitas <= 0) return primeira;
-  const k = Math.min(feitas, itens - 1);
-  return Math.ceil(primeira + (total - primeira) * k / (itens - 1));
+  return Math.min(total, primeira + 5 * (feitas * (feitas + 1) / 2));
 }
 
 // Quantas escolhas a coleção já deu com `tem` peças.

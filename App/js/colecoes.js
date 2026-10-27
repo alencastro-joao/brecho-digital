@@ -38,7 +38,7 @@ const GRUPOS = [
 ];
 
 // Como os itens saem, igual nas três abas.
-const COMO_SAI = 'Na 3ª peça da coleção o dono separa o primeiro item do avatar no balcão; os outros pedem mais peças, e o último só sai com a coleção completa. Levar um item gasta um resgate do dia, como as peças do mural.';
+const COMO_SAI = 'Na 3ª peça da coleção o dono separa o primeiro item do avatar no balcão; os outros pedem cada vez mais peças (3, 8, 18, 33...). Levar um item gasta um resgate do dia, como as peças do mural.';
 
 const EXPLICACAO = {
   marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. ' + COMO_SAI + ' Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
@@ -385,8 +385,8 @@ function renderDetalhe(c) {
         : el('p', { class: 'col-hero-conta' }, el('strong', {}, String(c.tem)), ` / ${c.total}`),
       c.total ? el('p', { class: 'col-hero-sub' }, c.completa ? [emo('✨'), ' Coleção completa!']
         : faltam === 1 ? 'Falta só 1 peça para completar' : `Faltam ${faltam} peças para completar`) : null),
-    c.total && c.itens.length ? trilha(c) : null,
-    c.livres > 0 ? blocoDeEscolha(c) : c.total ? itensTrancados(c) : null,
+    c.total && c.itens.length ? faixaDeEscolhas(c) : null,
+    c.total && c.itens.length ? araraDaColecao(c) : null,
     c.total ? el('section', { class: 'col-album' },
       el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
       el('div', { class: 'col-album-grade' }, ...emOrdem(c.ids).map((id, _, todas) => casaDoAlbum(id, todas)))) : null,
@@ -395,52 +395,66 @@ function renderDetalhe(c) {
   ].filter(Boolean));
 }
 
-// A trilha: uma barra de peças com um marco por item. Item que você já tem
-// aparece no marco; marco alcançado e sem item ainda é um presente.
-// A trilha de recompensas: passos iguais, mostrando até 5 marcos em volta de onde você está.
-function trilha(c) {
-  const meus = c.itens.filter(id => roupinha(id) && db.estadoDaRoupinha(roupinha(id)).liberada);
-  const marcos = c.itens.map((_, k) => ({ n: pecasParaEscolha(k, c.total, c.itens.length), item: meus[k] }));
-  const proximo = marcos.find(m => !m.item && m.n > c.tem);
-  const atual = Math.max(0, marcos.findIndex(m => !m.item));
+// A faixa de escolhas: um marco por degrau (3, 8, 18...). Cada degrau dá uma
+// escolha livre de qualquer item da coleção; mostra até 5 em volta de onde você está.
+function faixaDeEscolhas(c) {
+  const meus = c.itens.filter(id => roupinha(id) && db.estadoDaRoupinha(roupinha(id)).liberada).length;
+  const marcos = c.itens.map((_, k) => pecasParaEscolha(k, c.total, c.itens.length));
+  const ganhas = marcos.filter(n => n <= c.tem).length;
+  const proximo = marcos.find(n => n > c.tem);
+  const atual = Math.max(0, marcos.findIndex(n => n > c.tem));
   const inicio = Math.max(0, Math.min(atual - 1, marcos.length - 5));
-  const janela = marcos.slice(inicio, inicio + 5);
   const passos = [];
-  janela.forEach((m, i) => {
-    if (i > 0) passos.push(el('span', { class: 'col-trilha-liga' + (m.n <= c.tem ? ' cheia' : '') }));
-    const r = m.item && roupinha(m.item);
-    const presente = !r && m.n <= c.tem;
-    const marco = el('span', {
-      class: 'col-marco' + (r ? ' meu' : presente ? ' presente' : ''),
-      title: r ? r.nome : presente ? 'Separado no balcão' : `${m.n} peças`,
-    });
-    if (r) marco.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
-    else marco.replaceChildren(emo(presente ? '🎁' : '🔒'));
-    passos.push(el('span', { class: 'col-marco-casa' }, marco,
-      el('small', {}, r ? ico('ok') : `${m.n} peças`)));
+  marcos.slice(inicio, inicio + 5).forEach((n, j) => {
+    const k = inicio + j;
+    if (j > 0) passos.push(el('span', { class: 'col-trilha-liga' + (n <= c.tem ? ' cheia' : '') }));
+    const usada = k < meus, livre = !usada && k < ganhas;
+    const marco = el('span', { class: 'col-marco' + (usada ? ' meu' : livre ? ' presente' : ''),
+      title: usada ? 'Escolha usada' : livre ? 'Escolha livre' : `${n} peças` });
+    marco.replaceChildren(usada ? ico('ok') : emo(livre ? '🎁' : '🔒'));
+    passos.push(el('span', { class: 'col-marco-casa' }, marco, el('small', {}, `${n} peças`)));
   });
   return el('section', { class: 'col-trilha' },
     el('div', { class: 'col-trilha-passos' }, ...passos),
     el('p', { class: 'col-trilha-texto' }, c.livres > 0
-      ? [emo('🎁'), ' O dono separou um item para você no balcão. Escolha abaixo.']
-      : proximo ? `Mais ${proximo.n - c.tem} ${proximo.n - c.tem === 1 ? 'peça' : 'peças'} e o dono separa um item do avatar`
+      ? [emo('🎁'), c.livres === 1 ? ' Você tem 1 escolha livre: leve qualquer item da arara.'
+        : ` Você tem ${c.livres} escolhas livres: leve qualquer item da arara.`]
+      : proximo ? `Mais ${proximo - c.tem} ${proximo - c.tem === 1 ? 'peça' : 'peças'} para a próxima escolha`
       : 'Todos os itens desta coleção são seus.'));
 }
 
-function blocoDeEscolha(c) {
-  const trancados = c.itens.filter(id => roupinha(id) && !db.estadoDaRoupinha(roupinha(id)).liberada);
-  return el('section', { class: 'col-escolha' },
-    el('h3', {}, c.livres === 1 ? 'Escolha 1 item' : `Escolha ${c.livres} itens`),
-    el('p', { class: 'col-escolha-custo' }, custoDoItem()),
-    el('div', { class: 'col-escolha-grade' }, ...trancados.map(id => {
-      const r = roupinha(id);
-      const arte = el('span', { class: 'col-escolha-arte' });
-      arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
-      return el('button', {
-        type: 'button', class: 'col-escolha-item' + (novaNaVisita === c.id ? ' ponto-novo' : ''),
-        onclick: () => resgatarItem(c, id, r),
-      }, arte, el('strong', {}, r.nome));
-    })));
+// A arara: todos os itens da coleção pendurados. Os seus aparecem coloridos; os
+// que faltam são escolhidos com um toque (quando há escolha livre) e abrem no painel.
+let itemSel = null;
+function araraDaColecao(c) {
+  const itens = c.itens.map(id => roupinha(id)).filter(Boolean);
+  if (!itens.length) return null;
+  const meu = r => db.estadoDaRoupinha(r).liberada;
+  const faltam = itens.filter(r => !meu(r));
+  const sel = faltam.find(r => r.id === itemSel) || faltam[0] || null;
+  const cabides = itens.map(r => {
+    const tem = meu(r);
+    const arte = el('span', { class: 'col-cabide-arte' });
+    arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+    return el('button', { type: 'button',
+      class: 'col-cabide' + (tem ? ' tem' : ' falta') + (sel === r ? ' sel' : '')
+        + (!tem && c.livres > 0 && novaNaVisita === c.id ? ' ponto-novo' : ''),
+      disabled: tem, title: r.nome,
+      onclick: () => { itemSel = r.id; renderDetalhe(c); } },
+      arte, el('strong', {}, r.nome),
+      tem ? el('small', { class: 'col-cabide-tag ok' }, ico('ok'), ' tem')
+        : el('small', { class: 'col-cabide-tag' }, c.livres > 0 ? [emo('🎁'), ' pode levar'] : [emo('🔒'), ' falta']));
+  });
+  const painel = sel ? (() => {
+    const arte = el('span', { class: 'col-painel-arte' });
+    arte.innerHTML = svgRoupinha(sel, aparenciaAtual().corpo);
+    return el('aside', { class: 'col-painel-item' }, arte, el('strong', {}, sel.nome),
+      el('p', {}, c.livres > 0 ? custoDoItem() : 'Ainda sem escolha livre: veja o item e garimpe mais peças da coleção.'),
+      c.livres > 0 ? el('button', { type: 'button', class: 'btn-dark', onclick: () => resgatarItem(c, sel.id, sel) }, 'Escolher este item')
+        : el('button', { type: 'button', class: 'col-lupa-grande', onclick: () => verItemMaior(sel) }, emo('🔍'), ' Ver maior'));
+  })() : el('aside', { class: 'col-painel-item' }, el('strong', {}, 'Coleção completa'), el('p', {}, 'Todos os itens são seus.'));
+  return el('section', { class: 'col-arara' },
+    el('div', { class: 'col-arara-rail' }, el('div', { class: 'col-arara-fio' }, ...cabides)), painel);
 }
 
 // O que levar o item custa, dito antes do toque.
@@ -454,24 +468,6 @@ function custoDoItem() {
 function resgatarItem(c, id, r) {
   if (!db.podeResgatarItem()) { toast('Seus resgates de hoje acabaram. O item fica separado no balcão até amanhã.'); return; }
   if (db.escolherItem(c.id, id)) toast(`${r.nome} resgatado: está no inventário.`, 'rare');
-}
-
-// Os itens do avatar que ainda faltam ganhar, só para ver: em cinza e com
-// cadeado, sem clique. Quando há escolha esperando, quem mostra é a escolha.
-function itensTrancados(c) {
-  const trancados = c.itens.filter(id => roupinha(id) && !db.estadoDaRoupinha(roupinha(id)).liberada);
-  if (!trancados.length) return null;
-  return el('section', { class: 'col-escolha col-trancados' },
-    el('h3', {}, 'Itens para ganhar', el('small', {}, ` ${trancados.length}`)),
-    el('div', { class: 'col-escolha-grade' }, ...trancados.map(id => {
-      const r = roupinha(id);
-      const arte = el('span', { class: 'col-escolha-arte' });
-      arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
-      return el('div', { class: 'col-escolha-item trancado', title: `${r.nome} · ainda trancado` },
-        arte, el('span', { class: 'col-tranca' }, emo('🔒')), el('strong', {}, r.nome),
-        el('button', { type: 'button', class: 'col-lupa', title: 'Ver maior', 'aria-label': `Ver ${r.nome} maior`,
-          onclick: () => verItemMaior(r) }, emo('🔍')));
-    })));
 }
 
 // O item trancado em tamanho grande, só para ver de perto.
