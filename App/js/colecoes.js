@@ -436,14 +436,14 @@ function araraDaColecao(c) {
     const tem = meu(r);
     const arte = el('span', { class: 'col-cabide-arte' });
     arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
+    const estado = tem ? 'tem' : c.livres > 0 ? 'livre' : 'falta';
     return el('button', { type: 'button',
-      class: 'col-cabide' + (tem ? ' tem' : ' falta') + (sel === r ? ' sel' : '')
-        + (!tem && c.livres > 0 && novaNaVisita === c.id ? ' ponto-novo' : ''),
-      disabled: tem, title: r.nome,
+      class: 'col-cabide ' + estado + (sel === r ? ' sel' : '')
+        + (estado === 'livre' && novaNaVisita === c.id ? ' ponto-novo' : ''),
+      disabled: tem, title: `${r.nome} · ${tem ? 'já é seu' : c.livres > 0 ? 'pode escolher' : 'ainda não'}`,
+      'aria-label': r.nome,
       onclick: () => { itemSel = r.id; renderDetalhe(c); } },
-      arte, el('strong', {}, r.nome),
-      tem ? el('small', { class: 'col-cabide-tag ok' }, ico('ok'), ' tem')
-        : el('small', { class: 'col-cabide-tag' }, c.livres > 0 ? [emo('🎁'), ' pode levar'] : [emo('🔒'), ' falta']));
+      arte, el('span', { class: 'col-cabide-selo' }, tem ? ico('ok') : emo(c.livres > 0 ? '🎁' : '🔒')));
   });
   const painel = sel ? (() => {
     const arte = el('span', { class: 'col-painel-arte' });
