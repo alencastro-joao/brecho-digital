@@ -332,6 +332,7 @@
 
 .col-escolha { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #fbf6e8; border: 1.5px solid #e3d3a5; border-radius: 18px; }
 .col-escolha h3 { font-size: 15px; text-align: center; }
+.col-escolha-custo { margin: -4px 0 0; font-size: 12px; text-align: center; color: #8a7442; }
 .col-escolha-grade { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .col-escolha-grade > * { width: 104px; }
 .col-escolha-item {

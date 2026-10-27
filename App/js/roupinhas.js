@@ -1379,8 +1379,8 @@ export const METAS = {
       const c = nomeDaColecao(d.colecao);
       const pc = p?.colecoes?.[d.colecao];
       if (!pc?.total) return `Garimpe peças ${c.de}`;
-      if (pc.livres > 0) return 'Escolha disponível';
-      const n = pecasParaEscolha(pc.escolhidas.length, pc.total);
+      if (pc.livres > 0) return 'Separado no balcão';
+      const n = pecasParaEscolha(pc.escolhidas.length, pc.total, pc.nItens);
       return n >= pc.total && n > 1
         ? `Complete a coleção ${c.nome} (${n} peças) para escolher`
         : `Garimpe ${n} ${n === 1 ? 'peça' : 'peças'} ${c.de} para escolher`;
@@ -1390,20 +1390,23 @@ export const METAS = {
   },
 };
 
-// Quantas escolhas a coleção já deu: a primeira na 3ª peça (ou ao completar,
-// se a coleção tem menos de 3), depois uma a cada 2 peças. Completar dá todas
-// as que faltam, para nenhum item ficar fora de alcance.
-export function escolhasDaColecao(tem, total, itens) {
-  if (!total || !itens) return 0;
+// Os marcos de uma coleção: o 1º item na 3ª peça (ou ao completar, se a
+// coleção tem menos de 3), o último só com a coleção completa, e os do meio
+// espalhados entre os dois. Assim o 1º sai logo (o tutorial depende disso) e o
+// resto pede garimpo de verdade, em vez de vir de 2 em 2 peças.
+export function pecasParaEscolha(feitas, total, itens = 1) {
   const primeira = Math.min(3, total);
-  if (tem < primeira) return 0;
-  if (tem >= total) return itens;
-  return Math.min(itens, 1 + Math.floor((tem - primeira) / 2));
+  if (itens <= 1 || feitas <= 0) return primeira;
+  const k = Math.min(feitas, itens - 1);
+  return Math.ceil(primeira + (total - primeira) * k / (itens - 1));
 }
 
-// Quantas peças a próxima escolha pede, depois de `feitas` escolhas.
-export function pecasParaEscolha(feitas, total) {
-  return Math.min(total, Math.min(3, total) + 2 * feitas);
+// Quantas escolhas a coleção já deu com `tem` peças.
+export function escolhasDaColecao(tem, total, itens) {
+  if (!total || !itens) return 0;
+  let n = 0;
+  while (n < itens && pecasParaEscolha(n, total, itens) <= tem) n++;
+  return n;
 }
 
 export function estadoDoDesbloqueio(r, progresso) {

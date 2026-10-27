@@ -3,12 +3,12 @@
 // tudo por `./db.js`.
 
 import {
-  COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
+  CONFIG, COLECOES, normalizarMarca, COLECOES_DE_COR, ESTILOS, idDaCor, idDoEstilo,
 } from './config.js';
 import {
   ROUPINHAS, ROUPINHA, ORDEM_SLOTS, estadoDoDesbloqueio, escolhasDaColecao,
 } from './roupinhas.js';
-import { nivel, progredirMissao, salvar, state } from './db.js';
+import { nivel, progredirMissao, salvar, state, resgatesRestantes, virarODiaSeNecessario } from './db.js';
 
 // --- Vestiário (roupinhas) ------------------------------------------------
 // O catálogo e as regras de desbloqueio ficam em js/roupinhas.js; aqui mora o
@@ -58,11 +58,23 @@ for (const r of ROUPINHAS) {
   ITENS_DA_COLECAO.get(d.colecao).push(r.id);
 }
 
-// Abre um item da coleção, se ela tem escolha sobrando.
+// O item liberado fica separado no balcão da loja, e levar custa um resgate
+// do dia, o mesmo das peças do mural (os comprados com fichas valem também).
+// O primeiro item da vida é presente do dono, para o tutorial nunca travar.
+export const itemDeGraca = () =>
+  !Object.values(state.vestiario.escolhas || {}).some(l => l?.length);
+
+export function podeResgatarItem() {
+  virarODiaSeNecessario();
+  return itemDeGraca() || resgatesRestantes(CONFIG.RESGATES_POR_DIA) > 0;
+}
+
+// Abre um item da coleção, se ela tem escolha sobrando e há resgate para gastar.
 export function escolherItem(colecao, id) {
   const pc = progressoDasColecoes()[colecao];
   if (!pc || pc.livres < 1 || !(ITENS_DA_COLECAO.get(colecao) || []).includes(id)) return false;
-  if (pc.escolhidas.includes(id)) return false;
+  if (pc.escolhidas.includes(id) || !podeResgatarItem()) return false;
+  if (!itemDeGraca()) state.dia.resgates += 1;
   const v = state.vestiario;
   v.escolhas = { ...(v.escolhas || {}), [colecao]: [...pc.escolhidas, id] };
   progredirMissao('colecao');
@@ -101,7 +113,7 @@ function calcularProgressoDasColecoes() {
     // Item que você já tinha antes das coleções (herdado) não precisa ser
     // escolhido: a escolha só vale enquanto sobrar item trancado.
     const trancados = itens.filter(i => !escolhidas.includes(i) && !herdadas.has(i)).length;
-    out[id] = { ids, total: ids.length, tem, escolhidas, ganhas,
+    out[id] = { ids, total: ids.length, tem, escolhidas, ganhas, nItens: itens.length,
                 livres: Math.max(0, Math.min(ganhas - escolhidas.length, trancados)) };
   };
   for (const c of COLECOES) guardar(c.id, pecasDaMarca(c.marca));
