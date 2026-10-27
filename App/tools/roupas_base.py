@@ -1,9 +1,11 @@
-"""Três roupas base desenhadas (tênis, camiseta, calça) recoloridas para cada
-coleção de cor → assets/roupas/<base>-<cor>-<VERSAO>.webp.
+"""Roupas base desenhadas (tênis, camiseta, calça, camiseta longa) recoloridas
+para cada coleção de cor → assets/roupas/<base>-<cor>-<VERSAO>.webp.
 Troque VERSAO aqui e em ROUPAS_BASE_VERSAO (js/config.js) a cada arte nova: o
 CloudFront e o navegador guardam a imagem por um dia, e nome novo fura o cache.
 
     python tools/roupas_base.py tenis=tenis.png camiseta=camiseta.png calca=calca.png
+
+Só as peças passadas são refeitas; as outras ficam como estão.
 
 Os PNG são da artista: tela 2048×2048, transparente, com a peça já na posição
 dela no corpo. Cada um vira recorte na caixa da peça; as cores do desenho
@@ -42,6 +44,8 @@ PAPEIS = {
                  ((56, 120, 184), 'detalhe')],
     'calca': [((104, 136, 152), 'corpo'), ((56, 120, 184), 'detalhe'),
               ((168, 200, 216), 'luz')],
+    'camiseta-longa': [((240, 232, 232), 'corpo'), ((224, 192, 184), 'sombra'),
+                       ((56, 120, 176), 'detalhe')],
 }
 
 
@@ -90,10 +94,11 @@ def recolorir(rgba, base, cor):
 
 def main(args):
     SAIDA.mkdir(parents=True, exist_ok=True)
-    for velho in [v for b in ('tenis', 'camiseta', 'calca') for v in SAIDA.glob(f'{b}-*.webp')]:
-        velho.unlink()
     for arg in args:
         base, caminho = arg.split('=')
+        # Pela cor, senão camiseta-* levaria junto a camiseta-longa-*.
+        for velho in [v for nome in CORES for v in SAIDA.glob(f'{base}-{nome}-*.webp')]:
+            velho.unlink()
         rgba = np.asarray(Image.open(caminho).convert('RGBA'))
         x0, y0, x1, y1 = Image.fromarray(rgba[..., 3]).getbbox()
         x0, y0, x1, y1 = x0 - 3, y0 - 3, x1 + 3, y1 + 3
