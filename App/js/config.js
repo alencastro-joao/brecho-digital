@@ -1522,9 +1522,9 @@ export const INTRO = [
     dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
       'Toque numa peça para ver a ficha com marca, cor e estilo.' },
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
-    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças você libera um item para o avatar, e com mais, libera mais.' },
+    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças o dono separa um item do avatar no balcão; os próximos pedem mais peças, e o último só sai com a coleção completa.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
-    dica: 'Toque no item liberado para levá-lo ao seu inventário.',
+    dica: 'Toque no item separado para levá-lo ao inventário. Este é presente da loja; os próximos gastam um resgate do dia, como as peças do mural.',
     premio: { xp: 20 } },
   { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista o seu personagem',
     dica: 'Este é o Inventário, com as roupinhas do avatar. Clique no item que você resgatou (ou arraste para o corpo) para vestir.',

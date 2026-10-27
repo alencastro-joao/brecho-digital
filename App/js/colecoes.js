@@ -9,7 +9,7 @@
 // Nada aqui é gravado: o progresso é o guarda-roupa lido na hora
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
-import { COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao,
+import { CONFIG, COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao,
          migrarCategoria } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha, escolhasDaColecao } from './roupinhas.js';
@@ -37,10 +37,13 @@ const GRUPOS = [
   ['estilos', 'Temas'],
 ];
 
+// Como os itens saem, igual nas três abas.
+const COMO_SAI = 'Na 3ª peça da coleção o dono separa o primeiro item do avatar no balcão; os outros pedem mais peças, e o último só sai com a coleção completa. Levar um item gasta um resgate do dia, como as peças do mural.';
+
 const EXPLICACAO = {
-  marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
-  cores: 'Todas as peças da loja de uma mesma cor. Cada cor tem itens do avatar pintados nela. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens da mesma cor traz mais peças dessa cor na sua arara; vale pelo que você vestia ao abrir a loja no dia.',
-  estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. Na 3ª peça da coleção você escolhe um item do avatar, e a cada 2 peças depois ganha outra escolha; completar a coleção libera os que faltam. Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
+  marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. ' + COMO_SAI + ' Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
+  cores: 'Todas as peças da loja de uma mesma cor. Cada cor tem itens do avatar pintados nela. ' + COMO_SAI + ' Vestir 2 ou mais itens da mesma cor traz mais peças dessa cor na sua arara; vale pelo que você vestia ao abrir a loja no dia.',
+  estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. ' + COMO_SAI + ' Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
 };
 
 
@@ -397,7 +400,7 @@ function renderDetalhe(c) {
 // A trilha de recompensas: passos iguais, mostrando até 5 marcos em volta de onde você está.
 function trilha(c) {
   const meus = c.itens.filter(id => roupinha(id) && db.estadoDaRoupinha(roupinha(id)).liberada);
-  const marcos = c.itens.map((_, k) => ({ n: pecasParaEscolha(k, c.total), item: meus[k] }));
+  const marcos = c.itens.map((_, k) => ({ n: pecasParaEscolha(k, c.total, c.itens.length), item: meus[k] }));
   const proximo = marcos.find(m => !m.item && m.n > c.tem);
   const atual = Math.max(0, marcos.findIndex(m => !m.item));
   const inicio = Math.max(0, Math.min(atual - 1, marcos.length - 5));
@@ -409,7 +412,7 @@ function trilha(c) {
     const presente = !r && m.n <= c.tem;
     const marco = el('span', {
       class: 'col-marco' + (r ? ' meu' : presente ? ' presente' : ''),
-      title: r ? r.nome : presente ? 'Escolha disponível' : `${m.n} peças`,
+      title: r ? r.nome : presente ? 'Separado no balcão' : `${m.n} peças`,
     });
     if (r) marco.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
     else marco.replaceChildren(emo(presente ? '🎁' : '🔒'));
@@ -419,8 +422,8 @@ function trilha(c) {
   return el('section', { class: 'col-trilha' },
     el('div', { class: 'col-trilha-passos' }, ...passos),
     el('p', { class: 'col-trilha-texto' }, c.livres > 0
-      ? [emo('🎁'), ' Você ganhou um item! Escolha abaixo.']
-      : proximo ? `Mais ${proximo.n - c.tem} ${proximo.n - c.tem === 1 ? 'peça' : 'peças'} e você escolhe um item do avatar`
+      ? [emo('🎁'), ' O dono separou um item para você no balcão. Escolha abaixo.']
+      : proximo ? `Mais ${proximo.n - c.tem} ${proximo.n - c.tem === 1 ? 'peça' : 'peças'} e o dono separa um item do avatar`
       : 'Todos os itens desta coleção são seus.'));
 }
 
@@ -428,15 +431,29 @@ function blocoDeEscolha(c) {
   const trancados = c.itens.filter(id => roupinha(id) && !db.estadoDaRoupinha(roupinha(id)).liberada);
   return el('section', { class: 'col-escolha' },
     el('h3', {}, c.livres === 1 ? 'Escolha 1 item' : `Escolha ${c.livres} itens`),
+    el('p', { class: 'col-escolha-custo' }, custoDoItem()),
     el('div', { class: 'col-escolha-grade' }, ...trancados.map(id => {
       const r = roupinha(id);
       const arte = el('span', { class: 'col-escolha-arte' });
       arte.innerHTML = svgRoupinha(r, aparenciaAtual().corpo);
       return el('button', {
         type: 'button', class: 'col-escolha-item' + (novaNaVisita === c.id ? ' ponto-novo' : ''),
-        onclick: () => { if (db.escolherItem(c.id, id)) toast(`${r.nome} no inventário.`, 'rare'); },
+        onclick: () => resgatarItem(c, id, r),
       }, arte, el('strong', {}, r.nome));
     })));
+}
+
+// O que levar o item custa, dito antes do toque.
+function custoDoItem() {
+  if (db.itemDeGraca()) return 'O primeiro é presente da loja: não gasta resgate.';
+  const n = db.resgatesRestantes(CONFIG.RESGATES_POR_DIA);
+  return n ? `Gasta 1 resgate do dia (${n === 1 ? 'resta 1' : `restam ${n}`}).`
+    : 'Seus resgates de hoje acabaram: o item fica separado até amanhã.';
+}
+
+function resgatarItem(c, id, r) {
+  if (!db.podeResgatarItem()) { toast('Seus resgates de hoje acabaram. O item fica separado no balcão até amanhã.'); return; }
+  if (db.escolherItem(c.id, id)) toast(`${r.nome} resgatado: está no inventário.`, 'rare');
 }
 
 // Os itens do avatar que ainda faltam ganhar, só para ver: em cinza e com
@@ -512,13 +529,13 @@ function itemDaColecao(id, c) {
     title: e.liberada ? `${r.nome}: no seu inventário` : pode ? `Escolher ${r.nome}` : e.rotulo,
     onclick: () => {
       if (e.liberada) irPara('vestiario');
-      else if (pode && db.escolherItem(c.id, id)) toast(`${r.nome} no inventário.`, 'rare');
+      else if (pode) resgatarItem(c, id, r);
     },
   },
     arte,
     el('div', { class: 'col-item-info' },
       el('strong', {}, r.nome),
-      el('small', {}, e.liberada ? [ico('ok'), ' No inventário'] : pode ? [emo('🎁'), ' Escolher este'] : [emo('🔒'), ` ${e.rotulo}`])));
+      el('small', {}, e.liberada ? [ico('ok'), ' No inventário'] : pode ? [emo('🎁'), ' Resgatar este'] : [emo('🔒'), ` ${e.rotulo}`])));
 }
 
 // Entrar pela navegação abre a lista; pelo emblema, a coleção dele.
