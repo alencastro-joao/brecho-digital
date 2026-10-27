@@ -513,11 +513,15 @@
 .col-cabide:disabled { cursor: default; }
 .col-cabide-arte { width: 68px; height: 68px; display: grid; place-items: center; }
 .col-cabide-arte svg { width: 100%; height: 100%; }
-.col-cabide.falta .col-cabide-arte svg { filter: grayscale(1); opacity: .45; }
-.col-cabide.sel { border-color: var(--wii); background: #f0f9fb; }
-.col-cabide strong { font-size: 12px; }
-.col-cabide-tag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: #fbf0cc; color: #8a6d24; }
-.col-cabide-tag.ok { background: #e3f3d8; color: #3b7a2a; }
+.col-cabide.falta .col-cabide-arte svg { filter: grayscale(1); opacity: .4; }
+.col-cabide.tem { background: #f4faef; border-color: #cfe3c0; }
+.col-cabide.livre { background: #fbf0cc; border-color: #c9a443; animation: col-brilha 1.6s ease-in-out infinite; }
+@keyframes col-brilha { 50% { box-shadow: 0 0 0 4px rgba(201, 164, 67, .35); } }
+@media (prefers-reduced-motion: reduce) { .col-cabide.livre { animation: none; } }
+.col-cabide-selo { position: absolute; top: 14px; right: 6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; background: #fff; border: 2px solid var(--wii-borda); }
+.col-cabide.tem .col-cabide-selo { background: #3b7a2a; border-color: #3b7a2a; color: #fff; }
+.col-cabide.livre .col-cabide-selo { border-color: #c9a443; }
+.col-cabide.sel { border-color: var(--wii); box-shadow: 0 0 0 3px rgba(0, 149, 182, .3); animation: none; }
 .col-painel-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; text-align: center; background: #fbf6e8; border: 1.5px solid #e3d3a5; border-radius: 18px; }
 .col-painel-arte { width: 140px; height: 140px; display: grid; place-items: center; }
 .col-painel-arte svg { width: 100%; height: 100%; }
