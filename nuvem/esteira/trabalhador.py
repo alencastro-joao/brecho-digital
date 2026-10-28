@@ -28,7 +28,8 @@ Para cada foto:
      ou na esteira (repetidas.py). Se for, a foto para aqui como `repetida`
      — sem gastar o palpite da IA — e a API tira ela da esteira.
   5. Pede ao Claude (Bedrock) o palpite da ficha: categoria, cor, marca.
-     O nome não: toda peça chega sem nome.
+     O nome não: toda peça chega sem nome. Com o "Auto preencher" desligado
+     na esteira, pula este passo e a ficha chega em branco.
   6. Grava tudo em `esteira/<id>.json` com `estado: pronta`.
 
 Daí para a frente é a tela de revisão (`js/esteira.js`) que conversa com a API
@@ -94,6 +95,18 @@ def gravar_ficha(dados):
     _s3.put_object(Bucket=DADOS, Key='esteira/%s.json' % dados['id'],
                    Body=json.dumps(dados, ensure_ascii=False).encode('utf-8'),
                    ContentType='application/json; charset=utf-8')
+
+
+def auto_preencher():
+    """O botão da esteira (esteira/config/ajustes.json, ver lambda/esteira.py).
+    Sem o arquivo, ou sem conseguir ler, preenche: é o padrão."""
+    try:
+        r = _s3.get_object(Bucket=DADOS, Key='esteira/config/ajustes.json')
+        return json.loads(r['Body'].read()).get('autoPreencher', True) is not False
+    except Exception as e:                       # noqa: BLE001 - na dúvida, preenche
+        if not (isinstance(e, ClientError) and e.response['Error']['Code'] in ('NoSuchKey', '404')):
+            print('(não li os ajustes da esteira: %s)' % e)
+        return True
 
 
 # --- Modelo de recorte ------------------------------------------------------
@@ -219,9 +232,11 @@ def processar(chave):
         caminho, _ = contour_of(previa.convert('RGBA'))
         segundos_recorte = time.time() - marca
 
-        sugestao = ficha_ia.sugerir(webp, marcas_conhecidas())
+        # Com o preenchimento desligado na esteira, nem pergunta à IA.
+        preencher = auto_preencher()
+        sugestao = ficha_ia.sugerir(webp, marcas_conhecidas()) if preencher else {}
         # A cor medida nos pixels: chão para quando a IA falha ou não diz.
-        cor_medida = cor_da_imagem(previa)
+        cor_medida = cor_da_imagem(previa) if preencher else ''
     except FotoRuim as e:
         ficha.update(estado='erro', erro=str(e))
         gravar_ficha(ficha)
@@ -246,6 +261,7 @@ def processar(chave):
     )
     # A ficha que o admin edita nasce do palpite. O que ele já tiver mexido
     # (pelo celular, enquanto a foto ainda processava) não é atropelado.
+    # Desligado, a proposta sai em branco e a ficha fica só com o que ele digitou.
     proposta = {k: sugestao.get(k, '') for k in ('cat', 'cor', 'marca')}
     proposta['cor'] = proposta['cor'] or cor_medida
     ficha['ficha'] = {**proposta, **{k: v for k, v in (ficha.get('ficha') or {}).items() if v}}

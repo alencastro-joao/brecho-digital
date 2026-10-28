@@ -26,6 +26,7 @@ Tudo o que é da esteira mora no bucket de dados, que é privado:
     esteira/<id>.png              o recorte em alta (vira mestres/<peça>.png)
     esteira/pins/<pin>            marca de "esse pin já entrou" (ver Pinterest)
     esteira/config/pinterest.json as pastas do Pinterest vinculadas
+    esteira/config/ajustes.json   liga/desliga o preenchimento automático da ficha
 
 A prévia chega à tela por URL assinada de leitura, que vence em uma hora.
 """
@@ -332,6 +333,34 @@ def _guardar_leitura(mudadas):
                     p[k] = mudadas[p['id']][k]
     _gravar_pastas(atuais)
     return atuais
+
+
+# --- Ajustes da esteira ----------------------------------------------------
+# Hoje só um: se o trabalhador preenche a ficha sozinho (palpite da IA e cor
+# medida). Desligado, a peça chega com a ficha em branco e nem chama a IA.
+AJUSTES = 'esteira/config/ajustes.json'
+AJUSTES_PADRAO = {'autoPreencher': True}
+
+
+def ajustes():
+    """GET /api/esteira/ajustes."""
+    try:
+        r = _s3.get_object(Bucket=DADOS, Key=AJUSTES)
+        guardados = json.loads(r['Body'].read())
+    except ClientError as e:
+        if e.response['Error']['Code'] not in ('NoSuchKey', '404'):
+            raise
+        guardados = {}
+    return {**AJUSTES_PADRAO, **{k: v for k, v in guardados.items() if k in AJUSTES_PADRAO}}
+
+
+def mudar_ajustes(corpo):
+    """PUT /api/esteira/ajustes: só as chaves conhecidas, sempre booleanas."""
+    novos = {**ajustes(), **{k: bool(v) for k, v in (corpo or {}).items() if k in AJUSTES_PADRAO}}
+    _s3.put_object(Bucket=DADOS, Key=AJUSTES,
+                   Body=json.dumps(novos).encode('utf-8'),
+                   ContentType='application/json; charset=utf-8')
+    return novos
 
 
 def _publica(pasta):

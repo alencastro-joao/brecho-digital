@@ -468,6 +468,12 @@ def rotas_de_esteira(pedido):
         if metodo == 'POST':
             return responder(200, esteira.pinterest(pedido.corpo(LIMITE_LOGIN)))
         return None
+    if item_id == 'ajustes' and not acao:
+        if metodo == 'GET':
+            return responder(200, esteira.ajustes())
+        if metodo == 'PUT':
+            return responder(200, esteira.mudar_ajustes(pedido.corpo(LIMITE_LOGIN)))
+        return None
     if acao == 'publicar' and metodo == 'POST':
         return responder(201, esteira.publicar(item_id, pedido.corpo(LIMITE_LOGIN)))
     if acao == 'refazer' and metodo == 'POST':
