@@ -820,7 +820,6 @@
       <div class="tf-portas">
         <button type="button" class="tf-colecoes tf-baus" id="tarefas-baus"></button>
         <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
-        <button type="button" class="tf-colecoes tf-ajudas" id="tarefas-ajudas"></button>
       </div>
     </div>
   </section>
@@ -871,14 +870,14 @@
   </section>
 
   <!-- ====================== MINI GAMES ====================== -->
-  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre por Tarefas. -->
+  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre pelo botão do dado na barra. -->
   <section class="view view-ajudas" data-view="ajudas" hidden>
-    <div class="aj-wrapper">
-      <button type="button" class="bs-voltar" id="aj-voltar">‹ Tarefas</button>
-      <header class="aj-head"><h1>Mini games</h1></header>
-      <div class="aj-abas" id="aj-abas"></div>
-      <div class="aj-cota" id="aj-cota"></div>
-      <div class="aj-palco" id="aj-palco"></div>
+    <div class="mg-wrapper">
+      <button type="button" class="bs-voltar" id="mg-voltar" hidden>‹ Mini games</button>
+      <header class="mg-head"><h1 id="mg-titulo">Mini games</h1></header>
+      <div class="mg-menu" id="mg-menu"></div>
+      <div class="mg-cota" id="mg-cota"></div>
+      <div class="mg-palco" id="mg-palco"></div>
     </div>
   </section>
 
@@ -1127,6 +1126,7 @@
               aria-haspopup="true" aria-expanded="false" aria-controls="criar-menu"><i data-e="✨"></i><span>Criar</span></button>
       <button class="sidebar-btn social"     data-goto="social"  title="Feed"><i data-e="📸"></i><span>Feed</span></button>
       <button class="sidebar-btn tarefas"    data-goto="tarefas" title="Missões do dia"><i data-e="🏆"></i><span>Tarefas</span></button>
+      <button class="sidebar-btn jogos"      data-goto="ajudas"  title="Mini games"><i data-e="🎲"></i><span>Jogos</span></button>
       <button class="sidebar-btn perfil"     data-goto="perfil"  title="Perfil"><i data-e="👤"></i><span>Perfil</span></button>
     </div>
     <div class="sidebar-rodape">

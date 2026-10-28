@@ -22,7 +22,7 @@ export const VIEWS = ['vitrine', 'closet', 'stylist', 'board', 'social', 'tarefa
 // Telas sem botão próprio na barra: acendem o botão de onde vieram. Stylist e
 // Colagem dividem o Criar; as Roupas (vestiário) moram no perfil.
 const BOTAO_DA_VIEW = {
-  usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas', ajudas: 'tarefas', admin: 'perfil',
+  usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas', admin: 'perfil',
   stylist: 'criar', board: 'criar', vestiario: 'perfil',
 };
 
