@@ -128,23 +128,9 @@ function pintar() {
   mundo.style.width = 3 * LARGURA + 'px';
   mundo.innerHTML = trecho(0, gente) + trecho(1, gente) + trecho(2, gente);
 
-  $('#pc-faixa').replaceChildren(...(gente.length > 1
-    ? gente.slice(1).map(g => el('button', { class: 'pc-chip', onclick: () => irAte(g) },
-      comSvg('pc-rosto', svgAvatar({ aparencia: aparenciaDoPerfil(g.p), roupas: roupasDoPerfil(g.p), recorte: [212, 21, 176, 176], soCabeca: true })),
-      g.nome))
-    : [el('span', { class: 'pc-vazio' }, 'Quando alguém que você segue te seguir de volta, aparece aqui na praça.')]));
 
   const cena = $('#pc-cena');
   cena.scrollLeft = LARGURA + VOCE.x - cena.clientWidth / 2 + 60;
-}
-
-function irAte(g) {
-  const cena = $('#pc-cena');
-  const alvos = [0, 1, 2].map(k => k * LARGURA + g.x - cena.clientWidth / 2 + 60);
-  const alvo = alvos.reduce((a, b) =>
-    Math.abs(b - cena.scrollLeft) < Math.abs(a - cena.scrollLeft) ? b : a);
-  cena.scrollTo({ left: alvo, behavior: 'smooth' });
-  setTimeout(() => abrirCartao(g), 450);
 }
 
 export function montarPraca() {
