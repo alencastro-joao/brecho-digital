@@ -81,7 +81,26 @@ const avisar = () => ouvintes.forEach(fn => fn());
 function repintar() {
   if (viewAtual() === 'social') renderFeed();
   else precarregarFeed();
+  pintarPontinhoDoFeed();
   avisar();
+}
+
+// Pontinho vermelho no botão do Feed: saiu post de quem você segue depois da
+// última vez que você abriu o feed. Com o feed aberto, o mais novo já conta
+// como visto. Guarda a data do post (do servidor), não a do relógio daqui.
+export function pintarPontinhoDoFeed() {
+  const seguindo = db.state.usuario?.seguindo ?? [];
+  const ultimo = todosOsPosts().find(p => !sou(p.autor) && seguindo.includes(p.autor))?.criadoEm;
+  const visto = db.state.feedVistoEm;
+  const novo = !!ultimo && (!visto || new Date(ultimo) > new Date(visto));
+  if (novo && viewAtual() === 'social') {
+    db.state.feedVistoEm = ultimo;
+    db.salvar();
+  }
+  const tem = novo && viewAtual() !== 'social';
+  for (const botao of document.querySelectorAll('[data-goto="social"]')) {
+    botao.classList.toggle('tem-premio', tem);
+  }
 }
 aoMudarPublicacoes(repintar);
 
@@ -233,6 +252,7 @@ export async function montarSocial() {
   await semearFeed();
   if (!aba) aba = 'tudo';
   render();
+  pintarPontinhoDoFeed();
   // Quem entrou no brechó desde a última vez aparece na coluna sem ninguém
   // digitar nada.
   atualizarPessoas();
