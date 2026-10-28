@@ -1546,7 +1546,7 @@ export const INTRO = [
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
     dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças o dono separa um item do avatar no balcão; os próximos pedem mais peças, e o último só sai com a coleção completa.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
-    dica: 'Toque no item separado para levá-lo ao inventário. Este é presente da loja; os próximos gastam um resgate do dia, como as peças do mural.',
+    dica: 'Toque no item separado para levá-lo ao inventário. Itens do avatar não gastam resgate do dia.',
     premio: { xp: 20 } },
   { evento: 'vestir', ir: 'vestiario', lugar: 'cima', nome: 'Vista o seu personagem',
     dica: 'Este é o Inventário, com as roupinhas do avatar. Clique no item que você resgatou (ou arraste para o corpo) para vestir.',

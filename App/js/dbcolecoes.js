@@ -58,23 +58,17 @@ for (const r of ROUPINHAS) {
   ITENS_DA_COLECAO.get(d.colecao).push(r.id);
 }
 
-// O item liberado fica separado no balcão da loja, e levar custa um resgate
-// do dia, o mesmo das peças do mural (os comprados com fichas valem também).
-// O primeiro item da vida é presente do dono, para o tutorial nunca travar.
-export const itemDeGraca = () =>
-  !Object.values(state.vestiario.escolhas || {}).some(l => l?.length);
+// O item liberado fica separado no balcão da loja e levar não gasta resgate:
+// as roupinhas do avatar não têm limite por dia.
+export const itemDeGraca = () => true;
 
-export function podeResgatarItem() {
-  virarODiaSeNecessario();
-  return itemDeGraca() || resgatesRestantes(CONFIG.RESGATES_POR_DIA) > 0;
-}
+export const podeResgatarItem = () => true;
 
 // Abre um item da coleção, se ela tem escolha sobrando e há resgate para gastar.
 export function escolherItem(colecao, id) {
   const pc = progressoDasColecoes()[colecao];
   if (!pc || pc.livres < 1 || !(ITENS_DA_COLECAO.get(colecao) || []).includes(id)) return false;
   if (pc.escolhidas.includes(id) || !podeResgatarItem()) return false;
-  if (!itemDeGraca()) state.dia.resgates += 1;
   const v = state.vestiario;
   v.escolhas = { ...(v.escolhas || {}), [colecao]: [...pc.escolhidas, id] };
   progredirMissao('colecao');
