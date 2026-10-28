@@ -62,7 +62,7 @@ function paraPerfil(c) {
     nome: c.nome,
     handle: c.handle,
     cor: corDe(c.id),
-    bio: c.bio || '',
+    bio: c.bio === 'garimpando peça por peça.' ? '' : c.bio || '',   // a bio padrão antiga
     corFavorita: c.corFavorita || '',
     real: true,
     criadoEm: c.criadoEm,

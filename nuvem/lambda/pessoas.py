@@ -84,6 +84,9 @@ _CAMPOS = {'#id': 'id', '#h': 'handle', '#n': 'nome', '#c': 'criado_em',
 _PROJECAO = ', '.join(_CAMPOS)
 
 
+# A bio que o jogo punha sozinho em conta nova; quem não trocou fica sem bio.
+BIO_ANTIGA = 'garimpando peça por peça.'
+
 def normalizar(texto):
     """Sem acento, sem caixa: `jo` acha "Jô", `leo` acha "Léo"."""
     decomposto = unicodedata.normalize('NFD', str(texto or ''))
@@ -103,7 +106,7 @@ def _cartao(item, eu=None):
         'nome': item['nome'],
         'handle': '@' + item['handle'],
         'criadoEm': item['criado_em'],
-        'bio': perfil.get('bio') or '',
+        'bio': '' if perfil.get('bio') == BIO_ANTIGA else perfil.get('bio') or '',
         'avatar': dict(perfil.get('avatar') or {}),
         'equipado': dict(perfil.get('equipado') or {}),
         'corFavorita': perfil.get('corFavorita') or '',

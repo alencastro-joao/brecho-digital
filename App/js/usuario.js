@@ -306,9 +306,12 @@ function abaDeRoupasDe(p, favoritas) {
 // rolagem; "Ver perfil completo" leva à página inteira. No PC ela vem do lado
 // direito; no celular, de baixo.
 let gavetaAberta = false;
+// Vinda da Praça, a pessoa já está de corpo inteiro atrás: a gaveta não repete o rosto.
+let semFoto = false;
 
-export async function abrirGavetaDe(id) {
-  if (!id || id === db.state.usuario.id || viewAtual() !== 'social') return abrirPerfilDe(id);
+export async function abrirGavetaDe(id, { foto = true } = {}) {
+  if (!id || id === db.state.usuario.id || !['social', 'praca'].includes(viewAtual())) return abrirPerfilDe(id);
+  semFoto = !foto;
   if (!podeAbrir(id)) return toast('Perfil não encontrado.', 'aviso');
   fecharPost();
   if (idAtual !== id) abaAtual = null;
@@ -357,7 +360,7 @@ function renderGaveta() {
 
   $('#gv-corpo').replaceChildren(
     el('div', { class: 'gv-topo' },
-      el('div', { class: 'gv-foto' }, cabeca(aparenciaDoPerfil(p), 96, roupasDoPerfil(p))),
+      semFoto ? null : el('div', { class: 'gv-foto' }, cabeca(aparenciaDoPerfil(p), 96, roupasDoPerfil(p))),
       el('div', { class: 'gv-quem' },
         el('h2', { class: 'gv-nome' }, p.nome),
         el('p', { class: 'gv-arroba' }, p.handle,

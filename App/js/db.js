@@ -53,7 +53,7 @@ function estadoInicial() {
       id: 'local-user',
       nome: 'Você',
       handle: '@voce',
-      bio: 'garimpando peça por peça.',   // o que os outros leem no seu perfil
+      bio: '',   // o que os outros leem no seu perfil; vazio até a pessoa escrever
       criadoEm: new Date().toISOString(),
       seguindo: [],
       assinatura: { ...ASSINATURA_PADRAO },   // padrão de quem assina as colagens
@@ -143,6 +143,8 @@ export function missoesDaSemana(data = semanaISO()) {
   };
 }
 
+const BIO_ANTIGA = 'garimpando peça por peça.';
+
 function carregar() {
   try {
     const bruto = chave && localStorage.getItem(chave);
@@ -150,6 +152,8 @@ function carregar() {
     const salvo = JSON.parse(bruto);
     const base = estadoInicial();
     const estado = { ...base, ...salvo };
+    // A bio padrão antiga não foi a pessoa que escreveu: some.
+    if (estado.usuario?.bio === BIO_ANTIGA) estado.usuario.bio = '';
     // Chaves novas (missões, assinatura) precisam existir mesmo em save antigo.
     // Save antigo guardava missoes como mapa plano id->contagem, sem data:
     // esse formato não tem como virar o dia, então recomeça zerado.
