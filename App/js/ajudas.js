@@ -14,6 +14,7 @@
 import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, ancoraPadrao } from './config.js';
 import { rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
+import { tocar } from './sons.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
@@ -185,6 +186,7 @@ async function gravar(jogo, peca, corpo) {
     if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
     if (r.fichas) {
       db.ganharFicha(r.fichas);
+      tocar('missao');
       db.salvar();
       toast(`+${r.fichas} ficha${r.fichas > 1 ? 's' : ''} por ajudar!`);
       renderFichas();
@@ -207,6 +209,7 @@ function jogoAvaliar() {
     el('span', { class: 'mg-selo mg-selo-sim' }, 'Gostei'));
   const votar = (gostei) => {
     carta.classList.add(gostei ? 'sai-dir' : 'sai-esq');
+    tocar(gostei ? 'coracao' : 'naocurti');
     soltarPendente();
     pendente = { peca, gostei };
     estado.avaliar.pecas.push(peca.id);     // some da fila enquanto espera
@@ -214,6 +217,7 @@ function jogoAvaliar() {
   };
   const desfazer = () => {
     if (!pendente) return;
+    tocar('desfazer');
     const s = estado.avaliar;
     s.pecas = s.pecas.filter(id => id !== pendente.peca.id);
     peca = pendente.peca;
