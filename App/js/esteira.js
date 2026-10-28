@@ -403,6 +403,7 @@ const ordenado = (v) => (v && typeof v === 'object' && !Array.isArray(v)
 const chaveDe = (item) => JSON.stringify(ordenado({
   estado: item.estado, erro: item.erro, ficha: fichaDe(item), medida: item.medida, corte: item.corte,
   previa: item.previa, sugestao: item.sugestao, arquivo: item.arquivo, sel: selecionadas.has(item.id),
+  jogos: nosJogos.has(item.id),
 }));
 
 // A peça só aparece depois de cortada e classificada: a que ainda está
@@ -485,7 +486,8 @@ function cartao(item) {
   },
     el('div', { class: 'es-cartao-imagem' },
       item.previa
-        ? el('img', { src: item.previa, alt: f.nome || item.arquivo || '', loading: 'lazy' })
+        ? el('img', { src: item.previa, alt: f.nome || item.arquivo || '', loading: 'lazy',
+            style: item.corte ? { objectViewBox: caixaDoCorte(item.corte) } : {} })
         : el('span', { class: 'es-cartao-espera' }, ROTULO[item.estado] || item.estado),
       selecionavel(item) ? el('label', { class: 'es-cartao-marca', title: 'selecionar' },
         el('input', {
@@ -497,7 +499,8 @@ function cartao(item) {
         'aria-label': 'Selecionar a fileira inteira', onclick: () => alternarFileira(item.id),
       }, '⇔ fileira') : null,
       el('span', { class: `es-selo ${item.estado}` }, ROTULO[item.estado] || item.estado),
-      item.medida ? el('span', { class: 'es-medido', title: 'já tem medida no molde' }, 'medida ✓') : null),
+      item.medida ? el('span', { class: 'es-medido', title: 'já tem medida no molde' }, 'medida ✓') : null,
+      nosJogos.has(item.id) ? el('span', { class: 'es-nos-jogos', title: 'está nos mini games' }, '🎲 jogos') : null),
 
     item.estado === 'erro'
       ? el('p', { class: 'es-erro' }, item.erro || 'falhou')
@@ -707,6 +710,10 @@ function atualizarLote() {
   $('#es-lote-descartar').textContent = n > 1 ? `Descartar ${n}` : 'Descartar';
   $('#es-lote-publicar').disabled = !publicaveis;
   $('#es-lote-publicar').textContent = publicaveis > 1 ? `Publicar ${publicaveis}` : 'Publicar';
+  $('#es-lote-jogos').disabled = !publicaveis;
+  $('#es-lote-jogos').textContent = publicaveis > 1 ? `🎲 Jogos ${publicaveis}` : '🎲 Jogos';
+  // Cortar é de uma peça por vez: a caixa é da foto dela.
+  $('#es-lote-cortar').disabled = !(publicaveis === 1 && n === 1);
 }
 
 function aplicarLote() {
@@ -723,6 +730,85 @@ function aplicarLote() {
   }
   desenhar();
   toast('Aplicado às selecionadas.');
+}
+
+// ============================== Jogos =====================================
+// A outra saída da esteira: em vez de publicar, a peça vai para os mini games
+// (ajudas.py) e os jogadores opinam sobre raridade, cor e marca. Ela continua
+// aqui; publicar ou descartar depois tira ela dos jogos.
+let nosJogos = new Set();
+
+async function lerJogos() {
+  try {
+    const r = await fetch('api/admin/ajudas', { credentials: 'include' });
+    if (!r.ok) return;
+    nosJogos = new Set((await r.json()).nosJogos || []);
+    desenhar();
+  } catch { /* sem o selo, segue */ }
+}
+
+async function mandarParaJogos(lista) {
+  const prontas = lista.filter(i => i.estado === 'pronta');
+  const semCat = prontas.filter(i => !fichaDe(i).cat && !i.sugestao?.cat);
+  if (semCat.length) {
+    toast(`${semCat.length === 1 ? 'Uma peça ficou' : `${semCat.length} peças ficaram`} de fora: falta a categoria.`, 'aviso');
+  }
+  let feitas = 0;
+  for (const item of prontas.filter(i => !semCat.includes(i))) {
+    // A categoria que está na tela, mesmo que ainda não tenha sido guardada.
+    clearTimeout(guardando.get(item.id));
+    guardando.delete(item.id);
+    try {
+      await api(`/${item.id}`, { metodo: 'PUT', corpo: { ficha: item.ficha, medida: item.medida, corte: item.corte } });
+      const r = await fetch('api/admin/ajudas', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, nos: true }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || `erro ${r.status}`);
+      nosJogos.add(item.id);
+      selecionadas.delete(item.id);
+      feitas++;
+    } catch (e) {
+      toast(`Parou em "${fichaDe(item).nome || item.arquivo}": ${e.message}`, 'aviso');
+      break;
+    }
+  }
+  if (feitas) toast(feitas === 1 ? 'A peça foi para os mini games.' : `${feitas} peças foram para os mini games.`);
+  desenhar();
+}
+
+// ========================== Auto preencher ================================
+// Ligado, a nuvem preenche categoria, cor e marca das fotos que chegarem
+// (palpite da IA). Desligado, elas chegam em branco. Mora na nuvem, não no
+// navegador: vale para o celular e para o computador.
+let autoPreencher = true;
+
+function pintarAuto() {
+  const b = $('#es-auto');
+  b.disabled = false;
+  b.setAttribute('aria-pressed', String(autoPreencher));
+  b.classList.toggle('ligado', autoPreencher);
+  b.textContent = `Auto preencher: ${autoPreencher ? 'ligado' : 'desligado'}`;
+}
+
+async function lerAuto() {
+  try {
+    autoPreencher = (await api('/ajustes')).autoPreencher !== false;
+    pintarAuto();
+  } catch { /* fica desabilitado: sem saber o estado, não mexe */ }
+}
+
+async function alternarAuto() {
+  const b = $('#es-auto');
+  b.disabled = true;
+  try {
+    autoPreencher = (await api('/ajustes', { metodo: 'PUT', corpo: { autoPreencher: !autoPreencher } })).autoPreencher;
+    toast(autoPreencher ? 'As próximas fotos chegam com a ficha preenchida.' : 'As próximas fotos chegam com a ficha em branco.');
+  } catch (e) {
+    toast(`Não deu para mudar: ${e.message}`, 'aviso');
+  }
+  pintarAuto();
 }
 
 // ============================== Molde =====================================
@@ -800,7 +886,6 @@ function abrirMolde(item) {
   medida = item.medida ? ancoraNoCorpo(regiaoDe(item), { ...item.medida }) : medidaPadrao(f.cat);
   $('#es-avatar').innerHTML = svgAvatar();
   $('#es-peca-img').src = item.previa;
-  fecharCorte();
   $('#es-molde-modal').hidden = false;
   $('#es-molde-cat').value = f.cat;
   atualizarNavegacao();
@@ -984,7 +1069,6 @@ function ligarMolde() {
     posicionar();
   }));
 
-  ligarCorte();
   $('#es-molde-ok').addEventListener('click', () => fecharMolde(true));
   $('#es-molde-cancelar').addEventListener('click', () => fecharMolde(false));
   $('#es-molde-voltar').addEventListener('click', voltarNaFila);
@@ -993,7 +1077,7 @@ function ligarMolde() {
   cat.append(...ORDEM_CATEGORIAS.map(c => el('option', { value: c }, rotuloDeCadastro(c))));
   cat.addEventListener('change', () => trocarCategoriaNoMolde(cat.value));
   $('#es-molde-modal').addEventListener('pointerdown', (e) => {
-    if (e.target.id === 'es-molde-modal' && !cortando) fecharMolde(true);
+    if (e.target.id === 'es-molde-modal') fecharMolde(true);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && cortando) fecharCorte();
@@ -1002,14 +1086,18 @@ function ligarMolde() {
 }
 
 // ============================== Cortar ====================================
-// Na hora de medir dá para cortar a foto (sobrou braço, cabide, outra peça).
-// O corte é uma caixa em 0–1 sobre a prévia, guardada na ficha da esteira; o
-// molde já mostra a peça cortada e a API corta as imagens ao publicar.
+// Fora do molde: marca uma peça e usa o "✂ Cortar" da barra (sobrou braço,
+// cabide, outra peça). O corte é uma caixa em 0–1 sobre a prévia, guardada na
+// ficha da esteira; o cartão e o molde já mostram a peça cortada e a API corta
+// as imagens ao publicar.
 const INTEIRA = { x: 0, y: 0, w: 1, h: 1 };
 const MIN_CORTE = 0.05;
 let cortando = null;                   // a caixa em edição
+let cortado = null;                    // o item dela
 
 const corteDe = (item) => (item?.corte && item.corte.w > 0 && item.corte.h > 0 ? item.corte : INTEIRA);
+// object-view-box do cartão: inset(cima direita baixo esquerda) em %.
+const caixaDoCorte = (c) => `inset(${c.y * 100}% ${(1 - c.x - c.w) * 100}% ${(1 - c.y - c.h) * 100}% ${c.x * 100}%)`;
 
 // A imagem dentro de uma janela de overflow escondido mostra só o corte.
 function enquadrar(img, c) {
@@ -1019,19 +1107,19 @@ function enquadrar(img, c) {
   img.style.top = `${-c.y / c.h * 100}%`;
 }
 
-function abrirCorte() {
-  if (!medindo) return;
-  cortando = { ...corteDe(medindo) };
-  $('#es-corte-img').src = medindo.previa;
-  for (const id of ['es-molde-linha', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = true;
-  $('#es-corte').hidden = false;
+function abrirCorte(item) {
+  if (!item?.previa || item.estado !== 'pronta') return;
+  cortado = item;
+  cortando = { ...corteDe(item) };
+  $('#es-corte-img').src = item.previa;
+  $('#es-corte-modal').hidden = false;
   desenharCorte();
 }
 
 function fecharCorte() {
   cortando = null;
-  $('#es-corte').hidden = true;
-  for (const id of ['es-molde-linha', 'es-medida', 'es-molde-rodape', 'es-molde-dica']) $('#' + id).hidden = false;
+  cortado = null;
+  $('#es-corte-modal').hidden = true;
 }
 
 function desenharCorte() {
@@ -1047,17 +1135,21 @@ function desenharCorte() {
 // cortar metade da largura deixa a peça com metade do tamanho no corpo, e não
 // esticada de volta ao tamanho antigo.
 function aplicarCorte(novo) {
-  const antes = corteDe(medindo);
+  const item = cortado;
+  if (!item) return fecharCorte();
+  const antes = corteDe(item);
   const inteira = !novo || (novo.w > 0.995 && novo.h > 0.995);
   const corte = inteira ? false : {
     x: +novo.x.toFixed(4), y: +novo.y.toFixed(4), w: +novo.w.toFixed(4), h: +novo.h.toFixed(4),
   };
-  const atual = itens.find(i => i.id === medindo.id);
-  for (const i of new Set([medindo, atual].filter(Boolean))) i.corte = corte;
-  medida.w = clamp(medida.w * corteDe(medindo).w / antes.w, 20, 600);
-  guardarDepois(medindo);
+  const atual = itens.find(i => i.id === item.id);
+  for (const i of new Set([item, atual].filter(Boolean))) {
+    i.corte = corte;
+    if (i.medida) i.medida = { ...i.medida, w: Math.max(1, Math.round(i.medida.w * corteDe(i).w / antes.w)) };
+  }
+  guardarDepois(item);
   fecharCorte();
-  posicionar();
+  desenhar();
 }
 
 function ligarCorte() {
@@ -1095,10 +1187,12 @@ function ligarCorte() {
     caixa.addEventListener('pointerup', soltar);
     caixa.addEventListener('pointercancel', soltar);
   });
-  $('#es-molde-cortar').addEventListener('click', abrirCorte);
   $('#es-corte-ok').addEventListener('click', () => aplicarCorte(cortando));
   $('#es-corte-tirar').addEventListener('click', () => aplicarCorte(null));
   $('#es-corte-cancelar').addEventListener('click', fecharCorte);
+  $('#es-corte-modal').addEventListener('pointerdown', (e) => {
+    if (e.target.id === 'es-corte-modal') fecharCorte();
+  });
 }
 
 // ============================== Montagem ==================================
@@ -1139,6 +1233,9 @@ function ligarLote() {
   });
   $('#es-lote-aplicar').addEventListener('click', aplicarLote);
   $('#es-lote-publicar').addEventListener('click', () => publicar(marcadas()));
+  $('#es-lote-jogos').addEventListener('click', () => mandarParaJogos(marcadas()));
+  $('#es-lote-cortar').addEventListener('click', () => abrirCorte(marcadas()[0]));
+  $('#es-auto').addEventListener('click', alternarAuto);
   $('#es-lote-descartar').addEventListener('click', () => descartar(marcadas()));
   $('#es-pub-medidas').addEventListener('click', publicarMedidas);
   $('#es-medir-todas').addEventListener('click', medirTodas);
@@ -1184,7 +1281,10 @@ async function iniciar() {
   ligarEntrada();
   ligarLote();
   ligarMolde();
+  ligarCorte();
   carregarAcervo();
+  lerAuto();
+  lerJogos();
   await atualizar();
   montarPinterest();
   // Voltou para a aba (ex.: depois de fotografar no celular ou de salvar pin

@@ -23,6 +23,7 @@
   --loja: #c8e6c9;
   --tarefas: #ffe0b2;
   --vestiario: #dcedc8;
+  --jogos: #90caf9;
 
   /* Tamanho da célula onde uma peça aparece — guarda-roupa, paleta do Stylist,
      paleta da Colagem, cápsula do perfil. Uma medida só, para a peça ter
@@ -99,7 +100,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .sidebar-btn.criar { background: var(--stylist); }
 .sidebar-btn.social { background: var(--social); }
 .sidebar-btn.tarefas { background: var(--tarefas); }
-.sidebar-btn.jogos { background: #c8e6c9; }
+.sidebar-btn.jogos { background: var(--jogos); }
 .sidebar-btn.vestiario { background: var(--vestiario); }
 .sidebar-btn.perfil { background: var(--perfil); }
 
