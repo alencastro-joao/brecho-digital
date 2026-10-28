@@ -7,7 +7,7 @@
 
 import { tratarAssinaturaAntiga } from './assinaturas.js';
 import './icones.js';   // troca os <i data-i>/<i data-e> do HTML antes de tudo
-import { ADMIN, aplicarPapel } from './config.js';
+import { ADMIN, aplicarPapel, liberarPraca } from './config.js';
 import * as auth from './auth.js';
 import { pedirConta, voltaDoGoogle } from './telaauth.js';
 import { carregarCatalogo, catalogo } from './catalog.js';
@@ -65,8 +65,8 @@ async function entrar() {
   if (!conta) ({ conta, nova } = await pedirConta({ aviso }));
 
   aplicarPapel(conta.papel);      // o modo administrador vem da conta, não da URL
-  // A Praça ainda está em teste: o botão do meio da barra só aparece ao admin.
-  document.querySelector('.sidebar-btn.praca').hidden = conta.papel !== 'admin';
+  // A Praça ainda está em teste: o botão do meio da barra só aparece a quem pode (config.js).
+  document.querySelector('.sidebar-btn.praca').hidden = !liberarPraca(conta);
   db.iniciarEstado(conta);        // daqui para baixo, db.state é o save dela
   tratarAssinaturaAntiga();
   document.getElementById('app').hidden = false;

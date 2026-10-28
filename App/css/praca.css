@@ -24,6 +24,20 @@
     #efe4d4;
 }
 
+/* O céu da hora (praca.js, acertarCeu). De noite a cena escurece, as
+   estrelas aparecem e os postes acendem. */
+.pc-mundo.pc-amanhecer { background: linear-gradient(180deg, #f8bbd0 0%, #ffe0b2 38%, #fff3e0 55%); }
+.pc-mundo.pc-tarde { background: linear-gradient(180deg, #7e57c2 0%, #ff8a65 34%, #ffcc80 55%); }
+.pc-mundo.pc-noite { background:
+  radial-gradient(2px 2px at 8% 12%, #fff 99%, transparent), radial-gradient(2px 2px at 23% 30%, #fff 99%, transparent),
+  radial-gradient(2px 2px at 41% 8%, #fff 99%, transparent), radial-gradient(2px 2px at 57% 24%, #fff 99%, transparent),
+  radial-gradient(2px 2px at 72% 14%, #fff 99%, transparent), radial-gradient(2px 2px at 89% 28%, #fff 99%, transparent),
+  linear-gradient(180deg, #1a2350 0%, #2c3e70 40%, #4a5a8a 55%); }
+.pc-mundo.pc-noite::after { content: ""; position: absolute; inset: 0; background: rgba(20, 30, 70, .28); pointer-events: none; z-index: 150; }
+.pc-mundo.pc-noite .pc-poste::before { background: #fff59d; box-shadow: 0 0 24px 10px rgba(255, 241, 118, .55); }
+.pc-mundo.pc-noite .pc-nuvem { opacity: .35; }
+.pc-mundo.pc-tarde::after { content: ""; position: absolute; inset: 0; background: rgba(255, 138, 101, .1); pointer-events: none; z-index: 150; }
+
 /* nuvens com o mesmo traço da praça: o contorno vem do drop-shadow em volta */
 .pc-nuvem {
   position: absolute; height: 34px; background: #fff; border-radius: 40px; animation: pc-nuvem 60s linear infinite;
