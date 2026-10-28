@@ -145,3 +145,14 @@
    treme de leve os contornos. Fica fora dos textos para não borrar. */
 .pc-arvore,
 .pc-poste, .pc-chafariz, .pc-calcada { filter: url(#pc-falhado); }
+
+/* Conversa entre dois amigos: pontinhos de um lado, símbolo do outro, revezando. */
+.pc-pessoa.virado .pc-corpo svg { transform: scaleX(-1); }
+.pc-conversa { padding: 5px 10px; font-size: 16px; line-height: 1; animation: pc-vez 6s ease-in-out infinite; }
+.pc-conversa.responde { animation-delay: -3s; }
+.pc-conversa b { color: #d2555a; }
+.pc-conversa i { display: inline-block; width: 6px; height: 6px; margin: 0 2px; border-radius: 50%; background: var(--traco); animation: pc-ponto 1s ease-in-out infinite; }
+.pc-conversa i:nth-child(2) { animation-delay: .15s; }
+.pc-conversa i:nth-child(3) { animation-delay: .3s; }
+@keyframes pc-vez { 0%, 45% { opacity: 1; scale: 1; } 50%, 95% { opacity: 0; scale: .6; } 100% { opacity: 1; scale: 1; } }
+@keyframes pc-ponto { 50% { translate: 0 -3px; } }

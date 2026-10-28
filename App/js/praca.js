@@ -67,7 +67,7 @@ const VOCE = { x: 1560, y: 10 };
 const meusAmigos = () => db.state.usuario.seguindo
   .filter(segueDeVolta).map(perfilDe).filter(Boolean);
 
-// O balão: a última publicação, se for de hoje.
+// Novidade do cartão: a última publicação, se for de hoje.
 function novidadeDe(id) {
   const ultimo = postsDoAutor(id)
     .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm))[0];
@@ -96,18 +96,38 @@ function pessoas() {
     const p = amigos.splice(s % amigos.length, 1)[0];
     usando.push({
       p, x: o.x + o.pessoa[0], y: o.y + o.pessoa[1], nome: p.nome.split(' ')[0],
-      balao: novidadeDe(p.id), svg: corpo(aparenciaDoPerfil(p), roupasDoPerfil(p)),
+      novidade: novidadeDe(p.id), svg: corpo(aparenciaDoPerfil(p), roupasDoPerfil(p)),
     });
   }
-  return [eu, ...usando, ...amigos.slice(0, LUGARES.length).map(p => {
+  const soltos = amigos.slice(0, LUGARES.length).map(p => {
     const i = sementeDoTexto(`praca:${p.id}:${turno()}`) % livres.length;
     const [x, y] = livres.splice(i, 1)[0];
     return {
       p, x, y, nome: p.nome.split(' ')[0],
-      balao: novidadeDe(p.id),
+      novidade: novidadeDe(p.id),
       svg: corpo(aparenciaDoPerfil(p), roupasDoPerfil(p)),
     };
-  })];
+  });
+  // Às vezes dois amigos param lado a lado e ficam conversando (sem texto:
+  // pontinhos e um símbolo, um de cada vez). Em metade dos turnos, um par.
+  const s = sementeDoTexto(`praca:conversa:${turno()}`);
+  if (soltos.length >= 2 && s % 2 === 0) {
+    const a = soltos[s % soltos.length];
+    const b = soltos[(s + 1) % soltos.length];
+    b.x = a.x + 130; b.y = a.y;
+    a.conversa = 'fala'; b.conversa = 'responde';
+    b.simbolo = SIMBOLOS[s % SIMBOLOS.length];
+  }
+  return [eu, ...usando, ...soltos];
+}
+
+// O que o amigo responde na conversa: só desenho, nada escrito.
+const SIMBOLOS = ['♥', '★', '♪', '☕', '☺'];
+
+function balaoDaConversa(g) {
+  if (!g.conversa) return '';
+  const miolo = g.conversa === 'fala' ? '<i></i><i></i><i></i>' : `<b>${g.simbolo}</b>`;
+  return `<span class="pc-balao pc-conversa ${g.conversa}">${miolo}</span>`;
 }
 
 function trecho(k, gente) {
@@ -118,9 +138,9 @@ function trecho(k, gente) {
   const objetos = OBJETOS.map(o =>
     `<div class="pc-objeto" style="left:${o.x}px;bottom:${o.y}%;z-index:${100 - o.y}">${o.svg}</div>`).join('');
   const pessoasHtml = gente.map((g, i) => `
-    <button class="pc-pessoa${g.eu ? ' eu' : ''}" data-pessoa="${i}"
+    <button class="pc-pessoa${g.eu ? ' eu' : ''}${g.conversa === 'responde' ? ' virado' : ''}" data-pessoa="${i}"
       style="left:${g.x}px;bottom:${g.y}%;z-index:${100 - g.y};--h:${Math.round(250 - g.y * 3)}px">
-      ${g.balao ? `<span class="pc-balao">${g.balao}</span>` : ''}
+      ${balaoDaConversa(g)}
       <span class="pc-corpo"><span class="pc-chao"></span>${g.svg}</span>
     </button>`).join('');
   return `<div class="pc-trecho" style="left:${k * LARGURA}px;width:${LARGURA}px">
@@ -144,7 +164,7 @@ function abrirCartao(g) {
       el('h2', {}, g.eu ? 'Você' : g.p.nome),
       g.eu ? null : el('div', { class: 'pc-handle' }, g.p.handle || ''),
       g.p?.bio ? el('div', { class: 'pc-bio' }, g.p.bio) : null,
-      g.balao ? el('div', { class: 'pc-novidade' }, `${g.balao} · hoje`) : null,
+      g.novidade ? el('div', { class: 'pc-novidade' }, `${g.novidade} · hoje`) : null,
       el('div', { class: 'pc-botoes' }, ...botoes.map(([rotulo, fn], i) =>
         el('button', { class: 'pc-pilula' + (i ? '' : ' ativa'), onclick: () => { fecharCartao(); fn(); } }, rotulo)))));
   fundo.hidden = false;
