@@ -1210,7 +1210,8 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
     ROUPINHAS.push({
       id, nome: `${o.nome} ${o.cores[nomeDaCor]}`, slot: o.slot, z: o.z, raridade: 'common',
       cor: hex, corNome: nomeDaCor,
-      imagem: { href: `assets/roupas/${o.id}-${slug}-${o.versao}.webp`, caixa: caixaAjustada(o.id, o.caixa) },
+      imagem: { href: `assets/roupas/${o.id}-${slug}-${o.versao}.webp`, caixa: caixaAjustada(o.id, o.caixa),
+        ...(o.fem ? { hrefFem: `assets/roupas/${o.id}-${slug}-fem-${o.versao}.webp` } : {}) },
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem: ROUPAS_BASE.length + i, de: total, item: id },
     });
   });
@@ -1446,9 +1447,10 @@ const CONTORNO = 5;
 
 // `k` é a escala em que a peça vai ser desenhada (js/proporcao.js): o contorno
 // é dividido por ela para sair da mesma grossura em qualquer parte do corpo.
-const imagemDaPeca = (r) => {
+const imagemDaPeca = (r, corpo) => {
   const [x, y, w, h] = r.imagem.caixa;
-  return `<image href="${r.imagem.href}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+  const href = corpo === 'feminino' && r.imagem.hrefFem || r.imagem.href;
+  return `<image href="${href}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
 };
 
 const desenhar = (arte, m, cor, k = 1) => `
@@ -1489,7 +1491,7 @@ export function partesDasRoupas(roupas, corpo, soCabeca = false) {
 
     // Desenho da artista: já está no palco, sem escala de região nem contorno.
     if (r.imagem) {
-      (slot === 'acessorio' ? oculos : z >= 60 ? rosto : frente).push({ z, svg: imagemDaPeca(r) });
+      (slot === 'acessorio' ? oculos : z >= 60 ? rosto : frente).push({ z, svg: imagemDaPeca(r, corpo) });
       continue;
     }
     if (r.atras) atras.push(naRegiao(regiao, desenhar(r.atras, m, cor, k) + (r.arte ? '' : detalhe)));
