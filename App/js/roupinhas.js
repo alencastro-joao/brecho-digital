@@ -17,7 +17,7 @@
 // bermuda do corpo estreito não fica larga, e a manga cai no mesmo pulso.
 
 import {
-  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, OCULOS_DESENHADOS, ROUPAS_BASE_VERSAO, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
+  CONFIG, CORPOS, COLECOES, ESTILOS, COLECOES_DE_COR, ROUPAS_BASE, OCULOS_DESENHADOS, CAMISAS_SELECOES, ROUPAS_BASE_VERSAO, SO_ROUPAS_DESENHADAS, nomeDaRoupaBase, hexDaCor, idDaCor, idDoEstilo, nomeDaColecao,
 } from './config.js';
 import { ROUPAS_AVATAR, AJUSTES_ROUPAS, caixaAjustada } from './roupasavatar.js';
 import { mulberry32, sementeDoTexto, escolher } from './util.js';
@@ -1249,6 +1249,17 @@ for (const c of COLECOES) {
     const r = ROUPINHAS.find(x => x.id === base);
     if (r) ROUPINHAS.push({ ...r, id, nome, cor, desbloqueio: null });   // sem regra de antes: não é herdado
   }
+}
+
+// As camisas das seleções: desenho pronto, na caixa da camiseta de base. Sem
+// `desbloqueio` aqui: o tema da seleção adota cada uma logo abaixo.
+for (const c of CAMISAS_SELECOES) {
+  const b = ROUPAS_BASE.find(x => x.id === c.base);
+  if (!b) continue;
+  ROUPINHAS.push({
+    id: c.id, nome: c.nome, slot: b.slot, raridade: 'common', cor: hexDaCor(c.cor), corNome: c.cor,
+    imagem: { href: `assets/roupas/${c.id}-${c.versao}.webp`, caixa: caixaAjustada(c.base, b.caixa) },
+  });
 }
 
 export const ROUPINHA = Object.fromEntries(ROUPINHAS.map(r => [r.id, r]));

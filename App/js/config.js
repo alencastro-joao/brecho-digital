@@ -1372,8 +1372,8 @@ export const ESTILOS = {
   },
   jamaica: {
     nome: 'Jamaica', brilho: '#009b3a', icone: 'assets/temas/jamaica.svg',
-    itens: [],
-    libera: [],
+    itens: ['camisa-jamaica-bandeira', 'camisa-jamaica-preta', 'cropped-jamaica-bandeira'],
+    libera: ['camisa-jamaica-bandeira', 'camisa-jamaica-preta', 'cropped-jamaica-bandeira'],
     pecas: [],
   },
   animal: {
@@ -1444,6 +1444,15 @@ export const CAMISETA_CAVEIRA = {
   caixa: [147.3, 241.1, 305.4, 362.1],
   cores: { Preto: 'preta' },
 };
+// Camisas e croppeds das seleções: a camiseta da artista (`base`, de
+// ROUPAS_BASE) repintada por tools/camisas_selecoes.py, em
+// assets/roupas/<id>-<versao>.webp. Entram no tema da seleção (ESTILOS), que
+// é quem libera; `cor` é a cor do atributo (a de fundo da peça).
+export const CAMISAS_SELECOES = [
+  { id: 'camisa-jamaica-bandeira', nome: 'Camisa da Jamaica', base: 'camiseta-longa', cor: 'Verde', versao: 'v1' },
+  { id: 'camisa-jamaica-preta', nome: 'Camisa preta da Jamaica', base: 'camiseta-longa', cor: 'Preto', versao: 'v1' },
+  { id: 'cropped-jamaica-bandeira', nome: 'Cropped da Jamaica', base: 'camiseta', cor: 'Verde', versao: 'v1' },
+];
 // Os desenhos extras, na ordem em que entram nas coleções de cor.
 export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
