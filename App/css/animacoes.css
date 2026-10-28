@@ -104,12 +104,12 @@ html body .sidebar .sidebar-btn:active { transform: translateY(2px) scale(.94); 
 }
 
 /* ------------------------- Favoritar: estrelinhas ----------------------- */
-/* Ao pôr a estrela numa peça, look ou colagem, estrelinhas douradas saltam
+/* Ao pôr a estrela numa peça, look ou colagem, estrelinhas na cor da paleta saltam
    do botão (js/animacoes.js festejar()). */
 .anim-faisca {
   position: fixed; z-index: 2000; pointer-events: none;
   width: 14px; height: 14px; margin: -7px 0 0 -7px;
-  background: #f2c230;
+  background: var(--premio);
   clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
   animation: anim-faisca .7s cubic-bezier(.2, .8, .4, 1) forwards;
 }
@@ -140,7 +140,7 @@ html body .sidebar .sidebar-btn:active { transform: translateY(2px) scale(.94); 
   transform: translate(-50%, 0);
   padding: 3px 8px; border-radius: 99px;
   background: var(--perola); border: 1.5px solid var(--wii-borda);
-  color: #9a7b13; font: 800 11px/1 var(--fonte); white-space: nowrap;
+  color: var(--premio-texto); font: 800 11px/1 var(--fonte); white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
   animation: anim-sobe 1.3s cubic-bezier(.2, .8, .4, 1) forwards;
 }

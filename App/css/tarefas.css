@@ -31,7 +31,7 @@
 .tf-nv b { font-size: 17px; color: var(--tinta); }
 .tf-fichas { flex: none; font-size: 14px; }
 .tf-fichas b { font-variant-numeric: tabular-nums; }
-.tf-fichas.pronto { background: #fbf1d0 var(--brilho-topo); border-color: #e3cf8f; animation: premio 1.8s ease-in-out infinite; }
+.tf-fichas.pronto { background: var(--premio-claro) var(--brilho-topo); border-color: var(--premio-borda); animation: premio 1.8s ease-in-out infinite; }
 
 .tf-nivel { position: relative; font: inherit; text-align: left; }
 /* Trocas: a janela que abre ao tocar nas fichas. Cada troca é um cartão no
@@ -61,7 +61,7 @@
 .tf-preco {
   display: flex; align-items: center; gap: 5px; padding: 5px 10px;
   font-size: 14px; font-weight: 800; border-radius: 20px;
-  background: #fbf1d0; border: 1.5px solid #e3cf8f; color: #3d300c;
+  background: var(--premio-claro); border: 1.5px solid var(--premio-borda); color: var(--tinta);
 }
 .tf-trocas-nota { margin: 4px 0 0; font-size: 12px; color: var(--tinta-suave); text-align: center; }
 /* Quantos congelamentos estão guardados, no canto do botão. */
@@ -127,9 +127,9 @@
   position: relative; width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; font-size: 22px;
   background: var(--perola); border: 2px solid var(--bb); box-shadow: inset 0 -3px 0 var(--pb); color: var(--tinta);
 }
-.tf-bau.ouro { background: #fbf1d0 var(--brilho-topo); border-color: #e3cf8f; color: #8a6d24; }
+.tf-bau.especial { background: var(--premio-claro) var(--brilho-topo); border-color: var(--premio-borda); color: var(--premio-texto); }
 .tf-bau.pronto {
-  background: #e8c46a var(--brilho-topo); border-color: #c9a443; color: #3d300c;
+  background: var(--premio-fundo) var(--brilho-topo); border-color: var(--premio); color: var(--tinta);
   animation: premio 1.8s ease-in-out infinite;
 }
 .tf-bau.aberto { background: #6b8f4e; border-color: #5a7c40; color: #fff; }
@@ -146,20 +146,20 @@
 .barra span { display: block; height: 100%; background: var(--tinta); transition: width .4s; }
 .ficha-moeda {
   width: 18px; height: 18px; border-radius: 50%; flex: none;
-  background: #e8c46a; border: 2px solid #c9a443; box-shadow: inset 0 0 0 2px #f3d98f;
+  background: var(--premio-fundo); border: 2px solid var(--premio); box-shadow: inset 0 0 0 2px var(--premio-borda);
 }
 
 /* Botão de prêmio: o toque que faz o prêmio sair. */
 .btn-premio {
   display: block; width: 100%; border: 0; border-radius: 30px; padding: 11px 16px;
-  background: #e8c46a; color: #3d300c; font-size: 13px; font-weight: 700;
-  box-shadow: 0 0 0 0 rgba(232, 196, 106, .5); animation: premio 1.8s ease-in-out infinite;
+  background: var(--premio-fundo); color: var(--tinta); font-size: 13px; font-weight: 700;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--premio) 50%, transparent); animation: premio 1.8s ease-in-out infinite;
 }
-.btn-premio:hover { background: #e2b94f; }
-@keyframes premio { 50% { box-shadow: 0 0 0 6px rgba(232, 196, 106, .18); } }
+.btn-premio:hover { background: var(--premio-borda); }
+@keyframes premio { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--premio) 18%, transparent); } }
 @media (prefers-reduced-motion: reduce) { :is(.btn-premio, .tf-bau.pronto, .tf-fichas.pronto) { animation: none; } }
 .tf-painel .btn-premio {
-  border: 2px solid #c9a443; border-radius: 14px; background-image: var(--brilho-topo);
+  border: 2px solid var(--premio); border-radius: 14px; background-image: var(--brilho-topo);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -3px 0 rgba(60, 80, 95, .16);
 }
 
@@ -176,7 +176,7 @@
 .nivel-box { margin: 10px 0 12px; max-width: 420px; }
 .nivel-topo { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
 .nivel-num { font-size: 14px; font-weight: 800; }
-.nivel-xp { margin-left: auto; font-size: 11.5px; font-weight: 700; color: #8a6d24; }
+.nivel-xp { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--premio-texto); }
 .nivel-nota { display: block; margin-top: 5px; font-size: 11px; color: var(--tinta-suave); }
 
 
@@ -234,15 +234,15 @@
 .tn-nivel strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; }
 .tn-fim { font-size: 18px; color: var(--tinta-suave); display: grid; }
 .tn-nivel .btn-premio {
-  width: auto; flex: none; padding: 8px 18px; border: 2px solid #c9a443; border-radius: 12px;
+  width: auto; flex: none; padding: 8px 18px; border: 2px solid var(--premio); border-radius: 12px;
   background-image: var(--brilho-topo); box-shadow: inset 0 -3px 0 rgba(60, 80, 95, .16);
 }
 /* Os baús na cor da raridade de cima. */
 .tn-nivel.bau-incomum .tn-ico { color: #2fbf63; border-color: #9ae0b5; }
 .tn-nivel.bau-raro .tn-ico { color: #2f7ff0; border-color: #b9d6f2; }
 .tn-nivel.bau-epico .tn-ico { color: #9b46f0; border-color: #c3a6f2; }
-.tn-nivel.bau-lendario .tn-ico { color: #b8860b; border-color: #e3cf8f; background: #fbf1d0 var(--brilho-topo); }
-.tn-nivel.pronto { border-color: #e3cf8f; background: #fffaf0; }
+.tn-nivel.bau-lendario .tn-ico { color: var(--premio-texto); border-color: var(--premio-borda); background: var(--premio-claro) var(--brilho-topo); }
+.tn-nivel.pronto { border-color: var(--premio-borda); background: var(--premio-claro); }
 .tn-nivel.pronto .tn-num { background: var(--wii); border-color: var(--wii); color: #fff; }
 .tn-nivel.pego { background: #eef6e6; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
 .tn-nivel.pego .tn-num { background: #6b8f4e; border-color: #5a7c40; color: #fff; }
@@ -252,7 +252,7 @@
 .tn-nivel.proximo { opacity: 1; border-color: var(--tinta); }
 .tn-rodape { flex: none; padding: 0 16px 14px; }
 .tn-rodape:has(> [hidden]) { display: none; }
-.tn-rodape .btn-premio { border: 2px solid #c9a443; border-radius: 14px; background-image: var(--brilho-topo); }
+.tn-rodape .btn-premio { border: 2px solid var(--premio); border-radius: 14px; background-image: var(--brilho-topo); }
 
 /* ------------------------------ Baú abrindo ------------------------------ */
 /* O baú treme, dá um pulo e some num brilho; as peças pulam uma a uma, com
@@ -272,7 +272,7 @@
 .bau-caixa.bau-incomum { color: #2fbf63; border-color: #9ae0b5; }
 .bau-caixa.bau-raro { color: #2f7ff0; border-color: #b9d6f2; }
 .bau-caixa.bau-epico { color: #9b46f0; border-color: #c3a6f2; }
-.bau-caixa.bau-lendario { color: #b8860b; border-color: #e3cf8f; background: #fbf1d0 var(--brilho-topo); box-shadow: 0 0 30px rgba(232, 196, 106, .7); }
+.bau-caixa.bau-lendario { color: var(--premio-texto); border-color: var(--premio-borda); background: var(--premio-claro) var(--brilho-topo); box-shadow: 0 0 30px color-mix(in srgb, var(--premio) 70%, transparent); }
 .bau-saiu {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 0;
   max-height: 52vh; overflow-y: auto; padding: 6px;
@@ -293,7 +293,7 @@
 .bau-extra { font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
 .bau-extra:empty { display: none; }
 .bau-vazio { margin: 0; color: var(--tinta-suave); font-size: 13px; }
-.bau-palco .btn-premio { border: 2px solid #c9a443; border-radius: 14px; background-image: var(--brilho-topo); animation: none; }
+.bau-palco .btn-premio { border: 2px solid var(--premio); border-radius: 14px; background-image: var(--brilho-topo); animation: none; }
 
 .bau-modal.abrindo .bau-caixa { animation: bau-treme .75s ease-in-out both; }
 .bau-modal.abrindo :is(.bau-item, .bau-extra, .bau-vazio) { animation: bau-pula .5s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: var(--atraso, .8s); }
@@ -318,7 +318,7 @@
 /* A porta em Tarefas fica ao lado da de Coleções; a tela mostra um cartão
    pérola por tipo de baú, do mais raro ao mais comum, com a quantidade. */
 .tf-portas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.tf-baus.escolha .tf-col-ico { color: #8a6d24; }
+.tf-baus.escolha .tf-col-ico { color: var(--premio-texto); }
 
 .view-baus { background: var(--papel); overflow-y: auto; }
 .bs-wrapper {
@@ -350,8 +350,8 @@
 }
 .bs-bau strong { font-size: 14px; font-weight: 800; }
 .bs-bau small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
-.bs-bau.bau-lendario { background: #fffaf0; border-color: #e3cf8f; box-shadow: inset 0 -3px 0 #e3cf8f; }
-.bs-bau.bau-lendario .bau-caixa { box-shadow: 0 0 18px rgba(232, 196, 106, .7); }
+.bs-bau.bau-lendario { background: var(--premio-claro); border-color: var(--premio-borda); box-shadow: inset 0 -3px 0 var(--premio-borda); }
+.bs-bau.bau-lendario .bau-caixa { box-shadow: 0 0 18px color-mix(in srgb, var(--premio) 70%, transparent); }
 .bs-qtd {
   position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 10px;
   background: var(--tinta); color: #fff; font-size: 12px; font-weight: 800;
@@ -361,7 +361,7 @@
 .bs-vazio .bau-caixa { width: 64px; height: 64px; font-size: 34px; border-radius: 18px; opacity: .45; margin-bottom: 8px; }
 .bs-vazio strong { font-size: 14px; }
 .bs-vazio small { font-size: 12px; color: var(--tinta-suave); }
-.bs-wrapper > .btn-premio { border: 2px solid #c9a443; border-radius: 14px; background-image: var(--brilho-topo); }
+.bs-wrapper > .btn-premio { border: 2px solid var(--premio); border-radius: 14px; background-image: var(--brilho-topo); }
 .bs-wrapper > .btn-premio[hidden] { display: none; }
 @keyframes bs-espera {
   0%, 70%, 100% { transform: none; }

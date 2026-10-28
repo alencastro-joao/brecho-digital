@@ -223,7 +223,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .es-bolha.livre { border-style: dashed; }
 .es-bolha.estampa { background: conic-gradient(#e78fae, #e8c24a, #4f8f5c, #3c6fb4, #e78fae); }
 
-.es-ia { font-size: 11px; color: #8a6d24; padding: 4px 14px 0; }
+.es-ia { font-size: 11px; color: var(--tinta-suave, #6b6560); padding: 4px 14px 0; }
 
 .es-acoes { display: flex; gap: 6px; padding: 12px 14px 14px; margin-top: auto; }
 .es-acoes .es-btn.escuro { margin-left: auto; }
@@ -340,7 +340,7 @@ kbd {
 .toast.uncommon { background: #2f7a4a; }
 .toast.rare { background: #3b6ea5; }
 .toast.epic { background: #6b4fa5; }
-.toast.legendary { background: #9a7b13; }
+.toast.legendary { background: #a8306a; }
 
 /* ------------------------------ Celular -------------------------------- */
 /* Sem o contorno vermelho em volta da peça no molde: a barra e as alças já

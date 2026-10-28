@@ -1072,8 +1072,7 @@ O botão **+ Adicionar peça** no guarda-roupa abre um fluxo de dois passos:
    colorido e neutro, e a dos coloridos ganha a partir de 25% dos pixels: peça colorida
    sempre tem dobra escura e brilho lavado votando neutro, enquanto peça preta de verdade
    quase não tem pixel colorido. Duas cores distantes dividindo a peça sem nenhuma dominar
-   saem como **Estampado**. Dourado e Prateado ficam fora da leitura — na foto são só um
-   amarelo escuro e um cinza claro — e continuam à mão.
+   saem como **Estampado**. Dourado e Prateado não existem no jogo.
 
    O **nome** começa vazio: nome de arquivo não é nome de peça. Peça sem nome é mostrada
    como "Jaqueta Nike" (tipo + marca) ou "Top verde" (tipo + cor), via `nomeDaPeca`.

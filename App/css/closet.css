@@ -77,7 +77,7 @@
 .item-slot.r-legendary {
   border-color: transparent;
   background-image:
-    linear-gradient(var(--rar-bg, #fffdf2), var(--rar-bg, #fffdf2)),
+    linear-gradient(var(--rar-bg, #fff4f9), var(--rar-bg, #fff4f9)),
     conic-gradient(from 0deg,
       #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
   background-origin: border-box;
@@ -85,13 +85,13 @@
 }
 .selo-collab {
   position: absolute; top: 6px; right: 8px;
-  font-size: 12px; color: #c9a227;
+  font-size: 12px; color: var(--premio);
 }
 /* Peça favoritada: marca do lado oposto ao selo da cápsula, para as duas
    caberem na mesma peça. */
 .item-slot.favorita::after {
   content: ''; display: inline-block; width: 1em; height: 1em; background: currentColor; -webkit-mask: url(../assets/icones/ph/estrela-cheia.svg) center / contain no-repeat; mask: url(../assets/icones/ph/estrela-cheia.svg) center / contain no-repeat; position: absolute; top: 6px; left: 8px;
-  font-size: 12px; color: #d6a81f;
+  font-size: 12px; color: var(--premio);
 }
 .closet-paginas {
   flex: none; display: flex; align-items: center; justify-content: center;
@@ -143,7 +143,7 @@
   border: 1.5px solid var(--linha); border-radius: 20px; padding: 3px 11px;
 }
 .item-slot.achada { animation: slot-achada 1.2s ease-in-out 2; }
-@keyframes slot-achada { 50% { box-shadow: 0 0 0 4px #d9b453; transform: scale(1.06); } }
+@keyframes slot-achada { 50% { box-shadow: 0 0 0 4px var(--premio); transform: scale(1.06); } }
 
 /* --------------------------- Histórico da peça --------------------------- */
 /* De onde veio e por quem passou (js/historico.js): uma linha do tempo

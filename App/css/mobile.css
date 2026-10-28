@@ -382,7 +382,7 @@
   .view-closet .preview-meta .col-chip-disco {
     width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--bloco-borda);
   }
-  .view-closet .preview-meta .col-chip.presente .col-chip-disco { box-shadow: 0 0 0 2px #c9a443; }
+  .view-closet .preview-meta .col-chip.presente .col-chip-disco { box-shadow: 0 0 0 2px var(--premio); }
   .view-closet .preview-meta button.fav-estrela { order: 6; }
   .view-closet .preview-meta button.btn-historico { order: 6; }
   .view-closet .preview-meta button.btn-editar { order: 7; }

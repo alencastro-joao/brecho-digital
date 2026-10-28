@@ -42,8 +42,7 @@ CATEGORIAS = {
     'belts': 'cinto, cinta, faixa de cintura',
 }
 CORES = ['Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Rosa',
-         'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo', 'Dourado', 'Prateado',
-         'Estampado']
+         'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo', 'Estampado']
 
 FERRAMENTA = {
     'toolSpec': {
@@ -82,7 +81,7 @@ def _instrucao(marcas):
     linhas += ['- %s: %s' % (c, d) for c, d in CATEGORIAS.items()]
     linhas += ['', 'Cor: a cor dominante, entre as da lista. "Estampado" só '
                'quando nenhuma cor domina (xadrez, floral, listras de duas '
-               'cores). Dourado e Prateado só para metal.']
+               'cores).']
     if marcas:
         linhas += ['', 'Marcas que já existem no acervo (se for uma delas, '
                    'escreva igual): ' + ', '.join(marcas)]
