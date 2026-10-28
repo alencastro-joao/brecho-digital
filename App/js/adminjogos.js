@@ -62,9 +62,9 @@ async function renderJogosAdmin() {
 function cartao(item, resumo) {
   const cat = item.ficha?.cat || item.sugestao?.cat || '';
   const linhas = [];
-  if (resumo?.votos && (resumo.votos.sim + resumo.votos.nao)) {
+  if (resumo?.votos && (resumo.votos.sim + resumo.votos.nao + (resumo.votos.meh || 0))) {
     const v = resumo.votos;
-    linhas.push(`${v.sim + v.nao} votos · ${v.pct}% gostei` +
+    linhas.push(`${v.sim + v.nao + (v.meh || 0)} votos · ${v.pct}% gostei` +
       (v.raridade ? ` → ${RARIDADE[v.raridade]?.nome}` : ''));
   }
   if (resumo?.cor) linhas.push(`cor: ${resumo.cor.valor} (${resumo.cor.votos}/${resumo.cor.total})`);

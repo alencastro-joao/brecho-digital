@@ -3,7 +3,7 @@
 // três botões grandes, um por jogo.
 //
 //   Avaliar    a peça aparece; arrastar para a direita é "gostei", para a
-//              esquerda "não gostei". A média dos votos sugere a raridade.
+//              esquerda "não gostei"; "tanto faz" vale meio. A média dos votos sugere a raridade.
 //   Ajustar    encaixar a peça no corpo (arrastar e mudar o tamanho).
 //   Preencher  dizer a cor e a marca da peça.
 //
@@ -34,7 +34,7 @@ let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
 let premiado = null;      // jogo que acabou de pagar ficha (a barra mostra cheia)
-let pendente = null;      // Avaliar: último voto, ainda não enviado ({ peca, gostei }), para poder voltar
+let pendente = null;      // Avaliar: último voto, ainda não enviado ({ peca, voto }), para poder voltar
 
 async function chamar(rota, corpo) {
   const r = await fetch(rota, {
@@ -122,12 +122,14 @@ function renderCota() {
   const passo = s.feitas % s.porFicha;
   const pct = esgotou || ganhou ? 100 : passo / s.porFicha * 100;
   const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
+  const restam = Math.floor(s.limite / s.porFicha) - Math.floor(s.feitas / s.porFicha);
   $('#mg-cota').replaceChildren(el('div', {
     class: 'mg-progresso' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : ''),
   },
     el('span', { class: 'mg-progresso-ico' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' })),
     el('div', { class: 'mg-progresso-info' },
-      el('strong', {}, esgotou ? `Limite ${quando} atingido` : ganhou ? '+1 ficha!' : 'Próxima ficha'),
+      el('strong', {}, esgotou ? `Limite ${quando} atingido` : ganhou ? '+1 ficha!' : 'Próxima ficha',
+        esgotou ? null : el('span', { class: 'mg-restam' }, `Ainda dá para ganhar ${restam} ficha${restam === 1 ? '' : 's'} ${quando}`)),
       el('div', { class: 'mg-progresso-barra' }, el('span', { style: { width: pct + '%' } }))),
     el('small', {}, esgotou ? `${s.feitas}/${s.limite}` : `${ganhou ? s.porFicha : passo}/${s.porFicha}`)));
 }
@@ -173,9 +175,9 @@ async function enviar(corpo) {
 // "Voltar" desfaz sem precisar apagar nada no servidor.
 function soltarPendente() {
   if (!pendente) return;
-  const { peca: p, gostei } = pendente;
+  const { peca: p, voto } = pendente;
   pendente = null;
-  gravar('avaliar', p, { gostei }).then(() => { if (jogo === 'avaliar') renderCota(); });
+  gravar('avaliar', p, { voto }).then(() => { if (jogo === 'avaliar') renderCota(); });
 }
 
 async function gravar(jogo, peca, corpo) {
@@ -207,11 +209,12 @@ function jogoAvaliar() {
   const carta = el('div', { class: 'mg-carta' }, imagem(peca, 'mg-carta-img'),
     el('span', { class: 'mg-selo mg-selo-nao' }, 'Não'),
     el('span', { class: 'mg-selo mg-selo-sim' }, 'Gostei'));
-  const votar = (gostei) => {
-    carta.classList.add(gostei ? 'sai-dir' : 'sai-esq');
-    tocar(gostei ? 'coracao' : 'naocurti');
+  // voto: 'sim' (direita), 'nao' (esquerda) ou 'meh' (tanto faz: cai para baixo).
+  const votar = (voto) => {
+    carta.classList.add({ sim: 'sai-dir', nao: 'sai-esq', meh: 'sai-baixo' }[voto]);
+    tocar({ sim: 'coracao', nao: 'naocurti', meh: 'escolha' }[voto]);
     soltarPendente();
-    pendente = { peca, gostei };
+    pendente = { peca, voto };
     estado.avaliar.pecas.push(peca.id);     // some da fila enquanto espera
     setTimeout(proxima, 220);
   };
@@ -239,7 +242,7 @@ function jogoAvaliar() {
     const dx = e.clientX - ini;
     ini = null;
     carta.classList.remove('arrastando');
-    if (Math.abs(dx) > 100) return votar(dx > 0);
+    if (Math.abs(dx) > 100) return votar(dx > 0 ? 'sim' : 'nao');
     carta.style.transform = '';
     carta.style.setProperty('--sim', 0);
     carta.style.setProperty('--nao', 0);
@@ -251,8 +254,9 @@ function jogoAvaliar() {
     el('div', { class: 'mg-mesa' }, carta),
     $('#mg-cota'),
     el('div', { class: 'mg-botoes mg-botoes-voto' },
-      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar(false) }, ico('x'), 'Não curti'),
-      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar(true) }, ico('coracao-cheio'), 'Gostei')),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar('nao') }, ico('x'), 'Não curti'),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-meh', onclick: () => votar('meh') }, '😐', 'Tanto faz'),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar('sim') }, ico('coracao-cheio'), 'Gostei')),
     el('button', { type: 'button', class: 'mg-desfazer', disabled: !pendente, onclick: desfazer },
       ico('desfazer'), 'Voltar o último voto'));
 }

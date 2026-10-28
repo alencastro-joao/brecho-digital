@@ -267,3 +267,8 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 }
 .mg-desfazer:disabled { opacity: .4; cursor: default; }
 .mg-desfazer svg { width: 16px; height: 16px; }
+
+.mg-carta.sai-baixo { transform: translateY(60vh) scale(.8) !important; opacity: 0; }
+.mg-botoes-voto .mg-voto { white-space: nowrap; gap: 6px; padding: 0 6px; font-size: 15px; }
+.mg-voto-meh { flex: .9; }
+.mg-restam { display: block; margin-top: 1px; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
