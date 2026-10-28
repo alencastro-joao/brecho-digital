@@ -186,6 +186,7 @@ async function gravar(jogo, peca, corpo) {
     const s = estado[jogo];
     Object.assign(s, { feitas: r.feitas, limite: r.limite, porFicha: r.porFicha, vira: r.vira });
     if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
+    if (r.ok && !r.fichas) tocar('xp');     // a barra subiu
     if (r.fichas) {
       db.ganharFicha(r.fichas);
       tocar('missao');
@@ -387,7 +388,7 @@ function jogoPreencher() {
       campoMarca, atalhos),
     el('div', { class: 'mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto', onclick: () => {
-        estado[jogo].pecas.push(peca.id); proxima();
+        tocar('janela'); estado[jogo].pecas.push(peca.id); proxima();
       } }, ico('seta-dir'), 'Pular'),
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         if (!cat && !cor && !campoMarca.value.trim()) return toast('Escolha o tipo, a cor ou a marca.', 'aviso');
