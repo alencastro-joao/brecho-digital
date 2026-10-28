@@ -20,9 +20,9 @@ import { el, $, clamp, toast } from './util.js';
 import { ico } from './icones.js';
 
 const JOGOS = [
-  { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: '#ff5c8a', desc: 'Arraste: gostei ou não gostei.' },
-  { id: 'ajustar', nome: 'Ajustar', icone: 'mover', cor: '#4a90e2', desc: 'Encaixe a peça no corpo.' },
-  { id: 'preencher', nome: 'Preencher', icone: 'editar', cor: '#f5a623', desc: 'Diga a cor e a marca.' },
+  { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: 'var(--board)', desc: 'Arraste: gostei ou não gostei.' },
+  { id: 'ajustar', nome: 'Ajustar', icone: 'mover', cor: 'var(--inventario)', desc: 'Encaixe a peça no corpo.' },
+  { id: 'preencher', nome: 'Preencher', icone: 'editar', cor: 'var(--tarefas)', desc: 'Diga a cor e a marca.' },
 ];
 
 let estado = null;        // resposta de GET /api/ajudas
