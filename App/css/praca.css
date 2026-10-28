@@ -56,7 +56,7 @@
 .pc-enfeite svg { display: block; }
 
 /* Enfeites que se mexem (pracacasas.js). */
-.pc-ceu { position: absolute; pointer-events: none; }
+.pc-ceu { position: absolute; pointer-events: none; z-index: 120; }   /* voa na frente das casas e das pessoas */
 .pc-ceu svg, .pc-enfeite svg { overflow: visible; filter: url(#pc-falhado); }
 .pc-ave { animation: pc-voa 9s linear infinite; }
 .pc-asa { transform-box: fill-box; transform-origin: 50% 100%; animation: pc-asa .4s ease-in-out infinite; }
