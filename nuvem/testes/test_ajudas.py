@@ -54,7 +54,11 @@ class Ajudas(unittest.TestCase):
             fichas += r['fichas']
         self.assertEqual(fichas, regra['limite'] // regra['porFicha'])
         r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0099', 'gostei': True})
-        self.assertEqual(r['motivo'], 'limite')
+        # Depois do limite a ajuda vale, mas não paga ficha.
+        self.assertTrue(r['ok'])
+        self.assertEqual(r['fichas'], 0)
+        self.assertTrue(r['semPremio'])
+        self.assertEqual(r['feitas'], regra['limite'])
 
     def test_mesma_peca_nao_conta_duas_vezes(self):
         self.assertTrue(ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0001', 'gostei': True})['ok'])

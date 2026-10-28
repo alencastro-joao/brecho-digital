@@ -292,11 +292,11 @@ def ajudar(usuario, jogo, corpo):
     """Grava uma ajuda. Devolve a cota nova e quantas fichas ela pagou."""
     pid, dados = _validar(jogo, corpo or {})
     uid = usuario['id']
+    # Passou do limite a pessoa continua ajudando; só não ganha mais ficha.
     n = _contar(uid, jogo)
-    if n is None:
-        return {'ok': False, 'motivo': 'limite', **_situacao(uid, jogo)}
     if not _marcar_feita(uid, jogo, pid):
-        _descontar(uid, jogo)
+        if n is not None:
+            _descontar(uid, jogo)
         return {'ok': False, 'motivo': 'repetida', **_situacao(uid, jogo)}
     try:
         _anotar(jogo, pid, dados)
@@ -304,6 +304,8 @@ def ajudar(usuario, jogo, corpo):
         # Peça com medidas de sobra: a ajuda conta, a medida não entra.
         if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
             raise
+    if n is None:
+        return {'ok': True, 'fichas': 0, 'semPremio': True, **_situacao(uid, jogo)}
     fichas = 1 if n % JOGOS[jogo]['porFicha'] == 0 else 0
     return {'ok': True, 'fichas': fichas, **_situacao(uid, jogo, n)}
 
