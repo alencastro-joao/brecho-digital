@@ -1434,6 +1434,7 @@ export const OCULOS_MASCARA = {
 export const CAMISETA_CAVEIRA = {
   id: 'camiseta-longa-caveira', nome: 'Camiseta longa com caveira', slot: 'torso', versao: 'v3',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Preto: 'preta' },
 };
 // Camiseta longa com o sol branco no lugar da estrela, no Amarelo e no Laranja
@@ -1441,6 +1442,7 @@ export const CAMISETA_CAVEIRA = {
 export const CAMISETA_SOL = {
   id: 'camiseta-longa-sol', nome: 'Camiseta longa com sol', slot: 'torso', versao: 'v3',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Amarelo: 'amarela', Laranja: 'laranja' },
 };
 // Camiseta longa verde-creeper com o rosto do creeper em preto, só no Verde
@@ -1448,6 +1450,7 @@ export const CAMISETA_SOL = {
 export const CAMISETA_CREEPER = {
   id: 'camiseta-longa-creeper', nome: 'Camiseta longa creeper', slot: 'torso', versao: 'v3',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Verde: 'verde' },
 };
 // Camiseta longa vermelha com a foice e o martelo em amarelo, só no Vermelho
@@ -1455,6 +1458,7 @@ export const CAMISETA_CREEPER = {
 export const CAMISETA_FOICE_MARTELO = {
   id: 'camiseta-longa-foice-martelo', nome: 'Camiseta longa foice e martelo', slot: 'torso', versao: 'v3',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Vermelho: 'vermelha' },
 };
 // Camiseta longa roxa com o ankh em amarelo, só no Roxo
@@ -1462,6 +1466,7 @@ export const CAMISETA_FOICE_MARTELO = {
 export const CAMISETA_ANKH = {
   id: 'camiseta-longa-ankh', nome: 'Camiseta longa ankh', slot: 'torso', versao: 'v4',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Roxo: 'roxa' },
 };
 // Camiseta longa rosa com a Hello Kitty, só no Rosa
@@ -1469,6 +1474,7 @@ export const CAMISETA_ANKH = {
 export const CAMISETA_KITTY = {
   id: 'camiseta-longa-kitty', nome: 'Camiseta longa Hello Kitty', slot: 'torso', versao: 'v3',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Rosa: 'rosa' },
 };
 // Camiseta longa branca com o yin-yang preto e branco, só no Branco
@@ -1476,6 +1482,7 @@ export const CAMISETA_KITTY = {
 export const CAMISETA_YINYANG = {
   id: 'camiseta-longa-yinyang', nome: 'Camiseta longa yin-yang', slot: 'torso', versao: 'v3',
   caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
   cores: { Branco: 'branca' },
 };
 // Camisas e croppeds das seleções: a camiseta da artista (`base`, de
