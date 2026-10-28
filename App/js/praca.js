@@ -9,7 +9,7 @@ import * as db from './db.js';
 import { ADMIN } from './config.js';
 import { svgAvatar, aparenciaAtual, aparenciaDoPerfil } from './avatar.js';
 import { roupasDoPerfil, perfilDe } from './pessoas.js';
-import { segueDeVolta, abrirPerfilDe } from './usuario.js';
+import { segueDeVolta, abrirGavetaDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara } from './router.js';
 import { desenhoDaCasa } from './pracacasas.js';
@@ -60,8 +60,6 @@ function novidadeDe(id) {
 }
 
 // Nome de conta real vai para o HTML da rua: escapar.
-const esc = (t) => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
-const comSvg = (classe, svg) => { const n = el('span', { class: classe }); n.innerHTML = svg; return n; };
 
 const corpo = (aparencia, roupas) =>
   svgAvatar({ aparencia, roupas, recorte: RECORTE });
@@ -95,7 +93,6 @@ function trecho(k, gente) {
       style="left:${g.x}px;bottom:${g.y}%;z-index:${100 - g.y};--h:${Math.round(250 - g.y * 3)}px">
       ${g.balao ? `<span class="pc-balao">${g.balao}</span>` : ''}
       <span class="pc-corpo"><span class="pc-chao"></span>${g.svg}</span>
-      <span class="pc-nome">${esc(g.nome)}</span>
     </button>`).join('');
   return `<div class="pc-trecho" style="left:${k * LARGURA}px;width:${LARGURA}px">
     <div class="pc-calcada"></div>${ENFEITES}${casas}${pessoasHtml}</div>`;
@@ -103,17 +100,15 @@ function trecho(k, gente) {
 
 let gente = [];
 
+// Os outros abrem a gaveta de perfil (a mesma do feed), sem repetir o avatar.
 function abrirCartao(g) {
+  if (!g.eu) return abrirGavetaDe(g.p.id, { foto: false });
   const fundo = $('#pc-fundo');
-  const botoes = g.eu
-    ? [['Trocar de roupa', () => irPara('vestiario')], ['Meu perfil', () => irPara('perfil')]]
-    : [['Ver perfil', () => abrirPerfilDe(g.p.id)]];
+  const botoes = [['Trocar de roupa', () => irPara('vestiario')], ['Meu perfil', () => irPara('perfil')]];
   $('#pc-cartao').replaceChildren(
     el('button', { class: 'pc-fechar', 'aria-label': 'Fechar', onclick: fecharCartao }, '✕'),
-    comSvg('pc-lado', g.svg),
     el('div', { class: 'pc-info' },
-      el('h2', {}, g.eu ? 'Você' : g.p.nome),
-      g.eu ? null : el('div', { class: 'pc-handle' }, g.p.handle || ''),
+      el('h2', {}, 'Você'),
       g.p?.bio ? el('div', { class: 'pc-bio' }, g.p.bio) : null,
       g.balao ? el('div', { class: 'pc-novidade' }, `${g.balao} · hoje`) : null,
       el('div', { class: 'pc-botoes' }, ...botoes.map(([rotulo, fn], i) =>

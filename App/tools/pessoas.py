@@ -42,6 +42,9 @@ CORES_FAVORITAS = {'Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Ro
                    'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo'}
 
 
+# A bio que o jogo punha sozinho em conta nova; quem não trocou fica sem bio.
+BIO_ANTIGA = 'garimpando peça por peça.'
+
 def preparar():
     """Acrescenta o que as pessoas precisam ao esquema. Idempotente: roda no
     boot do servidor, depois de `contas.preparar()`."""
@@ -86,7 +89,7 @@ def _cartao(con, linha, eu_id=None):
         'nome': linha['nome'],
         'handle': '@' + linha['handle'],
         'criadoEm': linha['criado_em'],
-        'bio': perfil.get('bio') or '',
+        'bio': '' if perfil.get('bio') == BIO_ANTIGA else perfil.get('bio') or '',
         'avatar': perfil.get('avatar') or {},
         'equipado': perfil.get('equipado') or {},
         'corFavorita': perfil.get('corFavorita') or '',
