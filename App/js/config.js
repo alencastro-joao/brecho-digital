@@ -79,7 +79,7 @@ export const RARIDADES = [
   { id: 'epic',      nome: 'Épica',    peso: 3,  naLoja: { 0: 25, 1: 63, 2: 12 },
     tiragem: 100, cor: '#c3a6f2', bg: '#f8f4ff', aura: '#9b46f0' },
   { id: 'legendary', nome: 'Lendária', peso: 1,  naLoja: { 0: 93, 1: 7 },
-    tiragem: 25, cor: '#efd469', bg: '#fffdf2', aura: 'arco-iris' },
+    tiragem: 25, cor: '#f4a8c8', bg: '#fff4f9', aura: 'arco-iris' },
 ];
 export const RARIDADE = Object.fromEntries(RARIDADES.map(r => [r.id, r]));
 
@@ -125,8 +125,6 @@ export const CORES = [
   { nome: 'Verde',     hex: '#4f8f5c' },
   { nome: 'Azul',      hex: '#3c6fb4' },
   { nome: 'Roxo',      hex: '#7d5bb0' },
-  { nome: 'Dourado',   hex: '#c9a227' },
-  { nome: 'Prateado',  hex: '#b9bcc0' },
   { nome: 'Estampado', hex: 'estampa' },
 ];
 
@@ -143,11 +141,6 @@ export const hexDaCor = (nome) => CORES_POR_NOME.get(semAcento(nome))?.hex ?? nu
 // mais clara ou mais lavada que a cor da lista. Daí os dois passos daqui:
 // primeiro o pixel é neutro ou colorido, e só o colorido é comparado com a
 // paleta, num espaço onde o tom pesa mais que o resto.
-//
-// Dourado e Prateado ficam de fora: metal é brilho, não cor — na foto eles são
-// só um amarelo escuro e um cinza claro, e deixá-los concorrendo faz toda peça
-// bege virar dourada e toda camiseta branca virar prateada. Continuam à mão,
-// que é onde quem está olhando a peça sabe que ela é metálica.
 
 // sRGB → Lab (D65). A comparação tem que sair do RGB: nele um bege escuro fica
 // mais perto de cinza do que de marrom.
@@ -549,7 +542,7 @@ export const CORPOS = {
 export const ORDEM_CORPOS = Object.keys(CORPOS);
 
 // Tom de pele: a cor do corpo e o traço que a acompanha. A paleta é a de
-// joias e metais (pedras claras, médias e profundas, ouro, cobre e prata), com
+// joias (pedras claras, médias e profundas, mais cobre e bronze), com
 // as humanas misturadas no mesmo degradê de matiz: na tela é tudo uma cor só.
 // O grupo fica para o sorteio dos perfis do feed.
 // Quem tem uma pele que saiu da lista cai na mais parecida (PELES_ANTIGAS).
@@ -569,7 +562,6 @@ export const PELES = [
   { id: 'bege', nome: 'Bege', cor: '#e2c39d', traco: '#c5a075', grupo: 'humana' },
   { id: 'citrino',     nome: 'Citrino', cor: '#f2d68a', traco: '#b7a268', grupo: 'fantasia' },
   { id: 'topazio',     nome: 'Topázio', cor: '#e3a45a', traco: '#ac7c44', grupo: 'fantasia' },
-  { id: 'ouro',        nome: 'Ouro', cor: '#d8b45a', traco: '#a48844', grupo: 'fantasia' },
   { id: 'bronze',      nome: 'Bronze', cor: '#9a7444', traco: '#755833', grupo: 'fantasia' },
   { id: 'peridoto',    nome: 'Peridoto', cor: '#9fb85a', traco: '#788b44', grupo: 'fantasia' },
   { id: 'musgo',       nome: 'Musgo', cor: '#6e7038', traco: '#53552a', grupo: 'fantasia' },
@@ -592,15 +584,15 @@ export const PELES = [
   { id: 'quartzo',     nome: 'Quartzo', cor: '#e3a9b8', traco: '#ac808b', grupo: 'fantasia' },
   { id: 'rodolita',    nome: 'Rodolita', cor: '#c25a78', traco: '#93445b', grupo: 'fantasia' },
   { id: 'bordo',       nome: 'Bordô', cor: '#5a1a2a', traco: '#44131f', grupo: 'fantasia' },
-  { id: 'prata',       nome: 'Prata', cor: '#b8bcc4', traco: '#8b8e94', grupo: 'fantasia' },
   { id: 'grafite',     nome: 'Grafite', cor: '#50545e', traco: '#3c3f47', grupo: 'fantasia' },
   { id: 'onix',        nome: 'Ônix', cor: '#24232b', traco: '#1b1a20', grupo: 'fantasia' },
 ];
 
 // Ids da paleta anterior que saíram, apontando para a pedra mais parecida.
 const PELES_ANTIGAS = {
-  menta: 'jade', folha: 'peridoto', bruma: 'prata', ceu: 'topazioazul', oceano: 'safira',
-  lavanda: 'opala', coral: 'cobre', brasa: 'rubi', dourado: 'ouro', pedra: 'prata', breu: 'onix',
+  menta: 'jade', folha: 'peridoto', bruma: 'perola', ceu: 'topazioazul', oceano: 'safira',
+  lavanda: 'opala', coral: 'cobre', brasa: 'rubi', dourado: 'citrino', pedra: 'grafite', breu: 'onix',
+  ouro: 'citrino', prata: 'perola',
 };
 
 // A pele de um id; sem ele (ou com um desconhecido), a clara.

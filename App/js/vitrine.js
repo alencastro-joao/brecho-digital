@@ -537,7 +537,7 @@ export function montarVitrine({ entrada = false } = {}) {
       }, caixaDeAura(raridade, peca.src), img, db.estaCongelada(peca.id) ? seloDeCongelada() : null),
       el('span', { class: 'item-tag' },
         nomeDaPeca(peca),
-        r.aura ? el('span', { class: 'raridade', style: { color: r.aura === 'arco-iris' ? '#b8860b' : r.aura } },
+        r.aura ? el('span', { class: 'raridade', style: { color: r.aura === 'arco-iris' ? '#c2306e' : r.aura } },
           ' · ' + r.nome) : null),
       el('button', {
         class: 'btn-pegar',

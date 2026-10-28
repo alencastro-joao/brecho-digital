@@ -18,6 +18,13 @@
   --perola: linear-gradient(180deg, #ffffff 0%, var(--perola-1) 48%, var(--perola-2) 52%, var(--perola-3) 100%);
   /* a linha fina das bordas e divisórias, puxada para a borda da paleta */
   --linha: color-mix(in srgb, var(--wii-borda) 60%, var(--papel));
+  /* o destaque de prêmio (baú, fichas, coleção completa, estrela): sai do tom
+     da paleta, nada de dourado nem prateado no jogo */
+  --premio: var(--wii);
+  --premio-fundo: color-mix(in srgb, var(--wii) 45%, #fff);
+  --premio-borda: color-mix(in srgb, var(--wii) 35%, #fff);
+  --premio-claro: color-mix(in srgb, var(--wii) 10%, #fff);
+  --premio-texto: color-mix(in srgb, var(--wii) 75%, #000);
 }
 [data-paleta="blueberry"] {
   --wii: #2e7bd6; --wii-brilho: rgba(46, 123, 214, .28); --wii-borda: #cdd5de;

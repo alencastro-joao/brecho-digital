@@ -99,7 +99,7 @@
 .aviso-icone.curtida { background: var(--board); color: #b0285a; }
 .aviso-icone.comentario, .aviso-icone.seguidor { background: var(--social); color: #4b3a8a; }
 .aviso-icone.missao { background: var(--tarefas); color: #9a5a00; }
-.aviso-icone.nivel { background: #fff1c2; color: #9a7b13; }
+.aviso-icone.nivel { background: var(--premio-claro); color: var(--premio-texto); }
 .aviso-icone.loja { background: var(--loja); color: #2f6b34; }
 .aviso-icone.wishlist { background: var(--board); color: #b0285a; }
 

@@ -306,7 +306,7 @@ function renderSemana() {
     el('span', { class: 'tf-selo' + (i < n ? ' on' : ''), title: `Semana ${i + 1}` },
       i < n ? ico('ok') : String(i + 1)));
   trilha(selos, {
-    nome: 'Baú mensal', bau: BAU_ESPECIAL, icone: 'coroa', dourado: true,
+    nome: 'Baú mensal', bau: BAU_ESPECIAL, icone: 'coroa', especial: true,
     pronto: db.bauEspecialPronto(), abrir: abrirEspecial,
   });
 }
@@ -314,12 +314,12 @@ function renderSemana() {
 // ---------------------------------- Baús -----------------------------------
 // A trilha termina no baú. Fechado, um toque diz o que tem dentro; pronto, ele
 // brilha e o toque abre; aberto, a peça que saiu aparece embaixo.
-function trilha(selos, { nome, bau, icone, dourado, pronto, abrir, aberto }) {
+function trilha(selos, { nome, bau, icone, especial, pronto, abrir, aberto }) {
   const { atual } = premioDoBau(bau, db.nivel());
   const dica = `${nome} · ${descreverPremio(atual)}.`;
   const botaoBau = el('button', {
     type: 'button', 'aria-label': nome,
-    class: 'tf-bau' + (dourado ? ' ouro' : '') + (pronto ? ' pronto' : '') + (aberto ? ' aberto' : ''),
+    class: 'tf-bau' + (especial ? ' especial' : '') + (pronto ? ' pronto' : '') + (aberto ? ' aberto' : ''),
     title: aberto ? `${nome} aberto` : dica,
     onclick: () => pronto ? abrir() : toast(aberto ? `${nome} já pego esta semana.` : dica),
   }, ico(aberto ? 'ok' : pronto ? 'presente' : icone));

@@ -207,7 +207,7 @@
 .vs-item.r-legendary, .vs-slot.r-legendary {
   border-color: transparent;
   background-image:
-    linear-gradient(var(--rar-bg, #fffdf2), var(--rar-bg, #fffdf2)),
+    linear-gradient(var(--rar-bg, #fff4f9), var(--rar-bg, #fff4f9)),
     conic-gradient(from 0deg,
       #ff4d6d, #ffb84d, #ffe94d, #57e389, #4dc9ff, #9b6bff, #ff4d6d);
   background-origin: border-box;

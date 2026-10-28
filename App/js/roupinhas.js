@@ -829,7 +829,7 @@ export const ROUPINHAS = [
   },
   {
     id: 'coroa', nome: 'Coroa', slot: 'cabeca', raridade: 'legendary',
-    cor: '#e8c25a',
+    cor: '#e07aa8',
     desbloqueio: { tipo: 'dias', meta: 5 },
     arte: () => `<path d="M248 92 L242 24 L272 56 L300 14 L328 56 L358 24 L352 92 Z"/>`,
     detalhe: () => `<circle cx="300" cy="72" r="8" fill="#c9566b"/>
@@ -958,7 +958,7 @@ export const ROUPINHAS = [
   },
   {
     id: 'pulseiras', nome: 'Pulseiras', slot: 'acessorio', z: 55, raridade: 'rare',
-    cor: '#e8c25a',
+    cor: '#7d5bb0',
     caixa: [118, 596, 112, 112],
     desbloqueio: { tipo: 'looks', meta: 12 },
     arte: (m) => nasMaos(cx => `
@@ -969,7 +969,7 @@ export const ROUPINHAS = [
   // ------------------- Acessório: no pescoço e no pulso -------------------
   {
     id: 'corrente', nome: 'Corrente', slot: 'acessorio', z: 58, raridade: 'common',
-    cor: '#d8b45c',
+    cor: '#1c1a18',
     desbloqueio: { tipo: 'nivel', meta: 10 },
     arte: (m, x) => `
       <path d="M${300 - m.pescoco - 8} 216 C300 268 300 268 ${300 + m.pescoco + 8} 216"
@@ -1139,7 +1139,7 @@ export const ROUPINHAS = [
     arte: (m) => `<path d="M${300 - m.pescoco - 26} 248
       C300 234 300 234 ${300 + m.pescoco + 26} 248
       C300 288 300 288 ${300 - m.pescoco - 26} 248 Z"/>`,
-    detalhe: () => `<circle cx="300" cy="256" r="9" fill="#e8c25a"
+    detalhe: () => `<circle cx="300" cy="256" r="9" fill="#1c1a18"
                             stroke="rgba(0,0,0,.3)" stroke-width="3"/>`,
   },
   {
