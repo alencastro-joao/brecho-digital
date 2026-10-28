@@ -51,7 +51,10 @@ const OBJETOS = [
   { svg: CAVALETE, x: 640, y: 20, pessoa: [48, 2] },
   { svg: MESA, x: 2780, y: 18, pessoa: [44, 3] },
 ];
-const hoje = () => new Date().toISOString().slice(0, 10);
+// A rua muda a cada meia hora: quem sai e volta depois disso acha as pessoas
+// em outros lugares (pedido do João, 28/10/2026).
+const TURNO = 30 * 60e3;
+const turno = () => Math.floor(Date.now() / TURNO);
 
 // Lugares na calçada, fora das portas. y é a distância do chão em %:
 // menor fica mais à frente e maior.
@@ -83,12 +86,12 @@ function pessoas() {
     eu: true, nome: 'Você', ...VOCE,
     svg: corpo(aparenciaAtual(), db.roupasEquipadas()),
   };
-  // Lugar sorteado pelo id: a mesma pessoa fica no mesmo canto a cada visita.
+  // Lugar sorteado pelo id e pelo turno: fica parado enquanto dura o turno.
   const livres = [...LUGARES];
   const usando = [];
   for (const [n, o] of OBJETOS.entries()) {
-    // Sorteio do dia: em uns dois terços dos dias tem alguém ali.
-    const s = sementeDoTexto(`praca:${hoje()}:${n}`);
+    // Sorteio do turno: em uns dois terços das vezes tem alguém ali.
+    const s = sementeDoTexto(`praca:${turno()}:${n}`);
     if (!amigos.length || s % 3 === 0) continue;
     const p = amigos.splice(s % amigos.length, 1)[0];
     usando.push({
@@ -97,7 +100,7 @@ function pessoas() {
     });
   }
   return [eu, ...usando, ...amigos.slice(0, LUGARES.length).map(p => {
-    const i = sementeDoTexto('praca:' + p.id) % livres.length;
+    const i = sementeDoTexto(`praca:${p.id}:${turno()}`) % livres.length;
     const [x, y] = livres.splice(i, 1)[0];
     return {
       p, x, y, nome: p.nome.split(' ')[0],
