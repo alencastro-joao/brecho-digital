@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="css/personagem.css">
 <link rel="stylesheet" href="css/usuario.css">
 <link rel="stylesheet" href="css/tarefas.css">
+<link rel="stylesheet" href="css/ajudas.css">
 <link rel="stylesheet" href="css/colecoes.css">
 <link rel="stylesheet" href="css/vestiario.css">
 <link rel="stylesheet" href="css/auth.css">
@@ -819,6 +820,7 @@
       <div class="tf-portas">
         <button type="button" class="tf-colecoes tf-baus" id="tarefas-baus"></button>
         <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
+        <button type="button" class="tf-colecoes tf-ajudas" id="tarefas-ajudas"></button>
       </div>
     </div>
   </section>
@@ -865,6 +867,18 @@
       <header class="bs-head"><h1>Baús</h1><small id="bs-resumo"></small></header>
       <div class="bs-grade" id="bs-grade"></div>
       <button type="button" class="btn-premio" id="bs-todos" hidden></button>
+    </div>
+  </section>
+
+  <!-- ====================== MINI GAMES ====================== -->
+  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre por Tarefas. -->
+  <section class="view view-ajudas" data-view="ajudas" hidden>
+    <div class="aj-wrapper">
+      <button type="button" class="bs-voltar" id="aj-voltar">‹ Tarefas</button>
+      <header class="aj-head"><h1>Mini games</h1></header>
+      <div class="aj-abas" id="aj-abas"></div>
+      <div class="aj-cota" id="aj-cota"></div>
+      <div class="aj-palco" id="aj-palco"></div>
     </div>
   </section>
 

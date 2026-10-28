@@ -86,6 +86,7 @@ ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$'
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil',
                     '/api/perfil/miniatura')
 ROTA_REDE = re.compile(r'^/api/redes/(instagram|pinterest)/(entrar|volta|sair)$')
+ROTA_AJUDA = re.compile(r'^/api/ajudas(?:/(avaliar|ajustar|preencher))?$')
 ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 
 
@@ -501,6 +502,24 @@ def rotas_de_estoque(pedido):
     return None
 
 
+def rotas_de_ajudas(pedido):
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    import ajudas
+    if pedido.rota == '/api/admin/ajudas':
+        if usuario['papel'] != 'admin':
+            return responder(403, {'erro': 'só o administrador vê o resumo das ajudas'})
+        return responder(200, ajudas.resumo()) if pedido.metodo == 'GET' else None
+    jogo = ROTA_AJUDA.match(pedido.rota).group(1)
+    if not jogo and pedido.metodo == 'GET':
+        return responder(200, ajudas.estado(usuario))
+    if jogo and pedido.metodo == 'POST':
+        feito = ajudas.ajudar(usuario, jogo, pedido.corpo(LIMITE_LOGIN))
+        return responder(200 if feito['ok'] else 409, feito)
+    return None
+
+
 def rotas_de_limpeza(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -577,6 +596,8 @@ def despachar(pedido):
         return rotas_de_pessoas(pedido)
     if rota.startswith('/api/estoque'):
         return rotas_de_estoque(pedido)
+    if ROTA_AJUDA.match(rota) or rota == '/api/admin/ajudas':
+        return rotas_de_ajudas(pedido)
     if ROTA_FEED.match(rota):
         return rotas_de_feed(pedido)
     if rota == '/api/pecas' or ROTA_PECA.match(rota):

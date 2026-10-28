@@ -1,0 +1,78 @@
+/* Mini games de ajuda (js/ajudas.js): avaliar, ajustar, preencher. */
+.aj-wrapper { max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 12px; }
+.aj-head h1 { margin: 0; }
+.aj-abas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.aj-aba {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 6px; border: 1px solid var(--linha); border-radius: 10px;
+  background: var(--papel); font: inherit; cursor: pointer;
+}
+.aj-aba svg { width: 18px; height: 18px; }
+.aj-aba.ativa { border-color: var(--rosa, #ff2e63); color: var(--rosa, #ff2e63); font-weight: 600; }
+.aj-cota { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.aj-cota small { opacity: .7; }
+.aj-palco { display: grid; gap: 12px; justify-items: center; }
+.aj-vazio { text-align: center; opacity: .75; padding: 40px 8px; }
+.aj-dica { margin: 0; text-align: center; font-size: 14px; }
+.aj-mesa { position: relative; display: grid; place-items: center; min-height: min(360px, 48vh); width: 100%; }
+.aj-mesa-baixa { min-height: 0; }
+.aj-mesa-baixa .aj-carta-img { max-height: min(220px, 30vh); }
+
+/* Avaliar: a carta que arrasta para os lados. */
+.aj-carta {
+  --sim: 0; --nao: 0;
+  position: relative; width: min(300px, 80vw, 40vh); aspect-ratio: 3 / 4;
+  display: grid; place-items: center; padding: 16px;
+  background: var(--papel); border: 1px solid var(--linha); border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .12);
+  touch-action: none; user-select: none; cursor: grab;
+  transition: transform .22s ease, opacity .22s ease;
+}
+.aj-carta.arrastando { transition: none; cursor: grabbing; }
+.aj-carta.sai-dir { transform: translateX(120vw) rotate(20deg) !important; opacity: 0; }
+.aj-carta.sai-esq { transform: translateX(-120vw) rotate(-20deg) !important; opacity: 0; }
+.aj-carta-img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+.aj-selo {
+  position: absolute; top: 18px; padding: 4px 10px; border: 3px solid; border-radius: 8px;
+  font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+}
+.aj-selo-sim { left: 18px; color: #2fbf63; opacity: var(--sim); transform: rotate(-12deg); }
+.aj-selo-nao { right: 18px; color: #e0445a; opacity: var(--nao); transform: rotate(12deg); }
+
+.aj-botoes { display: flex; justify-content: center; align-items: center; gap: 16px; }
+.aj-btn {
+  width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--linha);
+  background: var(--papel); display: grid; place-items: center; cursor: pointer;
+}
+.aj-btn svg { width: 24px; height: 24px; }
+.aj-btn-sim { color: #2fbf63; }
+.aj-btn-nao { color: #e0445a; }
+.aj-pular { background: none; border: 0; font: inherit; text-decoration: underline; cursor: pointer; opacity: .7; }
+
+/* Ajustar: o corpo com a peça por cima, como no editor. */
+.aj-corpo {
+  position: relative; height: min(420px, 52vh); aspect-ratio: 1 / 2;
+  border: 1px solid var(--linha); border-radius: 10px; background: var(--papel);
+  touch-action: none; user-select: none; overflow: hidden;
+}
+.aj-boneco { position: absolute; inset: 0; opacity: .85; }
+.aj-boneco svg { width: 100%; height: 100%; display: block; }
+.aj-peca {
+  position: absolute; transform: translate(-50%, -50%); cursor: grab;
+  outline: 1.5px dashed rgba(255, 46, 99, .55); outline-offset: 3px;
+}
+.aj-peca img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+
+/* Preencher */
+.aj-cores { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.aj-cor {
+  display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+  border: 1px solid var(--linha); border-radius: 999px; background: var(--papel);
+  font: inherit; font-size: 13px; cursor: pointer;
+}
+.aj-cor span { width: 14px; height: 14px; border-radius: 50%; background: var(--cor); border: 1px solid rgba(0, 0, 0, .15); }
+.aj-cor.ativa { border-color: var(--rosa, #ff2e63); font-weight: 600; }
+.aj-marca {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px;
+  font: inherit; background: var(--papel);
+}

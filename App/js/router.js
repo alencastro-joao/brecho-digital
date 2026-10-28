@@ -17,12 +17,12 @@ const ganchos = new Map();
 export const onEnter = (view, fn) => ganchos.set(view, fn);
 
 export const VIEWS = ['vitrine', 'closet', 'stylist', 'board', 'social', 'tarefas',
-  'vestiario', 'perfil', 'personagem', 'usuario', 'colecoes', 'baus', 'admin'];
+  'vestiario', 'perfil', 'personagem', 'usuario', 'colecoes', 'baus', 'ajudas', 'admin'];
 
 // Telas sem botão próprio na barra: acendem o botão de onde vieram. Stylist e
 // Colagem dividem o Criar; as Roupas (vestiário) moram no perfil.
 const BOTAO_DA_VIEW = {
-  usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas', admin: 'perfil',
+  usuario: 'social', personagem: 'perfil', colecoes: 'tarefas', baus: 'tarefas', ajudas: 'tarefas', admin: 'perfil',
   stylist: 'criar', board: 'criar', vestiario: 'perfil',
 };
 
