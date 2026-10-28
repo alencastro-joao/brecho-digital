@@ -179,7 +179,7 @@ export const LIXEIRA = `<svg viewBox="0 0 90 130" width="52" height="76" aria-hi
 // ------------------------- Enfeites que se mexem ---------------------------
 // A animação está em praca.css (pc-voa, pc-asa, pc-zigue, pc-bate...).
 const ave = (atraso) => `<g class="pc-ave" style="animation-delay:${atraso}s">
-  <path class="pc-asa" d="M0 0 q16 -14 32 0" fill="#fff" ${l}/><path class="pc-asa pc-asa2" d="M32 0 q16 -14 32 0" fill="#fff" ${l}/></g>`;
+  <path class="pc-asa" d="M0 0 q16 -14 32 0" fill="none" ${l}/><path class="pc-asa pc-asa2" d="M32 0 q16 -14 32 0" fill="none" ${l}/></g>`;
 export const PASSARINHOS = `<svg viewBox="-40 -30 900 60" width="900" height="60" aria-hidden="true" overflow="visible">
   ${ave(0)}${ave(-1.6)}${ave(-3.1)}</svg>`;
 
@@ -202,6 +202,20 @@ export const GATO = `<svg viewBox="0 0 140 100" width="98" height="70" aria-hidd
   <g class="pc-respira"><path d="M14 80 q0 -44 50 -44 q46 0 46 44 z" fill="#ffccbc" ${L}/><path d="M24 80 q-14 -4 -6 -16" fill="none" ${L}/>
   <path d="M80 44 l4 -14 l10 12 M100 50 l10 -10 l2 16" fill="#ffccbc" ${l}/><path d="M84 58 q4 3 8 0 M98 60 q4 3 8 0" fill="none" ${l}/></g>
   <text class="pc-zz" x="116" y="36" font-family="'BD Caveat', cursive" font-size="22" fill="${T}">z</text></svg>`;
+
+// ------------------- Coisas que alguém pode estar usando ------------------
+// Ficam na frente da pessoa (praca.js põe o z-index), como se ela estivesse ali.
+export const CAVALETE = `<svg viewBox="0 0 130 190" width="104" height="152" aria-hidden="true" overflow="visible">
+  <path d="M60 10 l-34 178 M60 10 l34 178 M60 10 v178" fill="none" ${L}/>
+  <rect x="8" y="34" width="110" height="90" fill="#fffdf6" ${L} transform="rotate(-4 63 79)"/>
+  <path d="M22 104 q20 -40 40 -20 q20 20 40 -20" fill="none" stroke="#81c784" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="86" cy="58" r="10" fill="#fff176" ${l}/><path d="M18 128 h90" ${L}/></svg>`;
+
+export const MESA = `<svg viewBox="0 -70 220 290" width="250" height="330" aria-hidden="true" overflow="visible">
+  <path d="M110 -50 v266" ${L}/><g transform="translate(0 -70)"><path d="M20 70 q90 -80 180 0 z" fill="#d1c4e9" ${L}/>
+  <path d="M50 70 q15 -20 30 0 M80 70 q30 -50 60 0 M140 70 q15 -20 30 0" fill="none" ${l}/></g>
+  <ellipse cx="110" cy="164" rx="76" ry="12" fill="#fffdf6" ${L}/><path d="M110 176 v40 M84 216 h52" ${L}/>
+  <path d="M66 150 h14 v14 h-14 z M70 150 q4 -6 8 0" fill="#fff" ${l}/><path d="M138 152 h18 l-3 12 h-12 z" fill="#ffcc80" ${l}/></svg>`;
 
 export function desenhoDaCasa(c) {
   return `<svg viewBox="-6 0 262 ${c.h}" width="100%" height="100%" aria-hidden="true" overflow="visible">

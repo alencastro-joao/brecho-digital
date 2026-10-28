@@ -12,7 +12,7 @@ import { roupasDoPerfil, perfilDe } from './pessoas.js';
 import { segueDeVolta, abrirPerfilDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara, viewAtual } from './router.js';
-import { desenhoDaCasa, ARVORE, HIDRANTE, LIXEIRA, PASSARINHOS, BORBOLETA, BALAO, PIPA, GATO } from './pracacasas.js';
+import { desenhoDaCasa, ARVORE, HIDRANTE, LIXEIRA, PASSARINHOS, BORBOLETA, BALAO, PIPA, GATO, CAVALETE, MESA } from './pracacasas.js';
 import { el, $, sementeDoTexto } from './util.js';
 
 const LARGURA = 3000;
@@ -43,8 +43,15 @@ const ENFEITES = `
   <div class="pc-ceu" style="left:300px;top:110px">${PASSARINHOS}</div><div class="pc-ceu" style="left:1700px;top:60px">${PASSARINHOS}</div>
   <div class="pc-ceu" style="left:1210px;top:20px">${BALAO}</div><div class="pc-ceu" style="left:2700px;top:16px">${PIPA}</div>
   <div class="pc-ceu" style="left:960px;bottom:30%">${BORBOLETA}</div><div class="pc-ceu" style="left:2290px;bottom:32%">${BORBOLETA}</div>
-  <div class="pc-enfeite" style="left:2560px;bottom:28%">${GATO}</div>
-  <div class="pc-banco" style="left:620px"></div><div class="pc-banco" style="left:2760px"></div>`;
+  <div class="pc-enfeite" style="left:2560px;bottom:28%">${GATO}</div>`;
+
+// O cavalete e a mesa de café: às vezes tem um amigo usando, às vezes não.
+// A pessoa fica um pouco atrás (y maior) para a coisa cobrir as pernas.
+const OBJETOS = [
+  { svg: CAVALETE, x: 640, y: 20, pessoa: [48, 2] },
+  { svg: MESA, x: 2780, y: 18, pessoa: [44, 3] },
+];
+const hoje = () => new Date().toISOString().slice(0, 10);
 
 // Lugares na calçada, fora das portas. y é a distância do chão em %:
 // menor fica mais à frente e maior.
@@ -78,7 +85,18 @@ function pessoas() {
   };
   // Lugar sorteado pelo id: a mesma pessoa fica no mesmo canto a cada visita.
   const livres = [...LUGARES];
-  return [eu, ...amigos.slice(0, LUGARES.length).map(p => {
+  const usando = [];
+  for (const [n, o] of OBJETOS.entries()) {
+    // Sorteio do dia: em uns dois terços dos dias tem alguém ali.
+    const s = sementeDoTexto(`praca:${hoje()}:${n}`);
+    if (!amigos.length || s % 3 === 0) continue;
+    const p = amigos.splice(s % amigos.length, 1)[0];
+    usando.push({
+      p, x: o.x + o.pessoa[0], y: o.y + o.pessoa[1], nome: p.nome.split(' ')[0],
+      balao: novidadeDe(p.id), svg: corpo(aparenciaDoPerfil(p), roupasDoPerfil(p)),
+    });
+  }
+  return [eu, ...usando, ...amigos.slice(0, LUGARES.length).map(p => {
     const i = sementeDoTexto('praca:' + p.id) % livres.length;
     const [x, y] = livres.splice(i, 1)[0];
     return {
@@ -94,6 +112,8 @@ function trecho(k, gente) {
     <button class="pc-casa" data-casa="${i}" style="left:${c.x}px;height:${c.h}px">
       ${desenhoDaCasa(c)}
     </button>`).join('');
+  const objetos = OBJETOS.map(o =>
+    `<div class="pc-objeto" style="left:${o.x}px;bottom:${o.y}%;z-index:${100 - o.y}">${o.svg}</div>`).join('');
   const pessoasHtml = gente.map((g, i) => `
     <button class="pc-pessoa${g.eu ? ' eu' : ''}" data-pessoa="${i}"
       style="left:${g.x}px;bottom:${g.y}%;z-index:${100 - g.y};--h:${Math.round(250 - g.y * 3)}px">
@@ -101,7 +121,7 @@ function trecho(k, gente) {
       <span class="pc-corpo"><span class="pc-chao"></span>${g.svg}</span>
     </button>`).join('');
   return `<div class="pc-trecho" style="left:${k * LARGURA}px;width:${LARGURA}px">
-    <div class="pc-calcada"></div>${ENFEITES}${casas}${pessoasHtml}</div>`;
+    <div class="pc-calcada"></div>${ENFEITES}${casas}${objetos}${pessoasHtml}</div>`;
 }
 
 let gente = [];
