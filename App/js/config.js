@@ -1460,7 +1460,7 @@ export const CAMISETA_FOICE_MARTELO = {
 // Camiseta longa roxa com o ankh em amarelo, só no Roxo
 // (mesma caixa da camiseta longa; feita a partir dela).
 export const CAMISETA_ANKH = {
-  id: 'camiseta-longa-ankh', nome: 'Camiseta longa ankh', slot: 'torso', versao: 'v3',
+  id: 'camiseta-longa-ankh', nome: 'Camiseta longa ankh', slot: 'torso', versao: 'v4',
   caixa: [147.3, 241.1, 305.4, 362.1],
   cores: { Roxo: 'roxa' },
 };
