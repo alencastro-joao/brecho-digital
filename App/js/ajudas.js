@@ -1,4 +1,4 @@
-// Mini games de ajuda: os jogadores ajudam a cadastrar as peças do acervo e
+// Mini games de ajuda: os jogadores ajudam a cadastrar as peças da esteira e
 // ganham fichas por isso. Botão do dado na barra (#/ajudas): abre num menu de
 // três botões grandes, um por jogo.
 //
@@ -12,7 +12,7 @@
 // que ele diz e soma a ficha que ele mandar.
 
 import { CONFIG, CATEGORIAS, CORES, ancoraPadrao } from './config.js';
-import { catalogo, nomeDaPeca, srcGrande, proporcao } from './catalog.js';
+import { rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
@@ -25,7 +25,8 @@ const JOGOS = [
   { id: 'preencher', nome: 'Preencher', icone: 'editar', cor: 'var(--tarefas)', desc: 'Diga a cor e a marca.' },
 ];
 
-let estado = null;        // resposta de GET /api/ajudas
+let estado = null;        // resposta de GET /api/ajudas (a cota de cada jogo)
+let itens = [];           // as fotos da esteira que o admin mandou para os jogos
 let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
@@ -51,7 +52,9 @@ export async function aoEntrarNasAjudas() {
   renderMenu();
   $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' }, 'Carregando…'));
   try {
-    estado = (await chamar('/api/ajudas')).jogos;
+    const r = await chamar('/api/ajudas');
+    estado = r.jogos;
+    itens = r.itens || [];
   } catch {
     estado = null;
     $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
@@ -94,7 +97,7 @@ function renderCota() {
 // A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou.
 function escolherPeca() {
   const feitas = new Set(estado[jogo].pecas);
-  const cands = catalogo.itens.filter(i => !feitas.has(i.id) && CATEGORIAS[i.cat]);
+  const cands = itens.filter(i => !feitas.has(i.id) && CATEGORIAS[i.cat]);
   cands.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
   // Entre as 10 mais novas, uma qualquer: duas pessoas ao mesmo tempo não
   // ficam votando sempre na mesma.
@@ -113,7 +116,7 @@ function proxima() {
   peca = escolherPeca();
   if (!peca) {
     return $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
-      'Você já ajudou em todas as peças deste jogo. Obrigado!'));
+      'Não tem peça nova para este jogo agora. Volte mais tarde!'));
   }
   ({ avaliar: jogoAvaliar, ajustar: jogoAjustar, preencher: jogoPreencher })[jogo]();
 }
@@ -139,7 +142,8 @@ async function enviar(corpo) {
   proxima();
 }
 
-const imagem = (it, classe) => el('img', { class: classe, src: srcGrande(it), alt: nomeDaPeca(it), draggable: 'false' });
+const nomeDaPeca = (it) => (it.nome || rotuloCategoria(it.cat)).toLowerCase();
+const imagem = (it, classe) => el('img', { class: classe, src: it.src, alt: nomeDaPeca(it), draggable: 'false' });
 
 // ------------------------------- Avaliar ----------------------------------
 function jogoAvaliar() {
@@ -190,7 +194,7 @@ function jogoAjustar() {
     y: p.y + (Math.random() - 0.5) * 120,
     w: p.w * (0.75 + Math.random() * 0.5),
   };
-  const prop = proporcao(peca);
+  const prop = peca.w && peca.h ? peca.w / peca.h : 1;
   const no = el('div', { class: 'mg-peca' }, imagem(peca, ''));
   const palco = el('div', { class: 'mg-corpo' });
   const boneco = el('div', { class: 'mg-boneco' });
@@ -226,11 +230,11 @@ function jogoAjustar() {
 
   const tamanho = (k) => { medida.w = clamp(medida.w * k, 20, 600); posicionar(); };
   $('#mg-palco').replaceChildren(
-    el('p', { class: 'mg-dica' }, `Arraste ${nomeDaPeca(peca)} até o lugar certo e acerte o tamanho.`),
+    el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) até o lugar certo e acerte o tamanho.`),
     el('div', { class: 'mg-mesa' }, palco),
     el('div', { class: 'mg-botoes' },
-      el('button', { type: 'button', class: 'mg-btn', title: 'Menor', onclick: () => tamanho(0.94) }, ico('menos')),
-      el('button', { type: 'button', class: 'mg-btn', title: 'Maior', onclick: () => tamanho(1.06) }, ico('mais')),
+      el('button', { type: 'button', class: 'mg-btn', title: 'Menor', onclick: () => tamanho(0.94) }, el('b', { class: 'mg-sinal' }, '−')),
+      el('button', { type: 'button', class: 'mg-btn', title: 'Maior', onclick: () => tamanho(1.06) }, el('b', { class: 'mg-sinal' }, '+')),
       el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Pronto', onclick: () => {
         const m = ancoraNoMolde(CATEGORIAS[peca.cat].regiao, medida);
         enviar({ ancora: { x: m.x, y: m.y, w: m.w } });

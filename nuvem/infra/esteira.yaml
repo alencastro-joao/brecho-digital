@@ -229,6 +229,14 @@ Resources:
             Effect: Allow
             Action: [s3:DeleteObject]
             Resource: !Sub arn:aws:s3:::${BucketSite}/assets/posts/*
+          # Mini games de ajuda (lambda/ajudas.py): a prévia da esteira vai
+          # para o site e a lista dos jogos mora em assets/jogos.json.
+          - Sid: MiniGames
+            Effect: Allow
+            Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+            Resource:
+              - !Sub arn:aws:s3:::${BucketSite}/assets/jogos.json
+              - !Sub arn:aws:s3:::${BucketSite}/assets/jogos/*
           - Sid: LimpezaTabela
             Effect: Allow
             Action: [dynamodb:Scan, dynamodb:DeleteItem, dynamodb:UpdateItem]

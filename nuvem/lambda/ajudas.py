@@ -22,25 +22,34 @@ Itens do DynamoDB:
     AJUDA#PECA#<id>                    sim, nao, ajustes [{x,y,w}],
                                        "cor:<valor>", "marca:<valor>" (votos)
 
-Nada disto mexe no acervo sozinho: o admin vê o resumo (GET
-/api/admin/ajudas) e aplica o que quiser pelo editor da peça.
+**As peças vêm da esteira.** O admin escolhe (Admin › Mini games) quais
+fotos da esteira entram nos jogos: a prévia, que mora no bucket privado, é
+copiada para o site (`assets/jogos/<id>.webp`) e a lista pública fica em
+`assets/jogos.json`. Ao publicar a peça (ou descartar), ela sai dos jogos.
+Nada mexe na ficha sozinho: o admin vê o resumo (GET /api/admin/ajudas) e
+leva para a ficha da esteira o que quiser.
 
 **Os números ficam todos em JOGOS, VOTOS_MIN e FAIXAS logo abaixo** — são as
 regras do jogo, quem decide é o João.
 """
 
+import json
 import os
 import re
+import time
 import unicodedata
 from datetime import datetime, timedelta, timezone
 
 import boto3
 from botocore.exceptions import ClientError
 
-import estoque
-
 TABELA = os.environ.get('BD_TABELA') or 'brecho'
+SITE = os.environ.get('BD_BUCKET_SITE') or ''
+DADOS = os.environ.get('BD_BUCKET_DADOS') or ''
+LISTA = 'assets/jogos.json'
 _dynamo = boto3.client('dynamodb')
+_s3 = boto3.client('s3')
+_cache = {'ids': None, 'em': 0}
 BRASILIA = timezone(timedelta(hours=-3))
 
 # ----------------------------- Regras (João) ------------------------------
@@ -57,9 +66,64 @@ VOTOS_MIN = 10
 FAIXAS = [(85, 'legendary'), (65, 'epic'), (50, 'rare'), (40, 'uncommon'), (0, 'common')]
 # ---------------------------------------------------------------------------
 
-ID_OK = re.compile(r'^[a-z0-9][a-z0-9_-]{0,80}$')
+ID_OK = re.compile(r'^e[a-z0-9]{8,24}$')     # o id da esteira
 TEXTO_OK = re.compile(r'[^a-z0-9 &\'.-]+')
 MAX_AJUSTES = 60      # medidas guardadas por peça (a mediana não precisa de mais)
+
+
+# --------------------------- Peças nos jogos -------------------------------
+def ler_lista():
+    try:
+        r = _s3.get_object(Bucket=SITE, Key=LISTA)
+        return json.loads(r['Body'].read()).get('items') or []
+    except ClientError as e:
+        # Sem s3:ListBucket, arquivo que não existe chega como AccessDenied.
+        if e.response['Error']['Code'] in ('NoSuchKey', '404', 'AccessDenied'):
+            return []
+        raise
+
+
+def _gravar_lista(itens):
+    _s3.put_object(Bucket=SITE, Key=LISTA, ContentType='application/json; charset=utf-8',
+                   CacheControl='no-cache',
+                   Body=json.dumps({'items': itens}, ensure_ascii=False).encode('utf-8'))
+    _cache['ids'] = None
+
+
+def _ids_nos_jogos():
+    if _cache['ids'] is None or time.time() - _cache['em'] > 60:
+        _cache['ids'], _cache['em'] = {i['id'] for i in ler_lista()}, time.time()
+    return _cache['ids']
+
+
+def colocar(item_id, dados):
+    """Põe uma foto da esteira nos jogos. `dados` é a ficha da esteira."""
+    if dados.get('estado') != 'pronta' or not dados.get('previa'):
+        raise ValueError('essa foto ainda não está pronta')
+    ficha, palpite = dados.get('ficha') or {}, dados.get('sugestao') or {}
+    cat = ficha.get('cat') or palpite.get('cat') or ''
+    if not cat:
+        raise ValueError('escolha a categoria da peça na esteira antes')
+    chave = 'assets/jogos/%s.webp' % item_id
+    _s3.copy_object(Bucket=SITE, Key=chave, CopySource={'Bucket': DADOS, 'Key': dados['previa']},
+                    ContentType='image/webp', MetadataDirective='REPLACE',
+                    CacheControl='public, max-age=31536000, immutable')
+    itens = [i for i in ler_lista() if i['id'] != item_id]
+    itens.append({'id': item_id, 'src': chave, 'w': dados.get('w'), 'h': dados.get('h'),
+                  'cat': cat, 'nome': ficha.get('nome') or '',
+                  'criadoEm': dados.get('criadoEm') or ''})
+    _gravar_lista(itens)
+    return {'items': itens}
+
+
+def tirar(item_id):
+    """Tira dos jogos (o voto que já foi dado continua guardado)."""
+    itens = ler_lista()
+    resto = [i for i in itens if i['id'] != item_id]
+    if len(resto) != len(itens):
+        _gravar_lista(resto)
+        _s3.delete_object(Bucket=SITE, Key='assets/jogos/%s.webp' % item_id)
+    return {'items': resto}
 
 
 def _janela(jogo, agora=None):
@@ -102,7 +166,7 @@ def _validar(jogo, corpo):
     if jogo not in JOGOS:
         raise ValueError('jogo desconhecido')
     pid = str(corpo.get('peca') or '').strip().lower()
-    if not ID_OK.match(pid) or not estoque._existe(pid):
+    if not ID_OK.match(pid) or pid not in _ids_nos_jogos():
         raise ValueError('peça desconhecida')
     if jogo == 'avaliar':
         if not isinstance(corpo.get('gostei'), bool):
@@ -205,7 +269,7 @@ def estado(usuario):
         r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_feitas(uid, jogo)}})
         saida[jogo] = {**_situacao(uid, jogo),
                        'pecas': sorted((r.get('Item') or {}).get('ids', {}).get('SS', []))}
-    return {'jogos': saida}
+    return {'jogos': saida, 'itens': ler_lista()}
 
 
 def ajudar(usuario, jogo, corpo):
@@ -281,5 +345,5 @@ def resumo():
         inicio = r.get('LastEvaluatedKey')
         if not inicio:
             break
-    return {'pecas': pecas, 'regras': {'jogos': JOGOS, 'votosMin': VOTOS_MIN,
+    return {'pecas': pecas, 'nosJogos': sorted(_ids_nos_jogos()), 'regras': {'jogos': JOGOS, 'votosMin': VOTOS_MIN,
                                        'faixas': FAIXAS}}
