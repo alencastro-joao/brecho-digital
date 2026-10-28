@@ -1485,6 +1485,14 @@ export const CAMISETA_YINYANG = {
   troca: 'camiseta-longa',
   cores: { Branco: 'branca' },
 };
+// Camiseta longa azul (um tom mais claro) com a flor-de-lis dourada, só no Azul
+// (mesma caixa da camiseta longa; feita a partir dela).
+export const CAMISETA_FLOR_DE_LIS = {
+  id: 'camiseta-longa-flor-de-lis', nome: 'Camiseta longa flor-de-lis', slot: 'torso', versao: 'v3',
+  caixa: [147.3, 241.1, 305.4, 362.1],
+  troca: 'camiseta-longa',
+  cores: { Azul: 'azul' },
+};
 // Camisas e croppeds das seleções: a camiseta da artista (`base`, de
 // ROUPAS_BASE) repintada por tools/camisas_selecoes.py, em
 // assets/roupas/<id>-<versao>.webp. Entram no tema da seleção (ESTILOS), que
@@ -1495,7 +1503,7 @@ export const CAMISAS_SELECOES = [
   { id: 'cropped-jamaica-bandeira', nome: 'Cropped da Jamaica', base: 'camiseta', cor: 'Verde', versao: 'v1' },
 ];
 // Os desenhos extras, na ordem em que entram nas coleções de cor.
-export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_YINYANG];
+export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_YINYANG, CAMISETA_FLOR_DE_LIS];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
 // Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
 // as de código ficam ocultas, sem apagar nada dos saves. false desfaz.
