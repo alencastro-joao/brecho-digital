@@ -272,15 +272,19 @@ function jogoAjustar() {
 
   const tamanho = (k) => { medida.w = clamp(medida.w * k, 20, 600); posicionar(); };
   $('#mg-palco').replaceChildren(
-    el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) até o lugar certo e acerte o tamanho.`),
-    el('div', { class: 'mg-mesa' }, palco),
-    el('div', { class: 'mg-botoes' },
-      el('button', { type: 'button', class: 'mg-btn', title: 'Menor', onclick: () => tamanho(0.94) }, el('b', { class: 'mg-sinal' }, '−')),
-      el('button', { type: 'button', class: 'mg-btn', title: 'Maior', onclick: () => tamanho(1.06) }, el('b', { class: 'mg-sinal' }, '+')),
-      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Pronto', onclick: () => {
+    // O corpo no cartão branco e, ao lado, a coluna do tamanho.
+    el('div', { class: 'mg-ajuste' },
+      el('div', { class: 'mg-ajuste-corpo' }, palco),
+      el('div', { class: 'mg-tamanho' },
+        el('button', { type: 'button', class: 'mg-voto', title: 'Maior', onclick: () => tamanho(1.06) }, el('b', { class: 'mg-sinal' }, '+')),
+        el('small', {}, 'tamanho'),
+        el('button', { type: 'button', class: 'mg-voto', title: 'Menor', onclick: () => tamanho(0.94) }, el('b', { class: 'mg-sinal' }, '−')))),
+    el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) até o lugar certo no corpo.`),
+    el('div', { class: 'mg-botoes-voto' },
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         const m = ancoraNoMolde(CATEGORIAS[peca.cat].regiao, medida);
         enviar({ ancora: { x: m.x, y: m.y, w: m.w } });
-      } }, ico('ok'))));
+      } }, ico('ok'), 'Pronto, ficou certo')));
 }
 
 // ------------------------------ Preencher ---------------------------------
