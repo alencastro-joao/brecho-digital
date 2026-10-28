@@ -258,6 +258,9 @@ def processar(chave):
         segundos=round(time.time() - marca, 1),
         sugestao=sugestao,
         processadoEm=_agora(),
+        # Quando a peça apareceu na grade pela primeira vez: ordena a esteira.
+        # Reprocessar não muda, para a peça não pular para o topo.
+        apareceuEm=ficha.get('apareceuEm') or _agora(),
     )
     # A ficha que o admin edita nasce do palpite. O que ele já tiver mexido
     # (pelo celular, enquanto a foto ainda processava) não é atropelado.

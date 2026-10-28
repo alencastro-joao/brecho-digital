@@ -111,7 +111,7 @@ def _idade(iso):
 def _para_tela(dados):
     """O que a tela recebe: sem caminhos internos, com a prévia assinada."""
     saida = {k: dados.get(k) for k in (
-        'id', 'estado', 'arquivo', 'erro', 'criadoEm', 'processadoEm', 'w', 'h',
+        'id', 'estado', 'arquivo', 'erro', 'criadoEm', 'processadoEm', 'apareceuEm', 'w', 'h',
         'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'corte', 'origem')}
     if dados.get('estado') == 'enviando' and _idade(dados.get('criadoEm')) > ENVIO_ABANDONADO:
         saida['estado'] = 'erro'
@@ -543,7 +543,10 @@ def listar():
             print('esteira %s: pin %s sem foto, volta pelo Pinterest' % (f['id'], f['pin']))
             continue
         itens.append(_para_tela(f))
-    itens.sort(key=lambda i: i.get('criadoEm') or '', reverse=True)
+    # A que acabou de aparecer na grade vai para o topo: a foto enviada antes
+    # mas cortada depois não fica escondida embaixo das que já estavam lá.
+    itens.sort(key=lambda i: (i.get('apareceuEm') or i.get('criadoEm') or '',
+                              i.get('criadoEm') or '', i['id']), reverse=True)
     return {'itens': itens, 'repetidas': repetidas}
 
 
