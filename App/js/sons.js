@@ -2,8 +2,8 @@
 // nenhum (nada para baixar, nada de licença de terceiro).
 //
 // Quem toca é quem sabe o que aconteceu: animacoes.js (clique, favoritar,
-// curtir, subir de nível, dado), o baú abrindo, o tutorial (tecla e missão), a peça pega na vitrine, a
-// janela e os avisos. Aqui só se desenha cada som e se guarda o volume (a
+// curtir, subir de nível, dado), o baú abrindo, o tutorial (tecla e missão), a peça pega na vitrine, as
+// trocas de fichas, a janela e os avisos. Aqui só se desenha cada som e se guarda o volume (a
 // barra no menu da engrenagem do perfil; 0 é mudo), que vale para o aparelho
 // (localStorage), não para a conta.
 //
@@ -139,6 +139,11 @@ const SONS = {
   janela: (c) => nota(c, 330, { ate: 620, dur: 0.12, vol: 0.04 }),
   // Aviso (não deu, falta algo): dois tons descendo, sem susto.
   aviso: (c) => arpejo(c, [523, 415], 0.09, { dur: 0.14, tipo: 'triangle', vol: 0.05 }),
+  // Gastou fichas numa troca: moedinhas caindo no caixa e o "plim" da gaveta.
+  gastar: (c) => {
+    [0, 0.06, 0.11].forEach((em, i) => nota(c, 2200 - i * 250, { em, ate: 1500 - i * 150, dur: 0.07, tipo: 'square', vol: 0.02 }));
+    arpejo(c, [1568, 2093], 0.08, { em: 0.2, dur: 0.22, tipo: 'triangle', vol: 0.06 });
+  },
   // Deu certo.
   ok: (c) => arpejo(c, [784, 1047], 0.07, { dur: 0.14, vol: 0.06 }),
   // Tecla: o texto do tutorial sendo digitado. Um tique curtinho, cada um

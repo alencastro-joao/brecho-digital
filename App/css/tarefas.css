@@ -63,7 +63,6 @@
   font-size: 14px; font-weight: 800; border-radius: 20px;
   background: var(--premio-claro); border: 1.5px solid var(--premio-borda); color: var(--tinta);
 }
-.tf-trocas-nota { margin: 4px 0 0; font-size: 12px; color: var(--tinta-suave); text-align: center; }
 /* Quantos congelamentos estão guardados, no canto do botão. */
 .tf-tem { font-size: 11px; font-weight: 800; background: var(--tinta); color: #fff; border-radius: 10px; padding: 1px 6px; }
 
