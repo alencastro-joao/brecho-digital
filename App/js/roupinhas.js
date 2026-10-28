@@ -1401,14 +1401,14 @@ export const METAS = {
   },
 };
 
-// Os marcos de uma coleção: o 1º item na 3ª peça (ou ao completar, se a
-// coleção tem menos de 3) e os seguintes em degraus que crescem (3, 8, 18, 33,
-// 53...: +5, +10, +15...), limitados ao total da coleção para nenhum item
-// ficar inalcançável. Os números são fixos: peça nova no acervo não muda marco.
+// Os marcos de uma coleção: o 1º item na 3ª peça e os seguintes de 3 em 3
+// (3, 6, 9, 12...). Nunca pede a coleção inteira: o teto é 60% das peças dela,
+// porque a tiragem é limitada e as peças podem acabar.
 export function pecasParaEscolha(feitas, total, itens = 1) {
-  const primeira = Math.min(3, total);
+  const teto = Math.max(1, Math.ceil(total * 0.6));
+  const primeira = Math.min(3, teto);
   if (itens <= 1 || feitas <= 0) return primeira;
-  return Math.min(total, primeira + 5 * (feitas * (feitas + 1) / 2));
+  return Math.min(teto, primeira + 3 * feitas);
 }
 
 // Quantas escolhas a coleção já deu com `tem` peças.
