@@ -1,6 +1,28 @@
 /* Mini games de ajuda (js/ajudas.js): avaliar, ajustar, preencher. */
 .mg-wrapper { width: 100%; box-sizing: border-box; max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
+.mg-head { display: grid; gap: 2px; }
 .mg-head h1 { margin: 0; }
+.mg-voltar {
+  justify-self: start; padding: 4px 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; color: rgba(0, 0, 0, .5);
+}
+.mg-voltar:hover { color: var(--tinta); }
+
+/* Avaliar: o cartão, a barra e os dois botões de voto, tudo cabendo na tela. */
+.mg-palco .mg-cota { width: min(300px, 78vw, 44vh); text-align: center; }
+.mg-palco .mg-cota .mg-barra { justify-items: center; }
+.mg-botoes-voto { gap: 28px; }
+.mg-voto {
+  width: 72px; height: 72px; border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-items: center; color: #fff;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .12), 0 8px 18px rgba(0, 0, 0, .14);
+  transition: transform .15s;
+}
+.mg-voto:hover { transform: translateY(-2px) scale(1.05); }
+.mg-voto:active { transform: scale(.94); }
+.mg-voto svg { width: 34px; height: 34px; }
+.mg-voto-nao { background: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 55%), #ef5a72; }
+.mg-voto-sim { background: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 55%), #2fbf63; }
 /* O menu: três quadrados grandes, um por jogo. */
 .mg-menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 /* Mesmo jeito dos botões da barra de telas: pastel, cantos redondos, ícone e
@@ -51,7 +73,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 /* Avaliar: a carta que arrasta para os lados. */
 .mg-carta {
   --sim: 0; --nao: 0;
-  position: relative; width: min(300px, 80vw, 40vh); aspect-ratio: 3 / 4;
+  position: relative; width: min(300px, 78vw, 44vh); aspect-ratio: 3 / 4;
   display: grid; place-items: center; padding: 16px;
   background: var(--papel); border: 1px solid var(--linha); border-radius: 18px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, .12);
@@ -126,3 +148,5 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-sinal { font-size: 26px; line-height: 1; }
 .adm-jogos-caixa { width: min(760px, 94vw); max-height: 88vh; display: flex; flex-direction: column; }
 .adm-jogos-corpo { overflow: auto; padding: 4px 2px 12px; }
+.mg-voto svg [opacity] { display: none; }   /* sem o quadrado do ícone duotone */
+.mg-barra-trilho { width: 100%; }

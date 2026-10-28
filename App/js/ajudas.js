@@ -119,6 +119,8 @@ function escolherPeca() {
 }
 
 function proxima() {
+  // O Avaliar leva a barra para baixo do cartão; os outros a querem no topo.
+  $('#mg-palco').before($('#mg-cota'));
   renderCota();
   const s = estado[jogo];
   if (s.feitas >= s.limite) {
@@ -196,9 +198,10 @@ function jogoAvaliar() {
 
   $('#mg-palco').replaceChildren(
     el('div', { class: 'mg-mesa' }, carta),
-    el('div', { class: 'mg-botoes' },
-      el('button', { type: 'button', class: 'mg-btn mg-btn-nao', title: 'Não gostei', onclick: () => votar(false) }, ico('x')),
-      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Gostei', onclick: () => votar(true) }, ico('coracao-cheio'))));
+    $('#mg-cota'),
+    el('div', { class: 'mg-botoes mg-botoes-voto' },
+      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', title: 'Não gostei', onclick: () => votar(false) }, ico('x')),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', title: 'Gostei', onclick: () => votar(true) }, ico('coracao-cheio'))));
 }
 
 // ------------------------------- Ajustar ----------------------------------
