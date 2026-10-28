@@ -1493,6 +1493,13 @@ export const CAMISETA_FLOR_DE_LIS = {
   troca: 'camiseta-longa',
   cores: { Azul: 'azul' },
 };
+// Cinto cinza da artista com fivela redonda prata (tools/cinto_cinza.py), só no
+// Cinza. Na cintura, por cima da calça e por baixo da peça de cima, como o cinto.
+export const CINTO_CINZA = {
+  id: 'cinto-cinza', nome: 'Cinto de fivela redonda', slot: 'cintura', z: 24, versao: 'v1',
+  caixa: [185, 455, 230, 109.6],
+  cores: { Cinza: 'cinza' },
+};
 // Linha de croppeds florais do Verde, cada um num tom de verde (musgo, oliva,
 // menta); a partir do cropped (`camiseta`) com a estampa centralizada.
 export const CROPPEDS_VERDES = [
@@ -1511,7 +1518,7 @@ export const CAMISAS_SELECOES = [
   { id: 'cropped-jamaica-bandeira', nome: 'Cropped da Jamaica', base: 'camiseta', cor: 'Verde', versao: 'v1' },
 ];
 // Os desenhos extras, na ordem em que entram nas coleções de cor.
-export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_ESPIRAL, CAMISETA_FLOR_DE_LIS, ...CROPPEDS_VERDES];
+export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_ESPIRAL, CAMISETA_FLOR_DE_LIS, CINTO_CINZA, ...CROPPEDS_VERDES];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
 // Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
 // as de código ficam ocultas, sem apagar nada dos saves. false desfaz.
