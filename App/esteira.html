@@ -32,6 +32,9 @@
         <input type="file" accept="image/jpeg,image/png,image/webp" multiple id="es-arquivos" hidden>
       </label>
     </div>
+    <!-- Liga e desliga o palpite da IA nas fotos que chegarem daqui para a frente. -->
+    <button class="es-btn mini es-auto" type="button" id="es-auto" aria-pressed="true" disabled
+      title="Com ele ligado, a nuvem já preenche categoria, cor e marca das peças que chegarem">Auto preencher: …</button>
     <form class="es-pinterest" id="es-pinterest">
       <input type="url" id="es-pinterest-link" placeholder="ou cole o link de uma pasta do Pinterest para vincular"
         aria-label="Link de uma pasta do Pinterest" autocomplete="off">
@@ -60,6 +63,9 @@
     <select id="es-lote-tema" aria-label="Tema para as selecionadas"></select>
     <button class="es-btn" id="es-lote-aplicar">Aplicar</button>
     <button class="es-btn" id="es-lote-descartar">Descartar</button>
+    <button class="es-btn" id="es-lote-cortar" title="Cortar a foto da peça selecionada">✂ Cortar</button>
+    <!-- Duas saídas: o jogo (Publicar) ou os mini games, para os jogadores opinarem. -->
+    <button class="es-btn" id="es-lote-jogos" title="Mandar as selecionadas para os mini games">🎲 Jogos</button>
     <button class="es-btn escuro" id="es-lote-publicar">Publicar</button>
   </section>
 
@@ -100,8 +106,21 @@
       </div>
     </div>
     <p class="es-medida" id="es-medida"></p>
-    <!-- Cortar: a foto inteira com a caixa do que fica. Vale na publicação. -->
-    <div class="es-corte" id="es-corte" hidden>
+    <footer class="es-modal-rodape" id="es-molde-rodape">
+      <button class="es-btn" id="es-molde-voltar" hidden>← Anterior</button>
+      <button class="es-btn perigo" id="es-molde-excluir">Excluir peça</button>
+      <button class="es-btn" id="es-molde-cancelar">Cancelar</button>
+      <button class="es-btn escuro" id="es-molde-ok">Pronto</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Cortar a peça selecionada: a foto inteira com a caixa do que fica. Vale no
+     molde, no cartão e na publicação. -->
+<div class="es-modal" id="es-corte-modal" hidden>
+  <div class="es-modal-caixa">
+    <p class="es-modal-dica">Arraste a caixa e os cantos: fica só o que estiver dentro.</p>
+    <div class="es-corte" id="es-corte">
       <div class="es-corte-palco" id="es-corte-palco">
         <img id="es-corte-img" alt="" draggable="false">
         <div class="es-corte-veu"><div id="es-corte-furo"></div></div>
@@ -118,13 +137,6 @@
         <button class="es-btn escuro" id="es-corte-ok">Aplicar corte</button>
       </footer>
     </div>
-    <footer class="es-modal-rodape" id="es-molde-rodape">
-      <button class="es-btn" id="es-molde-voltar" hidden>← Anterior</button>
-      <button class="es-btn" id="es-molde-cortar">✂ Cortar</button>
-      <button class="es-btn perigo" id="es-molde-excluir">Excluir peça</button>
-      <button class="es-btn" id="es-molde-cancelar">Cancelar</button>
-      <button class="es-btn escuro" id="es-molde-ok">Pronto</button>
-    </footer>
   </div>
 </div>
 

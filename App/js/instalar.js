@@ -1,4 +1,6 @@
-// Sugestão de instalar o app, só no celular, logo depois do fim do tutorial.
+// Sugestão de instalar o app, só no celular: logo depois do fim do tutorial e,
+// para quem abre o site pelo navegador do celular, ao entrar (lembrarDeInstalar).
+// "Agora não" guarda a data e a janela só volta depois de DIAS_SEM_LEMBRAR.
 //
 // Android (Chrome, Edge, Samsung): o navegador avisa que dá para instalar pelo
 // evento beforeinstallprompt. Ele é guardado aqui, desde o boot, e o botão
@@ -24,8 +26,30 @@ const passos = (...itens) => el('div', {},
   el('p', { class: 'pergunta-texto' }, 'Com o Brechó na tela inicial, ele abre em tela cheia, como um app.'),
   el('ol', { class: 'pergunta-texto instalar-passos' }, itens.map(t => el('li', {}, t))));
 
+const CHAVE = 'bd-instalar-adiado';
+const DIAS_SEM_LEMBRAR = 3;
+
+function adiadoAte() {
+  try { return Number(localStorage.getItem(CHAVE)) || 0; } catch { return 0; }
+}
+function adiar() {
+  try { localStorage.setItem(CHAVE, String(Date.now() + DIAS_SEM_LEMBRAR * 864e5)); } catch { /* aba anônima */ }
+}
+
+// No boot: celular, no navegador, sem ter fechado a janela há pouco. Espera uns
+// segundos (o Chrome manda o beforeinstallprompt um pouco depois de carregar e
+// a vitrine abre primeiro) e não entra por cima de outra janela aberta.
+export function lembrarDeInstalar() {
+  if (instalado() || !(ehIos() || ehAndroid()) || Date.now() < adiadoAte()) return;
+  setTimeout(() => {
+    if (instalado() || document.querySelector('.modal:not([hidden])')) return;
+    sugerirInstalar();
+  }, 6000);
+}
+
 export async function sugerirInstalar() {
   if (instalado()) return;
+  adiar();
   if (ehIos()) {
     await mostrar(passos(
       'Toque no botão Compartilhar do navegador (o quadrado com a seta para cima).',

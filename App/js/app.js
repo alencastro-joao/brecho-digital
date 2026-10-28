@@ -39,6 +39,7 @@ import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
 import { montarAvisos } from './avisos.js';
 import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
+import { lembrarDeInstalar } from './instalar.js';
 import { toast } from './util.js';
 import { PROPORCAO_EM_TESTE, CORPO_EM_TESTE } from './proporcao.js';
 import { usarCorpoDesenhado } from './avatar.js';
@@ -197,6 +198,9 @@ async function iniciar() {
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
   if (nova || pediuTutorialNaUrl()) comecarIntro();
+  // Fora do tutorial (que já sugere no fim), o celular no navegador é lembrado
+  // de instalar o app.
+  else if (!db.introAtiva()) lembrarDeInstalar();
 
   // O dia pode virar com a aba aberta.
   setInterval(() => {
