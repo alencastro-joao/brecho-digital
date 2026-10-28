@@ -1125,14 +1125,6 @@
     border: 2px solid var(--bloco-borda); border-radius: 20px; background: var(--painel);
   }
   .view-social .mural { margin-top: 0; }
-  /* Desfile: no celular quem rola é a tela inteira, e o look cabe nela. */
-  .view-social:has(.desfile) { scroll-snap-type: y proximity; }
-  /* As abas também são um ponto de encaixe: sem isso a tela pulava direto
-     para o primeiro look e escondia as abas. */
-  .view-social:has(.desfile) .feed-head { scroll-snap-align: start; }
-  .view-social .desfile { margin-top: 0; gap: 26px; }
-  .view-social .desfile-post { scroll-margin-top: 12px; }
-  .view-social .desfile-foto img { height: min(58vh, 560px); }
   .view-social .feed-vazio { padding: 6px 4px; }
   .view-social .post-thumb, .view-social .post .sem-thumb {
     border: 2px solid var(--bloco-borda); border-radius: 14px;

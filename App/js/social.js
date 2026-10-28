@@ -278,7 +278,9 @@ function ouvirFoco() {
   window.addEventListener('focus', () => { if (viewAtual() === 'social') garantirFeed(); });
   // Janela mais larga ou mais estreita pode pedir outro número de colunas.
   window.addEventListener('resize', () => {
-    if (viewAtual() === 'social' && modo === 'mural' && colunasDoMural($('#feed')) !== colunasDesenhadas) renderFeed();
+    if (viewAtual() !== 'social') return;
+    if (modo === 'desfile') medirDesfile();
+    else if (colunasDoMural($('#feed')) !== colunasDesenhadas) renderFeed();
   });
   $('#feed-atualizar')?.addEventListener('click', atualizarFeed);
   $('#feed-modo')?.addEventListener('click', trocarModo);
@@ -434,6 +436,10 @@ function renderFeed() {
     estado.classList.toggle('offline', !lido);
   }
 
+  $('.view-social')?.classList.toggle('em-desfile',
+    modo === 'desfile' && posts.length > 0 && !/^vitrine-/.test(paramAtual() || ''));
+  if (modo === 'desfile') medirDesfile();
+
   if (!posts.length) {
     feed.replaceChildren(el('div', { class: 'feed-vazio' }, ...mensagemVazia()));
     return;
@@ -485,11 +491,12 @@ function mensagemVazia() {
 
 
 // ================================ Desfile =================================
-// O feed como uma passarela: um look por tela, que se rola para o próximo.
-// Em cima, quem postou; no meio, a imagem grande (um toque abre o look, dois
-// curtem); embaixo, as peças do look, marcando as que você já tem e as que
-// estão na vitrine da loja hoje. Tocar numa peça abre a ficha. No PC a
-// imagem fica à esquerda e o resto numa coluna ao lado (social.css).
+// O feed como uma passarela: um look por tela, que ocupa a tela inteira e
+// se rola para o próximo. A imagem é o fundo (um toque abre o look, dois
+// curtem); por cima, quem postou no alto e, embaixo, as peças do look,
+// marcando as que você já tem e as que estão na vitrine da loja hoje. Tocar
+// numa peça abre a ficha. No desfile a coluna "Quem seguir" sai da tela
+// (.em-desfile em social.css); no mural ela volta.
 // O mural continua a um toque (#feed-modo); a escolha fica neste navegador.
 const CHAVE_MODO = 'brecho-feed-modo';
 const COMENTARIOS_NO_DESFILE = 2;
@@ -570,6 +577,7 @@ function cardDoDesfile(post) {
         botaoCurtir(post),
         el('button', { class: 'desfile-comentar', title: 'Comentários', onclick: abrirConversa },
           ico('balao'), n ? el('span', {}, String(n)) : null))),
+    el('div', { class: 'desfile-info' },
     pecas.length
       ? el('section', { class: 'desfile-pecas' },
         el('p', {}, el('b', {}, `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`),
@@ -583,7 +591,16 @@ function cardDoDesfile(post) {
         el('button', { class: 'autor-link nome forte', onclick: () => abrirAutor(c.autor) }, autorDe(c.autor).nome),
         ' ', c.texto)),
       el('button', { class: 'link-btn', onclick: abrirConversa },
-        n > COMENTARIOS_NO_DESFILE ? `ver os ${n} comentários` : n ? 'responder' : 'comentar')));
+        n > COMENTARIOS_NO_DESFILE ? `ver os ${n} comentários` : n ? 'responder' : 'comentar'))));
+}
+
+// Cada look tem a altura da caixa que rola (no PC é .feed-wrapper, no celular
+// a tela do feed, acima da barra de baixo): medida aqui, porque nenhuma unidade
+// do CSS sabe a altura dessa caixa.
+function medirDesfile() {
+  const feed = $('#feed');
+  const caixa = feed && caixaQueRola(feed);
+  if (caixa?.clientHeight) feed.style.setProperty('--altura-desfile', caixa.clientHeight + 'px');
 }
 
 // ================================ O card ==================================
