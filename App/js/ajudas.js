@@ -33,6 +33,7 @@ let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
 let premiado = null;      // jogo que acabou de pagar ficha (a barra mostra cheia)
+let pendente = null;      // Avaliar: último voto, ainda não enviado ({ peca, gostei }), para poder voltar
 
 async function chamar(rota, corpo) {
   const r = await fetch(rota, {
@@ -47,7 +48,7 @@ async function chamar(rota, corpo) {
 }
 
 export function montarAjudas() {
-  $('#mg-voltar').addEventListener('click', () => { jogo = null; renderMenu(); });
+  $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; renderMenu(); });
 }
 
 export async function aoEntrarNasAjudas() {
@@ -162,11 +163,26 @@ function proxima() {
 async function enviar(corpo) {
   if (enviando) return;
   enviando = true;
+  await gravar(jogo, peca, corpo);
+  enviando = false;
+  proxima();
+}
+
+// O voto do Avaliar fica guardado até o próximo (ou até sair do jogo): assim
+// "Voltar" desfaz sem precisar apagar nada no servidor.
+function soltarPendente() {
+  if (!pendente) return;
+  const { peca: p, gostei } = pendente;
+  pendente = null;
+  gravar('avaliar', p, { gostei }).then(() => { if (jogo === 'avaliar') renderCota(); });
+}
+
+async function gravar(jogo, peca, corpo) {
   try {
     const r = await chamar('/api/ajudas/' + jogo, { peca: peca.id, ...corpo });
     const s = estado[jogo];
     Object.assign(s, { feitas: r.feitas, limite: r.limite, porFicha: r.porFicha, vira: r.vira });
-    if (r.ok || r.motivo === 'repetida') s.pecas.push(peca.id);
+    if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
     if (r.fichas) {
       db.ganharFicha(r.fichas);
       db.salvar();
@@ -178,10 +194,7 @@ async function enviar(corpo) {
     }
   } catch (e) {
     toast(`Não deu para enviar: ${e.message}`, 'aviso');
-  } finally {
-    enviando = false;
   }
-  proxima();
 }
 
 const nomeDaPeca = (it) => (it.nome || rotuloCategoria(it.cat)).toLowerCase();
@@ -194,7 +207,18 @@ function jogoAvaliar() {
     el('span', { class: 'mg-selo mg-selo-sim' }, 'Gostei'));
   const votar = (gostei) => {
     carta.classList.add(gostei ? 'sai-dir' : 'sai-esq');
-    setTimeout(() => enviar({ gostei }), 220);
+    soltarPendente();
+    pendente = { peca, gostei };
+    estado.avaliar.pecas.push(peca.id);     // some da fila enquanto espera
+    setTimeout(proxima, 220);
+  };
+  const desfazer = () => {
+    if (!pendente) return;
+    const s = estado.avaliar;
+    s.pecas = s.pecas.filter(id => id !== pendente.peca.id);
+    peca = pendente.peca;
+    pendente = null;
+    jogoAvaliar();
   };
 
   let ini = null;
@@ -225,7 +249,8 @@ function jogoAvaliar() {
     el('div', { class: 'mg-botoes mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar(false) }, ico('x'), 'Não curti'),
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar(true) }, ico('coracao-cheio'), 'Gostei')),
-    el('p', { class: 'mg-dica' }, 'Ou arraste a peça para um dos lados.'));
+    el('button', { type: 'button', class: 'mg-desfazer', disabled: !pendente, onclick: desfazer },
+      ico('desfazer'), 'Voltar o último voto'));
 }
 
 // ------------------------------- Ajustar ----------------------------------
