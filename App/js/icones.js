@@ -1,13 +1,14 @@
 // Ícones do app: Phosphor (duotone; o ⋯ em bold), licença MIT, numa cor só.
 // O SVG vai embutido aqui e pinta com `currentColor`, então segue a cor do
 // botão. Os arquivos soltos em assets/icones/ph/ servem ao CSS (::before, com
-// mask-image). bermuda, saia e colar não existem no Phosphor e foram
+// mask-image). bermuda, saia, colar e praca não existem no Phosphor e foram
 // desenhados no mesmo traço. Licença em assets/icones/ph/LICENSE.
 //
 // No HTML: <i data-i="ok"></i> vira o ícone; <i data-e="🎁"></i> é o mesmo
 // pelo emoji. No JS: ico('ok') e emo('🎁').
 
 const PH = {
+  'praca': '<circle cx="88" cy="88" r="56" opacity="0.2"/><g fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"><circle cx="88" cy="88" r="56"/><path d="M88,144v72M24,216H232M144,160h88M144,128h88M152,160v56M224,160v56"/></g>',
   'mover': '<circle cx="128" cy="128" r="40" opacity="0.2"/><path d="M165.66,194.34a8,8,0,0,1,0,11.32l-32,32a8,8,0,0,1-11.32,0l-32-32a8,8,0,0,1,11.32-11.32L120,212.69V136H43.31l18.35,18.34a8,8,0,0,1-11.32,11.32l-32-32a8,8,0,0,1,0-11.32l32-32a8,8,0,0,1,11.32,11.32L43.31,120H120V43.31L101.66,61.66A8,8,0,0,1,90.34,50.34l32-32a8,8,0,0,1,11.32,0l32,32a8,8,0,0,1-11.32,11.32L136,43.31V120h76.69l-18.35-18.34a8,8,0,0,1,11.32-11.32l32,32a8,8,0,0,1,0,11.32l-32,32a8,8,0,0,1-11.32-11.32L212.69,136H136v76.69l18.34-18.35A8,8,0,0,1,165.66,194.34Z"/>',
   'seta-dir': '<path d="M216,128l-72,72V56Z" opacity="0.2"/><path d="M221.66,122.34l-72-72A8,8,0,0,0,136,56v64H40a8,8,0,0,0,0,16h96v64a8,8,0,0,0,13.66,5.66l72-72A8,8,0,0,0,221.66,122.34ZM152,180.69V75.31L204.69,128Z"/>',
   'seta-esq': '<path d="M112,56V200L40,128Z" opacity="0.2"/><path d="M216,120H120V56a8,8,0,0,0-13.66-5.66l-72,72a8,8,0,0,0,0,11.32l72,72A8,8,0,0,0,120,200V136h96a8,8,0,0,0,0-16ZM104,180.69,51.31,128,104,75.31Z"/>',
@@ -100,7 +101,7 @@ const EMOJI_ICO = {
   '🛍': 'sacola', '🛍️': 'sacola', '✨': 'brilho', '💬': 'balao', '📌': 'alfinete',
   '🧍': 'corpo', '💇': 'tesoura', '🎨': 'paleta', '👃': 'rosto', '🤨': 'sobrancelha', '🪞': 'varinha',
   '🖼️': 'quadro', '🖼': 'quadro', '🏆': 'trofeu', '👤': 'usuario', '⭐': 'estrela-cheia',
-  '❤️': 'coracao-cheio', '📸': 'camera', '🪢': 'cinto', '👂': 'orelha',
+  '❤️': 'coracao-cheio', '📸': 'camera', '🪢': 'cinto', '👂': 'orelha', '⛲': 'praca',
 };
 
 const SVG = 'http://www.w3.org/2000/svg';
