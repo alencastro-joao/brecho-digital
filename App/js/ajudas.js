@@ -1,5 +1,6 @@
 // Mini games de ajuda: os jogadores ajudam a cadastrar as peças do acervo e
-// ganham fichas por isso. Abre por Tarefas (#/ajudas).
+// ganham fichas por isso. Botão do dado na barra (#/ajudas): abre num menu de
+// três botões grandes, um por jogo.
 //
 //   Avaliar    a peça aparece; arrastar para a direita é "gostei", para a
 //              esquerda "não gostei". A média dos votos sugere a raridade.
@@ -17,16 +18,15 @@ import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
 import { ico } from './icones.js';
-import { irPara } from './router.js';
 
 const JOGOS = [
-  { id: 'avaliar', nome: 'Avaliar', icone: 'coracao', desc: 'Arraste: gostei ou não gostei.' },
-  { id: 'ajustar', nome: 'Ajustar', icone: 'mover', desc: 'Encaixe a peça no corpo.' },
-  { id: 'preencher', nome: 'Preencher', icone: 'editar', desc: 'Diga a cor e a marca.' },
+  { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: '#ff5c8a', desc: 'Arraste: gostei ou não gostei.' },
+  { id: 'ajustar', nome: 'Ajustar', icone: 'mover', cor: '#4a90e2', desc: 'Encaixe a peça no corpo.' },
+  { id: 'preencher', nome: 'Preencher', icone: 'editar', cor: '#f5a623', desc: 'Diga a cor e a marca.' },
 ];
 
 let estado = null;        // resposta de GET /api/ajudas
-let jogo = 'avaliar';
+let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
 
@@ -43,37 +43,49 @@ async function chamar(rota, corpo) {
 }
 
 export function montarAjudas() {
-  $('#aj-voltar').addEventListener('click', () => irPara('tarefas'));
+  $('#mg-voltar').addEventListener('click', () => { jogo = null; renderMenu(); });
 }
 
 export async function aoEntrarNasAjudas() {
-  renderAbas();
-  $('#aj-palco').replaceChildren(el('p', { class: 'aj-vazio' }, 'Carregando…'));
+  jogo = null;
+  renderMenu();
+  $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' }, 'Carregando…'));
   try {
     estado = (await chamar('/api/ajudas')).jogos;
   } catch {
     estado = null;
-    $('#aj-palco').replaceChildren(el('p', { class: 'aj-vazio' },
+    $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
       'Os mini games precisam de internet e da sua conta. Tente de novo daqui a pouco.'));
     return;
   }
-  proxima();
+  renderMenu();
 }
 
-function renderAbas() {
-  $('#aj-abas').replaceChildren(...JOGOS.map(j => el('button', {
-    type: 'button', class: 'aj-aba' + (j.id === jogo ? ' ativa' : ''),
-    onclick: () => { jogo = j.id; renderAbas(); if (estado) proxima(); },
-  }, ico(j.icone), el('span', {}, j.nome))));
-  renderCota();
+// O menu: três quadrados grandes, cada um com sua cor e símbolo.
+function renderMenu() {
+  const noMenu = !jogo;
+  $('#mg-menu').hidden = !noMenu;
+  $('#mg-voltar').hidden = noMenu;
+  $('#mg-titulo').textContent = noMenu ? 'Mini games' : JOGOS.find(j => j.id === jogo).nome;
+  if (!noMenu) return;
+  $('#mg-cota').replaceChildren();
+  if (estado) $('#mg-palco').replaceChildren();
+  $('#mg-menu').replaceChildren(...JOGOS.map(j => {
+    const s = estado?.[j.id];
+    return el('button', {
+      type: 'button', class: 'mg-quadrado', style: { '--cor': j.cor },
+      onclick: () => { if (!estado) return; jogo = j.id; renderMenu(); proxima(); },
+    }, ico(j.icone), el('strong', {}, j.nome),
+    el('small', {}, s ? `${s.feitas}/${s.limite}` : ''));
+  }));
 }
 
 function renderCota() {
   const s = estado?.[jogo];
   const j = JOGOS.find(x => x.id === jogo);
-  if (!s) { $('#aj-cota').textContent = j.desc; return; }
+  if (!s) { $('#mg-cota').textContent = j.desc; return; }
   const falta = s.porFicha - (s.feitas % s.porFicha);
-  $('#aj-cota').replaceChildren(
+  $('#mg-cota').replaceChildren(
     el('span', {}, j.desc),
     el('small', {}, `${s.feitas}/${s.limite} ${s.janela === 'hora' ? 'nesta hora' : 'hoje'}` +
       (s.feitas < s.limite ? ` · mais ${falta} para 1 ficha` : '')));
@@ -94,13 +106,13 @@ function proxima() {
   const s = estado[jogo];
   if (s.feitas >= s.limite) {
     const vira = new Date(s.vira).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return $('#aj-palco').replaceChildren(el('p', { class: 'aj-vazio' },
+    return $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
       `Por ${s.janela === 'hora' ? 'esta hora' : 'hoje'} chega de ${JOGOS.find(j => j.id === jogo).nome.toLowerCase()}. ` +
       `Volta às ${vira}.`));
   }
   peca = escolherPeca();
   if (!peca) {
-    return $('#aj-palco').replaceChildren(el('p', { class: 'aj-vazio' },
+    return $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
       'Você já ajudou em todas as peças deste jogo. Obrigado!'));
   }
   ({ avaliar: jogoAvaliar, ajustar: jogoAjustar, preencher: jogoPreencher })[jogo]();
@@ -131,9 +143,9 @@ const imagem = (it, classe) => el('img', { class: classe, src: srcGrande(it), al
 
 // ------------------------------- Avaliar ----------------------------------
 function jogoAvaliar() {
-  const carta = el('div', { class: 'aj-carta' }, imagem(peca, 'aj-carta-img'),
-    el('span', { class: 'aj-selo aj-selo-nao' }, 'Não'),
-    el('span', { class: 'aj-selo aj-selo-sim' }, 'Gostei'));
+  const carta = el('div', { class: 'mg-carta' }, imagem(peca, 'mg-carta-img'),
+    el('span', { class: 'mg-selo mg-selo-nao' }, 'Não'),
+    el('span', { class: 'mg-selo mg-selo-sim' }, 'Gostei'));
   const votar = (gostei) => {
     carta.classList.add(gostei ? 'sai-dir' : 'sai-esq');
     setTimeout(() => enviar({ gostei }), 220);
@@ -161,11 +173,11 @@ function jogoAvaliar() {
   carta.addEventListener('pointerup', soltar);
   carta.addEventListener('pointercancel', soltar);
 
-  $('#aj-palco').replaceChildren(
-    el('div', { class: 'aj-mesa' }, carta),
-    el('div', { class: 'aj-botoes' },
-      el('button', { type: 'button', class: 'aj-btn aj-btn-nao', title: 'Não gostei', onclick: () => votar(false) }, ico('x')),
-      el('button', { type: 'button', class: 'aj-btn aj-btn-sim', title: 'Gostei', onclick: () => votar(true) }, ico('coracao-cheio'))));
+  $('#mg-palco').replaceChildren(
+    el('div', { class: 'mg-mesa' }, carta),
+    el('div', { class: 'mg-botoes' },
+      el('button', { type: 'button', class: 'mg-btn mg-btn-nao', title: 'Não gostei', onclick: () => votar(false) }, ico('x')),
+      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Gostei', onclick: () => votar(true) }, ico('coracao-cheio'))));
 }
 
 // ------------------------------- Ajustar ----------------------------------
@@ -179,9 +191,9 @@ function jogoAjustar() {
     w: p.w * (0.75 + Math.random() * 0.5),
   };
   const prop = proporcao(peca);
-  const no = el('div', { class: 'aj-peca' }, imagem(peca, ''));
-  const palco = el('div', { class: 'aj-corpo' });
-  const boneco = el('div', { class: 'aj-boneco' });
+  const no = el('div', { class: 'mg-peca' }, imagem(peca, ''));
+  const palco = el('div', { class: 'mg-corpo' });
+  const boneco = el('div', { class: 'mg-boneco' });
   boneco.innerHTML = svgAvatar();
   palco.append(boneco);
   palco.append(no);
@@ -213,13 +225,13 @@ function jogoAjustar() {
   }, { passive: false });
 
   const tamanho = (k) => { medida.w = clamp(medida.w * k, 20, 600); posicionar(); };
-  $('#aj-palco').replaceChildren(
-    el('p', { class: 'aj-dica' }, `Arraste ${nomeDaPeca(peca)} até o lugar certo e acerte o tamanho.`),
-    el('div', { class: 'aj-mesa' }, palco),
-    el('div', { class: 'aj-botoes' },
-      el('button', { type: 'button', class: 'aj-btn', title: 'Menor', onclick: () => tamanho(0.94) }, ico('menos')),
-      el('button', { type: 'button', class: 'aj-btn', title: 'Maior', onclick: () => tamanho(1.06) }, ico('mais')),
-      el('button', { type: 'button', class: 'aj-btn aj-btn-sim', title: 'Pronto', onclick: () => {
+  $('#mg-palco').replaceChildren(
+    el('p', { class: 'mg-dica' }, `Arraste ${nomeDaPeca(peca)} até o lugar certo e acerte o tamanho.`),
+    el('div', { class: 'mg-mesa' }, palco),
+    el('div', { class: 'mg-botoes' },
+      el('button', { type: 'button', class: 'mg-btn', title: 'Menor', onclick: () => tamanho(0.94) }, ico('menos')),
+      el('button', { type: 'button', class: 'mg-btn', title: 'Maior', onclick: () => tamanho(1.06) }, ico('mais')),
+      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Pronto', onclick: () => {
         const m = ancoraNoMolde(CATEGORIAS[peca.cat].regiao, medida);
         enviar({ ancora: { x: m.x, y: m.y, w: m.w } });
       } }, ico('ok'))));
@@ -228,27 +240,27 @@ function jogoAjustar() {
 // ------------------------------ Preencher ---------------------------------
 function jogoPreencher() {
   let cor = '';
-  const campoMarca = el('input', { class: 'aj-marca', type: 'text', maxlength: '40',
-    placeholder: 'Marca (deixe vazio se não souber)', list: 'aj-marcas' });
-  const lista = el('datalist', { id: 'aj-marcas' },
+  const campoMarca = el('input', { class: 'mg-marca', type: 'text', maxlength: '40',
+    placeholder: 'Marca (deixe vazio se não souber)', list: 'mg-marcas' });
+  const lista = el('datalist', { id: 'mg-marcas' },
     ...db.marcasOrdenadas().slice(0, 40).map(m => el('option', { value: m.nome })));
-  const cores = el('div', { class: 'aj-cores' });
+  const cores = el('div', { class: 'mg-cores' });
   const renderCores = () => cores.replaceChildren(...CORES.map(c => el('button', {
-    type: 'button', class: 'aj-cor' + (c.nome === cor ? ' ativa' : ''), title: c.nome,
+    type: 'button', class: 'mg-cor' + (c.nome === cor ? ' ativa' : ''), title: c.nome,
     style: { '--cor': c.hex === 'estampa' ? '#ccc' : c.hex },
     onclick: () => { cor = cor === c.nome ? '' : c.nome; renderCores(); },
   }, el('span', {}), c.nome)));
   renderCores();
 
-  $('#aj-palco').replaceChildren(
-    el('div', { class: 'aj-mesa aj-mesa-baixa' }, imagem(peca, 'aj-carta-img')),
-    el('p', { class: 'aj-dica' }, 'Qual a cor principal?'), cores,
+  $('#mg-palco').replaceChildren(
+    el('div', { class: 'mg-mesa mg-mesa-baixa' }, imagem(peca, 'mg-carta-img')),
+    el('p', { class: 'mg-dica' }, 'Qual a cor principal?'), cores,
     campoMarca, lista,
-    el('div', { class: 'aj-botoes' },
-      el('button', { type: 'button', class: 'aj-pular', onclick: () => {
+    el('div', { class: 'mg-botoes' },
+      el('button', { type: 'button', class: 'mg-pular', onclick: () => {
         estado[jogo].pecas.push(peca.id); proxima();
       } }, 'Pular'),
-      el('button', { type: 'button', class: 'aj-btn aj-btn-sim', title: 'Enviar', onclick: () => {
+      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Enviar', onclick: () => {
         if (!cor && !campoMarca.value.trim()) return toast('Escolha a cor ou escreva a marca.', 'aviso');
         enviar({ cor, marca: campoMarca.value.trim() });
       } }, ico('ok'))));

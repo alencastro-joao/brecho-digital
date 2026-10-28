@@ -121,19 +121,8 @@ function renderCartaoBaus() {
     el('strong', {}, 'Baús'),
     el('small', {}, n ? String(n) : ''),
     el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
-  renderCartaoAjudas();
 }
 
-// A porta dos mini games de ajuda (js/ajudas.js).
-function renderCartaoAjudas() {
-  const botao = $('#tarefas-ajudas');
-  botao.onclick = () => irPara('ajudas');
-  botao.replaceChildren(
-    el('span', { class: 'tf-col-ico' }, ico('dado')),
-    el('strong', {}, 'Mini games'),
-    el('small', {}, 'fichas'),
-    el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
-}
 
 // ---------------------------------- Topo ----------------------------------
 // Nível e fichas numa fileira. As fichas mostram só quantas você tem; tocar

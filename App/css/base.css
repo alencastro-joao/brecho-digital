@@ -99,6 +99,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .sidebar-btn.criar { background: var(--stylist); }
 .sidebar-btn.social { background: var(--social); }
 .sidebar-btn.tarefas { background: var(--tarefas); }
+.sidebar-btn.jogos { background: #c8e6c9; }
 .sidebar-btn.vestiario { background: var(--vestiario); }
 .sidebar-btn.perfil { background: var(--perfil); }
 
