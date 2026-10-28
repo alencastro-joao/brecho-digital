@@ -122,14 +122,16 @@ function renderCota() {
   const passo = s.feitas % s.porFicha;
   const pct = esgotou || ganhou ? 100 : passo / s.porFicha * 100;
   const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
-  const restam = Math.floor(s.limite / s.porFicha) - Math.floor(s.feitas / s.porFicha);
+  // Uma moedinha por ficha da janela: as já ganhas ficam apagadas.
+  const total = Math.floor(s.limite / s.porFicha), ganhas = Math.min(total, Math.floor(s.feitas / s.porFicha));
   $('#mg-cota').replaceChildren(el('div', {
     class: 'mg-progresso' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : ''),
   },
     el('span', { class: 'mg-progresso-ico' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' })),
     el('div', { class: 'mg-progresso-info' },
       el('strong', {}, esgotou ? `Limite ${quando} atingido` : ganhou ? '+1 ficha!' : 'Próxima ficha',
-        esgotou ? null : el('span', { class: 'mg-restam' }, `Ainda dá para ganhar ${restam} ficha${restam === 1 ? '' : 's'} ${quando}`)),
+        el('span', { class: 'mg-restam', title: `${total - ganhas} de ${total} fichas ${quando}` },
+          ...Array.from({ length: total }, (_, i) => el('span', { class: 'mg-moedinha' + (i < ganhas ? ' gasta' : '') })))),
       el('div', { class: 'mg-progresso-barra' }, el('span', { style: { width: pct + '%' } }))),
     el('small', {}, esgotou ? `${s.feitas}/${s.limite}` : `${ganhou ? s.porFicha : passo}/${s.porFicha}`)));
 }
@@ -255,9 +257,9 @@ function jogoAvaliar() {
     el('div', { class: 'mg-mesa' }, carta),
     $('#mg-cota'),
     el('div', { class: 'mg-botoes mg-botoes-voto' },
-      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar('nao') }, ico('x'), 'Não curti'),
-      el('button', { type: 'button', class: 'mg-voto mg-voto-meh', onclick: () => votar('meh') }, '😐', 'Tanto faz'),
-      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar('sim') }, ico('coracao-cheio'), 'Gostei')),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar('nao'), title: 'Não curti', 'aria-label': 'Não curti' }, ico('x')),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-meh', onclick: () => votar('meh'), title: 'Tanto faz', 'aria-label': 'Tanto faz' }, ico('menos')),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar('sim'), title: 'Gostei', 'aria-label': 'Gostei' }, ico('coracao-cheio'))),
     el('button', { type: 'button', class: 'mg-desfazer', disabled: !pendente, onclick: desfazer },
       ico('desfazer'), 'Voltar o último voto'));
 }
