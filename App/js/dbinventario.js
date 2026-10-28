@@ -68,13 +68,14 @@ export function trocarFichasPorResgate() {
   return true;
 }
 
-// Repor a loja com fichas (o mesmo repor da ficha de repor da trilha). Só
-// cobra: a arara nova é sorteada pela vitrine.
+// Repor a loja com fichas: vira uma ficha de repor guardada (a mesma das
+// missões e da trilha), e a pessoa usa quando quiser no ↻ da vitrine.
 export const podeReporComFichas = () => fichas() >= FICHAS.porRepor;
-export function gastarFichasNoRepor() {
+export function comprarRepor() {
   virarODiaSeNecessario();
   if (!podeReporComFichas()) return false;
   state.fichas = fichas() - FICHAS.porRepor;
+  state.fichasDeRepor = (state.fichasDeRepor ?? 0) + 1;
   salvar();
   return true;
 }

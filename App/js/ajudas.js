@@ -15,6 +15,7 @@ import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, ancoraPadrao } from './con
 import { rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
 import { tocar } from './sons.js';
+import { abrirTrocas } from './tarefas.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
@@ -50,6 +51,8 @@ async function chamar(rota, corpo) {
 
 export function montarAjudas() {
   $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; renderMenu(); });
+  // Tocar nas fichas abre as mesmas Trocas de Tarefas.
+  $('#mg-fichas').addEventListener('click', () => abrirTrocas(renderFichas));
 }
 
 export async function aoEntrarNasAjudas() {

@@ -971,29 +971,8 @@ export function reporComFicha() {
   falarDe('boasVindas');
 }
 
-// Troca FICHAS.porRepor fichas por uma loja nova. Mora em Tarefas, ao lado das
-// fichas, como o resgate extra. Leva para a vitrine para ver a arara nova.
-export async function trocarFichasPorRepor() {
-  if (!db.podeReporComFichas()) {
-    toast(`Faltam ${FICHAS.porRepor - db.fichas()} fichas para repor.`);
-    return false;
-  }
-  const presas = db.congeladas().length;
-  const custo = FICHAS.porRepor;
-  if (!await confirmar(`Trocar ${custo} das suas ${db.fichas()} fichas por uma arara nova?`
-    + (presas ? ' As peças congeladas continuam na loja.' : ''),
-    { titulo: 'Repor a loja', sim: `Repor · ${custo} fichas` })) return false;
-  if (!db.gastarFichasNoRepor()) return false;
-  reporNaLoja();
-  db.progredirMissao('repor');
-  irPara('vitrine');
-  montarVitrine({ entrada: true });
-  falarDe('boasVindas');
-  return true;
-}
-
 function renderFichaDeRepor() {
-  // Só o prêmio da trilha aparece aqui; a troca por fichas mora em Tarefas.
+  // As fichas de repor guardadas (missões, trilha ou compradas em Tarefas).
   const botao = $('#btn-repor-ficha');
   if (!botao) return;
   const n = db.fichasDeRepor();

@@ -23,7 +23,6 @@ import { ico } from './icones.js';
 import { irPara, viewAtual } from './router.js';
 import { todasAsColecoes, abrirColecao } from './colecoes.js';
 import { abrirFichaDePeca } from './usuario.js';
-import { trocarFichasPorRepor } from './vitrine.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
 
@@ -128,27 +127,30 @@ function renderCartaoBaus() {
 // Nível e fichas numa fileira. As fichas mostram só quantas você tem; tocar
 // nelas abre as Trocas.
 
-// Tudo que se compra com fichas, numa janela só. A ficha de repor (prêmio da
-// trilha) não é troca: só um lembrete, porque ela se usa na vitrine.
+// Tudo que se compra com fichas, numa janela só. Cada compra fica guardada
+// até a pessoa usar (o repor no ↻ da vitrine, como o das missões). `acao`
+// devolve se deu certo, para tocar o som de gastar.
 const TROCAS = [
   { id: 'resgate', nome: 'Resgate extra', texto: 'Mais uma peça na loja. Fica guardado até usar.',
     icone: () => ico('sacola'), preco: () => FICHAS.porResgate,
-    acao: () => { if (db.trocarFichasPorResgate()) toast('+1 resgate.', 'rare'); } },
-  { id: 'repor', nome: 'Repor a loja', texto: 'Arara nova agora. Os resgates do dia continuam.',
+    acao: () => { const ok = db.trocarFichasPorResgate(); if (ok) toast('+1 resgate.', 'rare'); return ok; } },
+  { id: 'repor', nome: 'Repor a loja', texto: 'Arara nova quando quiser: use no ↻ da vitrine.',
     icone: () => ico('atualizar'), preco: () => FICHAS.porRepor,
-    acao: () => trocarFichasPorRepor() },
+    acao: () => { const ok = db.comprarRepor(); if (ok) toast('+1 repor. Use no ↻ da vitrine.', 'rare'); return ok; },
+    guardados: () => db.fichasDeRepor() },
   { id: 'congelar', nome: 'Congelar', texto: 'Segura uma peça na loja até amanhã. Use na ficha dela.',
     icone: () => ico('floco'), preco: () => FICHAS.porCongelar,
-    acao: () => { if (db.comprarCongelamento()) toast('+1 congelamento.', 'rare'); },
+    acao: () => { const ok = db.comprarCongelamento(); if (ok) toast('+1 congelamento.', 'rare'); return ok; },
     guardados: () => db.congelamentos() },
 ];
 
-function abrirTrocas() {
+// Também abre pelas fichas dos mini games; `aoFechar` redesenha o saldo de lá.
+export function abrirTrocas(aoFechar = renderTopo) {
   const fechar = () => {
     fundo.remove();
     document.body.classList.remove('com-modal');
     document.removeEventListener('keydown', tecla);
-    renderTopo();
+    aoFechar();
   };
   const n = db.fichas();
   const opcao = (t) => {
@@ -158,8 +160,7 @@ function abrirTrocas() {
     return el('button', {
       type: 'button', class: 'tf-troca' + (pode ? ' pronto' : ''),
       disabled: pode ? null : true,
-      // Fecha antes de agir: o repor abre a própria pergunta.
-      onclick: () => { fechar(); t.acao(); },
+      onclick: () => { if (t.acao()) tocar('gastar'); fechar(); },
     },
       el('span', { class: 'tf-troca-ico', 'aria-hidden': 'true' }, t.icone()),
       el('span', { class: 'tf-troca-txt' },
@@ -168,14 +169,11 @@ function abrirTrocas() {
       el('span', { class: 'tf-preco' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), String(preco)));
   };
 
-  const premio = db.fichasDeRepor();
   const caixa = el('div', { class: 'modal-caixa pergunta-caixa tf-trocas-caixa', role: 'dialog', 'aria-modal': 'true' },
     el('h2', { class: 'pergunta-titulo' }, 'Trocas'),
     el('p', { class: 'tf-trocas-saldo' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }),
       el('b', {}, String(n)), n === 1 ? ' ficha' : ' fichas'),
     el('div', { class: 'tf-trocas-lista' }, ...TROCAS.map(opcao)),
-    premio ? el('p', { class: 'tf-trocas-nota' },
-      `Você também tem ${premio} ficha${premio > 1 ? 's' : ''} de repor da trilha: use no ↻ da vitrine.`) : null,
     el('div', { class: 'pergunta-botoes' },
       el('button', { type: 'button', class: 'btn-ghost', onclick: fechar }, 'Fechar')));
   const fundo = el('div', { class: 'modal pergunta' }, caixa);
@@ -201,7 +199,7 @@ function renderTopo() {
       el('small', {}, p.maximo ? `${p.xpTotal} XP` : `${p.xpNoNivel}/${p.xpDoNivel}`)),
     el('button', {
       type: 'button', class: 'tf-fichas' + (podeAlguma ? ' pronto' : ''),
-      title: 'Fichas: toque para ver as trocas', onclick: abrirTrocas,
+      title: 'Fichas: toque para ver as trocas', onclick: () => abrirTrocas(),
     }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(n))));
 }
 
