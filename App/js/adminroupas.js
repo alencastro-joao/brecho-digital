@@ -41,13 +41,14 @@ const nomeDaColecao = (id) => COLECOES_DA_TELA.find(c => c.id === id)?.nome ?? i
 let lista = [];
 let ajustes = {};
 
-// As roupas do código, com a imagem da cor preta para a lista e a prévia.
+// As roupas do código, com a imagem da cor preta para a lista e a prévia (ou
+// da primeira cor que a peça tem, se ela não existir em preto).
 // `cores` são as cores que têm desenho (só os óculos escolhem entre elas).
 const DO_CODIGO = [
   ...ROUPAS_BASE.map(b => ({ id: b.id, nome: b.nome, slot: b.slot, caixa: b.caixa,
     src: `assets/roupas/${b.id}-preto-${ROUPAS_BASE_VERSAO}.webp`, cores: null })),
   ...OCULOS_DESENHADOS.map(o => ({ id: o.id, nome: o.nome, slot: o.slot, caixa: o.caixa,
-    src: `assets/roupas/${o.id}-preto-${o.versao}.webp`, cores: Object.keys(o.cores) })),
+    src: `assets/roupas/${o.id}-${idDaCor(o.cores.Preto ? 'Preto' : Object.keys(o.cores)[0]).slice(4)}-${o.versao}.webp`, cores: Object.keys(o.cores) })),
 ];
 const ajustada = (c) => {
   const a = ajustes[c.id];
