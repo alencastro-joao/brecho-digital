@@ -18,6 +18,8 @@ import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
 import { ico } from './icones.js';
+import { alcaMover } from './alcamover.js';
+import { barrasPosicao } from './barrapos.js';
 
 const JOGOS = [
   { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: 'var(--board)', desc: 'Arraste: gostei ou não gostei.' },
@@ -241,46 +243,73 @@ function jogoAjustar() {
   const palco = el('div', { class: 'mg-corpo' });
   const boneco = el('div', { class: 'mg-boneco' });
   boneco.innerHTML = svgAvatar();
-  palco.append(boneco);
-  palco.append(no);
-  const posicionar = () => {
+  palco.append(boneco, no);
+
+  // Como no Stylist: a barra em pé do tamanho ao lado do corpo e a alça de
+  // quatro setas perto da peça, para o dedo não tapar o que se encaixa.
+  const faixa = el('input', { type: 'range', min: '20', max: '600', 'aria-label': 'Tamanho da peça' });
+  const tamanho = (w) => { medida.w = clamp(w, 20, 600); posicionar(); };
+  const alca = alcaMover(palco, (e) => pegar(e));
+  // E as barras de posição do Stylist: em pé sobe e desce, deitada vai para os lados.
+  const colunaY = el('div', { class: 'mg-pos-y' });
+  const linhaX = el('div', { class: 'mg-pos-x' });
+  const barras = barrasPosicao({
+    paiX: linhaX, paiY: colunaY,
+    faixaX: [0, CONFIG.STAGE_W], faixaY: [0, CONFIG.STAGE_H],
+    ler: () => medida,
+    mudar: ({ x, y }) => { medida.x = x; medida.y = y; posicionar(); },
+  });
+  function posicionar() {
     no.style.left = (medida.x / CONFIG.STAGE_W * 100) + '%';
     no.style.top = (medida.y / CONFIG.STAGE_H * 100) + '%';
     no.style.width = (medida.w / CONFIG.STAGE_W * 100) + '%';
     no.style.height = (medida.w / prop / CONFIG.STAGE_H * 100) + '%';
-  };
-  posicionar();
+    faixa.value = Math.round(medida.w);
+    alca.colocar([no]);
+    barras?.atualizar();
+  }
 
   let ini = null;
-  no.addEventListener('pointerdown', (e) => {
+  function pegar(e) {
     ini = { x: e.clientX, y: e.clientY, mx: medida.x, my: medida.y };
-    no.setPointerCapture(e.pointerId);
-  });
-  no.addEventListener('pointermove', (e) => {
-    if (!ini) return;
-    const r = palco.getBoundingClientRect();
-    medida.x = clamp(ini.mx + (e.clientX - ini.x) / r.width * CONFIG.STAGE_W, 0, CONFIG.STAGE_W);
-    medida.y = clamp(ini.my + (e.clientY - ini.y) / r.height * CONFIG.STAGE_H, 0, CONFIG.STAGE_H);
-    posicionar();
-  });
-  for (const t of ['pointerup', 'pointercancel']) no.addEventListener(t, () => { ini = null; });
+    const mover = (ev) => {
+      const r = palco.getBoundingClientRect();
+      medida.x = clamp(ini.mx + (ev.clientX - ini.x) / r.width * CONFIG.STAGE_W, 0, CONFIG.STAGE_W);
+      medida.y = clamp(ini.my + (ev.clientY - ini.y) / r.height * CONFIG.STAGE_H, 0, CONFIG.STAGE_H);
+      posicionar();
+    };
+    const soltar = () => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', soltar);
+    };
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', soltar);
+  }
+  no.addEventListener('pointerdown', (e) => { e.preventDefault(); pegar(e); });
   palco.addEventListener('wheel', (e) => {
     e.preventDefault();
-    medida.w = clamp(medida.w * (e.deltaY < 0 ? 1.05 : 0.95), 20, 600);
-    posicionar();
+    tamanho(medida.w * (e.deltaY < 0 ? 1.05 : 0.95));
   }, { passive: false });
+  faixa.addEventListener('input', () => tamanho(Number(faixa.value)));
 
-  const tamanho = (k) => { medida.w = clamp(medida.w * k, 20, 600); posicionar(); };
   $('#mg-palco').replaceChildren(
-    el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) até o lugar certo e acerte o tamanho.`),
-    el('div', { class: 'mg-mesa' }, palco),
-    el('div', { class: 'mg-botoes' },
-      el('button', { type: 'button', class: 'mg-btn', title: 'Menor', onclick: () => tamanho(0.94) }, el('b', { class: 'mg-sinal' }, '−')),
-      el('button', { type: 'button', class: 'mg-btn', title: 'Maior', onclick: () => tamanho(1.06) }, el('b', { class: 'mg-sinal' }, '+')),
-      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Pronto', onclick: () => {
+    el('div', { class: 'mg-ajuste' },
+      el('div', { class: 'mg-palco-corpo' }, palco),
+      colunaY,
+      el('div', { class: 'mg-tam' },
+        el('button', { type: 'button', title: 'Aumentar', onclick: () => tamanho(medida.w * 1.06) }, '+'),
+        faixa,
+        el('button', { type: 'button', title: 'Diminuir', onclick: () => tamanho(medida.w * 0.94) }, '−')),
+      linhaX),
+    el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) pela alça até o lugar certo.`),
+    el('div', { class: 'mg-botoes-voto' },
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         const m = ancoraNoMolde(CATEGORIAS[peca.cat].regiao, medida);
         enviar({ ancora: { x: m.x, y: m.y, w: m.w } });
-      } }, ico('ok'))));
+      } }, ico('ok'), 'Pronto, ficou certo')));
+  posicionar();
 }
 
 // ------------------------------ Preencher ---------------------------------
