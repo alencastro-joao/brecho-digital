@@ -1437,8 +1437,15 @@ export const OCULOS_MASCARA = {
   caixa: [238, 113, 124, 69.8],
   cores: { Preto: 'pretos' },
 };
-// Os óculos desenhados, na ordem em que entram nas coleções de cor.
-export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA];
+// Camiseta longa preta com a caveira no lugar da estrela, só no Preto (mesma
+// caixa da camiseta longa; imagem em assets/roupas/, feita a partir dela).
+export const CAMISETA_CAVEIRA = {
+  id: 'camiseta-longa-caveira', nome: 'Camiseta longa com caveira', slot: 'torso', versao: 'v3',
+  caixa: [147.3, 241.1, 305.4, 362.1],
+  cores: { Preto: 'preta' },
+};
+// Os desenhos extras, na ordem em que entram nas coleções de cor.
+export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
 // Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
 // as de código ficam ocultas, sem apagar nada dos saves. false desfaz.
