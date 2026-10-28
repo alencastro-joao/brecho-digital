@@ -124,3 +124,5 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .adm-jogos-foto.nos { border-color: #2fbf63; }
 .adm-jogos-foto.nos span { background: #2fbf63; color: #fff; border-color: #2fbf63; }
 .mg-sinal { font-size: 26px; line-height: 1; }
+.adm-jogos-caixa { width: min(760px, 94vw); max-height: 88vh; display: flex; flex-direction: column; }
+.adm-jogos-corpo { overflow: auto; padding: 4px 2px 12px; }

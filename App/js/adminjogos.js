@@ -21,7 +21,22 @@ async function chamar(rota, metodo = 'GET', corpo) {
   return dados;
 }
 
-export async function renderJogosAdmin() {
+export function montarJogosAdmin() {
+  $('#adm-jogos-abrir').addEventListener('click', () => {
+    $('#modal-jogos').hidden = false;
+    renderJogosAdmin();
+  });
+  $('#adm-jogos-fechar').addEventListener('click', () => { $('#modal-jogos').hidden = true; });
+}
+
+let nos = new Set();      // ids que estão nos jogos agora
+
+function resumoDoTopo() {
+  $('#adm-jogos-topo').textContent =
+    `${nos.size} nos jogos. Toque numa foto para pôr ou tirar. Ao publicar ou descartar na esteira, ela sai dos jogos.`;
+}
+
+async function renderJogosAdmin() {
   const caixa = $('#adm-jogos');
   caixa.replaceChildren(el('p', { class: 'tool-hint' }, 'Carregando a esteira…'));
   let esteira, resumo;
@@ -31,7 +46,7 @@ export async function renderJogosAdmin() {
     caixa.replaceChildren(el('p', { class: 'tool-hint' }, `Não consegui ler: ${e.message}`));
     return;
   }
-  const nos = new Set(resumo.nosJogos || []);
+  nos = new Set(resumo.nosJogos || []);
   const porPeca = new Map((resumo.pecas || []).map(p => [p.peca, p]));
   const prontas = (esteira.itens || []).filter(i => i.estado === 'pronta');
   if (!prontas.length) {
@@ -39,12 +54,12 @@ export async function renderJogosAdmin() {
     return;
   }
   caixa.replaceChildren(
-    el('p', { class: 'tool-hint' },
-      `${nos.size} nos jogos. Toque numa foto para pôr ou tirar. Ao publicar ou descartar na esteira, ela sai dos jogos.`),
-    el('div', { class: 'adm-jogos-grade' }, ...prontas.map(i => cartao(i, nos.has(i.id), porPeca.get(i.id)))));
+    el('p', { class: 'tool-hint', id: 'adm-jogos-topo' }),
+    el('div', { class: 'adm-jogos-grade' }, ...prontas.map(i => cartao(i, porPeca.get(i.id)))));
+  resumoDoTopo();
 }
 
-function cartao(item, nosJogos, resumo) {
+function cartao(item, resumo) {
   const cat = item.ficha?.cat || item.sugestao?.cat || '';
   const linhas = [];
   if (resumo?.votos && (resumo.votos.sim + resumo.votos.nao)) {
@@ -56,22 +71,33 @@ function cartao(item, nosJogos, resumo) {
   if (resumo?.marca) linhas.push(`marca: ${resumo.marca.valor} (${resumo.marca.votos}/${resumo.marca.total})`);
   if (resumo?.ajuste) linhas.push(`${resumo.ajuste.medidas} ajuste${resumo.ajuste.medidas > 1 ? 's' : ''} no corpo`);
 
+  // Marcar e desmarcar mexe só nesta foto: a grade não recarrega.
+  const selo = el('span', {});
+  const pintar = () => {
+    const esta = nos.has(item.id);
+    botao.classList.toggle('nos', esta);
+    botao.title = esta ? 'Tirar dos jogos' : 'Mandar para os jogos';
+    selo.textContent = esta ? '✓ nos jogos' : '+ jogos';
+  };
   const botao = el('button', {
-    type: 'button', class: 'adm-jogos-foto' + (nosJogos ? ' nos' : ''),
-    title: nosJogos ? 'Tirar dos jogos' : 'Mandar para os jogos',
+    type: 'button', class: 'adm-jogos-foto',
     onclick: async () => {
       if (!cat) return toast('Escolha a categoria dessa peça na esteira antes.', 'aviso');
+      const ir = !nos.has(item.id);
       botao.disabled = true;
       try {
-        await chamar('/api/admin/ajudas', 'POST', { id: item.id, nos: !nosJogos });
-        toast(nosJogos ? 'Saiu dos jogos.' : 'Foi para os jogos.');
-        renderJogosAdmin();
+        await chamar('/api/admin/ajudas', 'POST', { id: item.id, nos: ir });
+        ir ? nos.add(item.id) : nos.delete(item.id);
+        pintar();
+        resumoDoTopo();
       } catch (e) {
-        botao.disabled = false;
         toast(`Não deu: ${e.message}`, 'aviso');
+      } finally {
+        botao.disabled = false;
       }
     },
-  }, el('img', { src: item.previa, alt: '' }), el('span', {}, nosJogos ? '✓ nos jogos' : '+ jogos'));
+  }, el('img', { src: item.previa, alt: '' }), selo);
+  pintar();
 
   return el('div', { class: 'adm-jogos-item' }, botao,
     el('small', {}, cat ? rotuloCategoria(cat) : 'sem categoria'),

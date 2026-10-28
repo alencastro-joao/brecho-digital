@@ -848,6 +848,17 @@
   </div>
 
   <!-- Histórico da peça: de onde veio e por quem a cópia passou (js/historico.js) -->
+  <!-- Admin › Mini games: as fotos da esteira que vão para os jogos (js/adminjogos.js) -->
+  <div class="modal" id="modal-jogos" hidden>
+    <div class="modal-caixa adm-jogos-caixa">
+      <header class="modal-topo">
+        <h2>Peças dos mini games</h2>
+        <button class="modal-x" id="adm-jogos-fechar" title="Fechar"><i data-i="x"></i></button>
+      </header>
+      <div class="adm-jogos-corpo" id="adm-jogos"></div>
+    </div>
+  </div>
+
   <div class="modal" id="modal-historico" hidden>
     <div class="modal-caixa hp-caixa">
       <header class="modal-topo">
@@ -1026,7 +1037,9 @@
       <!-- Quais fotos da esteira vão para os mini games de ajuda (js/adminjogos.js) -->
       <section class="adm-bloco">
         <h2>Mini games</h2>
-        <div id="adm-jogos"></div>
+        <div class="tool-row">
+          <button class="btn-ghost" id="adm-jogos-abrir">Escolher peças da esteira</button>
+        </div>
       </section>
 
       <!-- Roupas desenhadas das coleções, sem mexer no código (js/adminroupas.js) -->
