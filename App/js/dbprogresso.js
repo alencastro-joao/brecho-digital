@@ -337,11 +337,15 @@ export function marcarVistas(chaves) {
 }
 
 export const novidadesDoTopo = () => (podeTrocarFichas() ? [`troca:${hojeISO()}`] : []);
+// Missão feita e ainda não resgatada também é caminho: cada uma acende o
+// pontinho uma vez, na hora em que fecha.
 export const novidadesDoDia = () => [
+  ...MISSOES.filter(m => missaoCompleta(m.id) && !missaoResgatada(m.id)).map(m => `missao:${hojeISO()}:${m.id}`),
   marcoDoDiaPronto() && `dia:${hojeISO()}:${marcoDoDiaPronto()}`,
   bauDosDiasPronto() && `bau-dias:${state.semana.data}`,
 ].filter(Boolean);
 export const novidadesDaSemana = () => [
+  ...MISSOES_SEMANA.filter(m => semanalCompleta(m.id) && !semanalResgatada(m.id)).map(m => `semanal:${state.semana.data}:${m.id}`),
   carimboDaSemanaPronto() && `carimbo-semana:${state.semana.data}`,
   bauEspecialPronto() && `bau-semanal:${state.stats.semanasCompletas ?? 0}`,
 ].filter(Boolean);
