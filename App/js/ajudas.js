@@ -142,7 +142,8 @@ function renderCota() {
 // A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou.
 function escolherPeca() {
   const feitas = new Set(estado[jogo].pecas);
-  const cands = itens.filter(i => !feitas.has(i.id) && CATEGORIAS[i.cat]);
+  // Só o Ajustar precisa da categoria (é dela o lugar padrão no corpo).
+  const cands = itens.filter(i => !feitas.has(i.id) && (jogo !== 'ajustar' || CATEGORIAS[i.cat]));
   cands.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
   // Entre as 10 mais novas, uma qualquer: duas pessoas ao mesmo tempo não
   // ficam votando sempre na mesma.
@@ -203,7 +204,7 @@ async function gravar(jogo, peca, corpo) {
   }
 }
 
-const nomeDaPeca = (it) => (it.nome || rotuloCategoria(it.cat)).toLowerCase();
+const nomeDaPeca = (it) => (it.nome || (CATEGORIAS[it.cat] ? rotuloCategoria(it.cat) : 'peça')).toLowerCase();
 const imagem = (it, classe) => el('img', { class: classe, src: it.src, alt: nomeDaPeca(it), draggable: 'false' });
 
 // ------------------------------- Avaliar ----------------------------------

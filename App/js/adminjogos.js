@@ -83,7 +83,6 @@ function cartao(item, resumo) {
   const botao = el('button', {
     type: 'button', class: 'adm-jogos-foto',
     onclick: async () => {
-      if (!cat) return toast('Escolha a categoria dessa peça na esteira antes.', 'aviso');
       const ir = !nos.has(item.id);
       botao.disabled = true;
       try {

@@ -384,6 +384,10 @@ const opcoesDeTema = (vazio) => [
 // Pronta vai para publicar; com erro, só para descartar. As duas se marcam.
 const selecionavel = (item) => item.estado === 'pronta' || item.estado === 'erro';
 const marcadas = () => itens.filter(i => selecionadas.has(i.id));
+// A peça que foi para os mini games sai da grade e fica guardada à parte,
+// atrás do botão "Nos jogos". `verJogos` diz qual das duas está na tela.
+let verJogos = false;
+const naVista = (item) => nosJogos.has(item.id) === verJogos;
 
 const fichaDe = (item) => {
   const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', tema: '', ...(item.ficha || {}) };
@@ -414,8 +418,8 @@ function desenhar() {
   const grade = $('#es-grade');
   const foco = document.activeElement?.closest?.('.es-cartao')?.dataset.id;
   const campoFoco = document.activeElement?.dataset?.campo;
-  const visiveis = itens.filter(aparece);
-  const chegando = itens.length - visiveis.length;
+  const visiveis = itens.filter(i => aparece(i) && naVista(i));
+  const chegando = itens.filter(i => !aparece(i)).length;
   const aviso = $('#es-chegando');
   aviso.hidden = !chegando;
   aviso.textContent = chegando
@@ -441,7 +445,15 @@ function desenhar() {
   }
   while (ref) { const prox = ref.nextSibling; ref.remove(); ref = prox; }
   grade.classList.toggle('selecionando', selecionadas.size > 0);
-  $('#es-vazio').hidden = itens.length > 0;   // com peça chegando, a contagem já diz
+  const vazio = $('#es-vazio');
+  vazio.hidden = visiveis.length > 0 || (!verJogos && chegando > 0);   // com peça chegando, a contagem já diz
+  vazio.textContent = verJogos ? 'Nenhuma peça nos mini games.'
+    : itens.length ? 'As peças prontas estão todas nos mini games.' : 'Nada na esteira. As fotos que você mandar aparecem aqui.';
+  const nJogos = itens.filter(i => nosJogos.has(i.id)).length;
+  $('#es-vista').hidden = !nJogos && !verJogos;
+  const ver = $('#es-ver-jogos');
+  ver.setAttribute('aria-pressed', String(verJogos));
+  ver.textContent = verJogos ? '← Voltar à esteira' : `🎲 Nos jogos ${nJogos}`;
   atualizarLote();
 
   // Redesenhar não pode tirar o cursor do campo que a pessoa está usando.
@@ -638,15 +650,15 @@ async function publicar(lista) {
 const prontaComCat = (i) => i.estado === 'pronta' && fichaDe(i).cat;
 
 function publicarMedidas() {
-  const lista = itens.filter(i => prontaComCat(i) && i.medida);
+  const lista = itens.filter(i => naVista(i) && prontaComCat(i) && i.medida);
   if (!lista.length) return toast('Nenhuma peça medida esperando.', 'aviso');
   if (!confirm(`Publicar ${lista.length === 1 ? 'a peça já medida' : `as ${lista.length} peças já medidas`}?`)) return;
   publicar(lista);
 }
 
 function medirTodas() {
-  const semCat = itens.filter(i => i.estado === 'pronta' && !fichaDe(i).cat && !i.medida).length;
-  const lista = itens.filter(i => prontaComCat(i) && !i.medida);
+  const semCat = itens.filter(i => naVista(i) && i.estado === 'pronta' && !fichaDe(i).cat && !i.medida).length;
+  const lista = itens.filter(i => naVista(i) && prontaComCat(i) && !i.medida);
   if (semCat) {
     toast(`${semCat === 1 ? 'Uma peça ficou' : `${semCat} peças ficaram`} de fora: falta a categoria.`, 'aviso');
   }
@@ -656,8 +668,8 @@ function medirTodas() {
 }
 
 function atualizarAtalhos() {
-  const medidas = itens.filter(i => prontaComCat(i) && i.medida).length;
-  const semMedida = itens.filter(i => i.estado === 'pronta' && !i.medida).length;
+  const medidas = itens.filter(i => naVista(i) && prontaComCat(i) && i.medida).length;
+  const semMedida = itens.filter(i => naVista(i) && i.estado === 'pronta' && !i.medida).length;
   $('#es-atalhos-lote').hidden = !medidas && !semMedida;
   const pub = $('#es-pub-medidas');
   pub.disabled = !medidas;
@@ -698,7 +710,7 @@ async function refazer(item) {
 // ============================== Lote ======================================
 function atualizarLote() {
   atualizarAtalhos();
-  const marcaveis = itens.filter(selecionavel);
+  const marcaveis = itens.filter(i => selecionavel(i) && naVista(i));
   $('#es-lote').hidden = !marcaveis.length;
   const sel = marcadas();
   const n = sel.length;
@@ -710,6 +722,8 @@ function atualizarLote() {
   $('#es-lote-descartar').textContent = n > 1 ? `Descartar ${n}` : 'Descartar';
   $('#es-lote-publicar').disabled = !publicaveis;
   $('#es-lote-publicar').textContent = publicaveis > 1 ? `Publicar ${publicaveis}` : 'Publicar';
+  // Na vista "Nos jogos" elas já estão lá: o botão some.
+  $('#es-lote-jogos').hidden = verJogos;
   $('#es-lote-jogos').disabled = !publicaveis;
   $('#es-lote-jogos').textContent = publicaveis > 1 ? `🎲 Jogos ${publicaveis}` : '🎲 Jogos';
   // Cortar é de uma peça por vez: a caixa é da foto dela.
@@ -748,13 +762,10 @@ async function lerJogos() {
 }
 
 async function mandarParaJogos(lista) {
-  const prontas = lista.filter(i => i.estado === 'pronta');
-  const semCat = prontas.filter(i => !fichaDe(i).cat && !i.sugestao?.cat);
-  if (semCat.length) {
-    toast(`${semCat.length === 1 ? 'Uma peça ficou' : `${semCat.length} peças ficaram`} de fora: falta a categoria.`, 'aviso');
-  }
+  // Não precisa de ficha: os jogadores dizem tipo, cor e marca.
+  const prontas = lista.filter(i => i.estado === 'pronta' && !nosJogos.has(i.id));
   let feitas = 0;
-  for (const item of prontas.filter(i => !semCat.includes(i))) {
+  for (const item of prontas) {
     // A categoria que está na tela, mesmo que ainda não tenha sido guardada.
     clearTimeout(guardando.get(item.id));
     guardando.delete(item.id);
@@ -774,7 +785,8 @@ async function mandarParaJogos(lista) {
       break;
     }
   }
-  if (feitas) toast(feitas === 1 ? 'A peça foi para os mini games.' : `${feitas} peças foram para os mini games.`);
+  if (feitas) toast(feitas === 1 ? 'A peça foi para os mini games (fica em "Nos jogos").'
+    : `${feitas} peças foram para os mini games (ficam em "Nos jogos").`);
   desenhar();
 }
 
@@ -1228,12 +1240,18 @@ function ligarLote() {
 
   $('#es-todas').addEventListener('change', (e) => {
     selecionadas.clear();
-    if (e.target.checked) itens.filter(selecionavel).forEach(i => selecionadas.add(i.id));
+    if (e.target.checked) itens.filter(i => selecionavel(i) && naVista(i)).forEach(i => selecionadas.add(i.id));
     desenhar();
   });
   $('#es-lote-aplicar').addEventListener('click', aplicarLote);
   $('#es-lote-publicar').addEventListener('click', () => publicar(marcadas()));
   $('#es-lote-jogos').addEventListener('click', () => mandarParaJogos(marcadas()));
+  $('#es-ver-jogos').addEventListener('click', () => {
+    verJogos = !verJogos;
+    selecionadas.clear();
+    desenhar();
+    window.scrollTo(0, 0);
+  });
   $('#es-lote-cortar').addEventListener('click', () => abrirCorte(marcadas()[0]));
   $('#es-auto').addEventListener('click', alternarAuto);
   $('#es-lote-descartar').addEventListener('click', () => descartar(marcadas()));

@@ -479,7 +479,13 @@ def rotas_de_esteira(pedido):
     if acao == 'refazer' and metodo == 'POST':
         return responder(200, esteira.refazer(item_id))
     if not acao and metodo == 'PUT':
-        return responder(200, esteira.guardar(item_id, pedido.corpo(LIMITE_LOGIN)))
+        feito = esteira.guardar(item_id, pedido.corpo(LIMITE_LOGIN))
+        import ajudas
+        try:   # a peça que está nos jogos leva a categoria nova junto
+            ajudas.atualizar(item_id, feito['item'])
+        except Exception as e:                   # noqa: BLE001 - a ficha já foi guardada
+            print('jogos não acompanharam %s: %s' % (item_id, e))
+        return responder(200, feito)
     if not acao and metodo == 'DELETE':
         return responder(200, esteira.descartar(item_id))
     return None
