@@ -67,6 +67,19 @@ class Ajudas(unittest.TestCase):
         with self.assertRaises(ValueError):
             ajudas.ajudar(ANA, 'avaliar', {'peca': 'eoutra12345', 'gostei': True})
 
+    def test_tanto_faz_e_rodada(self):
+        ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0003', 'voto': 'sim'})
+        ajudas.ajudar(BIA, 'avaliar', {'peca': 'epeca0003', 'voto': 'meh'})
+        p = ajudas.resumo()['pecas'][0]
+        self.assertEqual(p['votos']['pct'], 75)
+        # Rodada nova: os votos somem e a Ana pode votar de novo.
+        ajudas.RODADA_AVALIAR += 1
+        try:
+            self.assertEqual(ajudas.resumo()['pecas'][0]['votos']['pct'], None)
+            self.assertTrue(ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0003', 'voto': 'nao'})['ok'])
+        finally:
+            ajudas.RODADA_AVALIAR -= 1
+
     def test_resumo(self):
         for i in range(ajudas.VOTOS_MIN):
             ajudas.ajudar({'id': 'u%d' % i}, 'avaliar', {'peca': 'epeca0002', 'gostei': i < 9})

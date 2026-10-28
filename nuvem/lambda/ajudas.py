@@ -5,7 +5,7 @@ Mini games de ajuda: os jogadores ajudam a cadastrar as peças do acervo.
 Três jogos, um por tarefa do cadastro:
 
     avaliar    a peça aparece e a pessoa arrasta para um lado (gostei / não
-               gostei). A média dos votos vira a raridade sugerida.
+               gostei) ou aperta "tanto faz". A média dos votos vira a raridade sugerida.
     ajustar    a pessoa encaixa a peça no corpo (posição e tamanho). A mediana
                das medidas vira o ajuste sugerido.
     preencher  a pessoa diz a cor e a marca. A resposta mais votada vence.
@@ -18,8 +18,8 @@ senão bastava chamar a rota em loop.
 Itens do DynamoDB:
 
     AJUDA#COTA#<uid>#<jogo>#<janela>   n (ajudas na janela), ttl
-    AJUDA#FEITAS#<uid>#<jogo>          ids (peças em que a pessoa já ajudou)
-    AJUDA#PECA#<id>                    sim, nao, ajustes [{x,y,w}],
+    AJUDA#FEITAS#<uid>#<jogo>[#r<rodada>] ids (peças em que a pessoa já ajudou)
+    AJUDA#PECA#<id>                    "r<rodada>:sim|nao|meh", ajustes [{x,y,w}],
                                        "cor:<valor>", "marca:<valor>" (votos)
 
 **As peças vêm da esteira.** O admin escolhe (Admin › Mini games) quais
@@ -62,6 +62,10 @@ JOGOS = {
 }
 # Votos que a peça precisa antes de ganhar raridade sugerida.
 VOTOS_MIN = 10
+# Rodada do Avaliar: subir este número zera todos os votos (os antigos ficam
+# no banco, mas ninguém lê) e deixa todo mundo votar de novo em todas as peças.
+RODADA_AVALIAR = 2
+# "Tanto faz" conta como meio "gostei".
 # % de "gostei" a partir da qual a peça entra em cada raridade (de cima para baixo).
 FAIXAS = [(85, 'legendary'), (65, 'epic'), (50, 'rare'), (40, 'uncommon'), (0, 'common')]
 # ---------------------------------------------------------------------------
@@ -139,7 +143,13 @@ def _pk_cota(uid, jogo):
 
 
 def _pk_feitas(uid, jogo):
+    if jogo == 'avaliar':
+        return 'AJUDA#FEITAS#%s#avaliar#r%d' % (uid, RODADA_AVALIAR)
     return 'AJUDA#FEITAS#%s#%s' % (uid, jogo)
+
+
+def _campo_voto(voto):
+    return 'r%d:%s' % (RODADA_AVALIAR, voto)
 
 
 def _pk_peca(pid):
@@ -170,9 +180,12 @@ def _validar(jogo, corpo):
     if not ID_OK.match(pid) or pid not in _ids_nos_jogos():
         raise ValueError('peça desconhecida')
     if jogo == 'avaliar':
-        if not isinstance(corpo.get('gostei'), bool):
+        voto = corpo.get('voto')
+        if voto is None and isinstance(corpo.get('gostei'), bool):
+            voto = 'sim' if corpo['gostei'] else 'nao'
+        if voto not in ('sim', 'meh', 'nao'):
             raise ValueError('voto inválido')
-        return pid, {'gostei': corpo['gostei']}
+        return pid, {'voto': voto}
     if jogo == 'ajustar':
         a = corpo.get('ancora') or {}
         return pid, {'x': _numero(a.get('x'), 0, 600), 'y': _numero(a.get('y'), 0, 1200),
@@ -234,7 +247,7 @@ def _anotar(jogo, pid, dados):
     if jogo == 'avaliar':
         _dynamo.update_item(TableName=TABELA, Key=chave,
                             UpdateExpression='ADD #v :um',
-                            ExpressionAttributeNames={'#v': 'sim' if dados['gostei'] else 'nao'},
+                            ExpressionAttributeNames={'#v': _campo_voto(dados['voto'])},
                             ExpressionAttributeValues=um)
     elif jogo == 'ajustar':
         medida = {'M': {k: {'N': str(v)} for k, v in dados.items()}}
@@ -296,11 +309,15 @@ def ajudar(usuario, jogo, corpo):
 
 
 # ------------------------------- Resumo -----------------------------------
-def raridade_sugerida(sim, nao):
-    total = sim + nao
-    if total < VOTOS_MIN:
+def _pct(sim, nao, meh=0):
+    total = sim + nao + meh
+    return (sim + meh / 2) * 100 / total if total else None
+
+
+def raridade_sugerida(sim, nao, meh=0):
+    if sim + nao + meh < VOTOS_MIN:
         return None
-    pct = sim * 100 / total
+    pct = _pct(sim, nao, meh)
     return next(r for corte, r in FAIXAS if pct >= corte)
 
 
@@ -320,14 +337,14 @@ def _mais_votado(item, campo):
 
 
 def resumo_da_peca(item):
-    sim, nao = int(item.get('sim', {}).get('N', 0)), int(item.get('nao', {}).get('N', 0))
+    sim, nao, meh = (int(item.get(_campo_voto(v), {}).get('N', 0)) for v in ('sim', 'nao', 'meh'))
     ajustes = [{k: float(v['N']) for k, v in a['M'].items()}
                for a in item.get('ajustes', {}).get('L', [])]
     return {
         'peca': item['pk']['S'][len('AJUDA#PECA#'):],
-        'votos': {'sim': sim, 'nao': nao,
-                  'pct': round(sim * 100 / (sim + nao)) if sim + nao else None,
-                  'raridade': raridade_sugerida(sim, nao)},
+        'votos': {'sim': sim, 'nao': nao, 'meh': meh,
+                  'pct': round(_pct(sim, nao, meh)) if sim + nao + meh else None,
+                  'raridade': raridade_sugerida(sim, nao, meh)},
         'ajuste': ({k: round(_mediana([a[k] for a in ajustes]), 1) for k in ('x', 'y', 'w')}
                    | {'medidas': len(ajustes)}) if ajustes else None,
         'cor': _mais_votado(item, 'cor'),
