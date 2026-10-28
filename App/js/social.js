@@ -18,7 +18,7 @@ import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, RARIDADE } from
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
-import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast, hojeISO } from './util.js';
+import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
 import { confirmar } from './janela.js';
 import { ico, emo } from './icones.js';
 import { aparenciaDoPerfil, aparenciaAtual, cabeca } from './avatar.js';
@@ -492,11 +492,10 @@ function mensagemVazia() {
 
 // ================================ Desfile =================================
 // O feed como uma passarela: um look por tela, que ocupa a tela inteira e
-// se rola para o próximo. A imagem é o fundo (um toque abre o look, dois
-// curtem); por cima, quem postou no alto e, embaixo, as peças do look,
-// marcando as que você já tem e as que estão na vitrine da loja hoje. Tocar
-// numa peça abre a ficha. No desfile a coluna "Quem seguir" sai da tela
-// (.em-desfile em social.css); no mural ela volta.
+// se rola para o próximo. Em cima, quem postou; no meio, o look inteiro (um
+// toque abre o post, dois curtem); embaixo, quem curtiu e a conversa. As
+// peças usadas só aparecem no post aberto. No desfile a coluna "Quem seguir"
+// sai da tela (.em-desfile em social.css); no mural ela volta.
 // O mural continua a um toque (#feed-modo); a escolha fica neste navegador.
 const CHAVE_MODO = 'brecho-feed-modo';
 const COMENTARIOS_NO_DESFILE = 2;
@@ -527,32 +526,12 @@ function pintarBotaoModo() {
   botao.replaceChildren(ico(vaiPara === 'mural' ? 'grade' : 'quadro'));
 }
 
-// As peças que o dono da loja pôs na vitrine hoje. Só lê o que a vitrine já
-// sorteou e guardou no save: sortear aqui mexeria na loja de fora dela.
-function pecasNaVitrine() {
-  const dia = db.state.dia;
-  return new Set(dia?.data === hojeISO() ? dia.vitrine?.ids || [] : []);
-}
-
 function cardDoDesfile(post) {
   const meu = sou(post.autor);
   const segue = db.state.usuario.seguindo.includes(post.autor);
   post.comentarios ??= [];
   prepararGerado(post);
   const autor = autorDe(post.autor);
-  const pecas = pecasDoPost(post);
-  const naVitrine = pecasNaVitrine();
-  const grade = gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i) });
-  grade.forEach((b, i) => {
-    const tenho = db.temPeca(pecas[i].id);
-    b.classList.toggle('tenho', tenho);
-    if (!tenho && naVitrine.has(pecas[i].id)) {
-      b.classList.add('na-vitrine');
-      b.title += ' · na vitrine hoje';
-    }
-  });
-  const tenho = pecas.filter(p => db.temPeca(p.id)).length;
-  const naLoja = grade.filter(b => b.classList.contains('na-vitrine')).length;
   const n = post.comentarios.length;
   const abrirConversa = (e) => { e?.stopPropagation(); focarEm = post.id; abrirPostGrande(post.id); };
 
@@ -578,20 +557,13 @@ function cardDoDesfile(post) {
         el('button', { class: 'desfile-comentar', title: 'Comentários', onclick: abrirConversa },
           ico('balao'), n ? el('span', {}, String(n)) : null))),
     el('div', { class: 'desfile-info' },
-    pecas.length
-      ? el('section', { class: 'desfile-pecas' },
-        el('p', {}, el('b', {}, `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`),
-          tenho ? el('span', { class: 'desfile-tenho' }, ` · você tem ${tenho}`) : null,
-          naLoja ? el('span', { class: 'desfile-loja' }, ` · ${naLoja} na vitrine hoje`) : null),
-        el('div', { class: 'pf-grade look-pecas' }, ...grade))
-      : null,
-    quemCurtiu(post),
-    el('div', { class: 'desfile-conversa' },
-      ...post.comentarios.slice(-COMENTARIOS_NO_DESFILE).map(c => el('p', {},
-        el('button', { class: 'autor-link nome forte', onclick: () => abrirAutor(c.autor) }, autorDe(c.autor).nome),
-        ' ', c.texto)),
-      el('button', { class: 'link-btn', onclick: abrirConversa },
-        n > COMENTARIOS_NO_DESFILE ? `ver os ${n} comentários` : n ? 'responder' : 'comentar'))));
+      quemCurtiu(post),
+      el('div', { class: 'desfile-conversa' },
+        ...post.comentarios.slice(-COMENTARIOS_NO_DESFILE).map(c => el('p', {},
+          el('button', { class: 'autor-link nome forte', onclick: () => abrirAutor(c.autor) }, autorDe(c.autor).nome),
+          ' ', c.texto)),
+        el('button', { class: 'link-btn', onclick: abrirConversa },
+          n > COMENTARIOS_NO_DESFILE ? `ver os ${n} comentários` : n ? 'responder' : 'comentar'))));
 }
 
 // Cada look tem a altura da caixa que rola (no PC é .feed-wrapper, no celular
