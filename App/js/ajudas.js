@@ -30,6 +30,7 @@ let itens = [];           // as fotos da esteira que o admin mandou para os jogo
 let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
+let premiado = null;      // jogo que acabou de pagar ficha (a barra mostra cheia)
 
 async function chamar(rota, corpo) {
   const r = await fetch(rota, {
@@ -79,19 +80,32 @@ function renderMenu() {
       type: 'button', class: 'mg-quadrado', style: { '--cor': j.cor },
       onclick: () => { if (!estado) return; jogo = j.id; renderMenu(); proxima(); },
     }, ico(j.icone), el('strong', {}, j.nome),
-    el('small', {}, s ? `${s.feitas}/${s.limite}` : ''));
+    s ? barra(s, j.id, true) : el('small', {}, ''));
   }));
+}
+
+// A barra enche a cada ajuda; cheia, paga a ficha e volta a zero. No limite
+// da janela ela fica cheia e cinza, com o aviso.
+function barra(s, id, curta = false) {
+  const esgotou = s.feitas >= s.limite;
+  const ganhou = premiado === id;
+  const cheia = esgotou || ganhou;
+  const passo = s.feitas % s.porFicha;
+  const pct = cheia ? 100 : passo / s.porFicha * 100;
+  const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
+  const texto = esgotou ? `Limite ${quando} atingido`
+    : ganhou ? '+1 ficha!'
+    : curta ? `${passo}/${s.porFicha}` : `${passo}/${s.porFicha} para 1 ficha · ${s.feitas}/${s.limite} ${quando}`;
+  return el('div', { class: 'mg-barra' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : '') },
+    el('div', { class: 'mg-barra-trilho' }, el('div', { class: 'mg-barra-cheio', style: { width: pct + '%' } })),
+    el('small', {}, texto));
 }
 
 function renderCota() {
   const s = estado?.[jogo];
   const j = JOGOS.find(x => x.id === jogo);
   if (!s) { $('#mg-cota').textContent = j.desc; return; }
-  const falta = s.porFicha - (s.feitas % s.porFicha);
-  $('#mg-cota').replaceChildren(
-    el('span', {}, j.desc),
-    el('small', {}, `${s.feitas}/${s.limite} ${s.janela === 'hora' ? 'nesta hora' : 'hoje'}` +
-      (s.feitas < s.limite ? ` · mais ${falta} para 1 ficha` : '')));
+  $('#mg-cota').replaceChildren(el('span', {}, j.desc), barra(s, jogo));
 }
 
 // A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou.
@@ -133,6 +147,9 @@ async function enviar(corpo) {
       db.ganharFicha(r.fichas);
       db.salvar();
       toast(`+${r.fichas} ficha${r.fichas > 1 ? 's' : ''} por ajudar!`);
+      // A barra fica cheia um instante antes de zerar.
+      premiado = jogo;
+      setTimeout(() => { premiado = null; if (jogo) renderCota(); }, 1200);
     }
   } catch (e) {
     toast(`Não deu para enviar: ${e.message}`, 'aviso');
