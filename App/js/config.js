@@ -54,6 +54,15 @@ export function aplicarPapel(papel) {
   return ADMIN;
 }
 
+// A Praça ainda está em teste: abre para o admin e para as contas desta lista
+// (pedido do João, 28/10/2026). É só esconder a tela, não é segurança.
+const PRACA_CONTAS = ['alencastrokk@gmail.com'];
+export let PRACA = false;
+export function liberarPraca(conta) {
+  PRACA = conta.papel === 'admin' || PRACA_CONTAS.includes(String(conta.email || '').toLowerCase());
+  return PRACA;
+}
+
 // Hierarquia de raridade.
 // A peça já nasce com a sua raridade no sorteio do dia — por isso ela aparece
 // com aura na vitrine, antes mesmo de ser resgatada — e o valor fica gravado

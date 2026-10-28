@@ -6,12 +6,12 @@
 // um trecho inteiro e fica sempre no do meio, então ela "dá a volta".
 
 import * as db from './db.js';
-import { ADMIN } from './config.js';
+import { PRACA } from './config.js';
 import { svgAvatar, aparenciaAtual, aparenciaDoPerfil } from './avatar.js';
 import { roupasDoPerfil, perfilDe } from './pessoas.js';
 import { segueDeVolta, abrirPerfilDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
-import { irPara } from './router.js';
+import { irPara, viewAtual } from './router.js';
 import { desenhoDaCasa, ARVORE, HIDRANTE, LIXEIRA, PASSARINHOS, BORBOLETA, BALAO, PIPA, GATO } from './pracacasas.js';
 import { el, $, sementeDoTexto } from './util.js';
 
@@ -128,9 +128,22 @@ function abrirCartao(g) {
 }
 const fecharCartao = () => { $('#pc-fundo').hidden = true; };
 
+// O céu segue o relógio de quem joga: amanhecer, dia, fim de tarde e noite.
+function horaDoDia(h = new Date().getHours()) {
+  if (h >= 5 && h < 7) return 'amanhecer';
+  if (h >= 7 && h < 17) return 'dia';
+  if (h >= 17 && h < 19) return 'tarde';
+  return 'noite';
+}
+function acertarCeu() {
+  const mundo = $('#pc-mundo');
+  for (const c of ['amanhecer', 'dia', 'tarde', 'noite']) mundo.classList.toggle('pc-' + c, horaDoDia() === c);
+}
+
 function pintar() {
   gente = pessoas();
   const mundo = $('#pc-mundo');
+  acertarCeu();
   mundo.style.width = 3 * LARGURA + 'px';
   mundo.innerHTML = trecho(0, gente) + trecho(1, gente) + trecho(2, gente);
 
@@ -140,6 +153,7 @@ function pintar() {
 }
 
 export function montarPraca() {
+  setInterval(() => { if (viewAtual() === 'praca') acertarCeu(); }, 5 * 60e3);
   const cena = $('#pc-cena');
   cena.addEventListener('scroll', () => {
     if (cena.scrollLeft < LARGURA * 0.5) cena.scrollLeft += LARGURA;
@@ -169,7 +183,7 @@ export function montarPraca() {
 }
 
 export function aoEntrarNaPraca() {
-  if (!ADMIN) { irPara('perfil'); return; }
+  if (!PRACA) { irPara('perfil'); return; }
   fecharCartao();
   pintar();
 }
