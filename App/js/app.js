@@ -198,8 +198,8 @@ async function iniciar() {
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
   if (nova || pediuTutorialNaUrl()) comecarIntro();
-  // Quem joga pelo navegador do celular: a janela com o botão de instalar.
-  // No tutorial, ela vem no fim dele.
+  // Fora do tutorial (que já sugere no fim), o celular no navegador é lembrado
+  // de instalar o app.
   else if (!db.introAtiva()) lembrarDeInstalar();
 
   // O dia pode virar com a aba aberta.
