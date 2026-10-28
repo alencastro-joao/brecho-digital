@@ -1,28 +1,69 @@
 /* Mini games de ajuda (js/ajudas.js): avaliar, ajustar, preencher. */
-.mg-wrapper { width: 100%; box-sizing: border-box; max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
-.mg-head { display: grid; gap: 2px; }
-.mg-head h1 { margin: 0; }
-.mg-voltar {
-  justify-self: start; padding: 4px 0; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 14px; font-weight: 700; color: rgba(0, 0, 0, .5);
+.view-ajudas { background: var(--papel); overflow-y: auto; --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco); }
+.mg-wrapper {
+  width: 100%; box-sizing: border-box; max-width: 560px; margin: 0 auto;
+  padding: 36px 16px 40px; display: grid; gap: 10px; align-content: start;
 }
-.mg-voltar:hover { color: var(--tinta); }
 
-/* Avaliar: o cartão, a barra e os dois botões de voto, tudo cabendo na tela. */
-.mg-palco .mg-cota { width: min(300px, 78vw, 44vh); text-align: center; }
-.mg-palco .mg-cota .mg-barra { justify-items: center; }
-.mg-botoes-voto { gap: 28px; }
+/* Topo: os mesmos blocos pérola de Tarefas (nível e fichas). */
+.mg-topo { display: flex; gap: 8px; }
+.mg-voltar, .mg-titulo, .mg-fichas {
+  display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 12px;
+  border: 2px solid var(--bb); border-radius: 14px; background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--pb); color: var(--tinta);
+}
+.mg-voltar { flex: none; width: 46px; justify-content: center; padding: 0; font: inherit; font-size: 24px; font-weight: 700; cursor: pointer; }
+.mg-voltar[hidden] { display: none; }
+.mg-titulo { flex: 1; min-width: 0; font-size: 16px; }
+.mg-titulo > span {
+  width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 9px;
+  background: var(--cor) var(--brilho-topo); border: 2px solid var(--bb);
+}
+.mg-titulo > span svg { width: 18px; height: 18px; }
+.mg-fichas { flex: none; font-size: 14px; }
+.mg-fichas b { font-variant-numeric: tabular-nums; }
+
+/* O painel do jogo, como o de Tarefas. */
+.mg-painel {
+  border: 2px solid var(--bb); border-radius: 20px; background: var(--pn);
+  padding: 10px; display: grid; gap: 10px;
+}
+.mg-painel[hidden] { display: none; }
+
+/* A linha de progresso, como um pedido de Tarefas. */
+.mg-progresso {
+  display: flex; align-items: center; gap: 12px; padding: 9px 12px 11px; background: #fff;
+  border: 2px solid var(--bb); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--pb);
+}
+.mg-progresso-ico {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px;
+  background: var(--perola); border: 2px solid var(--bb);
+}
+.mg-progresso-info { flex: 1; min-width: 0; display: grid; gap: 7px; }
+.mg-progresso-info strong { font-size: 14px; font-weight: 700; }
+.mg-progresso-barra { height: 6px; border-radius: 4px; background: var(--perola-degrau); overflow: hidden; }
+.mg-progresso-barra span { display: block; height: 100%; border-radius: 4px; background: var(--wii); transition: width .4s; }
+.mg-progresso > small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
+.mg-progresso.ganhou { background: #fbf1d0; border-color: #e3cf8f; box-shadow: inset 0 -3px 0 #e3cf8f; }
+.mg-progresso.ganhou .mg-progresso-barra span { background: #e8c46a; }
+.mg-progresso.esgotou { background: #eef6e6; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
+.mg-progresso.esgotou .mg-progresso-barra span { background: #6b8f4e; }
+
+/* Os botões de voto: blocos pérola como as abas de Tarefas, com o ícone colorido. */
+.mg-botoes-voto { display: flex; gap: 8px; width: 100%; }
 .mg-voto {
-  width: 72px; height: 72px; border-radius: 50%; border: 0; cursor: pointer;
-  display: grid; place-items: center; color: #fff;
-  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .12), 0 8px 18px rgba(0, 0, 0, .14);
+  flex: 1; height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: 2px solid var(--bb); border-radius: 14px; background: var(--perola) var(--brilho-topo);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--pb);
+  font: inherit; font-size: 15px; font-weight: 700; color: var(--tinta); cursor: pointer;
   transition: transform .15s;
 }
-.mg-voto:hover { transform: translateY(-2px) scale(1.05); }
-.mg-voto:active { transform: scale(.94); }
-.mg-voto svg { width: 34px; height: 34px; }
-.mg-voto-nao { background: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 55%), #ef5a72; }
-.mg-voto-sim { background: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 55%), #2fbf63; }
+.mg-voto:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 var(--pb); }
+.mg-voto svg { width: 22px; height: 22px; }
+.mg-voto svg [opacity] { display: none; }
+.mg-voto-nao svg { color: #e0533a; }
+.mg-voto-sim svg { color: #4f9a3a; }
+
 /* O menu: três quadrados grandes, um por jogo. */
 .mg-menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 /* Mesmo jeito dos botões da barra de telas: pastel, cantos redondos, ícone e
@@ -63,20 +104,20 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-quadrado .mg-barra { width: 72%; justify-items: center; }
 .mg-quadrado .mg-barra-trilho { height: 7px; width: 100%; background: rgba(255, 255, 255, .6); }
 .mg-quadrado .mg-barra small { font-size: 10px; text-align: center; }
-.mg-palco { display: grid; gap: 12px; justify-items: center; }
+.mg-palco { display: grid; gap: 10px; justify-items: center; }
 .mg-vazio { text-align: center; opacity: .75; padding: 40px 8px; }
-.mg-dica { margin: 0; text-align: center; font-size: 14px; }
-.mg-mesa { position: relative; display: grid; place-items: center; min-height: min(360px, 48vh); width: 100%; }
+.mg-dica { margin: 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.mg-mesa { position: relative; display: grid; place-items: center; width: 100%; padding: 4px 0; }
 .mg-mesa-baixa { min-height: 0; }
 .mg-mesa-baixa .mg-carta-img { max-height: min(220px, 30vh); }
 
 /* Avaliar: a carta que arrasta para os lados. */
 .mg-carta {
   --sim: 0; --nao: 0;
-  position: relative; width: min(300px, 78vw, 44vh); aspect-ratio: 3 / 4;
-  display: grid; place-items: center; padding: 16px;
-  background: var(--papel); border: 1px solid var(--linha); border-radius: 18px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, .12);
+  position: relative; width: min(100%, 280px, 36vh); aspect-ratio: 3 / 4;
+  display: grid; place-items: center; padding: 14px;
+  background: #fff; border: 2px solid var(--bb); border-radius: 18px;
+  box-shadow: inset 0 -4px 0 var(--pb), 0 8px 18px rgba(60, 80, 95, .12);
   touch-action: none; user-select: none; cursor: grab;
   transition: transform .22s ease, opacity .22s ease;
 }
@@ -148,5 +189,6 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-sinal { font-size: 26px; line-height: 1; }
 .adm-jogos-caixa { width: min(760px, 94vw); max-height: 88vh; display: flex; flex-direction: column; }
 .adm-jogos-corpo { overflow: auto; padding: 4px 2px 12px; }
-.mg-voto svg [opacity] { display: none; }   /* sem o quadrado do ícone duotone */
 .mg-barra-trilho { width: 100%; }
+.mg-palco > .mg-cota { width: 100%; }
+@media (max-width: 760px) { .mg-wrapper { padding: 12px 16px 24px; } }
