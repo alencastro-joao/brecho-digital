@@ -11,13 +11,13 @@
 // (nuvem/lambda/ajudas.py, onde também moram os números): aqui só se mostra o
 // que ele diz e soma a ficha que ele mandar.
 
-import { CONFIG, CATEGORIAS, CORES, ancoraPadrao } from './config.js';
+import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, ancoraPadrao } from './config.js';
 import { rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
-import { ico } from './icones.js';
+import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
 import { barrasPosicao } from './barrapos.js';
 
@@ -33,6 +33,7 @@ let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
 let premiado = null;      // jogo que acabou de pagar ficha (a barra mostra cheia)
+let pendente = null;      // Avaliar: último voto, ainda não enviado ({ peca, gostei }), para poder voltar
 
 async function chamar(rota, corpo) {
   const r = await fetch(rota, {
@@ -47,7 +48,7 @@ async function chamar(rota, corpo) {
 }
 
 export function montarAjudas() {
-  $('#mg-voltar').addEventListener('click', () => { jogo = null; renderMenu(); });
+  $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; renderMenu(); });
 }
 
 export async function aoEntrarNasAjudas() {
@@ -162,11 +163,26 @@ function proxima() {
 async function enviar(corpo) {
   if (enviando) return;
   enviando = true;
+  await gravar(jogo, peca, corpo);
+  enviando = false;
+  proxima();
+}
+
+// O voto do Avaliar fica guardado até o próximo (ou até sair do jogo): assim
+// "Voltar" desfaz sem precisar apagar nada no servidor.
+function soltarPendente() {
+  if (!pendente) return;
+  const { peca: p, gostei } = pendente;
+  pendente = null;
+  gravar('avaliar', p, { gostei }).then(() => { if (jogo === 'avaliar') renderCota(); });
+}
+
+async function gravar(jogo, peca, corpo) {
   try {
     const r = await chamar('/api/ajudas/' + jogo, { peca: peca.id, ...corpo });
     const s = estado[jogo];
     Object.assign(s, { feitas: r.feitas, limite: r.limite, porFicha: r.porFicha, vira: r.vira });
-    if (r.ok || r.motivo === 'repetida') s.pecas.push(peca.id);
+    if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
     if (r.fichas) {
       db.ganharFicha(r.fichas);
       db.salvar();
@@ -178,10 +194,7 @@ async function enviar(corpo) {
     }
   } catch (e) {
     toast(`Não deu para enviar: ${e.message}`, 'aviso');
-  } finally {
-    enviando = false;
   }
-  proxima();
 }
 
 const nomeDaPeca = (it) => (it.nome || rotuloCategoria(it.cat)).toLowerCase();
@@ -194,7 +207,18 @@ function jogoAvaliar() {
     el('span', { class: 'mg-selo mg-selo-sim' }, 'Gostei'));
   const votar = (gostei) => {
     carta.classList.add(gostei ? 'sai-dir' : 'sai-esq');
-    setTimeout(() => enviar({ gostei }), 220);
+    soltarPendente();
+    pendente = { peca, gostei };
+    estado.avaliar.pecas.push(peca.id);     // some da fila enquanto espera
+    setTimeout(proxima, 220);
+  };
+  const desfazer = () => {
+    if (!pendente) return;
+    const s = estado.avaliar;
+    s.pecas = s.pecas.filter(id => id !== pendente.peca.id);
+    peca = pendente.peca;
+    pendente = null;
+    jogoAvaliar();
   };
 
   let ini = null;
@@ -225,7 +249,8 @@ function jogoAvaliar() {
     el('div', { class: 'mg-botoes mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar(false) }, ico('x'), 'Não curti'),
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar(true) }, ico('coracao-cheio'), 'Gostei')),
-    el('p', { class: 'mg-dica' }, 'Ou arraste a peça para um dos lados.'));
+    el('button', { type: 'button', class: 'mg-desfazer', disabled: !pendente, onclick: desfazer },
+      ico('desfazer'), 'Voltar o último voto'));
 }
 
 // ------------------------------- Ajustar ----------------------------------
@@ -315,28 +340,49 @@ function jogoAjustar() {
 // ------------------------------ Preencher ---------------------------------
 function jogoPreencher() {
   let cor = '';
+  let cat = '';
+  // O tipo da peça: um bloco pérola por categoria, com o ícone e o nome.
+  const tipos = el('div', { class: 'mg-tipos' });
+  const renderTipos = () => tipos.replaceChildren(...ORDEM_CATEGORIAS.map(c => el('button', {
+    type: 'button', class: 'mg-tipo' + (c === cat ? ' ativa' : ''),
+    onclick: () => { cat = cat === c ? '' : c; renderTipos(); },
+  }, emo(CATEGORIAS[c].icone), el('span', {}, CATEGORIAS[c].nome))));
+  renderTipos();
+  const nomeCor = el('small', {}, 'escolha uma');
   const campoMarca = el('input', { class: 'mg-marca', type: 'text', maxlength: '40',
-    placeholder: 'Marca (deixe vazio se não souber)', list: 'mg-marcas' });
-  const lista = el('datalist', { id: 'mg-marcas' },
-    ...db.marcasOrdenadas().slice(0, 40).map(m => el('option', { value: m.nome })));
+    placeholder: 'Escreva a marca', autocomplete: 'off' });
   const cores = el('div', { class: 'mg-cores' });
-  const renderCores = () => cores.replaceChildren(...CORES.map(c => el('button', {
-    type: 'button', class: 'mg-cor' + (c.nome === cor ? ' ativa' : ''), title: c.nome,
-    style: { '--cor': c.hex === 'estampa' ? '#ccc' : c.hex },
-    onclick: () => { cor = cor === c.nome ? '' : c.nome; renderCores(); },
-  }, el('span', {}), c.nome)));
+  const renderCores = () => {
+    cores.replaceChildren(...CORES.map(c => el('button', {
+      type: 'button', class: 'mg-cor' + (c.nome === cor ? ' ativa' : '') + (c.hex === 'estampa' ? ' estampa' : ''),
+      title: c.nome, 'aria-label': c.nome,
+      style: c.hex === 'estampa' ? {} : { '--cor': c.hex },
+      onclick: () => { cor = cor === c.nome ? '' : c.nome; renderCores(); },
+    })));
+    nomeCor.textContent = cor || 'escolha uma';
+  };
   renderCores();
+  // As marcas mais usadas no jogo viram atalhos: um toque preenche o campo.
+  const atalhos = el('div', { class: 'mg-marcas' }, ...db.marcasOrdenadas().slice(0, 8).map(m =>
+    el('button', { type: 'button', class: 'mg-marca-chip', onclick: () => { campoMarca.value = m.nome; } }, m.nome)));
 
   $('#mg-palco').replaceChildren(
-    el('div', { class: 'mg-mesa mg-mesa-baixa' }, imagem(peca, 'mg-carta-img')),
-    el('p', { class: 'mg-dica' }, 'Qual a cor principal?'), cores,
-    campoMarca, lista,
-    el('div', { class: 'mg-botoes' },
-      el('button', { type: 'button', class: 'mg-pular', onclick: () => {
+    el('div', { class: 'mg-mesa' }, el('div', { class: 'mg-carta mg-carta-baixa' }, imagem(peca, 'mg-carta-img'))),
+    el('div', { class: 'mg-bloco' },
+      el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Tipo de peça'), el('small', {}, 'o que é?')),
+      tipos),
+    el('div', { class: 'mg-bloco' },
+      el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Cor principal'), nomeCor),
+      cores),
+    el('div', { class: 'mg-bloco' },
+      el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Marca'), el('small', {}, 'se souber')),
+      campoMarca, atalhos),
+    el('div', { class: 'mg-botoes-voto' },
+      el('button', { type: 'button', class: 'mg-voto', onclick: () => {
         estado[jogo].pecas.push(peca.id); proxima();
-      } }, 'Pular'),
-      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Enviar', onclick: () => {
-        if (!cor && !campoMarca.value.trim()) return toast('Escolha a cor ou escreva a marca.', 'aviso');
-        enviar({ cor, marca: campoMarca.value.trim() });
-      } }, ico('ok'))));
+      } }, ico('seta-dir'), 'Pular'),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
+        if (!cat && !cor && !campoMarca.value.trim()) return toast('Escolha o tipo, a cor ou a marca.', 'aviso');
+        enviar({ cat, cor, marca: campoMarca.value.trim() });
+      } }, ico('ok'), 'Enviar')));
 }

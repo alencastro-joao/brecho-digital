@@ -67,6 +67,7 @@ FAIXAS = [(85, 'legendary'), (65, 'epic'), (50, 'rare'), (40, 'uncommon'), (0, '
 # ---------------------------------------------------------------------------
 
 ID_OK = re.compile(r'^e[a-z0-9]{8,24}$')     # o id da esteira
+CAT_OK = re.compile(r'^[a-z][a-z-]{1,20}$')     # id da categoria (config.js)
 TEXTO_OK = re.compile(r'[^a-z0-9 &\'.-]+')
 MAX_AJUSTES = 60      # medidas guardadas por peça (a mediana não precisa de mais)
 
@@ -177,9 +178,11 @@ def _validar(jogo, corpo):
         return pid, {'x': _numero(a.get('x'), 0, 600), 'y': _numero(a.get('y'), 0, 1200),
                      'w': _numero(a.get('w'), 10, 700)}
     cor, marca = _texto(corpo.get('cor'), 24), _texto(corpo.get('marca'), 40)
-    if not cor and not marca:
-        raise ValueError('diga a cor ou a marca')
-    return pid, {'cor': cor, 'marca': marca}
+    cat = str(corpo.get('cat') or '').strip().lower()
+    cat = cat if CAT_OK.match(cat) else ''
+    if not cor and not marca and not cat:
+        raise ValueError('diga o tipo, a cor ou a marca')
+    return pid, {'cat': cat, 'cor': cor, 'marca': marca}
 
 
 def _contar(uid, jogo):
@@ -243,7 +246,7 @@ def _anotar(jogo, pid, dados):
     else:
         nomes = {}
         partes = []
-        for i, campo in enumerate(('cor', 'marca')):
+        for i, campo in enumerate(('cat', 'cor', 'marca')):
             if dados[campo]:
                 nomes['#c%d' % i] = '%s:%s' % (campo, dados[campo])
                 partes.append('#c%d :um' % i)
@@ -329,6 +332,7 @@ def resumo_da_peca(item):
                    | {'medidas': len(ajustes)}) if ajustes else None,
         'cor': _mais_votado(item, 'cor'),
         'marca': _mais_votado(item, 'marca'),
+        'cat': _mais_votado(item, 'cat'),
     }
 
 
