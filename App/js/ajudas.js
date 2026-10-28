@@ -102,7 +102,7 @@ function barra(s, id, curta = false) {
   const passo = s.feitas % s.porFicha;
   const pct = cheia ? 100 : passo / s.porFicha * 100;
   const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
-  const texto = esgotou ? `Limite ${quando} atingido`
+  const texto = esgotou ? `Fichas ${quando} já ganhas`
     : ganhou ? '+1 ficha!'
     : curta ? `${passo}/${s.porFicha}` : `${passo}/${s.porFicha} para 1 ficha · ${s.feitas}/${s.limite} ${quando}`;
   return el('div', { class: 'mg-barra' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : '') },
@@ -129,7 +129,7 @@ function renderCota() {
   },
     el('span', { class: 'mg-progresso-ico' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' })),
     el('div', { class: 'mg-progresso-info' },
-      el('strong', {}, esgotou ? `Limite ${quando} atingido` : ganhou ? '+1 ficha!' : 'Próxima ficha',
+      el('strong', {}, esgotou ? `Fichas ${quando} já ganhas` : ganhou ? '+1 ficha!' : 'Próxima ficha',
         el('span', { class: 'mg-restam', title: `${total - ganhas} de ${total} fichas ${quando}` },
           ...Array.from({ length: total }, (_, i) => el('span', { class: 'mg-moedinha' + (i < ganhas ? ' gasta' : '') })))),
       el('div', { class: 'mg-progresso-barra' }, el('span', { style: { width: pct + '%' } }))),
@@ -153,13 +153,6 @@ function proxima() {
   // O Avaliar leva a barra para baixo do cartão; os outros a querem no topo.
   $('#mg-palco').before($('#mg-cota'));
   renderCota();
-  const s = estado[jogo];
-  if (s.feitas >= s.limite) {
-    const vira = new Date(s.vira).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
-      `Por ${s.janela === 'hora' ? 'esta hora' : 'hoje'} chega de ${JOGOS.find(j => j.id === jogo).nome.toLowerCase()}. ` +
-      `Volta às ${vira}.`));
-  }
   peca = escolherPeca();
   if (!peca) {
     return $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
@@ -191,7 +184,7 @@ async function gravar(jogo, peca, corpo) {
     const s = estado[jogo];
     Object.assign(s, { feitas: r.feitas, limite: r.limite, porFicha: r.porFicha, vira: r.vira });
     if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
-    if (r.ok && !r.fichas) tocar('xp');     // a barra subiu
+    if (r.ok && !r.fichas && !r.semPremio) tocar('xp');     // a barra subiu
     if (r.fichas) {
       db.ganharFicha(r.fichas);
       tocar('missao');
