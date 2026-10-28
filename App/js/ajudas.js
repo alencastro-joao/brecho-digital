@@ -19,6 +19,7 @@ import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
 import { ico } from './icones.js';
 import { alcaMover } from './alcamover.js';
+import { barrasPosicao } from './barrapos.js';
 
 const JOGOS = [
   { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: 'var(--board)', desc: 'Arraste: gostei ou não gostei.' },
@@ -249,6 +250,15 @@ function jogoAjustar() {
   const faixa = el('input', { type: 'range', min: '20', max: '600', 'aria-label': 'Tamanho da peça' });
   const tamanho = (w) => { medida.w = clamp(w, 20, 600); posicionar(); };
   const alca = alcaMover(palco, (e) => pegar(e));
+  // E as barras de posição do Stylist: em pé sobe e desce, deitada vai para os lados.
+  const colunaY = el('div', { class: 'mg-pos-y' });
+  const linhaX = el('div', { class: 'mg-pos-x' });
+  const barras = barrasPosicao({
+    paiX: linhaX, paiY: colunaY,
+    faixaX: [0, CONFIG.STAGE_W], faixaY: [0, CONFIG.STAGE_H],
+    ler: () => medida,
+    mudar: ({ x, y }) => { medida.x = x; medida.y = y; posicionar(); },
+  });
   function posicionar() {
     no.style.left = (medida.x / CONFIG.STAGE_W * 100) + '%';
     no.style.top = (medida.y / CONFIG.STAGE_H * 100) + '%';
@@ -256,6 +266,7 @@ function jogoAjustar() {
     no.style.height = (medida.w / prop / CONFIG.STAGE_H * 100) + '%';
     faixa.value = Math.round(medida.w);
     alca.colocar([no]);
+    barras?.atualizar();
   }
 
   let ini = null;
@@ -286,10 +297,12 @@ function jogoAjustar() {
   $('#mg-palco').replaceChildren(
     el('div', { class: 'mg-ajuste' },
       el('div', { class: 'mg-palco-corpo' }, palco),
+      colunaY,
       el('div', { class: 'mg-tam' },
         el('button', { type: 'button', title: 'Aumentar', onclick: () => tamanho(medida.w * 1.06) }, '+'),
         faixa,
-        el('button', { type: 'button', title: 'Diminuir', onclick: () => tamanho(medida.w * 0.94) }, '−'))),
+        el('button', { type: 'button', title: 'Diminuir', onclick: () => tamanho(medida.w * 0.94) }, '−')),
+      linhaX),
     el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) pela alça até o lugar certo.`),
     el('div', { class: 'mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {

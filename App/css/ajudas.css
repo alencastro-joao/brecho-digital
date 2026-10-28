@@ -1,5 +1,8 @@
 /* Mini games de ajuda (js/ajudas.js): avaliar, ajustar, preencher. */
-.view-ajudas { background: var(--papel); overflow-y: auto; --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco); }
+.view-ajudas {
+  background: var(--papel); overflow-y: auto; --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco);
+  --bloco: #fff; --bloco-borda: var(--wii-borda); --bloco-fundo: var(--perola-bloco); --painel: var(--perola-painel);
+}
 .mg-wrapper {
   width: 100%; box-sizing: border-box; max-width: 560px; margin: 0 auto;
   padding: 36px 16px 40px; display: grid; gap: 10px; align-content: start;
@@ -145,7 +148,14 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 /* Ajustar: o corpo com a peça por cima, como no editor. */
 /* Ajustar no jeito do Stylist: o palco pérola com o corpo, a barra em pé do
    tamanho à direita e a alça de mover (alcamover.css) ao lado da peça. */
-.mg-ajuste { display: flex; align-items: stretch; gap: 10px; width: 100%; }
+.mg-ajuste {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; width: 100%;
+}
+.mg-pos-y { display: flex; }
+.mg-pos-y .barra-pos { height: 100%; box-sizing: border-box; }
+.mg-pos-x { grid-column: 1; }
+.mg-pos-x .barra-pos { width: 100%; box-sizing: border-box; }
+.mg-pos-y:empty, .mg-pos-x:empty { display: none; }
 .mg-tam {
   width: 40px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0;
   border: 2px solid var(--bb); border-radius: 20px; background: #fff; box-shadow: inset 0 -3px 0 var(--pb);
@@ -167,7 +177,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 }
 /* O corpo guarda a proporção do palco (600 × 1200): a medida é em % dele. */
 .mg-corpo {
-  position: relative; height: min(520px, 56vh); aspect-ratio: 1 / 2;
+  position: relative; height: min(500px, 50vh); aspect-ratio: 1 / 2;
   touch-action: none; user-select: none;
 }
 .mg-boneco { position: absolute; inset: 0; opacity: .85; }
