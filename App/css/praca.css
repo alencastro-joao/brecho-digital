@@ -21,7 +21,11 @@
     linear-gradient(180deg, #efe7dc 0%, #e7ddd0 60%, #d9cec0 60%, #d9cec0 64%, #c7c0b6 64%);
 }
 
-.pc-nuvem { position: absolute; height: 36px; background: #fff; border-radius: 40px; opacity: .9; animation: pc-nuvem 60s linear infinite; }
+/* nuvens com o mesmo traço da praça: o contorno vem do drop-shadow em volta */
+.pc-nuvem {
+  position: absolute; height: 34px; background: #fff; border-radius: 40px; animation: pc-nuvem 60s linear infinite;
+  filter: url(#pc-falhado) drop-shadow(2px 0 0 #3b2b22) drop-shadow(-2px 0 0 #3b2b22) drop-shadow(0 2px 0 #3b2b22) drop-shadow(0 -2px 0 #3b2b22);
+}
 .pc-nuvem::before, .pc-nuvem::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
 .pc-nuvem::before { width: 46px; height: 46px; top: -22px; left: 18px; }
 .pc-nuvem::after { width: 34px; height: 34px; top: -14px; left: 52px; }
@@ -38,8 +42,8 @@
 
 /* as casas: cada uma leva a uma tela */
 .pc-casa {
-  position: absolute; bottom: 46%; width: 250px; padding: 0; border: 0; background: none;
-  transition: transform .2s; filter: url(#pc-falhado) drop-shadow(0 6px 8px rgba(0, 0, 0, .1));
+  position: absolute; bottom: 40%; width: 250px; padding: 0; border: 0; background: none;
+  transition: transform .2s; filter: url(#pc-falhado);
 }
 .pc-casa:hover { transform: translateY(-4px); }
 .pc-casa svg { display: block; }

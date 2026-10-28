@@ -1,6 +1,6 @@
 // Praça: os prédios desenhados, um para cada botão da barra e na cor dele.
 // Cada um é um SVG de 250 de largura com o chão em y = h; o nome vai escrito
-// à mão (Caveat) numa placa ou na fachada, sem emoji.
+// numa placa ou na fachada, com o nome do botão e a fonte do jogo.
 
 const T = '#3b2b22';                                   // o traço das roupas
 const L = `stroke="${T}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
@@ -8,7 +8,7 @@ const l = `stroke="${T}" stroke-width="2" stroke-linejoin="round" stroke-linecap
 const SOMBRA = 'rgba(0,0,0,.07)';
 
 const escrito = (x, y, texto, tam = 30, rot = 0) =>
-  `<text x="${x}" y="${y}" text-anchor="middle" font-family="'BD Caveat', cursive" font-size="${tam}"
+  `<text x="${x}" y="${y}" text-anchor="middle" style="font: 700 ${Math.round(tam * .66)}px var(--fonte)"
     fill="${T}" transform="rotate(${rot} ${x} ${y})">${texto}</text>`;
 
 // Toldo listrado com a barra de baixo em ondinhas.
@@ -52,7 +52,7 @@ const DESENHOS = {
       ${porta(168, h - 92, 56, 92)}
       <path d="M96 0 v18 M154 0 v18" ${l}/>
       <rect x="82" y="14" width="86" height="26" rx="4" fill="#fffdf6" ${L} transform="rotate(-2 125 27)"/>
-      ${escrito(125, 35, 'Brechó', 26, -2)}`;
+      ${escrito(125, 35, 'Loja', 26, -2)}`;
   },
 
   // Closet: o prédio é o próprio guarda-roupa, com duas portas e um cabide no topo.
@@ -77,7 +77,7 @@ const DESENHOS = {
       <rect x="20" y="70" width="210" height="${h - 70}" fill="${c.cor}" ${L}/>
       ${janela(40, 92, 56, 50)}${janela(154, 92, 56, 50)}
       <rect x="62" y="152" width="126" height="28" rx="4" fill="#fffdf6" ${L} transform="rotate(1 125 166)"/>
-      ${escrito(125, 174, 'Ateliê', 26, 1)}
+      ${escrito(125, 174, 'Stylist', 26, 1)}
       ${toldo(14, h - 112, 222, c.toldo, 6)}
       <rect x="30" y="${h - 84}" width="104" height="84" fill="#fffdf6" ${L}/>
       <path d="M70 ${h - 66} q12 -6 24 0 q4 14 -2 26 q8 6 6 14 h-32 q-2 -8 6 -14 q-6 -12 -2 -26 z" fill="#f8bbd0" ${l}/>
@@ -112,7 +112,7 @@ const DESENHOS = {
       <circle cx="125" cy="90" r="9" fill="#7e57c2" ${l}/><circle cx="119" cy="84" r="3" fill="#fff"/>
       <rect x="192" y="58" width="22" height="12" rx="3" fill="#fffdf6" ${l}/>
       <path d="M40 158 q85 -10 170 0" fill="none" ${l}/>
-      ${escrito(125, 150, 'Café do Feed', 30, -1)}
+      ${escrito(125, 150, 'Feed', 30, -1)}
       ${toldo(8, h - 112, 234, c.toldo, 7)}
       <rect x="24" y="${h - 84}" width="116" height="84" fill="#fffdf6" ${L}/>
       <path d="M54 ${h - 52} h22 v12 q0 10 -11 10 q-11 0 -11 -10 z M76 ${h - 48} q8 0 6 6 q-2 4 -6 4" fill="#fffdf6" ${l}/>
