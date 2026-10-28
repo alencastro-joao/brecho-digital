@@ -200,7 +200,7 @@ async function iniciar() {
   if (nova || pediuTutorialNaUrl()) comecarIntro();
   // Fora do tutorial (que já sugere no fim), o celular no navegador é lembrado
   // de instalar o app.
-  else lembrarDeInstalar();
+  else if (!db.introAtiva()) lembrarDeInstalar();
 
   // O dia pode virar com a aba aberta.
   setInterval(() => {
