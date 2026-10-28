@@ -11,13 +11,13 @@
 // (nuvem/lambda/ajudas.py, onde também moram os números): aqui só se mostra o
 // que ele diz e soma a ficha que ele mandar.
 
-import { CONFIG, CATEGORIAS, CORES, ancoraPadrao } from './config.js';
+import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, ancoraPadrao } from './config.js';
 import { rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
 import { svgAvatar } from './avatar.js';
 import { ancoraNoMolde } from './proporcao.js';
 import { el, $, clamp, toast } from './util.js';
-import { ico } from './icones.js';
+import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
 import { barrasPosicao } from './barrapos.js';
 
@@ -315,6 +315,14 @@ function jogoAjustar() {
 // ------------------------------ Preencher ---------------------------------
 function jogoPreencher() {
   let cor = '';
+  let cat = '';
+  // O tipo da peça: um bloco pérola por categoria, com o ícone e o nome.
+  const tipos = el('div', { class: 'mg-tipos' });
+  const renderTipos = () => tipos.replaceChildren(...ORDEM_CATEGORIAS.map(c => el('button', {
+    type: 'button', class: 'mg-tipo' + (c === cat ? ' ativa' : ''),
+    onclick: () => { cat = cat === c ? '' : c; renderTipos(); },
+  }, emo(CATEGORIAS[c].icone), el('span', {}, CATEGORIAS[c].nome))));
+  renderTipos();
   const nomeCor = el('small', {}, 'escolha uma');
   const campoMarca = el('input', { class: 'mg-marca', type: 'text', maxlength: '40',
     placeholder: 'Escreva a marca', autocomplete: 'off' });
@@ -336,6 +344,9 @@ function jogoPreencher() {
   $('#mg-palco').replaceChildren(
     el('div', { class: 'mg-mesa' }, el('div', { class: 'mg-carta mg-carta-baixa' }, imagem(peca, 'mg-carta-img'))),
     el('div', { class: 'mg-bloco' },
+      el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Tipo de peça'), el('small', {}, 'o que é?')),
+      tipos),
+    el('div', { class: 'mg-bloco' },
       el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Cor principal'), nomeCor),
       cores),
     el('div', { class: 'mg-bloco' },
@@ -346,7 +357,7 @@ function jogoPreencher() {
         estado[jogo].pecas.push(peca.id); proxima();
       } }, ico('seta-dir'), 'Pular'),
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
-        if (!cor && !campoMarca.value.trim()) return toast('Escolha a cor ou escreva a marca.', 'aviso');
-        enviar({ cor, marca: campoMarca.value.trim() });
+        if (!cat && !cor && !campoMarca.value.trim()) return toast('Escolha o tipo, a cor ou a marca.', 'aviso');
+        enviar({ cat, cor, marca: campoMarca.value.trim() });
       } }, ico('ok'), 'Enviar')));
 }

@@ -73,13 +73,14 @@ class Ajudas(unittest.TestCase):
         ajudas.ajudar(ANA, 'ajustar', {'peca': 'epeca0002', 'ancora': {'x': 300, 'y': 500, 'w': 200}})
         ajudas.ajudar(BIA, 'ajustar', {'peca': 'epeca0002', 'ancora': {'x': 310, 'y': 520, 'w': 220}})
         ajudas.ajudar(ANA, 'preencher', {'peca': 'epeca0002', 'cor': 'Preto', 'marca': 'Niké '})
-        ajudas.ajudar(BIA, 'preencher', {'peca': 'epeca0002', 'cor': 'preto', 'marca': ''})
+        ajudas.ajudar(BIA, 'preencher', {'peca': 'epeca0002', 'cor': 'preto', 'marca': '', 'cat': 'pants'})
         p = ajudas.resumo()['pecas'][0]
         self.assertEqual(p['votos']['pct'], 90)
         self.assertEqual(p['votos']['raridade'], 'legendary')
         self.assertEqual(p['ajuste'], {'x': 305, 'y': 510, 'w': 210, 'medidas': 2})
         self.assertEqual(p['cor'], {'valor': 'preto', 'votos': 2, 'total': 2})
         self.assertEqual(p['marca']['valor'], 'nike')
+        self.assertEqual(p['cat']['valor'], 'pants')
 
     def test_colocar_e_tirar_da_esteira(self):
         _s3 = boto3.client('s3')

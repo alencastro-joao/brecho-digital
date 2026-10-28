@@ -68,6 +68,7 @@ function cartao(item, resumo) {
       (v.raridade ? ` → ${RARIDADE[v.raridade]?.nome}` : ''));
   }
   if (resumo?.cor) linhas.push(`cor: ${resumo.cor.valor} (${resumo.cor.votos}/${resumo.cor.total})`);
+  if (resumo?.cat) linhas.push(`tipo: ${rotuloCategoria(resumo.cat.valor)} (${resumo.cat.votos}/${resumo.cat.total})`);
   if (resumo?.marca) linhas.push(`marca: ${resumo.marca.valor} (${resumo.marca.votos}/${resumo.marca.total})`);
   if (resumo?.ajuste) linhas.push(`${resumo.ajuste.medidas} ajuste${resumo.ajuste.medidas > 1 ? 's' : ''} no corpo`);
 
@@ -110,6 +111,7 @@ function cartao(item, resumo) {
 // Leva o que os jogadores disseram para a ficha da esteira (só o que tem voto).
 async function usarNaFicha(item, resumo) {
   const ficha = { ...(item.ficha || {}) };
+  if (resumo.cat && CATEGORIAS[resumo.cat.valor]) ficha.cat = resumo.cat.valor;
   if (!ficha.cat) ficha.cat = item.sugestao?.cat || '';
   if (resumo.votos?.raridade) ficha.raridade = resumo.votos.raridade;
   if (resumo.cor) {

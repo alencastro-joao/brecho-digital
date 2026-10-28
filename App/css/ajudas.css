@@ -189,7 +189,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-peca img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
 
 /* Preencher: a peça, e um bloco branco para a cor e outro para a marca. */
-.mg-carta-baixa { width: min(100%, 180px, 24vh); cursor: default; }
+.mg-carta-baixa { width: min(100%, 140px, 18vh); cursor: default; }
 .mg-bloco {
   width: 100%; box-sizing: border-box; display: grid; gap: 10px; padding: 10px 12px 13px; background: #fff;
   border: 2px solid var(--bb); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--pb);
@@ -239,3 +239,18 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-barra-trilho { width: 100%; }
 .mg-palco > .mg-cota { width: 100%; }
 @media (max-width: 760px) { .mg-wrapper { padding: 12px 16px 24px; } }
+.mg-tipos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.mg-tipo {
+  display: grid; justify-items: center; gap: 1px; padding: 4px 1px 5px; min-width: 0;
+  border: 2px solid var(--bb); border-radius: 11px; background: var(--perola);
+  box-shadow: inset 0 -2px 0 var(--pb); font: inherit; color: var(--tinta); cursor: pointer;
+}
+.mg-tipo .ico { width: 18px; height: 18px; }
+.mg-tipo span { font-size: 10px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mg-tipo.ativa { background: var(--tarefas) var(--brilho-topo); border-color: var(--tinta); }
+/* No Preencher a tela rola: Pular e Enviar ficam presos embaixo, à vista. */
+.mg-palco > .mg-botoes-voto:last-child {
+  position: sticky; bottom: 0; z-index: 2; margin: 0 -10px -10px; padding: 8px 10px 10px; width: calc(100% + 20px); box-sizing: border-box;
+  background: var(--perola-painel); border-radius: 0 0 18px 18px; box-shadow: 0 -6px 12px -8px rgba(60, 80, 95, .25);
+}
+.mg-voto { background-color: #fff; }
