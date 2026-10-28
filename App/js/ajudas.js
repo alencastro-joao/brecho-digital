@@ -315,28 +315,38 @@ function jogoAjustar() {
 // ------------------------------ Preencher ---------------------------------
 function jogoPreencher() {
   let cor = '';
+  const nomeCor = el('small', {}, 'escolha uma');
   const campoMarca = el('input', { class: 'mg-marca', type: 'text', maxlength: '40',
-    placeholder: 'Marca (deixe vazio se não souber)', list: 'mg-marcas' });
-  const lista = el('datalist', { id: 'mg-marcas' },
-    ...db.marcasOrdenadas().slice(0, 40).map(m => el('option', { value: m.nome })));
+    placeholder: 'Escreva a marca', autocomplete: 'off' });
   const cores = el('div', { class: 'mg-cores' });
-  const renderCores = () => cores.replaceChildren(...CORES.map(c => el('button', {
-    type: 'button', class: 'mg-cor' + (c.nome === cor ? ' ativa' : ''), title: c.nome,
-    style: { '--cor': c.hex === 'estampa' ? '#ccc' : c.hex },
-    onclick: () => { cor = cor === c.nome ? '' : c.nome; renderCores(); },
-  }, el('span', {}), c.nome)));
+  const renderCores = () => {
+    cores.replaceChildren(...CORES.map(c => el('button', {
+      type: 'button', class: 'mg-cor' + (c.nome === cor ? ' ativa' : '') + (c.hex === 'estampa' ? ' estampa' : ''),
+      title: c.nome, 'aria-label': c.nome,
+      style: c.hex === 'estampa' ? {} : { '--cor': c.hex },
+      onclick: () => { cor = cor === c.nome ? '' : c.nome; renderCores(); },
+    })));
+    nomeCor.textContent = cor || 'escolha uma';
+  };
   renderCores();
+  // As marcas mais usadas no jogo viram atalhos: um toque preenche o campo.
+  const atalhos = el('div', { class: 'mg-marcas' }, ...db.marcasOrdenadas().slice(0, 8).map(m =>
+    el('button', { type: 'button', class: 'mg-marca-chip', onclick: () => { campoMarca.value = m.nome; } }, m.nome)));
 
   $('#mg-palco').replaceChildren(
-    el('div', { class: 'mg-mesa mg-mesa-baixa' }, imagem(peca, 'mg-carta-img')),
-    el('p', { class: 'mg-dica' }, 'Qual a cor principal?'), cores,
-    campoMarca, lista,
-    el('div', { class: 'mg-botoes' },
-      el('button', { type: 'button', class: 'mg-pular', onclick: () => {
+    el('div', { class: 'mg-mesa' }, el('div', { class: 'mg-carta mg-carta-baixa' }, imagem(peca, 'mg-carta-img'))),
+    el('div', { class: 'mg-bloco' },
+      el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Cor principal'), nomeCor),
+      cores),
+    el('div', { class: 'mg-bloco' },
+      el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Marca'), el('small', {}, 'se souber')),
+      campoMarca, atalhos),
+    el('div', { class: 'mg-botoes-voto' },
+      el('button', { type: 'button', class: 'mg-voto', onclick: () => {
         estado[jogo].pecas.push(peca.id); proxima();
-      } }, 'Pular'),
-      el('button', { type: 'button', class: 'mg-btn mg-btn-sim', title: 'Enviar', onclick: () => {
+      } }, ico('seta-dir'), 'Pular'),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         if (!cor && !campoMarca.value.trim()) return toast('Escolha a cor ou escreva a marca.', 'aviso');
         enviar({ cor, marca: campoMarca.value.trim() });
-      } }, ico('ok'))));
+      } }, ico('ok'), 'Enviar')));
 }

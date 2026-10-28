@@ -188,18 +188,33 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 }
 .mg-peca img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
 
-/* Preencher */
-.mg-cores { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.mg-cor {
-  display: flex; align-items: center; gap: 6px; padding: 5px 10px;
-  border: 1px solid var(--linha); border-radius: 999px; background: var(--papel);
-  font: inherit; font-size: 13px; cursor: pointer;
+/* Preencher: a peça, e um bloco branco para a cor e outro para a marca. */
+.mg-carta-baixa { width: min(100%, 180px, 24vh); cursor: default; }
+.mg-bloco {
+  width: 100%; box-sizing: border-box; display: grid; gap: 10px; padding: 10px 12px 13px; background: #fff;
+  border: 2px solid var(--bb); border-radius: 14px; box-shadow: inset 0 -3px 0 var(--pb);
 }
-.mg-cor span { width: 14px; height: 14px; border-radius: 50%; background: var(--cor); border: 1px solid rgba(0, 0, 0, .15); }
-.mg-cor.ativa { border-color: var(--rosa, #ff2e63); font-weight: 600; }
+.mg-bloco-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mg-bloco-topo strong { font-size: 14px; }
+.mg-bloco-topo small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.mg-cores { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; justify-items: center; }
+.mg-cor {
+  width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
+  background: var(--cor); border: 2px solid rgba(0, 0, 0, .12);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .12), 0 0 0 2px #fff;
+}
+.mg-cor.estampa { background: conic-gradient(#e0533a, #e8c46a, #4f9a3a, #34beed, #9b46f0, #e0533a); }
+.mg-cor.ativa { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--tinta); }
 .mg-marca {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px;
-  font: inherit; background: var(--papel);
+  width: 100%; box-sizing: border-box; height: 42px; padding: 0 12px;
+  border: 2px solid var(--bb); border-radius: 11px; background: var(--perola);
+  font: inherit; font-size: 15px; color: var(--tinta);
+}
+.mg-marcas { display: flex; flex-wrap: wrap; gap: 6px; }
+.mg-marcas:empty { display: none; }
+.mg-marca-chip {
+  padding: 4px 10px 5px; border: 2px solid var(--bb); border-radius: 10px; background: var(--perola);
+  box-shadow: inset 0 -2px 0 var(--pb); font: inherit; font-size: 12px; font-weight: 700; color: var(--tinta); cursor: pointer;
 }
 
 /* Admin › Mini games (js/adminjogos.js): as fotos prontas da esteira. */
