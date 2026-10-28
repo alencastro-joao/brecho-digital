@@ -3,29 +3,20 @@
 .view-praca { background: var(--papel); }
 .pc-tela { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-.pc-topo {
-  display: flex; align-items: center; gap: 12px; padding: 12px 18px;
-  border-bottom: 1px solid var(--linha); background: var(--branco);
-}
-.pc-topo h1 { font-size: 19px; line-height: 1; }
-.pc-sub { font-size: 12px; color: var(--tinta-suave); margin-top: 3px; }
-.pc-selo {
-  width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
-  font-size: 20px; background: var(--inventario);
-}
 
 .pc-faixa {
-  display: flex; gap: 8px; padding: 10px 18px; overflow-x: auto;
-  background: var(--branco); border-bottom: 1px solid var(--linha);
+  /* Por cima do céu: a rua sobe até o topo da tela. */
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+  display: flex; gap: 14px; padding: calc(10px + env(safe-area-inset-top)) 16px 8px; overflow-x: auto;
+  scrollbar-width: none;
 }
 .pc-chip {
-  display: flex; align-items: center; gap: 6px; flex: none;
-  border: 1px solid var(--linha); border-radius: 999px; padding: 3px 10px 3px 3px;
-  background: var(--branco); font-size: 12px; color: var(--tinta);
+  display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none;
+  border: 0; background: none; padding: 0; font-size: 11px; color: var(--tinta);
 }
-.pc-rosto { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; background: var(--papel); display: block; }
+.pc-rosto { width: 46px; height: 46px; display: block; border-radius: 50%; overflow: hidden; }
 .pc-rosto svg { width: 100%; height: 100%; display: block; }
-.pc-vazio { font-size: 13px; color: var(--tinta-suave); padding: 6px 0; }
+.pc-vazio { font-size: 13px; color: var(--tinta-suave); padding: 6px 10px; background: #ffffffcc; border-radius: 12px; }
 
 /* a rua */
 .pc-cena { flex: 1; position: relative; overflow-x: auto; overflow-y: hidden; cursor: grab; scrollbar-width: none; }
@@ -99,10 +90,6 @@
 }
 @keyframes pc-flutua { 50% { translate: 0 -4px; } }
 
-.pc-dica {
-  position: absolute; left: 16px; bottom: 14px; background: #ffffffe6; border-radius: 12px;
-  padding: 7px 12px; font-size: 12px; color: var(--tinta-suave); box-shadow: var(--sombra); pointer-events: none;
-}
 
 /* cartão do amigo */
 .pc-fundo { position: absolute; inset: 0; background: rgba(20, 40, 45, .35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
