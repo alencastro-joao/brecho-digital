@@ -1494,9 +1494,9 @@ export const CAMISETA_FLOR_DE_LIS = {
   cores: { Azul: 'azul' },
 };
 // Cinto cinza da artista com fivela redonda prata (tools/cinto_cinza.py), só no
-// Cinza. Na cintura, por cima da calça e da peça de cima, como o cinto.
+// Cinza. Na cintura, por cima da calça e por baixo da peça de cima, como o cinto.
 export const CINTO_CINZA = {
-  id: 'cinto-cinza', nome: 'Cinto de fivela redonda', slot: 'cintura', z: 36, versao: 'v1',
+  id: 'cinto-cinza', nome: 'Cinto de fivela redonda', slot: 'cintura', z: 24, versao: 'v1',
   caixa: [185, 455, 230, 109.6],
   cores: { Cinza: 'cinza' },
 };
