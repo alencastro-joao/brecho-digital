@@ -22,8 +22,8 @@ const ART = `
   <g>
     <path d="M96 268 L96 176 q0-40 40-40 l24 0 q40 0 40 40 l0 92 z" fill="#2f2b28"/>
     <!-- avental -->
-    <path d="M118 176 l52 0 6 92 -64 0 z" fill="#c9a227" opacity=".92"/>
-    <path d="M132 150 l36 0 -4 26 -28 0 z" fill="#c9a227" opacity=".92"/>
+    <path d="M118 176 l52 0 6 92 -64 0 z" fill="#c8342f" opacity=".92"/>
+    <path d="M132 150 l36 0 -4 26 -28 0 z" fill="#c8342f" opacity=".92"/>
     <!-- braços -->
     <path d="M104 186 q-22 34 -14 62" stroke="#2f2b28" stroke-width="20" fill="none" stroke-linecap="round"/>
     <path d="M188 186 q22 34 14 62" stroke="#2f2b28" stroke-width="20" fill="none" stroke-linecap="round"/>

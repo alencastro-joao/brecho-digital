@@ -224,7 +224,7 @@ button.pf-stat:hover small { text-decoration: underline; }
 .pf-estrela {
   position: absolute; z-index: 2; top: 7px; left: 7px;
   display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(0, 0, 0, .55); color: #ffd35c; font-size: 13px;
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px;
 }
 
 /* O último quadrinho da prévia: quantas faltam, e abre a lista inteira. */

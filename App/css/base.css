@@ -133,7 +133,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .nivel-barra.mini { height: 4px; width: 38px; margin-top: 3px; }
 .nivel-barra > span {
   display: block; height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #f0c674, #c8a24a);
+  background: linear-gradient(90deg, var(--premio-fundo), var(--premio));
   transition: width .4s ease;
 }
 
@@ -184,7 +184,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 /* A estrela que escolhe o que aparece no perfil (js/favoritos.js). No painel
    do guarda-roupa ela é um .btn-ghost com rótulo; nas listas do Stylist e da
    Colagem é só a estrela, encostada na linha. */
-.fav-estrela.on { border-color: #e7c96a; background: #fffaea; color: #8a6d24; }
+.fav-estrela.on { border-color: var(--premio-borda); background: var(--premio-claro); color: var(--premio-texto); }
 
 .fav-estrela.mini {
   flex: none; width: 26px; height: 26px; padding: 0;
@@ -193,8 +193,8 @@ button:disabled { cursor: not-allowed; opacity: .4; }
   display: grid; place-items: center;
   transition: color .15s, background .15s;
 }
-.fav-estrela.mini:hover { background: var(--perola-painel); color: #8a6d24; }
-.fav-estrela.mini.on { background: #fff6d6; color: #d6a81f; }
+.fav-estrela.mini:hover { background: var(--perola-painel); color: var(--premio-texto); }
+.fav-estrela.mini.on { background: var(--premio-claro); color: var(--premio); }
 
 /* Nome ou retrato de quem assina algo: leva ao perfil da pessoa. Continua
    parecendo texto (e o retrato, um retrato) — só o cursor e o sublinhado no
@@ -235,7 +235,7 @@ button:disabled { cursor: not-allowed; opacity: .4; }
 .toast.uncommon { background: #2f7a4a; }
 .toast.rare { background: #3b6ea5; }
 .toast.epic { background: #6b4fa5; }
-.toast.legendary { background: #9a7b13; }
+.toast.legendary { background: #a8306a; }
 /* O aviso do resgate com "Desfazer" (vitrine.js): a barrinha embaixo esvazia
    nos 10 segundos em que o botão vale. */
 .toast.desfazer {

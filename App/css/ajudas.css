@@ -47,8 +47,8 @@
 .mg-progresso-barra { height: 6px; border-radius: 4px; background: var(--perola-degrau); overflow: hidden; }
 .mg-progresso-barra span { display: block; height: 100%; border-radius: 4px; background: var(--wii); transition: width .4s; }
 .mg-progresso > small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
-.mg-progresso.ganhou { background: #fbf1d0; border-color: #e3cf8f; box-shadow: inset 0 -3px 0 #e3cf8f; }
-.mg-progresso.ganhou .mg-progresso-barra span { background: #e8c46a; }
+.mg-progresso.ganhou { background: var(--premio-claro); border-color: var(--premio-borda); box-shadow: inset 0 -3px 0 var(--premio-borda); }
+.mg-progresso.ganhou .mg-progresso-barra span { background: var(--premio-fundo); }
 .mg-progresso.esgotou { background: #eef6e6; border-color: #c6dcb2; box-shadow: inset 0 -3px 0 #c6dcb2; }
 .mg-progresso.esgotou .mg-progresso-barra span { background: #6b8f4e; }
 
@@ -101,7 +101,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
   height: 100%; border-radius: inherit; transition: width .35s ease;
   background: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, 0) 60%), #2fbf63;
 }
-.mg-barra.ganhou .mg-barra-cheio { background-color: #efb93a; animation: pulso .7s ease; }
+.mg-barra.ganhou .mg-barra-cheio { background-color: var(--premio); animation: pulso .7s ease; }
 .mg-barra.esgotou .mg-barra-cheio { background: #b8b2aa; }
 .mg-barra.esgotou small { color: #b0452f; }
 .mg-quadrado .mg-barra { width: 72%; justify-items: center; }
@@ -203,7 +203,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
   background: var(--cor); border: 2px solid rgba(0, 0, 0, .12);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .12), 0 0 0 2px #fff;
 }
-.mg-cor.estampa { background: conic-gradient(#e0533a, #e8c46a, #4f9a3a, #34beed, #9b46f0, #e0533a); }
+.mg-cor.estampa { background: conic-gradient(#e0533a, var(--premio-fundo), #4f9a3a, #34beed, #9b46f0, #e0533a); }
 .mg-cor.ativa { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--tinta); }
 .mg-marca {
   width: 100%; box-sizing: border-box; height: 42px; padding: 0 12px;

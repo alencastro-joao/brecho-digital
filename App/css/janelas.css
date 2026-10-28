@@ -36,7 +36,7 @@ html body .toast.aviso     { --cor-aviso: #eea52c; --ico-aviso: '!'; }
 html body .toast.uncommon  { --cor-aviso: #2fbf63; --ico-aviso: '★'; border-color: #2fbf63; }
 html body .toast.rare      { --cor-aviso: #2f7ff0; --ico-aviso: '★'; border-color: #2f7ff0; }
 html body .toast.epic      { --cor-aviso: #9b46f0; --ico-aviso: '★'; border-color: #9b46f0; }
-html body .toast.legendary { --cor-aviso: #d4a514; --ico-aviso: '▲'; border-color: #d4a514; }
+html body .toast.legendary { --cor-aviso: #d6458a; --ico-aviso: '▲'; border-color: #d6458a; }
 html body .toast.desfazer  { --ico-aviso: '↶'; padding-left: 6px; }
 html body .toast:is(.rare, .epic, .legendary) {
   background-image: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .9) 50%, transparent 62%), var(--perola);
@@ -45,7 +45,7 @@ html body .toast:is(.rare, .epic, .legendary) {
 /* O da coleção já traz a capa dela no lugar da bolinha. */
 html body .toast.col-toast { background: var(--perola); color: var(--tinta); border: 2px solid var(--wii-borda); }
 html body .toast.col-toast::before { display: none; }
-html body .toast.col-toast strong { color: #9a7b13; }
+html body .toast.col-toast strong { color: var(--premio-texto); }
 html body .toast.col-toast .col-chip-disco { background: var(--perola-painel); }
 
 /* --------------------------------- Janelas ------------------------------- */
