@@ -484,46 +484,92 @@
 .ig-publicar:hover { color: #245fb0; }
 
 /* -------------------------------- Desfile -------------------------------- */
-/* Um look por tela (social.js, cardDoDesfile). A rolagem encaixa de leve no
-   começo de cada look, sem prender quem quer passar vários de uma vez. */
-.view-social:has(.desfile) .feed-wrapper { scroll-snap-type: y proximity; }
-.desfile { display: flex; flex-direction: column; gap: 34px; margin: 20px auto 0; max-width: 520px; }
-.desfile-post {
-  scroll-snap-align: start; scroll-margin-top: 130px;
-  display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr);
+/* Um look por tela, na tela inteira (social.js, cardDoDesfile). A imagem é o
+   fundo; quem postou, as abas e as peças ficam por cima, em plaquinhas. A
+   rolagem encaixa em cada look, como nos vídeos curtos. `--altura-desfile` é
+   a altura da caixa que rola, medida no social.js. */
+.view-social.em-desfile .feed-side { display: none; }
+.view-social.em-desfile .feed-wrapper { padding: 0; scroll-snap-type: y mandatory; }
+/* No celular quem rola é a tela do feed inteira, não o .feed-wrapper. */
+.view-social.em-desfile { scroll-snap-type: y mandatory; }
+.view-social.em-desfile .desfile-foto { border: 0; border-radius: 0; box-shadow: none; }
+.view-social.em-desfile .feed { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; min-height: 0; }
+
+/* O cabeçalho não ocupa lugar: fica grudado no alto, flutuando sobre o look. */
+.view-social.em-desfile .feed-head {
+  position: sticky; top: 0; z-index: 6;
+  height: 0; margin: 0; padding: 0 16px; border: 0; background: none; box-shadow: none;
+  display: flex; align-items: flex-start; gap: 8px;
 }
-.desfile-topo { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Tudo à esquerda: no canto direito do PC moram o sino e o seu retrato. */
+.view-social.em-desfile .feed-head > * {
+  margin: 12px 0 0; flex: none; padding: 6px;
+  border-radius: 18px; background: var(--vidro-desfile); backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .1);
+}
+.view-social.em-desfile .feed-barra { order: 1; }
+.view-social.em-desfile .feed-titulo { order: 2; gap: 6px; }
+.view-social.em-desfile :is(.feed-head h1, .feed-head p) { display: none; }
+
+.view-social { --vidro-desfile: rgba(253, 250, 246, .86); }
+.desfile { display: flex; flex-direction: column; }
+.desfile-post {
+  position: relative; overflow: hidden;
+  height: var(--altura-desfile, 100vh); min-height: 420px;
+  scroll-snap-align: start; scroll-snap-stop: always;
+}
+.desfile-foto {
+  position: absolute; inset: 0; border-radius: 0; box-shadow: none;
+}
+.desfile-post:hover .post-thumb, .desfile-post.meu .post-thumb { transform: none; box-shadow: none; }
+.desfile-foto img { width: 100%; height: 100%; object-fit: contain; }
+.desfile-foto .sem-thumb { width: 100%; }
+
+/* Quem postou: logo abaixo das abas. */
+.desfile-topo {
+  position: absolute; z-index: 3; top: 70px; left: 16px;
+  max-width: min(420px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 6px 10px 6px 6px; border-radius: 99px;
+  background: var(--vidro-desfile); backdrop-filter: blur(8px);
+}
 .desfile-topo .post-autor { flex: 1; min-width: 0; display: grid; }
-.desfile-topo .post-autor strong { font-size: 14.5px; }
+.desfile-topo .post-autor strong { font-size: 14px; }
 .desfile-topo .post-autor small {
-  font-size: 12px; color: var(--tinta-suave);
+  font-size: 11.5px; color: var(--tinta-suave);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.desfile-foto { display: grid; place-items: center; }
-.desfile-post:hover .post-thumb { transform: none; }
-.desfile-foto img { width: 100%; height: min(64vh, 620px); object-fit: contain; }
-.desfile-foto .sem-thumb { width: 100%; }
-/* Curtir e comentar empilhados no canto de baixo, como nos vídeos curtos. */
+
+/* Curtir e comentar empilhados na direita, acima das peças. */
 .desfile-lado {
-  position: absolute; right: 10px; bottom: 10px; z-index: 2;
-  display: flex; flex-direction: column; gap: 8px;
+  position: absolute; right: 16px; bottom: 190px; z-index: 2;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .desfile-lado :is(.curtir, .desfile-comentar) {
   position: static; flex-direction: column; gap: 1px;
-  min-width: 46px; padding: 7px 8px; border: 0; border-radius: 16px;
-  background: rgba(255, 255, 255, .92); box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
-  font-size: 19px; color: var(--tinta); display: flex; align-items: center;
+  min-width: 50px; padding: 8px; border: 0; border-radius: 18px;
+  background: var(--vidro-desfile); box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+  font-size: 21px; color: var(--tinta); display: flex; align-items: center;
 }
 .desfile-lado span { font-size: 11px; font-weight: 700; }
 .desfile-lado .curtir.on { color: #d1345b; }
+
+/* Embaixo: as peças, quem curtiu e a conversa, numa plaquinha só. */
+.desfile-info {
+  position: absolute; z-index: 3; left: 16px; bottom: 16px;
+  width: min(460px, calc(100% - 32px));
+  display: grid; gap: 8px; padding: 10px 12px;
+  border-radius: 18px; background: var(--vidro-desfile); backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .1);
+}
 .desfile-pecas p { margin: 0 0 6px; font-size: 12.5px; }
 .desfile-tenho { color: #2f9e5a; font-weight: 700; }
 .desfile-loja { color: #b7791f; font-weight: 700; }
-.desfile-pecas .pf-grade.look-pecas button.up-peca { flex: 0 0 64px; width: 64px; border-radius: 12px; }
-.desfile-pecas .up-peca .peca-caixa { inset: 7px; }
+.desfile-pecas .pf-grade.look-pecas button.up-peca { flex: 0 0 56px; width: 56px; border-radius: 12px; }
+.desfile-pecas .up-peca .peca-caixa { inset: 6px; }
 .desfile-pecas .up-peca.tenho::after {
-  content: '✓'; position: absolute; right: 4px; top: 4px; z-index: 2;
-  width: 15px; height: 15px; border-radius: 50%;
+  content: '✓'; position: absolute; right: 3px; top: 3px; z-index: 2;
+  width: 14px; height: 14px; border-radius: 50%;
   background: #2f9e5a; color: #fff; font-size: 9px; font-weight: 800;
   display: grid; place-items: center;
 }
@@ -533,24 +579,7 @@
   content: ''; position: absolute; right: 4px; top: 4px; z-index: 2;
   width: 9px; height: 9px; border-radius: 50%; background: #e8b04a;
 }
-.desfile-post .post-curtiram { margin: 0; }
-.desfile-conversa { display: grid; gap: 3px; font-size: 13px; }
+.desfile-info .post-curtiram { margin: 0; }
+.desfile-conversa { display: grid; gap: 2px; font-size: 12.5px; }
 .desfile-conversa p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.desfile-conversa .link-btn { justify-self: start; font-size: 12.5px; color: var(--tinta-suave); }
-
-/* PC largo: a imagem à esquerda e quem postou, as peças e a conversa ao lado. */
-@media (min-width: 1100px) {
-  .desfile { max-width: 860px; }
-  .desfile-post {
-    grid-template-columns: minmax(0, 1fr) 280px; column-gap: 22px;
-    grid-template-areas: "foto topo" "foto pecas" "foto curtiram" "foto conversa" "foto .";
-    grid-template-rows: auto auto auto auto 1fr;
-  }
-  .desfile-topo { grid-area: topo; }
-  .desfile-foto { grid-area: foto; }
-  .desfile-pecas { grid-area: pecas; }
-  .desfile-post .post-curtiram { grid-area: curtiram; }
-  .desfile-conversa { grid-area: conversa; }
-  .desfile-pecas .pf-grade.look-pecas { flex-wrap: wrap; overflow: visible; }
-  .desfile-conversa p { white-space: normal; }
-}
+.desfile-conversa .link-btn { justify-self: start; font-size: 12px; color: var(--tinta-suave); }
