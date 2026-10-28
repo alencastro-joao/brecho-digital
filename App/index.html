@@ -35,6 +35,7 @@
 <link rel="stylesheet" href="css/tutorial.css">
 <link rel="stylesheet" href="css/animacoes.css">
 <link rel="stylesheet" href="css/janelas.css">
+<link rel="stylesheet" href="css/praca.css">
 </head>
 <body>
 
@@ -995,6 +996,7 @@
                 </label>
               </div>
               <button type="button" id="pf-menu-admin" hidden><i data-i="trofeu"></i> Administração</button>
+              <button type="button" id="pf-menu-praca" hidden><i data-e="⛲"></i> Praça (teste)</button>
             </nav>
           </div>
         </div>
@@ -1024,6 +1026,20 @@
   <!-- ====================== ADMINISTRAÇÃO ====================== -->
   <!-- Só a conta do dono da loja (o servidor decide quem é admin; js/admin.js
        devolve qualquer outra conta para a loja). -->
+  <!-- Praça: a rua com os avatares dos amigos (js/praca.js). Só admin, por ora. -->
+  <section class="view view-praca" data-view="praca" hidden>
+    <div class="pc-tela">
+      <header class="pc-topo">
+        <div class="pc-selo">⛲</div>
+        <div><h1>Praça</h1><div class="pc-sub">Seus amigos e o que estão vestindo</div></div>
+      </header>
+      <nav class="pc-faixa" id="pc-faixa"></nav>
+      <main class="pc-cena" id="pc-cena"><div class="pc-mundo" id="pc-mundo"></div></main>
+      <div class="pc-dica">A rua dá a volta · toque numa casa para entrar · toque em alguém para ver o look</div>
+      <div class="pc-fundo" id="pc-fundo" hidden><div class="pc-cartao" id="pc-cartao"></div></div>
+    </div>
+  </section>
+
   <section class="view view-admin" data-view="admin" hidden>
     <div class="adm-pagina">
       <header class="adm-topo">
