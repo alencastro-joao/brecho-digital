@@ -1,6 +1,6 @@
 // Praça: os prédios desenhados, um para cada botão da barra e na cor dele.
 // Cada um é um SVG de 250 de largura com o chão em y = h; o nome vai escrito
-// numa placa ou na fachada, com o nome do botão e a fonte do jogo.
+// à mão (Caveat) numa placa ou na fachada, com o nome do botão.
 
 const T = '#3b2b22';                                   // o traço das roupas
 const L = `stroke="${T}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
@@ -8,7 +8,7 @@ const l = `stroke="${T}" stroke-width="2" stroke-linejoin="round" stroke-linecap
 const SOMBRA = 'rgba(0,0,0,.07)';
 
 const escrito = (x, y, texto, tam = 30, rot = 0) =>
-  `<text x="${x}" y="${y}" text-anchor="middle" style="font: 700 ${Math.round(tam * .66)}px var(--fonte)"
+  `<text x="${x}" y="${y}" text-anchor="middle" font-family="'BD Caveat', cursive" font-size="${tam}"
     fill="${T}" transform="rotate(${rot} ${x} ${y})">${texto}</text>`;
 
 // Toldo listrado com a barra de baixo em ondinhas.
@@ -156,6 +156,16 @@ const DESENHOS = {
       <path d="M40 ${h - 16} h70 l6 16 h-82 z" fill="#a5d6a7" ${l}/>`;
   },
 };
+
+// Árvore no mesmo traço: copa de bolas sobrepostas, tronco com galho.
+export const ARVORE = `<svg class="pc-arvore-svg" viewBox="0 0 130 200" width="130" height="200" aria-hidden="true">
+  <path d="M58 200 q4 -40 0 -80 h14 q-4 40 0 80 z" fill="#b08968" ${L}/>
+  <path d="M71 150 q10 -6 18 -20" fill="none" ${L}/>
+  <path d="M30 122 q-24 -4 -22 -30 q-14 -26 12 -40 q2 -30 34 -30 q16 -22 42 -6 q30 -2 30 28 q22 16 6 40 q6 28 -24 32 q-12 18 -36 8 q-20 14 -42 -2 z"
+    fill="#a5d6a7" ${L}/>
+  <path d="M40 60 q6 -14 22 -14 M84 40 q12 0 16 12" fill="none" stroke="#e8f5e9" stroke-width="5" stroke-linecap="round"/>
+  <path d="M52 100 q12 8 26 0 M96 82 q6 6 4 14 M24 84 q4 8 12 10" fill="none" ${l}/>
+</svg>`;
 
 export function desenhoDaCasa(c) {
   return `<svg viewBox="-6 0 262 ${c.h}" width="100%" height="100%" aria-hidden="true" overflow="visible">
