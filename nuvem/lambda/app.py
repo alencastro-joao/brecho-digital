@@ -510,7 +510,16 @@ def rotas_de_ajudas(pedido):
     if pedido.rota == '/api/admin/ajudas':
         if usuario['papel'] != 'admin':
             return responder(403, {'erro': 'só o administrador vê o resumo das ajudas'})
-        return responder(200, ajudas.resumo()) if pedido.metodo == 'GET' else None
+        if pedido.metodo == 'GET':
+            return responder(200, ajudas.resumo())
+        if pedido.metodo == 'POST':
+            import esteira
+            corpo = pedido.corpo(LIMITE_LOGIN)
+            item_id = esteira._id(corpo.get('id'))
+            if corpo.get('nos'):
+                return responder(200, ajudas.colocar(item_id, esteira._ler(item_id)))
+            return responder(200, ajudas.tirar(item_id))
+        return None
     jogo = ROTA_AJUDA.match(pedido.rota).group(1)
     if not jogo and pedido.metodo == 'GET':
         return responder(200, ajudas.estado(usuario))

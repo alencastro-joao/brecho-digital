@@ -1,5 +1,5 @@
 /* Mini games de ajuda (js/ajudas.js): avaliar, ajustar, preencher. */
-.mg-wrapper { max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 12px; }
+.mg-wrapper { width: 100%; box-sizing: border-box; max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
 .mg-head h1 { margin: 0; }
 /* O menu: três quadrados grandes, um por jogo. */
 .mg-menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
@@ -21,7 +21,8 @@
 }
 .mg-quadrado small { font-size: 11px; font-weight: 700; color: rgba(0, 0, 0, .45); min-height: 1em; }
 /* Na tela dos mini games a cabeça do avatar não aparece (pedido do João). */
-body[data-view="ajudas"] .perfil-atalho { display: none; }
+body[data-view="ajudas"] .perfil-atalho,
+body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-cota { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 14px; }
 .mg-cota small { opacity: .7; }
 .mg-palco { display: grid; gap: 12px; justify-items: center; }
@@ -89,3 +90,21 @@ body[data-view="ajudas"] .perfil-atalho { display: none; }
   width: 100%; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px;
   font: inherit; background: var(--papel);
 }
+
+/* Admin › Mini games (js/adminjogos.js): as fotos prontas da esteira. */
+.adm-jogos-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.adm-jogos-item { display: grid; gap: 3px; align-content: start; }
+.adm-jogos-item small { font-size: 11px; opacity: .75; }
+.adm-jogos-item .btn-ghost { font-size: 12px; padding: 4px 8px; }
+.adm-jogos-foto {
+  position: relative; aspect-ratio: 1; padding: 6px; cursor: pointer;
+  border: 2px solid var(--linha); border-radius: 14px; background: var(--papel);
+}
+.adm-jogos-foto img { width: 100%; height: 100%; object-fit: contain; }
+.adm-jogos-foto span {
+  position: absolute; left: 6px; bottom: 6px; padding: 2px 6px; border-radius: 8px;
+  font-size: 11px; font-weight: 800; background: var(--branco); border: 1px solid var(--linha);
+}
+.adm-jogos-foto.nos { border-color: #2fbf63; }
+.adm-jogos-foto.nos span { background: #2fbf63; color: #fff; border-color: #2fbf63; }
+.mg-sinal { font-size: 26px; line-height: 1; }

@@ -650,6 +650,7 @@ def publicar(item_id, corpo):
     _apagar('esteira/%s.json' % item_id, dados.get('previa'), dados.get('previaG'),
             dados.get('mestre'), dados.get('entrada'))
     print('esteira %s publicada como %s (%s)' % (item_id, peca_id, item['cat']))
+    _sair_dos_jogos(item_id)
     return {'item': item}
 
 
@@ -673,4 +674,16 @@ def descartar(item_id):
     dados = _ler(_id(item_id))
     _apagar('esteira/%s.json' % dados['id'], dados.get('previa'),
             dados.get('previaG'), dados.get('mestre'), dados.get('entrada'))
+    _sair_dos_jogos(dados['id'])
     return {'ok': True}
+
+
+def _sair_dos_jogos(item_id):
+    """Peça publicada ou descartada sai dos mini games (ajudas.py). Falhar
+    aqui não desfaz o que já foi feito: no pior caso ela fica nos jogos até o
+    admin tirar à mão."""
+    try:
+        import ajudas
+        ajudas.tirar(item_id)
+    except Exception as e:                       # noqa: BLE001
+        print('esteira %s: não saiu dos jogos: %r' % (item_id, e))
