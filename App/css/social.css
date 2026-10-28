@@ -482,3 +482,75 @@
   font-size: 14px; font-weight: 800; color: #3d7fd9;
 }
 .ig-publicar:hover { color: #245fb0; }
+
+/* -------------------------------- Desfile -------------------------------- */
+/* Um look por tela (social.js, cardDoDesfile). A rolagem encaixa de leve no
+   começo de cada look, sem prender quem quer passar vários de uma vez. */
+.view-social:has(.desfile) .feed-wrapper { scroll-snap-type: y proximity; }
+.desfile { display: flex; flex-direction: column; gap: 34px; margin: 20px auto 0; max-width: 520px; }
+.desfile-post {
+  scroll-snap-align: start; scroll-margin-top: 130px;
+  display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr);
+}
+.desfile-topo { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.desfile-topo .post-autor { flex: 1; min-width: 0; display: grid; }
+.desfile-topo .post-autor strong { font-size: 14.5px; }
+.desfile-topo .post-autor small {
+  font-size: 12px; color: var(--tinta-suave);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.desfile-foto { display: grid; place-items: center; }
+.desfile-post:hover .post-thumb { transform: none; }
+.desfile-foto img { width: 100%; height: min(64vh, 620px); object-fit: contain; }
+.desfile-foto .sem-thumb { width: 100%; }
+/* Curtir e comentar empilhados no canto de baixo, como nos vídeos curtos. */
+.desfile-lado {
+  position: absolute; right: 10px; bottom: 10px; z-index: 2;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.desfile-lado :is(.curtir, .desfile-comentar) {
+  position: static; flex-direction: column; gap: 1px;
+  min-width: 46px; padding: 7px 8px; border: 0; border-radius: 16px;
+  background: rgba(255, 255, 255, .92); box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+  font-size: 19px; color: var(--tinta); display: flex; align-items: center;
+}
+.desfile-lado span { font-size: 11px; font-weight: 700; }
+.desfile-lado .curtir.on { color: #d1345b; }
+.desfile-pecas p { margin: 0 0 6px; font-size: 12.5px; }
+.desfile-tenho { color: #2f9e5a; font-weight: 700; }
+.desfile-loja { color: #b7791f; font-weight: 700; }
+.desfile-pecas .pf-grade.look-pecas button.up-peca { flex: 0 0 64px; width: 64px; border-radius: 12px; }
+.desfile-pecas .up-peca .peca-caixa { inset: 7px; }
+.desfile-pecas .up-peca.tenho::after {
+  content: '✓'; position: absolute; right: 4px; top: 4px; z-index: 2;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: #2f9e5a; color: #fff; font-size: 9px; font-weight: 800;
+  display: grid; place-items: center;
+}
+/* Na vitrine hoje: borda e pontinho dourados (dá para pegar na loja). */
+.desfile-pecas .up-peca.na-vitrine { border-color: #e8b04a; }
+.desfile-pecas .up-peca.na-vitrine::after {
+  content: ''; position: absolute; right: 4px; top: 4px; z-index: 2;
+  width: 9px; height: 9px; border-radius: 50%; background: #e8b04a;
+}
+.desfile-post .post-curtiram { margin: 0; }
+.desfile-conversa { display: grid; gap: 3px; font-size: 13px; }
+.desfile-conversa p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desfile-conversa .link-btn { justify-self: start; font-size: 12.5px; color: var(--tinta-suave); }
+
+/* PC largo: a imagem à esquerda e quem postou, as peças e a conversa ao lado. */
+@media (min-width: 1100px) {
+  .desfile { max-width: 860px; }
+  .desfile-post {
+    grid-template-columns: minmax(0, 1fr) 280px; column-gap: 22px;
+    grid-template-areas: "foto topo" "foto pecas" "foto curtiram" "foto conversa" "foto .";
+    grid-template-rows: auto auto auto auto 1fr;
+  }
+  .desfile-topo { grid-area: topo; }
+  .desfile-foto { grid-area: foto; }
+  .desfile-pecas { grid-area: pecas; }
+  .desfile-post .post-curtiram { grid-area: curtiram; }
+  .desfile-conversa { grid-area: conversa; }
+  .desfile-pecas .pf-grade.look-pecas { flex-wrap: wrap; overflow: visible; }
+  .desfile-conversa p { white-space: normal; }
+}
