@@ -131,6 +131,9 @@ const SONS = {
     arpejo(c, notas, 0.07, { dur: 0.18, tipo: 'triangle', vol: 0.07 });
   },
   // Devolveu, desfez: desce.
+  // Mini games: "não curti" (assobio que desce) e a peça escolhida no Preencher.
+  naocurti: (c) => nota(c, 480, { ate: 240, dur: 0.14, tipo: 'triangle', vol: 0.06 }),
+  escolha: (c) => nota(c, 880, { ate: 1100, dur: 0.06, tipo: 'triangle', vol: 0.05 }),
   desfazer: (c) => nota(c, 700, { ate: 350, dur: 0.16, tipo: 'triangle', vol: 0.06 }),
   // Janela abrindo: sopro leve.
   janela: (c) => nota(c, 330, { ate: 620, dur: 0.12, vol: 0.04 }),
