@@ -1074,11 +1074,11 @@ export const ROUPINHAS = [
       fill="none" stroke="${escurecer(cor, .3)}" stroke-width="6" opacity=".8"/>`,
   },
   {
-    id: 'cinto', nome: 'Cinto', slot: 'cintura', z: 36, raridade: 'common',
+    id: 'cinto', nome: 'Cinto', slot: 'cintura', z: 24, raridade: 'common',
     cor: '#4a3426',
     desbloqueio: { tipo: 'resgates', meta: 16 },
-    // z 36: por cima da calça e da peça de cima (30), como a pochete — o
-    // cinto aparece mesmo com a camiseta comprida.
+    // z 24: por cima da calça (20) e por baixo da peça de cima (30) — é onde
+    // um cinto fica, e é por isso que ele some sob a camiseta comprida.
     arte: (m) => `<rect x="${300 - m.quadril - 6}" y="576" width="${(m.quadril + 6) * 2}"
                         height="34" rx="6"/>`,
     detalhe: (m, cor) => `
