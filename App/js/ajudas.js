@@ -68,9 +68,14 @@ export async function aoEntrarNasAjudas() {
 // O menu: três quadrados grandes, cada um com sua cor e símbolo.
 function renderMenu() {
   const noMenu = !jogo;
+  const j = JOGOS.find(x => x.id === jogo);
   $('#mg-menu').hidden = !noMenu;
+  $('#mg-painel').hidden = noMenu && !!estado;
   $('#mg-voltar').hidden = noMenu;
-  $('#mg-titulo').textContent = noMenu ? 'Mini games' : JOGOS.find(j => j.id === jogo).nome;
+  $('#mg-titulo').textContent = noMenu ? 'Mini games' : j.nome;
+  $('#mg-titulo-ico').replaceChildren(ico(noMenu ? 'dado' : j.icone));
+  $('#mg-titulo-ico').style.setProperty('--cor', noMenu ? 'var(--loja)' : j.cor);
+  renderFichas();
   if (!noMenu) return;
   $('#mg-cota').replaceChildren();
   if (estado) $('#mg-palco').replaceChildren();
@@ -101,11 +106,26 @@ function barra(s, id, curta = false) {
     el('small', {}, texto));
 }
 
+const renderFichas = () => $('#mg-fichas').replaceChildren(
+  el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(db.fichas())));
+
+// A linha de progresso dentro do jogo, no molde dos pedidos de Tarefas.
 function renderCota() {
   const s = estado?.[jogo];
-  const j = JOGOS.find(x => x.id === jogo);
-  if (!s) { $('#mg-cota').textContent = j.desc; return; }
-  $('#mg-cota').replaceChildren(el('span', {}, j.desc), barra(s, jogo));
+  if (!s) return $('#mg-cota').replaceChildren();
+  const esgotou = s.feitas >= s.limite;
+  const ganhou = premiado === jogo;
+  const passo = s.feitas % s.porFicha;
+  const pct = esgotou || ganhou ? 100 : passo / s.porFicha * 100;
+  const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
+  $('#mg-cota').replaceChildren(el('div', {
+    class: 'mg-progresso' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : ''),
+  },
+    el('span', { class: 'mg-progresso-ico' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' })),
+    el('div', { class: 'mg-progresso-info' },
+      el('strong', {}, esgotou ? `Limite ${quando} atingido` : ganhou ? '+1 ficha!' : 'Próxima ficha'),
+      el('div', { class: 'mg-progresso-barra' }, el('span', { style: { width: pct + '%' } }))),
+    el('small', {}, esgotou ? `${s.feitas}/${s.limite}` : `${ganhou ? s.porFicha : passo}/${s.porFicha}`)));
 }
 
 // A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou.
@@ -149,6 +169,7 @@ async function enviar(corpo) {
       db.ganharFicha(r.fichas);
       db.salvar();
       toast(`+${r.fichas} ficha${r.fichas > 1 ? 's' : ''} por ajudar!`);
+      renderFichas();
       // A barra fica cheia um instante antes de zerar.
       premiado = jogo;
       setTimeout(() => { premiado = null; if (jogo) renderCota(); }, 1200);
@@ -200,8 +221,9 @@ function jogoAvaliar() {
     el('div', { class: 'mg-mesa' }, carta),
     $('#mg-cota'),
     el('div', { class: 'mg-botoes mg-botoes-voto' },
-      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', title: 'Não gostei', onclick: () => votar(false) }, ico('x')),
-      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', title: 'Gostei', onclick: () => votar(true) }, ico('coracao-cheio'))));
+      el('button', { type: 'button', class: 'mg-voto mg-voto-nao', onclick: () => votar(false) }, ico('x'), 'Não curti'),
+      el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => votar(true) }, ico('coracao-cheio'), 'Gostei')),
+    el('p', { class: 'mg-dica' }, 'Ou arraste a peça para um dos lados.'));
 }
 
 // ------------------------------- Ajustar ----------------------------------

@@ -884,13 +884,17 @@
   <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre pelo botão do dado na barra. -->
   <section class="view view-ajudas" data-view="ajudas" hidden>
     <div class="mg-wrapper">
-      <header class="mg-head">
-        <button type="button" class="mg-voltar" id="mg-voltar" hidden>‹ Mini games</button>
-        <h1 id="mg-titulo">Mini games</h1>
+      <!-- Topo no jeito de Tarefas: voltar, o nome do jogo e as fichas. -->
+      <header class="mg-topo">
+        <button type="button" class="mg-voltar" id="mg-voltar" title="Voltar aos mini games" hidden>‹</button>
+        <div class="mg-titulo"><span id="mg-titulo-ico"></span><strong id="mg-titulo">Mini games</strong></div>
+        <div class="mg-fichas" id="mg-fichas" title="Suas fichas"></div>
       </header>
       <div class="mg-menu" id="mg-menu"></div>
-      <div class="mg-cota" id="mg-cota"></div>
-      <div class="mg-palco" id="mg-palco"></div>
+      <section class="mg-painel" id="mg-painel" hidden>
+        <div class="mg-cota" id="mg-cota"></div>
+        <div class="mg-palco" id="mg-palco"></div>
+      </section>
     </div>
   </section>
 
