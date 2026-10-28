@@ -9,7 +9,7 @@ import * as db from './db.js';
 import { ADMIN } from './config.js';
 import { svgAvatar, aparenciaAtual, aparenciaDoPerfil } from './avatar.js';
 import { roupasDoPerfil, perfilDe } from './pessoas.js';
-import { segueDeVolta, abrirGavetaDe } from './usuario.js';
+import { segueDeVolta, abrirPerfilDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara } from './router.js';
 import { desenhoDaCasa, ARVORE } from './pracacasas.js';
@@ -100,15 +100,20 @@ function trecho(k, gente) {
 
 let gente = [];
 
-// Os outros abrem a gaveta de perfil (a mesma do feed), sem repetir o avatar.
+// O cartão da pessoa: o avatar grande ao lado, quem é e o caminho para o perfil.
 function abrirCartao(g) {
-  if (!g.eu) return abrirGavetaDe(g.p.id, { foto: false });
   const fundo = $('#pc-fundo');
-  const botoes = [['Trocar de roupa', () => irPara('vestiario')], ['Meu perfil', () => irPara('perfil')]];
+  const botoes = g.eu
+    ? [['Trocar de roupa', () => irPara('vestiario')], ['Meu perfil', () => irPara('perfil')]]
+    : [['Ver perfil', () => abrirPerfilDe(g.p.id)]];
+  const lado = el('span', { class: 'pc-lado' });
+  lado.innerHTML = g.svg;
   $('#pc-cartao').replaceChildren(
     el('button', { class: 'pc-fechar', 'aria-label': 'Fechar', onclick: fecharCartao }, '✕'),
+    lado,
     el('div', { class: 'pc-info' },
-      el('h2', {}, 'Você'),
+      el('h2', {}, g.eu ? 'Você' : g.p.nome),
+      g.eu ? null : el('div', { class: 'pc-handle' }, g.p.handle || ''),
       g.p?.bio ? el('div', { class: 'pc-bio' }, g.p.bio) : null,
       g.balao ? el('div', { class: 'pc-novidade' }, `${g.balao} · hoje`) : null,
       el('div', { class: 'pc-botoes' }, ...botoes.map(([rotulo, fn], i) =>
