@@ -3,16 +3,23 @@
 .mg-head h1 { margin: 0; }
 /* O menu: três quadrados grandes, um por jogo. */
 .mg-menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+/* Mesmo jeito dos botões da barra de telas: pastel, cantos redondos, ícone e
+   rótulo escuros em caixa alta. */
 .mg-quadrado {
   aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 6px;
-  border: 0; border-radius: 18px; background: var(--cor); color: #fff;
-  font: inherit; cursor: pointer; box-shadow: 0 6px 14px rgba(0, 0, 0, .12);
-  transition: transform .15s;
+  border: 2px solid transparent; border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 55%), var(--cor);
+  color: rgba(0, 0, 0, .7); font: inherit; cursor: pointer;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .06), var(--sombra);
+  transition: transform .25s, border-color .25s;
 }
-.mg-quadrado:hover { transform: translateY(-2px); }
-.mg-quadrado svg { width: clamp(32px, 9vw, 56px); height: clamp(32px, 9vw, 56px); }
-.mg-quadrado strong { font-size: 15px; }
-.mg-quadrado small { font-size: 11px; opacity: .85; min-height: 1em; }
+.mg-quadrado:hover { transform: translateY(-2px) scale(1.03); border-color: var(--tinta); }
+.mg-quadrado svg { width: clamp(30px, 8vw, 48px); height: clamp(30px, 8vw, 48px); }
+.mg-quadrado strong {
+  font-size: 12px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: rgba(0, 0, 0, .6);
+}
+.mg-quadrado small { font-size: 11px; font-weight: 700; color: rgba(0, 0, 0, .45); min-height: 1em; }
 /* Na tela dos mini games a cabeça do avatar não aparece (pedido do João). */
 body[data-view="ajudas"] .perfil-atalho { display: none; }
 .mg-cota { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 14px; }
