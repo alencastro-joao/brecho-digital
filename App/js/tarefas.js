@@ -115,6 +115,7 @@ function renderCartaoBaus() {
   botao.classList.toggle('escolha', n > 0);
   botao.classList.toggle('ponto-novo', db.naoVistas(db.novidadesDosBaus()).length > 0);
   botao.onclick = () => irPara('baus');
+  $('#tarefas-jogos').onclick = () => irPara('ajudas');
   botao.replaceChildren(
     el('span', { class: 'tf-col-ico' }, ico('presente')),
     el('strong', {}, 'Baús'),

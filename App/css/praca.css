@@ -114,3 +114,8 @@
 .pc-chafariz::before { border: 2px solid var(--traco); }
 .pc-banco { box-shadow: 0 22px 0 -4px var(--traco); }
 .pc-calcada { border-top: var(--tr); }
+
+/* Traço meio falhado, de desenho à mão: o filtro #pc-falhado (index.html)
+   treme de leve os contornos. Fica fora dos textos para não borrar. */
+.pc-casa, .pc-toldo, .pc-jan, .pc-vitrine, .pc-porta, .pc-arvore,
+.pc-poste, .pc-chafariz, .pc-banco, .pc-calcada { filter: url(#pc-falhado); }

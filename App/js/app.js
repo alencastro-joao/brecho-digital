@@ -65,6 +65,8 @@ async function entrar() {
   if (!conta) ({ conta, nova } = await pedirConta({ aviso }));
 
   aplicarPapel(conta.papel);      // o modo administrador vem da conta, não da URL
+  // A Praça ainda está em teste: o botão do meio da barra só aparece ao admin.
+  document.querySelector('.sidebar-btn.praca').hidden = conta.papel !== 'admin';
   db.iniciarEstado(conta);        // daqui para baixo, db.state é o save dela
   tratarAssinaturaAntiga();
   document.getElementById('app').hidden = false;

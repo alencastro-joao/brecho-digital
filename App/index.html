@@ -821,6 +821,9 @@
       <div class="tf-portas">
         <button type="button" class="tf-colecoes tf-baus" id="tarefas-baus"></button>
         <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
+        <button type="button" class="tf-colecoes tf-jogos" id="tarefas-jogos" title="Mini games">
+          <span class="tf-col-ico"><i data-e="🎲"></i></span><strong>Jogos</strong><small></small><span class="tf-col-seta" aria-hidden="true">›</span>
+        </button>
       </div>
     </div>
   </section>
@@ -882,7 +885,7 @@
   </section>
 
   <!-- ====================== MINI GAMES ====================== -->
-  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre pelo botão do dado na barra. -->
+  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre pelo botão Jogos da tela de Tarefas. -->
   <section class="view view-ajudas" data-view="ajudas" hidden>
     <div class="mg-wrapper">
       <!-- Topo no jeito de Tarefas: voltar, o nome do jogo e as fichas. -->
@@ -996,7 +999,6 @@
                 </label>
               </div>
               <button type="button" id="pf-menu-admin" hidden><i data-i="trofeu"></i> Administração</button>
-              <button type="button" id="pf-menu-praca" hidden><i data-e="⛲"></i> Praça (teste)</button>
             </nav>
           </div>
         </div>
@@ -1028,6 +1030,11 @@
        devolve qualquer outra conta para a loja). -->
   <!-- Praça: a rua com os avatares dos amigos (js/praca.js). Só admin, por ora. -->
   <section class="view view-praca" data-view="praca" hidden>
+    <!-- Traço "falhadinho": tremida leve nos contornos da Praça (praca.css). -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <filter id="pc-falhado"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3"/>
+        <feDisplacementMap in="SourceGraphic" scale="2.5"/></filter>
+    </svg>
     <div class="pc-tela">
       <main class="pc-cena" id="pc-cena"><div class="pc-mundo" id="pc-mundo"></div></main>
       <div class="pc-fundo" id="pc-fundo" hidden><div class="pc-cartao" id="pc-cartao"></div></div>
@@ -1159,9 +1166,10 @@
       <!-- Stylist e Colagem num botão só: ele abre o menu de escolher (router.js). -->
       <button class="sidebar-btn criar"      data-goto="criar"   title="Criar: Stylist ou Colagem"
               aria-haspopup="true" aria-expanded="false" aria-controls="criar-menu"><i data-e="✨"></i><span>Criar</span></button>
+      <!-- Praça no meio da barra: ainda em teste, só o admin vê (app.js). -->
+      <button class="sidebar-btn praca"      data-goto="praca"   title="Praça" hidden><i data-e="⛲"></i><span>Praça</span></button>
       <button class="sidebar-btn social"     data-goto="social"  title="Feed"><i data-e="📸"></i><span>Feed</span></button>
       <button class="sidebar-btn tarefas"    data-goto="tarefas" title="Missões do dia"><i data-e="🏆"></i><span>Tarefas</span></button>
-      <button class="sidebar-btn jogos"      data-goto="ajudas"  title="Mini games"><i data-e="🎲"></i><span>Jogos</span></button>
       <button class="sidebar-btn perfil"     data-goto="perfil"  title="Perfil"><i data-e="👤"></i><span>Perfil</span></button>
     </div>
     <div class="sidebar-rodape">
