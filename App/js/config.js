@@ -1493,6 +1493,14 @@ export const CAMISETA_FLOR_DE_LIS = {
   troca: 'camiseta-longa',
   cores: { Azul: 'azul' },
 };
+// Linha de croppeds florais do Verde, cada um num tom de verde (musgo, oliva,
+// menta); a partir do cropped (`camiseta`) com a estampa centralizada.
+export const CROPPEDS_VERDES = [
+  { id: 'cropped-tres-flores', nome: 'Cropped três flores', slot: 'torso', versao: 'v3', caixa: [147.3, 241.1, 305.4, 229.2], cores: { Verde: 'musgo' } },
+  { id: 'cropped-moldura', nome: 'Cropped moldura florida', slot: 'torso', versao: 'v3', caixa: [147.3, 241.1, 305.4, 229.2], cores: { Verde: 'oliva' } },
+  { id: 'cropped-folha', nome: 'Cropped folha', slot: 'torso', versao: 'v3', caixa: [147.3, 241.1, 305.4, 229.2], cores: { Verde: 'menta' } },
+  { id: 'cropped-peonia', nome: 'Cropped peônia', slot: 'torso', versao: 'v3', caixa: [147.3, 241.1, 305.4, 229.2], cores: { Verde: 'musgo' } },
+];
 // Camisas e croppeds das seleções: a camiseta da artista (`base`, de
 // ROUPAS_BASE) repintada por tools/camisas_selecoes.py, em
 // assets/roupas/<id>-<versao>.webp. Entram no tema da seleção (ESTILOS), que
@@ -1503,7 +1511,7 @@ export const CAMISAS_SELECOES = [
   { id: 'cropped-jamaica-bandeira', nome: 'Cropped da Jamaica', base: 'camiseta', cor: 'Verde', versao: 'v1' },
 ];
 // Os desenhos extras, na ordem em que entram nas coleções de cor.
-export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_ESPIRAL, CAMISETA_FLOR_DE_LIS];
+export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_ESPIRAL, CAMISETA_FLOR_DE_LIS, ...CROPPEDS_VERDES];
 const COR_FEMININA = { Preto: 'preta', Branco: 'branca', Vermelho: 'vermelha', Amarelo: 'amarela', Roxo: 'roxa' };
 // Enquanto for true, só as roupas desenhadas (ROUPAS_BASE) aparecem no jogo;
 // as de código ficam ocultas, sem apagar nada dos saves. false desfaz.
