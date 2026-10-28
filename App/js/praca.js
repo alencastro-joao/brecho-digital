@@ -12,7 +12,7 @@ import { roupasDoPerfil, perfilDe } from './pessoas.js';
 import { segueDeVolta, abrirGavetaDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara } from './router.js';
-import { desenhoDaCasa } from './pracacasas.js';
+import { desenhoDaCasa, ARVORE } from './pracacasas.js';
 import { el, $, sementeDoTexto } from './util.js';
 
 const LARGURA = 3000;
@@ -35,9 +35,9 @@ const ENFEITES = `
   <div class="pc-nuvem" style="left:120px;top:40px;width:110px"></div>
   <div class="pc-nuvem" style="left:980px;top:70px;width:90px;animation-duration:80s"></div>
   <div class="pc-nuvem" style="left:1900px;top:36px;width:120px"></div>
-  <div class="pc-arvore" style="left:300px"></div><div class="pc-poste" style="left:700px"></div>
-  <div class="pc-arvore" style="left:1060px"></div><div class="pc-chafariz" style="left:1200px"></div>
-  <div class="pc-poste" style="left:1990px"></div><div class="pc-arvore" style="left:2340px"></div>
+  <div class="pc-arvore" style="left:300px">${ARVORE}</div><div class="pc-poste" style="left:700px"></div>
+  <div class="pc-arvore" style="left:1050px">${ARVORE}</div><div class="pc-chafariz" style="left:1460px"></div>
+  <div class="pc-poste" style="left:1990px"></div><div class="pc-arvore" style="left:2330px">${ARVORE}</div>
   <div class="pc-banco" style="left:620px"></div><div class="pc-banco" style="left:2760px"></div>`;
 
 // Lugares na calçada, fora das portas. y é a distância do chão em %:

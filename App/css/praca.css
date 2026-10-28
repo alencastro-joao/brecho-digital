@@ -16,9 +16,12 @@
 .pc-trecho { position: absolute; top: 0; bottom: 0; }
 .pc-calcada {
   position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+  /* calçada de lajotas e o meio-fio lá na frente, no traço marrom */
   background:
-    repeating-linear-gradient(90deg, transparent 0 118px, rgba(0, 0, 0, .05) 118px 120px),
-    linear-gradient(180deg, #efe7dc 0%, #e7ddd0 60%, #d9cec0 60%, #d9cec0 64%, #c7c0b6 64%);
+    linear-gradient(180deg, transparent 0 91%, #3b2b22 91% calc(91% + 2px), #d7ccc8 calc(91% + 2px) 96%, #3b2b22 96% calc(96% + 3px), #b9b4ae calc(96% + 3px)),
+    repeating-linear-gradient(90deg, transparent 0 118px, rgba(59, 43, 34, .3) 118px 120px) 0 0 / 100% 91% no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 58px, rgba(59, 43, 34, .18) 58px 60px) 0 0 / 100% 91% no-repeat,
+    #efe4d4;
 }
 
 /* nuvens com o mesmo traço da praça: o contorno vem do drop-shadow em volta */
@@ -31,12 +34,11 @@
 .pc-nuvem::after { width: 34px; height: 34px; top: -14px; left: 52px; }
 @keyframes pc-nuvem { to { transform: translateX(160px); } }
 
-.pc-arvore { position: absolute; bottom: 44%; width: 110px; height: 190px; pointer-events: none; }
-.pc-arvore::before { content: ""; position: absolute; bottom: 0; left: 48px; width: 14px; height: 80px; background: #a98b6e; border-radius: 6px; }
-.pc-arvore::after { content: ""; position: absolute; top: 0; left: 0; width: 110px; height: 120px; background: radial-gradient(circle at 35% 30%, #d5edd6, #93c79d 70%); border-radius: 50%; }
+.pc-arvore { position: absolute; bottom: 42%; width: 130px; height: 200px; pointer-events: none; }
+.pc-arvore svg { display: block; overflow: visible; }
 .pc-poste { position: absolute; bottom: 40%; width: 8px; height: 210px; background: #7f8c8d; border-radius: 4px; pointer-events: none; }
 .pc-poste::before { content: ""; position: absolute; top: -10px; left: -10px; width: 28px; height: 20px; background: #fffbe6; border: 3px solid #7f8c8d; border-radius: 10px 10px 4px 4px; }
-.pc-chafariz { position: absolute; bottom: 33%; width: 220px; height: 74px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #e0f7fa, #80d4e2); border: 8px solid #fff; box-shadow: var(--sombra); pointer-events: none; }
+.pc-chafariz { position: absolute; bottom: 33%; width: 220px; height: 74px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #e0f7fa, #80d4e2); border: 8px solid #fff; pointer-events: none; }
 .pc-chafariz::before { content: ""; position: absolute; left: 50%; top: -70px; width: 14px; height: 80px; margin-left: -7px; background: linear-gradient(#b2ebf2, #fff); border-radius: 8px; }
 .pc-banco { position: absolute; bottom: 31%; width: 140px; height: 16px; background: #c49a6c; border-radius: 6px; box-shadow: 0 22px 0 -4px #8d6e63; pointer-events: none; }
 
@@ -55,8 +57,9 @@
 }
 .pc-corpo { position: relative; display: block; height: var(--h); aspect-ratio: 340 / 1160; transition: transform .2s; }
 .pc-pessoa:hover .pc-corpo { transform: translateY(-6px); }
-.pc-corpo svg { position: relative; width: 100%; height: 100%; display: block; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .12)); }
-.pc-chao { position: absolute; bottom: -6px; left: 50%; width: 140%; transform: translateX(-50%); height: 12px; border-radius: 50%; background: rgba(0, 0, 0, .13); }
+.pc-corpo svg { position: relative; width: 100%; height: 100%; display: block; }
+/* sombra chapada, sem borrão, como nos desenhos: uma elipse fina no tom do traço */
+.pc-chao { position: absolute; bottom: -3px; left: 50%; width: 120%; transform: translateX(-50%); height: 9px; border-radius: 50%; background: rgba(59, 43, 34, .2); }
 .pc-nome {
   margin-top: 8px; background: #fff; border: 1px solid var(--linha); border-radius: 999px;
   padding: 3px 11px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--tinta);
@@ -93,8 +96,6 @@
 .pc-nome { box-shadow: none; border-width: 2px; }
 .pc-balao { border-width: 2px; }
 .pc-balao::after { content: ""; position: absolute; bottom: -9px; left: 50%; margin-left: -8px; border: 8px solid transparent; border-top-color: var(--traco); border-bottom: 0; }
-.pc-arvore::before { border: var(--tr); }
-.pc-arvore::after { border: var(--tr); box-shadow: inset -12px -10px 0 rgba(0, 0, 0, .08); }
 .pc-poste { border: 2px solid var(--traco); }
 .pc-poste::before { border-color: var(--traco); }
 .pc-chafariz::before { border: 2px solid var(--traco); }
