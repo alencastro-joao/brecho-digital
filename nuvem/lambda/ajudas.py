@@ -106,9 +106,9 @@ def colocar(item_id, dados):
     if dados.get('estado') != 'pronta' or not dados.get('previa'):
         raise ValueError('essa foto ainda não está pronta')
     ficha, palpite = dados.get('ficha') or {}, dados.get('sugestao') or {}
+    # Sem categoria também vai: o Avaliar e o Preencher não precisam dela (o
+    # Preencher pergunta o tipo); só o Ajustar espera a categoria aparecer.
     cat = ficha.get('cat') or palpite.get('cat') or ''
-    if not cat:
-        raise ValueError('escolha a categoria da peça na esteira antes')
     chave = 'assets/jogos/%s.webp' % item_id
     _s3.copy_object(Bucket=SITE, Key=chave, CopySource={'Bucket': DADOS, 'Key': dados['previa']},
                     ContentType='image/webp', MetadataDirective='REPLACE',
@@ -119,6 +119,22 @@ def colocar(item_id, dados):
                   'criadoEm': dados.get('criadoEm') or ''})
     _gravar_lista(itens)
     return {'items': itens}
+
+
+def atualizar(item_id, dados):
+    """A ficha mudou na esteira: a categoria e o nome dos jogos acompanham."""
+    if item_id not in _ids_nos_jogos():
+        return
+    ficha, palpite = dados.get('ficha') or {}, dados.get('sugestao') or {}
+    cat, nome = ficha.get('cat') or palpite.get('cat') or '', ficha.get('nome') or ''
+    itens = ler_lista()
+    mudou = False
+    for i in itens:
+        if i['id'] == item_id and (i.get('cat') != cat or i.get('nome') != nome):
+            i.update(cat=cat, nome=nome)
+            mudou = True
+    if mudou:
+        _gravar_lista(itens)
 
 
 def tirar(item_id):

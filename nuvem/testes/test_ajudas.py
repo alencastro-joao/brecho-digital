@@ -112,8 +112,13 @@ class Ajudas(unittest.TestCase):
         self.assertEqual(ajudas.ler_lista()[0]['cat'], 'shirts')
         self.assertIn('eabc12345', ajudas._ids_nos_jogos())
         self.assertTrue(ajudas.ajudar(ANA, 'avaliar', {'peca': 'eabc12345', 'gostei': True})['ok'])
+        ajudas.atualizar('eabc12345', {'ficha': {'cat': 'pants', 'nome': 'calça'}})
+        self.assertEqual(ajudas.ler_lista()[0]['cat'], 'pants')
         ajudas.tirar('eabc12345')
         self.assertEqual(ajudas.ler_lista(), [])
+        # Sem categoria também entra: os jogadores dizem o tipo.
+        ajudas.colocar('eabc12345', {'estado': 'pronta', 'previa': 'esteira/eabc12345.webp'})
+        self.assertEqual(ajudas.ler_lista()[0]['cat'], '')
 
     def test_faixas(self):
         self.assertIsNone(ajudas.raridade_sugerida(3, 3))
