@@ -367,8 +367,6 @@ export const aparenciaDoPerfil = (perfil) =>
 // feed, avisos, busca, amigos). O quadrado pega a cabeça com folga para o
 // cabelo dos lados e de cima, no molde, e acompanha a proporção.
 const CABECINHA = recorteNaRegiao('cabeca', [212, 21, 176, 176]);
-// O queixo, no palco: o de baixo da cabeça (y=182 no molde) e um respiro.
-const [, QUEIXO] = recorteNaRegiao('cabeca', [0, 186, 0, 0]);
 
 export function cabeca(aparencia, tamanho = 34, roupas = null) {
   const caixa = el('span', {
@@ -377,39 +375,10 @@ export function cabeca(aparencia, tamanho = 34, roupas = null) {
   });
   caixa.innerHTML = svgAvatar({ aparencia, roupas, recorte: CABECINHA, soCabeca: true });
   const svg = caixa.querySelector('svg');
+  // A escala vem do rosto, não do cabelo (pedido do João, 28/10/2026): o
+  // quadrado é sempre o mesmo, e o cabelo alto ou cheio transborda da caixa.
   Object.assign(svg.style, { width: '100%', height: '100%' });
-  centrarNaCaixa(svg, larguraDoCabelo(aparencia));
   return caixa;
-}
-
-// O cabelo cheio (afro, cacheado, ondulado) passa dos lados do quadrado e saía
-// da caixa (pedido do João, 21/10/2026): a largura do desenho do corte, nos
-// dois lados do meio da cara (x=300), entra na conta do quadrado.
-function larguraDoCabelo(aparencia) {
-  const corte = catalogoCabelos()[corteDoCatalogo(aparencia?.cabelo)];
-  const caixas = [corte?.atras?.caixa, corte?.frente?.caixa].filter(Array.isArray);
-  if (!caixas.length) return 0;
-  const meia = Math.max(...caixas.map(([x, , w]) => Math.max(300 - x, x + w - 300)));
-  return meia * 2 + 4;
-}
-
-// Cada corte tem uma altura (espetado e afro sobem bem acima do raspado, um
-// chapéu sobe mais ainda), e com o quadrado fixo a cabeça ficava ora alta, ora
-// baixa na caixa. Quando ela já está na tela dá para medir: o quadrado desliza
-// para o meio entre o topo do desenho e o queixo, no mesmo tamanho (a cabeça
-// não muda de escala de um avatar para outro); só cresce se não couber.
-function centrarNaCaixa(svg, largura = 0, tentativas = 20) {
-  if (!svg.isConnected) {
-    if (tentativas > 0) requestAnimationFrame(() => centrarNaCaixa(svg, largura, tentativas - 1));
-    return;
-  }
-  const desenho = svg.querySelector(':scope > g[mask]');
-  if (!desenho) return;
-  let topo;
-  try { topo = desenho.getBBox().y; } catch { return; }
-  const lado = Math.max(CABECINHA[3], QUEIXO - topo, largura);
-  const y = (topo + QUEIXO) / 2 - lado / 2;
-  svg.setAttribute('viewBox', `${300 - lado / 2} ${y} ${lado} ${lado}`);
 }
 
 // O boneco é um monte de peça sobreposta (braço, tronco, pescoço, cabeça). Dar
