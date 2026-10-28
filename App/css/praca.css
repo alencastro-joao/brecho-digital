@@ -36,6 +36,8 @@
 
 .pc-arvore { position: absolute; bottom: 42%; width: 130px; height: 200px; pointer-events: none; }
 .pc-arvore svg { display: block; overflow: visible; }
+.pc-enfeite { position: absolute; bottom: 38%; pointer-events: none; }
+.pc-enfeite svg { display: block; }
 .pc-poste { position: absolute; bottom: 40%; width: 8px; height: 210px; background: #7f8c8d; border-radius: 4px; pointer-events: none; }
 .pc-poste::before { content: ""; position: absolute; top: -10px; left: -10px; width: 28px; height: 20px; background: #fffbe6; border: 3px solid #7f8c8d; border-radius: 10px 10px 4px 4px; }
 .pc-chafariz { position: absolute; bottom: 33%; width: 220px; height: 74px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #e0f7fa, #80d4e2); border: 8px solid #fff; pointer-events: none; }
@@ -106,5 +108,5 @@
 
 /* Traço meio falhado, de desenho à mão: o filtro #pc-falhado (index.html)
    treme de leve os contornos. Fica fora dos textos para não borrar. */
-.pc-arvore,
+.pc-arvore, .pc-enfeite,
 .pc-poste, .pc-chafariz, .pc-banco, .pc-calcada { filter: url(#pc-falhado); }

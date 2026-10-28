@@ -167,6 +167,15 @@ export const ARVORE = `<svg class="pc-arvore-svg" viewBox="0 0 130 200" width="1
   <path d="M52 100 q12 8 26 0 M96 82 q6 6 4 14 M24 84 q4 8 12 10" fill="none" ${l}/>
 </svg>`;
 
+export const HIDRANTE = `<svg viewBox="0 0 80 120" width="48" height="72" aria-hidden="true">
+  <rect x="20" y="40" width="40" height="74" rx="6" fill="#ef5350" ${L}/><path d="M16 44 q24 -40 48 0 z" fill="#ef5350" ${L}/>
+  <rect x="8" y="60" width="12" height="16" fill="#ef5350" ${l}/><rect x="60" y="60" width="12" height="16" fill="#ef5350" ${l}/>
+  <rect x="14" y="110" width="52" height="8" fill="#c62828" ${l}/><rect x="34" y="14" width="12" height="10" fill="#ef5350" ${l}/></svg>`;
+
+export const LIXEIRA = `<svg viewBox="0 0 90 130" width="52" height="76" aria-hidden="true">
+  <path d="M14 30 h62 l-6 96 h-50 z" fill="#81c784" ${L}/><rect x="8" y="20" width="74" height="12" rx="4" fill="#66bb6a" ${L}/>
+  <path d="M32 46 v66 M45 46 v66 M58 46 v66" ${l}/><path d="M36 20 q9 -12 18 0" fill="none" ${l}/></svg>`;
+
 export function desenhoDaCasa(c) {
   return `<svg viewBox="-6 0 262 ${c.h}" width="100%" height="100%" aria-hidden="true" overflow="visible">
     ${DESENHOS[c.view](c.h, c)}

@@ -12,7 +12,7 @@ import { roupasDoPerfil, perfilDe } from './pessoas.js';
 import { segueDeVolta, abrirPerfilDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara } from './router.js';
-import { desenhoDaCasa, ARVORE } from './pracacasas.js';
+import { desenhoDaCasa, ARVORE, HIDRANTE, LIXEIRA } from './pracacasas.js';
 import { el, $, sementeDoTexto } from './util.js';
 
 const LARGURA = 3000;
@@ -38,6 +38,8 @@ const ENFEITES = `
   <div class="pc-arvore" style="left:300px">${ARVORE}</div><div class="pc-poste" style="left:700px"></div>
   <div class="pc-arvore" style="left:1050px">${ARVORE}</div><div class="pc-chafariz" style="left:1460px"></div>
   <div class="pc-poste" style="left:1990px"></div><div class="pc-arvore" style="left:2330px">${ARVORE}</div>
+  <div class="pc-enfeite" style="left:740px">${HIDRANTE}</div><div class="pc-enfeite" style="left:1120px">${LIXEIRA}</div>
+  <div class="pc-enfeite" style="left:2015px">${LIXEIRA}</div><div class="pc-enfeite" style="left:2395px">${HIDRANTE}</div>
   <div class="pc-banco" style="left:620px"></div><div class="pc-banco" style="left:2760px"></div>`;
 
 // Lugares na calçada, fora das portas. y é a distância do chão em %:
