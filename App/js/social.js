@@ -9,15 +9,16 @@
 //     peças e uma semente; o desenho é feito aqui (prepararGerado).
 //
 // A tela é organizada em abas (Seguindo · Tudo), sempre com looks
-// e colagens juntos. Os posts formam um mural: colunas em que cada card
-// tem a altura da própria imagem, e passar o mouse mostra as peças usadas.
+// e colagens juntos. Abre no desfile: um look por tela, com as peças dele
+// logo embaixo. O botão ao lado do ↻ troca para o mural: colunas em que cada
+// card tem a altura da própria imagem, e passar o mouse mostra as peças.
 // Um toque abre o look grande (abrirPostGrande); dois toques curtem.
 
 import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, RARIDADE } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
-import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
+import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast, hojeISO } from './util.js';
 import { confirmar } from './janela.js';
 import { ico, emo } from './icones.js';
 import { aparenciaDoPerfil, aparenciaAtual, cabeca } from './avatar.js';
@@ -257,14 +258,16 @@ function ouvirFoco() {
   window.addEventListener('focus', () => { if (viewAtual() === 'social') garantirFeed(); });
   // Janela mais larga ou mais estreita pode pedir outro número de colunas.
   window.addEventListener('resize', () => {
-    if (viewAtual() === 'social' && colunasDoMural($('#feed')) !== colunasDesenhadas) renderFeed();
+    if (viewAtual() === 'social' && modo === 'mural' && colunasDoMural($('#feed')) !== colunasDesenhadas) renderFeed();
   });
   $('#feed-atualizar')?.addEventListener('click', atualizarFeed);
+  $('#feed-modo')?.addEventListener('click', trocarModo);
 }
 
 function render() {
   ouvirFoco();
   renderAbas();
+  pintarBotaoModo();
   renderFeed();
   renderPessoas();
 }
@@ -342,6 +345,12 @@ function porNoMural({ cols }, posts) {
   }
 }
 
+// O desfile não tem colunas: os cards entram um embaixo do outro.
+function porNoFeed(m, posts) {
+  if (m.cols) porNoMural(m, posts);
+  else m.no.append(...posts.map(cardDoDesfile));
+}
+
 // O mural não monta os 120 cards de uma vez: cada card tem dois retratos (SVG
 // com máscara, medido na tela) e as peças por cima, e montar tudo a cada
 // curtida travava a rolagem. Entra um lote, e o próximo quando a rolagem
@@ -368,7 +377,7 @@ function mostrarMais() {
   // Acabou o que já veio: pede a página seguinte ao servidor. Quando ela
   // chega, o aviso de publicacoes.js repinta o mural com os novos no fim.
   if (m.feitos >= m.posts.length) { if (temMaisNoFeed()) carregarMaisFeed(); return; }
-  porNoMural(m, m.posts.slice(m.feitos, m.feitos + LOTE));
+  porNoFeed(m, m.posts.slice(m.feitos, m.feitos + LOTE));
   m.feitos = Math.min(m.posts.length, m.feitos + LOTE);
   mostrando = m.feitos;
   cascataDoFeed($('#feed'));
@@ -416,10 +425,14 @@ function renderFeed() {
     return;
   }
 
-  colunasDesenhadas = colunasDoMural(feed);
-  const mural = montarMural(colunasDesenhadas);
+  let mural;
+  if (modo === 'desfile') mural = { no: el('div', { class: 'desfile' }) };
+  else {
+    colunasDesenhadas = colunasDoMural(feed);
+    mural = montarMural(colunasDesenhadas);
+  }
   const feitos = Math.min(posts.length, Math.max(mostrando, LOTE));
-  porNoMural(mural, posts.slice(0, feitos));
+  porNoFeed(mural, posts.slice(0, feitos));
   const fim = feitos < posts.length || temMaisNoFeed()
     ? el('div', { class: 'mural-fim', 'aria-hidden': 'true' }) : null;
   muralAtual = { ...mural, posts, feitos, fim };
@@ -448,6 +461,109 @@ function mensagemVazia() {
   return [acervoParaLooks().length < 4
     ? 'Sem peças no acervo ainda — os perfis de exemplo só postam quando houver roupa para vestir.'
     : 'Feed vazio. Publique um look no Stylist para começar.'];
+}
+
+
+// ================================ Desfile =================================
+// O feed como uma passarela: um look por tela, que se rola para o próximo.
+// Em cima, quem postou; no meio, a imagem grande (um toque abre o look, dois
+// curtem); embaixo, as peças do look, marcando as que você já tem e as que
+// estão na vitrine da loja hoje. Tocar numa peça abre a ficha. No PC a
+// imagem fica à esquerda e o resto numa coluna ao lado (social.css).
+// O mural continua a um toque (#feed-modo); a escolha fica neste navegador.
+const CHAVE_MODO = 'brecho-feed-modo';
+const COMENTARIOS_NO_DESFILE = 2;
+let modo = lerModo();
+
+function lerModo() {
+  try { return localStorage.getItem(CHAVE_MODO) === 'mural' ? 'mural' : 'desfile'; }
+  catch { return 'desfile'; }
+}
+
+function trocarModo() {
+  modo = modo === 'desfile' ? 'mural' : 'desfile';
+  try { localStorage.setItem(CHAVE_MODO, modo); } catch {}
+  mostrando = LOTE;
+  pintarBotaoModo();
+  renderFeed();
+  $('#feed')?.scrollIntoView({ block: 'start' });
+}
+
+// O botão mostra para onde ele leva, não onde você está.
+function pintarBotaoModo() {
+  const botao = $('#feed-modo');
+  if (!botao) return;
+  const vaiPara = modo === 'desfile' ? 'mural' : 'desfile';
+  const rotulo = vaiPara === 'mural' ? 'Ver em mural' : 'Ver em desfile, um look por tela';
+  botao.title = rotulo;
+  botao.setAttribute('aria-label', rotulo);
+  botao.replaceChildren(ico(vaiPara === 'mural' ? 'grade' : 'quadro'));
+}
+
+// As peças que o dono da loja pôs na vitrine hoje. Só lê o que a vitrine já
+// sorteou e guardou no save: sortear aqui mexeria na loja de fora dela.
+function pecasNaVitrine() {
+  const dia = db.state.dia;
+  return new Set(dia?.data === hojeISO() ? dia.vitrine?.ids || [] : []);
+}
+
+function cardDoDesfile(post) {
+  const meu = sou(post.autor);
+  const segue = db.state.usuario.seguindo.includes(post.autor);
+  post.comentarios ??= [];
+  prepararGerado(post);
+  const autor = autorDe(post.autor);
+  const pecas = pecasDoPost(post);
+  const naVitrine = pecasNaVitrine();
+  const grade = gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i) });
+  grade.forEach((b, i) => {
+    const tenho = db.temPeca(pecas[i].id);
+    b.classList.toggle('tenho', tenho);
+    if (!tenho && naVitrine.has(pecas[i].id)) {
+      b.classList.add('na-vitrine');
+      b.title += ' · na vitrine hoje';
+    }
+  });
+  const tenho = pecas.filter(p => db.temPeca(p.id)).length;
+  const naLoja = grade.filter(b => b.classList.contains('na-vitrine')).length;
+  const n = post.comentarios.length;
+  const abrirConversa = (e) => { e?.stopPropagation(); focarEm = post.id; abrirPostGrande(post.id); };
+
+  return el('article', { class: 'post desfile-post' + (meu ? ' meu' : ''), dataset: { post: post.id } },
+    el('header', { class: 'desfile-topo' },
+      el('button', {
+        class: 'autor-link', title: `Ver o perfil de ${autor.nome}`, onclick: () => abrirAutor(post.autor),
+      }, retratoDe(post.autor, 36)),
+      el('div', { class: 'post-autor' },
+        el('strong', {}, el('button', { class: 'autor-link nome', onclick: () => abrirAutor(post.autor) }, autor.nome)),
+        el('small', {}, `${post.nome} · ${tempoCurto(post.criadoEm)}`)),
+      meu || segue ? null : el('button', { class: 'btn-seguir mini', onclick: () => alternarSeguir(post.autor) }, 'seguir'),
+      el('button', {
+        class: 'post-mais', title: 'Mais opções', onclick: (e) => menuDoPost(post, e.currentTarget),
+      }, ico('mais'))),
+    el('div', {
+      class: 'post-thumb desfile-foto abrivel' + (post.tipo === 'board' ? ' colagem' : ''),
+      onclick: (e) => tocarNaImagem(post, e),
+    },
+      post.thumb || post.gerado ? imagemDoPost(post) : el('div', { class: 'sem-thumb' }, 'sem prévia'),
+      el('div', { class: 'desfile-lado' },
+        botaoCurtir(post),
+        el('button', { class: 'desfile-comentar', title: 'Comentários', onclick: abrirConversa },
+          ico('balao'), n ? el('span', {}, String(n)) : null))),
+    pecas.length
+      ? el('section', { class: 'desfile-pecas' },
+        el('p', {}, el('b', {}, `${pecas.length} ${pecas.length === 1 ? 'peça' : 'peças'}`),
+          tenho ? el('span', { class: 'desfile-tenho' }, ` · você tem ${tenho}`) : null,
+          naLoja ? el('span', { class: 'desfile-loja' }, ` · ${naLoja} na vitrine hoje`) : null),
+        el('div', { class: 'pf-grade look-pecas' }, ...grade))
+      : null,
+    quemCurtiu(post),
+    el('div', { class: 'desfile-conversa' },
+      ...post.comentarios.slice(-COMENTARIOS_NO_DESFILE).map(c => el('p', {},
+        el('button', { class: 'autor-link nome forte', onclick: () => abrirAutor(c.autor) }, autorDe(c.autor).nome),
+        ' ', c.texto)),
+      el('button', { class: 'link-btn', onclick: abrirConversa },
+        n > COMENTARIOS_NO_DESFILE ? `ver os ${n} comentários` : n ? 'responder' : 'comentar')));
 }
 
 // ================================ O card ==================================
