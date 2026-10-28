@@ -349,6 +349,8 @@ function montarAjustes() {
   $('#pf-menu-assinaturas').addEventListener('click', () => { mostrarMenu(false); abrirAssinaturas(); });
   // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
   $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
+  // A Praça (js/praca.js) ainda está em teste: só o admin vê.
+  $('#pf-menu-praca').addEventListener('click', () => { mostrarMenu(false); irPara('praca'); });
   // Volume: muda ali mesmo, sem fechar o menu, tocando um "tic" para ouvir a
   // altura. O alto-falante silencia e, mudo, volta ao volume de antes.
   const barra = $('#pf-volume');
@@ -490,6 +492,7 @@ function renderConta() {
   const papel = conta.papel === 'admin' ? ' · administrador' : '';
   $('#conta-resumo').textContent = `${conta.email} · ${conta.handle}${papel}`;
   $('#pf-menu-admin').hidden = conta.papel !== 'admin';
+  $('#pf-menu-praca').hidden = conta.papel !== 'admin';
 }
 
 // ------------------------- Limpeza de contas (admin) -----------------------

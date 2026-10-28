@@ -27,6 +27,7 @@ import { montarColecoes, aoEntrarNasColecoes } from './colecoes.js';
 import { montarBaus, aoEntrarNosBaus } from './baus.js';
 import { montarAjudas, aoEntrarNasAjudas } from './ajudas.js';
 import { montarAdmin, aoEntrarNoAdmin } from './admin.js';
+import { montarPraca, aoEntrarNaPraca } from './praca.js';
 import { montarPerfil, aoEntrarNoPerfil } from './perfil.js';
 import { montarPaineis } from './paineis.js';
 import { montarPaleta } from './paleta.js';
@@ -160,6 +161,7 @@ async function iniciar() {
   montarBaus();
   montarAjudas();
   montarAdmin();
+  montarPraca();
   montarPerfil();
   montarEditar();
   montarConexoes();
@@ -180,6 +182,7 @@ async function iniciar() {
   onEnter('baus', aoEntrarNosBaus);
   onEnter('ajudas', aoEntrarNasAjudas);
   onEnter('admin', aoEntrarNoAdmin);
+  onEnter('praca', aoEntrarNaPraca);
   onEnter('perfil', aoEntrarNoPerfil);
   onEnter('usuario', aoEntrarNoUsuario);
   onEnter('personagem', aoEntrarNoPersonagem);
