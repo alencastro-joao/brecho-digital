@@ -38,23 +38,11 @@
 
 /* as casas: cada uma leva a uma tela */
 .pc-casa {
-  position: absolute; bottom: 46%; width: 250px; padding: 0; border: 1px solid rgba(0, 0, 0, .05);
-  border-radius: 16px 16px 0 0; box-shadow: var(--sombra); transition: transform .2s;
+  position: absolute; bottom: 46%; width: 250px; padding: 0; border: 0; background: none;
+  transition: transform .2s; filter: url(#pc-falhado) drop-shadow(0 6px 8px rgba(0, 0, 0, .1));
 }
 .pc-casa:hover { transform: translateY(-4px); }
-.pc-casa span { position: absolute; display: block; }
-.pc-placa {
-  top: 14px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 999px;
-  padding: 5px 14px; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-}
-.pc-jan { top: 56px; width: 44px; height: 44px; border-radius: 10px; background: #ffffffb0; border: 3px solid #fff; }
-.pc-toldo {
-  bottom: 108px; left: -10px; right: -10px; height: 34px; border-radius: 0 0 16px 16px;
-  background: repeating-linear-gradient(90deg, #fff 0 22px, var(--toldo) 22px 44px);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, .08);
-}
-.pc-vitrine { bottom: 0; left: 18px; width: 120px; height: 100px; background: linear-gradient(160deg, #ffffffcc, #ffffff66); border: 4px solid #fff; border-bottom: 0; border-radius: 10px 10px 0 0; }
-.pc-porta { bottom: 0; right: 22px; width: 62px; height: 96px; background: #ffffffaa; border: 4px solid #fff; border-bottom: 0; border-radius: 30px 30px 0 0; }
+.pc-casa svg { display: block; }
 
 /* gente */
 .pc-pessoa {
@@ -99,12 +87,8 @@
 /* Contorno no estilo das roupas desenhadas: traço marrom-escuro e cheio,
    cada peça com a sombra da própria cor. */
 .view-praca { --traco: #3b2b22; --tr: 3px solid var(--traco); }
-.pc-casa, .pc-jan, .pc-toldo, .pc-vitrine, .pc-porta, .pc-placa,
 .pc-nome, .pc-balao, .pc-chafariz, .pc-banco { border: var(--tr); }
-.pc-vitrine, .pc-porta { border-bottom: 0; }
-.pc-casa { box-shadow: inset -10px 0 0 rgba(0, 0, 0, .06); }
-.pc-toldo { box-shadow: none; }
-.pc-placa, .pc-nome { box-shadow: none; border-width: 2px; }
+.pc-nome { box-shadow: none; border-width: 2px; }
 .pc-balao { border-width: 2px; }
 .pc-balao::after { content: ""; position: absolute; bottom: -9px; left: 50%; margin-left: -8px; border: 8px solid transparent; border-top-color: var(--traco); border-bottom: 0; }
 .pc-arvore::before { border: var(--tr); }
@@ -117,5 +101,5 @@
 
 /* Traço meio falhado, de desenho à mão: o filtro #pc-falhado (index.html)
    treme de leve os contornos. Fica fora dos textos para não borrar. */
-.pc-casa, .pc-toldo, .pc-jan, .pc-vitrine, .pc-porta, .pc-arvore,
+.pc-arvore,
 .pc-poste, .pc-chafariz, .pc-banco, .pc-calcada { filter: url(#pc-falhado); }

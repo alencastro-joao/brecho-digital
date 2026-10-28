@@ -12,6 +12,7 @@ import { roupasDoPerfil, perfilDe } from './pessoas.js';
 import { segueDeVolta, abrirPerfilDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara } from './router.js';
+import { desenhoDaCasa } from './pracacasas.js';
 import { el, $, sementeDoTexto } from './util.js';
 
 const LARGURA = 3000;
@@ -19,14 +20,15 @@ const LARGURA = 3000;
 const RECORTE = [130, 0, 340, 1160];
 const UM_DIA = 24 * 3600e3;
 
+// As cores são as dos botões da barra (base.css); o desenho está em pracacasas.js.
 const CASAS = [
-  { nome: 'Brechó', ico: '🛍️', cor: 'var(--loja)', toldo: '#81c784', view: 'vitrine', x: 40, h: 260 },
-  { nome: 'Guarda-roupa', ico: '🚪', cor: 'var(--inventario)', toldo: '#4dd0e1', view: 'closet', x: 420, h: 240 },
-  { nome: 'Ateliê Stylist', ico: '✂️', cor: 'var(--stylist)', toldo: '#ffd54f', view: 'stylist', x: 800, h: 300 },
-  { nome: 'Colagem', ico: '🖼️', cor: 'var(--board)', toldo: '#f48fb1', view: 'board', x: 1180, h: 250 },
-  { nome: 'Café do Feed', ico: '☕', cor: 'var(--social)', toldo: '#9575cd', view: 'social', x: 1700, h: 270 },
-  { nome: 'Tarefas', ico: '📋', cor: 'var(--tarefas)', toldo: '#ffb74d', view: 'tarefas', x: 2080, h: 240 },
-  { nome: 'Meu perfil', ico: '⭐', cor: 'var(--perfil)', toldo: '#ff8a65', view: 'perfil', x: 2460, h: 280 },
+  { cor: '#c8e6c9', toldo: '#81c784', view: 'vitrine', x: 40, h: 260 },
+  { cor: '#b2ebf2', toldo: '#4dd0e1', view: 'closet', x: 420, h: 240 },
+  { cor: '#fff9c4', toldo: '#ffd54f', view: 'stylist', x: 800, h: 300 },
+  { cor: '#f8bbd0', toldo: '#f48fb1', view: 'board', x: 1180, h: 250 },
+  { cor: '#d1c4e9', toldo: '#9575cd', view: 'social', x: 1700, h: 270 },
+  { cor: '#ffe0b2', toldo: '#ffb74d', view: 'tarefas', x: 2080, h: 240 },
+  { cor: '#ffccbc', toldo: '#ff8a65', view: 'perfil', x: 2460, h: 280 },
 ];
 
 const ENFEITES = `
@@ -85,10 +87,8 @@ function pessoas() {
 
 function trecho(k, gente) {
   const casas = CASAS.map((c, i) => `
-    <button class="pc-casa" data-casa="${i}" style="left:${c.x}px;height:${c.h}px;background:${c.cor};--toldo:${c.toldo}">
-      <span class="pc-placa">${c.ico} ${c.nome}</span>
-      <span class="pc-jan" style="left:40px"></span><span class="pc-jan" style="right:40px"></span>
-      <span class="pc-toldo"></span><span class="pc-vitrine"></span><span class="pc-porta"></span>
+    <button class="pc-casa" data-casa="${i}" style="left:${c.x}px;height:${c.h}px">
+      ${desenhoDaCasa(c)}
     </button>`).join('');
   const pessoasHtml = gente.map((g, i) => `
     <button class="pc-pessoa${g.eu ? ' eu' : ''}" data-pessoa="${i}"
