@@ -147,6 +147,9 @@ function escolherPeca() {
 }
 
 function proxima() {
+  // Peça nova começa do topo (o Preencher é comprido e a pessoa desceu para enviar).
+  for (let n = $('#mg-palco'); n; n = n.parentElement) if (n.scrollTop) n.scrollTop = 0;
+  window.scrollTo(0, 0);
   // O Avaliar leva a barra para baixo do cartão; os outros a querem no topo.
   $('#mg-palco').before($('#mg-cota'));
   renderCota();
