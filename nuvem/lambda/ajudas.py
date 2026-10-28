@@ -57,7 +57,7 @@ BRASILIA = timezone(timedelta(hours=-3))
 # janela: 'dia' ou 'hora' (Brasília).
 JOGOS = {
     'avaliar':   {'porFicha': 8, 'limite': 56, 'janela': 'dia'},
-    'ajustar':   {'porFicha': 2, 'limite': 8, 'janela': 'dia'},
+    'ajustar':   {'porFicha': 4, 'limite': 16, 'janela': 'dia'},
     'preencher': {'porFicha': 4, 'limite': 20, 'janela': 'dia'},
 }
 # Votos que a peça precisa antes de ganhar raridade sugerida.
