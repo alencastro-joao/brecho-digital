@@ -38,6 +38,27 @@
 .pc-arvore svg { display: block; overflow: visible; }
 .pc-enfeite { position: absolute; bottom: 38%; pointer-events: none; }
 .pc-enfeite svg { display: block; }
+
+/* Enfeites que se mexem (pracacasas.js). */
+.pc-ceu { position: absolute; pointer-events: none; }
+.pc-ceu svg, .pc-enfeite svg { overflow: visible; filter: url(#pc-falhado); }
+.pc-ave { animation: pc-voa 9s linear infinite; }
+.pc-asa { transform-box: fill-box; transform-origin: 50% 100%; animation: pc-asa .4s ease-in-out infinite; }
+.pc-zigue { animation: pc-zigue 6s ease-in-out infinite; }
+.pc-bate { transform-box: fill-box; transform-origin: 50% 50%; animation: pc-bate .25s ease-in-out infinite; }
+.pc-sobe { transform-box: fill-box; transform-origin: 50% 100%; animation: pc-sobe 5s ease-in-out infinite; }
+.pc-pipa { transform-box: fill-box; transform-origin: 50% 100%; animation: pc-pipa 2.4s ease-in-out infinite; }
+.pc-respira { transform-box: fill-box; transform-origin: 50% 100%; animation: pc-respira 2.6s ease-in-out infinite; }
+.pc-zz { animation: pc-zz 2.6s ease-out infinite; }
+@keyframes pc-voa { 0% { transform: translate(-40px, 10px); } 50% { transform: translate(400px, -14px); } 100% { transform: translate(860px, 10px); } }
+@keyframes pc-asa { 50% { transform: scaleY(-.6); } }
+@keyframes pc-zigue { 0%, 100% { transform: translate(20px, 140px); } 25% { transform: translate(90px, 60px); } 50% { transform: translate(190px, 110px); } 75% { transform: translate(130px, 30px); } }
+@keyframes pc-bate { 50% { transform: scaleX(.3); } }
+@keyframes pc-sobe { 0%, 100% { transform: translateY(20px) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+@keyframes pc-pipa { 50% { transform: translate(14px, -10px) rotate(8deg); } }
+@keyframes pc-respira { 50% { transform: scaleY(1.07); } }
+@keyframes pc-zz { 0% { transform: translate(0, 0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(20px, -40px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pc-ceu *, .pc-enfeite * { animation: none !important; } }
 .pc-poste { position: absolute; bottom: 40%; width: 8px; height: 210px; background: #7f8c8d; border-radius: 4px; pointer-events: none; }
 .pc-poste::before { content: ""; position: absolute; top: -10px; left: -10px; width: 28px; height: 20px; background: #fffbe6; border: 3px solid #7f8c8d; border-radius: 10px 10px 4px 4px; }
 .pc-chafariz { position: absolute; bottom: 33%; width: 220px; height: 74px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #e0f7fa, #80d4e2); border: 8px solid #fff; pointer-events: none; }
@@ -108,5 +129,5 @@
 
 /* Traço meio falhado, de desenho à mão: o filtro #pc-falhado (index.html)
    treme de leve os contornos. Fica fora dos textos para não borrar. */
-.pc-arvore, .pc-enfeite,
+.pc-arvore,
 .pc-poste, .pc-chafariz, .pc-banco, .pc-calcada { filter: url(#pc-falhado); }

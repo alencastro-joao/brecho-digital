@@ -176,6 +176,33 @@ export const LIXEIRA = `<svg viewBox="0 0 90 130" width="52" height="76" aria-hi
   <path d="M14 30 h62 l-6 96 h-50 z" fill="#81c784" ${L}/><rect x="8" y="20" width="74" height="12" rx="4" fill="#66bb6a" ${L}/>
   <path d="M32 46 v66 M45 46 v66 M58 46 v66" ${l}/><path d="M36 20 q9 -12 18 0" fill="none" ${l}/></svg>`;
 
+// ------------------------- Enfeites que se mexem ---------------------------
+// A animação está em praca.css (pc-voa, pc-asa, pc-zigue, pc-bate...).
+const ave = (atraso) => `<g class="pc-ave" style="animation-delay:${atraso}s">
+  <path class="pc-asa" d="M0 0 q16 -14 32 0" fill="#fff" ${l}/><path class="pc-asa pc-asa2" d="M32 0 q16 -14 32 0" fill="#fff" ${l}/></g>`;
+export const PASSARINHOS = `<svg viewBox="-40 -30 900 60" width="900" height="60" aria-hidden="true" overflow="visible">
+  ${ave(0)}${ave(-1.6)}${ave(-3.1)}</svg>`;
+
+export const BORBOLETA = `<svg viewBox="0 0 220 200" width="220" height="200" aria-hidden="true" overflow="visible">
+  <g class="pc-zigue"><g class="pc-bate">
+    <ellipse cx="-9" cy="-4" rx="10" ry="8" fill="#f48fb1" ${l}/><ellipse cx="9" cy="-4" rx="10" ry="8" fill="#f48fb1" ${l}/>
+    <ellipse cx="-7" cy="8" rx="7" ry="6" fill="#ce93d8" ${l}/><ellipse cx="7" cy="8" rx="7" ry="6" fill="#ce93d8" ${l}/></g>
+    <path d="M0 -8 v20" ${L}/></g></svg>`;
+
+export const BALAO = `<svg viewBox="0 0 80 170" width="64" height="136" aria-hidden="true" overflow="visible">
+  <g class="pc-sobe"><ellipse cx="40" cy="40" rx="28" ry="34" fill="#ef5350" ${L}/><path d="M34 74 h12 l-6 6 z" fill="#ef5350" ${l}/>
+  <path d="M40 80 q-10 30 4 50 q10 20 -4 30" fill="none" ${l}/><path d="M26 26 q6 -10 14 -10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></g></svg>`;
+
+export const PIPA = `<svg viewBox="0 0 160 190" width="120" height="142" aria-hidden="true" overflow="visible">
+  <g class="pc-pipa"><path d="M80 10 l30 34 l-30 50 l-30 -50 z" fill="#fff176" ${L}/><path d="M80 10 v84 M50 44 h60" ${l}/>
+  <path d="M80 94 q-14 16 0 30 q14 14 0 30" fill="none" ${l}/>
+  ${[110, 130, 150].map(y => `<path d="M74 ${y} l12 -4 l-2 8 z" fill="#f48fb1" ${l}/>`).join('')}</g></svg>`;
+
+export const GATO = `<svg viewBox="0 0 140 100" width="98" height="70" aria-hidden="true" overflow="visible">
+  <g class="pc-respira"><path d="M14 80 q0 -44 50 -44 q46 0 46 44 z" fill="#ffccbc" ${L}/><path d="M24 80 q-14 -4 -6 -16" fill="none" ${L}/>
+  <path d="M80 44 l4 -14 l10 12 M100 50 l10 -10 l2 16" fill="#ffccbc" ${l}/><path d="M84 58 q4 3 8 0 M98 60 q4 3 8 0" fill="none" ${l}/></g>
+  <text class="pc-zz" x="116" y="36" font-family="'BD Caveat', cursive" font-size="22" fill="${T}">z</text></svg>`;
+
 export function desenhoDaCasa(c) {
   return `<svg viewBox="-6 0 262 ${c.h}" width="100%" height="100%" aria-hidden="true" overflow="visible">
     ${DESENHOS[c.view](c.h, c)}

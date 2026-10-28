@@ -12,7 +12,7 @@ import { roupasDoPerfil, perfilDe } from './pessoas.js';
 import { segueDeVolta, abrirPerfilDe } from './usuario.js';
 import { postsDoAutor } from './social.js';
 import { irPara } from './router.js';
-import { desenhoDaCasa, ARVORE, HIDRANTE, LIXEIRA } from './pracacasas.js';
+import { desenhoDaCasa, ARVORE, HIDRANTE, LIXEIRA, PASSARINHOS, BORBOLETA, BALAO, PIPA, GATO } from './pracacasas.js';
 import { el, $, sementeDoTexto } from './util.js';
 
 const LARGURA = 3000;
@@ -40,6 +40,10 @@ const ENFEITES = `
   <div class="pc-poste" style="left:1990px"></div><div class="pc-arvore" style="left:2330px">${ARVORE}</div>
   <div class="pc-enfeite" style="left:740px">${HIDRANTE}</div><div class="pc-enfeite" style="left:1120px">${LIXEIRA}</div>
   <div class="pc-enfeite" style="left:2015px">${LIXEIRA}</div><div class="pc-enfeite" style="left:2395px">${HIDRANTE}</div>
+  <div class="pc-ceu" style="left:300px;top:110px">${PASSARINHOS}</div><div class="pc-ceu" style="left:1700px;top:60px">${PASSARINHOS}</div>
+  <div class="pc-ceu" style="left:1210px;top:20px">${BALAO}</div><div class="pc-ceu" style="left:2700px;top:16px">${PIPA}</div>
+  <div class="pc-ceu" style="left:960px;bottom:30%">${BORBOLETA}</div><div class="pc-ceu" style="left:2290px;bottom:32%">${BORBOLETA}</div>
+  <div class="pc-enfeite" style="left:2560px;bottom:28%">${GATO}</div>
   <div class="pc-banco" style="left:620px"></div><div class="pc-banco" style="left:2760px"></div>`;
 
 // Lugares na calçada, fora das portas. y é a distância do chão em %:
