@@ -1184,8 +1184,12 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   const hex = hexDaCor(nomeDaCor);
   const slug = idDaCor(nomeDaCor).slice(4);
   // O admin pode tirar os óculos de alguma das cores que têm desenho.
-  const oculos = OCULOS_DESENHADOS.filter(o => o.cores[nomeDaCor]
+  const desenhos = OCULOS_DESENHADOS.filter(o => o.cores[nomeDaCor]
     && (!Array.isArray(AJUSTES_ROUPAS[o.id]?.cores) || AJUSTES_ROUPAS[o.id].cores.includes(nomeDaCor)));
+  // Camisetas estampadas (`troca`) entram no lugar da roupa base daquela cor,
+  // com o mesmo id, para quem já tinha a lisa ficar com a estampada.
+  const oculos = desenhos.filter(o => !o.troca);
+  const trocaDe = (base) => desenhos.find(o => o.troca === base);
   const doAdmin = ROUPAS_AVATAR.filter(a => a.colecoes.includes(idDaCor(nomeDaCor)));
   const desenhadas = ROUPAS_BASE.length + oculos.length + doAdmin.length;
   const total = desenhadas + itens.length;
@@ -1193,10 +1197,11 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
   // mais os óculos desenhados nas cores que têm; os de código seguem depois.
   ROUPAS_BASE.forEach((b, ordem) => {
     const id = `${b.id}-base-${slug}`;
+    const t = trocaDe(b.id);
     ROUPINHAS.push({
-      id, nome: nomeDaRoupaBase(b, nomeDaCor), slot: b.slot, raridade: 'common',
+      id, nome: t ? `${t.nome} ${t.cores[nomeDaCor]}` : nomeDaRoupaBase(b, nomeDaCor), slot: b.slot, raridade: 'common',
       cor: hex, corNome: nomeDaCor,
-      imagem: { href: `assets/roupas/${b.id}-${slug}-${ROUPAS_BASE_VERSAO}.webp`, caixa: caixaAjustada(b.id, b.caixa) },
+      imagem: { href: t ? `assets/roupas/${t.id}-${slug}-${t.versao}.webp` : `assets/roupas/${b.id}-${slug}-${ROUPAS_BASE_VERSAO}.webp`, caixa: caixaAjustada(b.id, b.caixa) },
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total, item: id },
     });
   });
