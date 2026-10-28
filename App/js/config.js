@@ -1629,7 +1629,7 @@ export const INTRO = [
     dica: 'Aqui ficam os looks de todo mundo. Toque em Seguir em quem você curtir. Para achar amigos, busque pelo nome ou @.',
     premio: { fichas: 2 } },
   { ir: 'ajudas', lugar: 'baixo', nome: 'Mini games',
-    dica: 'No 🎲 Jogos da barra você ajuda a loja e ganha fichas. Avaliar: arraste a peça para gostei ou não gostei. ' +
+    dica: 'Em 🎲 Jogos, na tela de Tarefas, você ajuda a loja e ganha fichas. Avaliar: arraste a peça para gostei ou não gostei. ' +
       'Ajustar: encaixe a peça no corpo. Preencher: diga a cor e a marca. A barra de cada jogo enche a cada ajuda; ' +
       'cheia, vira 1 ficha. Tem um limite por dia.' },
   { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
