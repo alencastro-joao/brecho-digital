@@ -77,8 +77,10 @@
 .pc-fundo { position: absolute; inset: 0; background: rgba(20, 40, 45, .35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
 .pc-cartao {
   position: relative; background: #fff; border-radius: 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
-  width: min(380px, 100%); overflow: hidden;
+  width: min(420px, 100%); overflow: hidden; display: grid; grid-template-columns: 160px 1fr;
 }
+.pc-lado { display: flex; align-items: flex-end; justify-content: center; padding: 16px 8px 10px; background: linear-gradient(180deg, var(--social), #fff); }
+.pc-lado svg { height: 300px; width: auto; }
 .pc-info { padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 8px; }
 .pc-info h2 { font-size: 18px; line-height: 1.1; }
 .pc-handle { font-size: 12px; color: var(--tinta-suave); }
