@@ -31,6 +31,7 @@ const JOGOS = [
 
 let estado = null;        // resposta de GET /api/ajudas (a cota de cada jogo)
 let itens = [];           // as fotos da esteira que o admin mandou para os jogos
+let faltam = {};          // id → entradas que ainda não fecharam (ajudas.py, pendencias)
 let jogo = null;          // null = o menu dos três botões
 let peca = null;          // peça na tela
 let enviando = false;
@@ -63,6 +64,7 @@ export async function aoEntrarNasAjudas() {
     const r = await chamar('/api/ajudas');
     estado = r.jogos;
     itens = r.itens || [];
+    faltam = r.faltam || {};
   } catch {
     estado = null;
     $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
@@ -139,11 +141,17 @@ function renderCota() {
     el('small', {}, esgotou ? `${s.feitas}/${s.limite}` : `${ganhou ? s.porFicha : passo}/${s.porFicha}`)));
 }
 
-// A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou.
+// O que cada jogo responde. Peça sem nada em `faltam` ainda não recebeu ajuda.
+const ENTRADAS_DO_JOGO = { avaliar: ['raridade'], ajustar: ['ajuste'], preencher: ['cat', 'cor', 'marca'] };
+const falta = (it, entrada) => (faltam[it.id] ?? [entrada]).includes(entrada);
+const faltaNoJogo = (it) => ENTRADAS_DO_JOGO[jogo].some(e => falta(it, e));
+
+// A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou
+// e as que já fecharam o que este jogo pergunta.
 function escolherPeca() {
   const feitas = new Set(estado[jogo].pecas);
   // Só o Ajustar precisa da categoria (é dela o lugar padrão no corpo).
-  const cands = itens.filter(i => !feitas.has(i.id) && (jogo !== 'ajustar' || CATEGORIAS[i.cat]));
+  const cands = itens.filter(i => !feitas.has(i.id) && faltaNoJogo(i) && (jogo !== 'ajustar' || CATEGORIAS[i.cat]));
   cands.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
   // Entre as 10 mais novas, uma qualquer: duas pessoas ao mesmo tempo não
   // ficam votando sempre na mesma.
@@ -377,17 +385,18 @@ function jogoPreencher() {
   const atalhos = el('div', { class: 'mg-marcas' }, ...db.marcasOrdenadas().slice(0, 8).map(m =>
     el('button', { type: 'button', class: 'mg-marca-chip', onclick: () => { campoMarca.value = m.nome; } }, m.nome)));
 
-  $('#mg-palco').replaceChildren(
+  // Só pergunta o que ainda não fechou: o tipo, a cor ou a marca já decididos somem.
+  $('#mg-palco').replaceChildren(...[
     el('div', { class: 'mg-mesa' }, el('div', { class: 'mg-carta mg-carta-baixa' }, imagem(peca, 'mg-carta-img'))),
-    el('div', { class: 'mg-bloco' },
+    falta(peca, 'cat') ? el('div', { class: 'mg-bloco' },
       el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Tipo de peça'), el('small', {}, 'o que é?')),
-      tipos),
-    el('div', { class: 'mg-bloco' },
+      tipos) : null,
+    falta(peca, 'cor') ? el('div', { class: 'mg-bloco' },
       el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Cor principal'), nomeCor),
-      cores),
-    el('div', { class: 'mg-bloco' },
+      cores) : null,
+    falta(peca, 'marca') ? el('div', { class: 'mg-bloco' },
       el('div', { class: 'mg-bloco-topo' }, el('strong', {}, 'Marca'), el('small', {}, 'se souber')),
-      campoMarca, atalhos),
+      campoMarca, atalhos) : null,
     el('div', { class: 'mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto', onclick: () => {
         tocar('janela'); estado[jogo].pecas.push(peca.id); proxima();
@@ -395,5 +404,5 @@ function jogoPreencher() {
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         if (!cat && !cor && !campoMarca.value.trim()) return toast('Escolha o tipo, a cor ou a marca.', 'aviso');
         enviar({ cat, cor, marca: campoMarca.value.trim() });
-      } }, ico('ok'), 'Enviar')));
+      } }, ico('ok'), 'Enviar'))].filter(Boolean));
 }
