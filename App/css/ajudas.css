@@ -276,3 +276,11 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-botoes-voto .mg-voto svg { width: 28px; height: 28px; }
 .mg-voto-meh { color: #e0a81c; }
 .mg-voto-meh svg path { stroke: currentColor; stroke-width: 10; }
+
+/* Admin › Mini games › Como vão */
+.adm-num-bloco { margin: 0 0 16px; }
+.adm-num-bloco h3 { font-size: 15px; margin: 0 0 6px; }
+.adm-num-bloco ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.adm-num-tabela { width: 100%; border-collapse: collapse; font-size: 13px; }
+.adm-num-tabela th, .adm-num-tabela td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--bb); white-space: nowrap; }
+.adm-num-bloco:first-child { overflow-x: auto; }

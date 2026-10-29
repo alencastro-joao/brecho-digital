@@ -98,6 +98,9 @@ class Ajudas(unittest.TestCase):
         self.assertEqual(p['cor'], {'valor': 'preto', 'votos': 2, 'total': 2})
         self.assertEqual(p['marca']['valor'], 'nike')
         self.assertEqual(p['cat']['valor'], 'pants')
+        dia = next(iter(ajudas.resumo()['cotas']['avaliar'].values()))
+        self.assertEqual(dia['pessoas'], ajudas.VOTOS_MIN)
+        self.assertEqual(dia['ajudas'], ajudas.VOTOS_MIN)
 
     def test_colocar_e_tirar_da_esteira(self):
         _s3 = boto3.client('s3')

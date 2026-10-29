@@ -371,18 +371,38 @@ def resumo_da_peca(item):
     }
 
 
+def _somar_cota(cotas, item):
+    """AJUDA#COTA#<uid>#<jogo>#<janela>: a contagem de uma pessoa num dia."""
+    _, jogo, janela = item['pk']['S'].rsplit('#', 2)
+    if jogo not in JOGOS:
+        return
+    n = int(item.get('n', {}).get('N', 0))
+    regra = JOGOS[jogo]
+    dia = cotas.setdefault(jogo, {}).setdefault(janela, {'pessoas': 0, 'ajudas': 0,
+                                                         'fichas': 0, 'noLimite': 0})
+    dia['pessoas'] += 1
+    dia['ajudas'] += n
+    dia['fichas'] += n // regra['porFicha']
+    dia['noLimite'] += 1 if n >= regra['limite'] else 0
+
+
 def resumo():
-    """Tudo o que os jogadores disseram, peça a peça (só o admin vê)."""
-    pecas, inicio = [], None
+    """Tudo o que os jogadores disseram, peça a peça (só o admin vê), e as
+    cotas dos últimos dias (o ttl apaga as cotas dois dias depois)."""
+    pecas, cotas, inicio = [], {}, None
     while True:
-        args = {'TableName': TABELA, 'FilterExpression': 'begins_with(pk, :p)',
-                'ExpressionAttributeValues': {':p': {'S': 'AJUDA#PECA#'}}}
+        args = {'TableName': TABELA, 'FilterExpression': 'begins_with(pk, :p) OR begins_with(pk, :c)',
+                'ExpressionAttributeValues': {':p': {'S': 'AJUDA#PECA#'}, ':c': {'S': 'AJUDA#COTA#'}}}
         if inicio:
             args['ExclusiveStartKey'] = inicio
         r = _dynamo.scan(**args)
-        pecas += [resumo_da_peca(i) for i in r.get('Items', [])]
+        for i in r.get('Items', []):
+            if i['pk']['S'].startswith('AJUDA#PECA#'):
+                pecas.append(resumo_da_peca(i))
+            else:
+                _somar_cota(cotas, i)
         inicio = r.get('LastEvaluatedKey')
         if not inicio:
             break
-    return {'pecas': pecas, 'nosJogos': sorted(_ids_nos_jogos()), 'regras': {'jogos': JOGOS, 'votosMin': VOTOS_MIN,
-                                       'faixas': FAIXAS}}
+    return {'pecas': pecas, 'cotas': cotas, 'nosJogos': sorted(_ids_nos_jogos()),
+            'regras': {'jogos': JOGOS, 'votosMin': VOTOS_MIN, 'faixas': FAIXAS}}
