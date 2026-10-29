@@ -60,6 +60,19 @@ class Ajudas(unittest.TestCase):
         self.assertTrue(r['semPremio'])
         self.assertEqual(r['feitas'], regra['limite'])
 
+    def test_teto_de_fichas_somando_os_jogos(self):
+        # 25 avaliações = 5 fichas; o Ajustar depois disso não paga mais.
+        for i in range(25):
+            ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca%04d' % i, 'gostei': True})
+        fichas = 0
+        for i in range(4):
+            r = ajudas.ajudar(ANA, 'ajustar', {'peca': 'epeca%04d' % i,
+                                               'ancora': {'x': 300, 'y': 500, 'w': 200}})
+            fichas += r['fichas']
+        self.assertEqual(fichas, 0)
+        self.assertTrue(r['semPremio'])
+        self.assertEqual(ajudas.estado(ANA)['jogos']['ajustar']['fichasHoje'], ajudas.TETO_FICHAS_DIA)
+
     def test_mesma_peca_nao_conta_duas_vezes(self):
         self.assertTrue(ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0001', 'gostei': True})['ok'])
         r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0001', 'gostei': False})

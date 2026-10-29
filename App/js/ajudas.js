@@ -101,7 +101,7 @@ function renderMenu() {
 // A barra enche a cada ajuda; cheia, paga a ficha e volta a zero. No limite
 // da janela ela fica cheia e cinza, com o aviso.
 function barra(s, id, curta = false) {
-  const esgotou = s.feitas >= s.limite;
+  const esgotou = s.feitas >= s.limite || s.fichasHoje >= s.tetoDia;
   const ganhou = premiado === id;
   const cheia = esgotou || ganhou;
   const passo = s.feitas % s.porFicha;
@@ -122,7 +122,7 @@ const renderFichas = () => $('#mg-fichas').replaceChildren(
 function renderCota() {
   const s = estado?.[jogo];
   if (!s) return $('#mg-cota').replaceChildren();
-  const esgotou = s.feitas >= s.limite;
+  const esgotou = s.feitas >= s.limite || s.fichasHoje >= s.tetoDia;
   const ganhou = premiado === jogo;
   const passo = s.feitas % s.porFicha;
   const pct = esgotou || ganhou ? 100 : passo / s.porFicha * 100;
@@ -195,6 +195,8 @@ async function gravar(jogo, peca, corpo) {
     const r = await chamar('/api/ajudas/' + jogo, { peca: peca.id, ...corpo });
     const s = estado[jogo];
     Object.assign(s, { feitas: r.feitas, limite: r.limite, porFicha: r.porFicha, vira: r.vira });
+    // O teto de fichas do dia é um só para os três jogos.
+    if (r.tetoDia) for (const c of Object.values(estado)) Object.assign(c, { fichasHoje: r.fichasHoje, tetoDia: r.tetoDia });
     if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
     if (r.ok && !r.fichas && !r.semPremio) tocar('xp');     // a barra subiu
     if (r.fichas) {
