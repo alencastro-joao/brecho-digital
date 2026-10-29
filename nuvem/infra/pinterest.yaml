@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Brecho Digital - leitura das pastas do Pinterest da esteira com o site
+  fechado. O EventBridge Scheduler chama a Lambda brecho-api de tempos em
+  tempos (esteira.rodar_agendado); pasta grande faz a API chamar a si mesma
+  para a rodada seguinte. Publicado por nuvem/infra/publicar-pinterest.sh.
+
+Parameters:
+  Frequencia:
+    Type: String
+    Default: rate(15 minutes)
+    Description: >
+      De quanto em quanto tempo le. Mais curto que isso o Pinterest passa a
+      recusar a visita com mais frequencia.
+  Ligado:
+    Type: String
+    Default: ENABLED
+    AllowedValues: [ENABLED, DISABLED]
+  Funcao:
+    Type: String
+    Default: brecho-api
+  PapelDaApi:
+    Type: String
+    Default: brecho-lambda
+
+Resources:
+  PapelDoAgendador:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: brecho-pinterest-agendador
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { 'aws:SourceAccount': !Ref AWS::AccountId }
+      Policies:
+        - PolicyName: chamar-a-api
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Funcao}
+      Tags:
+        - { Key: projeto, Value: brecho }
+
+  # A rodada que ainda tem o que ler chama a seguinte (assincrona).
+  ApiChamaASiMesma:
+    Type: AWS::IAM::RolePolicy
+    Properties:
+      RoleName: !Ref PapelDaApi
+      PolicyName: brecho-pinterest-rodada-seguinte
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: lambda:InvokeFunction
+            Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Funcao}
+
+  Agenda:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: brecho-pinterest
+      Description: Le as pastas do Pinterest da esteira (esteira.rodar_agendado)
+      ScheduleExpression: !Ref Frequencia
+      State: !Ref Ligado
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      Target:
+        Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Funcao}
+        RoleArn: !GetAtt PapelDoAgendador.Arn
+        Input: '{"agendado": "reler-pinterest"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 0          # rodada perdida nao se repete: vem a proxima
+
+Outputs:
+  Agenda:
+    Value: !Ref Frequencia

@@ -646,6 +646,14 @@ def handler(evento, _contexto):
         feito = gerador.rodar_agendado(evento.get('quantos'), evento.get('espalhar_horas') or 0)
         print('gerador: %r' % (feito,))
         return feito
+    # Mesma porta: a leitura das pastas do Pinterest com o site fechado
+    # (infra/esteira.yaml), e a rodada que ela mesma encadeia.
+    if 'requestContext' not in evento and evento.get('agendado') == 'reler-pinterest':
+        import esteira
+        feito = esteira.rodar_agendado([str(f) for f in evento.get('feitas') or []][:200],
+                                       int(evento.get('rodada') or 0))
+        print('pinterest: %r' % (feito,))
+        return feito
 
     # O CloudFront injeta o segredo em toda requisição de origem. Sem ele, o
     # pedido veio direto na Function URL — e aí não veio do nosso site.

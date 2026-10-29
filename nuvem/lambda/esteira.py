@@ -491,6 +491,42 @@ def _reler_na_vez(feitas=(), varrer=False):
     return {'pastas': resultado}
 
 
+# Leitura com o site fechado (29/10/2026). O EventBridge Scheduler
+# (infra/esteira.yaml) chama a API a cada 15 min com {"agendado":
+# "reler-pinterest"}: é a mesma rodada que a tela pede, com a mesma vez, então
+# com a esteira aberta uma das duas espera. Pasta que ainda tem o que ler faz
+# a função chamar a si mesma na hora (assíncrona), como a tela faria, até
+# acabar ou bater no teto. Recusa do Pinterest não encadeia: fica para a
+# próxima agenda, para não insistir com quem já disse não.
+MAX_ENCADEADAS = 100         # ~40 pins por rodada: 4 mil pins antes de esperar a agenda
+_lambda = None
+
+
+def _continua(r):
+    return r.get('adiada') or ((r.get('faltam') or r.get('continua'))
+                               and not r.get('erro') and not r.get('recusada'))
+
+
+def rodar_agendado(feitas=(), rodada=0):
+    if not _pastas():
+        return {'pastas': 0}
+    feito = _reler(feitas)
+    if feito.get('ocupado'):
+        return feito                 # a tela ou outra rodada está lendo
+    pastas = feito['pastas']
+    feitas = list(feitas) + [r['id'] for r in pastas if not _continua(r)]
+    andou = any(r.get('entraram') or r.get('falharam') or not r.get('adiada') for r in pastas)
+    seguir = andou and any(_continua(r) for r in pastas) and rodada + 1 < MAX_ENCADEADAS
+    if seguir:
+        global _lambda
+        _lambda = _lambda or boto3.client('lambda', region_name='us-east-1')
+        _lambda.invoke(FunctionName=os.environ['AWS_LAMBDA_FUNCTION_NAME'], InvocationType='Event',
+                       Payload=json.dumps({'agendado': 'reler-pinterest', 'feitas': feitas,
+                                           'rodada': rodada + 1}).encode('utf-8'))
+    return {'rodada': rodada, 'entraram': sum(r.get('entraram') or 0 for r in pastas),
+            'segue': seguir}
+
+
 def _fichas():
     # O Delimiter deixa as subpastas (`pins/`, `config/`) de fora: são
     # milhares de marcas que não são ficha, e a tela relê a lista a cada 3 s
