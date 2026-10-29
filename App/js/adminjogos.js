@@ -71,7 +71,7 @@ function cartao(item, resumo) {
   }
   if (resumo?.cor) linhas.push(`cor: ${resumo.cor.valor} (${resumo.cor.votos}/${resumo.cor.total})`);
   if (resumo?.cat) linhas.push(`tipo: ${rotuloCategoria(resumo.cat.valor)} (${resumo.cat.votos}/${resumo.cat.total})`);
-  if (resumo?.marca) linhas.push(`marca: ${resumo.marca.valor} (${resumo.marca.votos}/${resumo.marca.total})`);
+  if (resumo?.marca) linhas.push(`marca: ${resumo.marca.valor || 'sem marca'} (${resumo.marca.votos}/${resumo.marca.total})`);
   if (resumo?.ajuste) linhas.push(`${resumo.ajuste.medidas} ajuste${resumo.ajuste.medidas > 1 ? 's' : ''} no corpo`);
 
   // Marcar e desmarcar mexe só nesta foto: a grade não recarrega.

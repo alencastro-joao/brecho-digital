@@ -159,6 +159,13 @@ class Ajudas(unittest.TestCase):
         self.assertEqual(ajudas.pendencias(lidas.get(pid)), [])
         self.assertNotIn('epeca0007', lidas)
 
+    def test_marca_em_branco_e_sem_marca(self):
+        for uid in ('s1', 's2'):
+            ajudas.ajudar({'id': uid}, 'preencher', {'peca': 'epeca0008', 'cor': 'Azul', 'marca': '  '})
+        p = ajudas.resumo()['pecas'][0]
+        self.assertEqual((p['marca']['valor'], p['marca']['pronto']), ('', True))
+        self.assertNotIn('marca', p['faltam'])
+
     def test_faixas(self):
         self.assertIsNone(ajudas.raridade_sugerida(3, 3))
         self.assertEqual(ajudas.raridade_sugerida(1, 9), 'common')

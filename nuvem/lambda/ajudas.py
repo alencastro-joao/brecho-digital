@@ -9,6 +9,7 @@ Três jogos, um por tarefa do cadastro:
     ajustar    a pessoa encaixa a peça no corpo (posição e tamanho). A mediana
                das medidas vira o ajuste sugerido.
     preencher  a pessoa diz a cor e a marca. A resposta mais votada vence.
+               Marca deixada em branco conta como "sem marca".
 
 Cada jogo paga fichas a cada `porFicha` ajudas e tem um teto de ajudas por
 janela (dia ou hora, no horário de Brasília). As fichas moram no save (o
@@ -295,7 +296,8 @@ def _anotar(jogo, pid, dados):
         nomes = {}
         partes = []
         for i, campo in enumerate(('cat', 'cor', 'marca')):
-            if dados[campo] and campo not in fechadas:
+            # Marca em branco é resposta também: "sem marca" (o voto 'marca:').
+            if (dados[campo] or campo == 'marca') and campo not in fechadas:
                 nomes['#c%d' % i] = '%s:%s' % (campo, dados[campo])
                 partes.append('#c%d :um' % i)
         if not partes:
