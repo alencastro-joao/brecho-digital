@@ -65,10 +65,12 @@ BRASILIA = timezone(timedelta(hours=-3))
 # porFicha: quantas ajudas valem 1 ficha. limite: ajudas por janela.
 # janela: 'dia' ou 'hora' (Brasília).
 JOGOS = {
-    'avaliar':   {'porFicha': 8, 'limite': 56, 'janela': 'dia'},
+    'avaliar':   {'porFicha': 5, 'limite': 25, 'janela': 'dia'},
     'ajustar':   {'porFicha': 4, 'limite': 16, 'janela': 'dia'},
     'preencher': {'porFicha': 4, 'limite': 20, 'janela': 'dia'},
 }
+# Teto de fichas por dia somando os três jogos (João, 29/10/2026).
+TETO_FICHAS_DIA = 5
 # Votos que a peça precisa antes de ganhar raridade sugerida.
 VOTOS_MIN = 10
 # Medidas do Ajustar para a mediana valer.
@@ -316,13 +318,23 @@ def _situacao(uid, jogo, n=None):
             'janela': regra['janela'], 'vira': _janela(jogo)[1].isoformat()}
 
 
+def _fichas_hoje(uid):
+    """Fichas que as cotas de hoje já valem, somando os jogos."""
+    total = 0
+    for jogo, regra in JOGOS.items():
+        r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_cota(uid, jogo)}})
+        total += int((r.get('Item') or {}).get('n', {}).get('N', 0)) // regra['porFicha']
+    return total
+
+
 def estado(usuario):
     """O que a tela precisa: a cota de cada jogo e as peças já ajudadas."""
     uid = usuario['id']
     saida = {}
+    teto = {'fichasHoje': min(_fichas_hoje(uid), TETO_FICHAS_DIA), 'tetoDia': TETO_FICHAS_DIA}
     for jogo in JOGOS:
         r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_feitas(uid, jogo)}})
-        saida[jogo] = {**_situacao(uid, jogo),
+        saida[jogo] = {**_situacao(uid, jogo), **teto,
                        'pecas': sorted((r.get('Item') or {}).get('ids', {}).get('SS', []))}
     itens = ler_lista()
     # O que falta em cada peça: o jogo pula a peça (ou a pergunta) que já fechou.
@@ -350,7 +362,12 @@ def ajudar(usuario, jogo, corpo):
     if n is None:
         return {'ok': True, 'fichas': 0, 'semPremio': True, **_situacao(uid, jogo)}
     fichas = 1 if n % JOGOS[jogo]['porFicha'] == 0 else 0
-    return {'ok': True, 'fichas': fichas, **_situacao(uid, jogo, n)}
+    hoje = _fichas_hoje(uid)
+    teto = {'fichasHoje': min(hoje, TETO_FICHAS_DIA), 'tetoDia': TETO_FICHAS_DIA}
+    # Bateu o teto do dia somando os jogos: a ajuda conta, a ficha não vem.
+    if fichas and hoje > TETO_FICHAS_DIA:
+        return {'ok': True, 'fichas': 0, 'semPremio': True, **_situacao(uid, jogo, n), **teto}
+    return {'ok': True, 'fichas': fichas, **_situacao(uid, jogo, n), **teto}
 
 
 # ------------------------------- Resumo -----------------------------------
