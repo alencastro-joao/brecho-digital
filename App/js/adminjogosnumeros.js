@@ -2,10 +2,13 @@
 // (js/ajudas.js) juntaram. Só lê GET /api/admin/ajudas e a esteira; "Usar na
 // ficha" é o mesmo de js/adminjogos.js.
 
-import { RARIDADES, RARIDADE, CATEGORIAS } from './config.js';
+import { RARIDADES, RARIDADE, CATEGORIAS, CONFIG, ancoraPadrao } from './config.js';
 import { rotuloCategoria } from './catalog.js';
-import { el, $ } from './util.js';
-import { chamar, usarNaFicha } from './adminjogos.js';
+import { svgAvatar } from './avatar.js';
+import { ancoraNoCorpo } from './proporcao.js';
+import { confirmar, mostrar } from './janela.js';
+import { el, $, toast } from './util.js';
+import { chamar, usarNaFicha, fichaDosJogos } from './adminjogos.js';
 
 const JOGOS = [
   { id: 'avaliar', nome: 'Avaliar', faz: 'gostei / não gostei', cor: '#f48fb1' },
@@ -254,5 +257,73 @@ function linhaPeca(p) {
         resp('tipo', 'cat', (c) => (CATEGORIAS[c] ? rotuloCategoria(c) : c)),
         resumo.ajuste ? el('span', {}, el('small', {}, 'ajuste'), `${resumo.ajuste.medidas} medida${resumo.ajuste.medidas > 1 ? 's' : ''}`)
           : el('span', { class: 'falta' }, el('small', {}, 'ajuste'), '–'))),
-    p.mexeu ? el('button', { type: 'button', class: 'btn-ghost', onclick: () => usarNaFicha(p.item, resumo) }, 'Usar na ficha') : null);
+    el('div', { class: 'mgn-peca-acoes' },
+      el('button', { type: 'button', class: 'btn-ghost', onclick: () => verComoFica(p) }, 'Ver como fica'),
+      p.mexeu ? el('button', { type: 'button', class: 'btn-ghost', onclick: () => usarNaFicha(p.item, resumo) }, 'Usar na ficha') : null));
+}
+
+// ---------------------------- Ver como fica --------------------------------
+// A peça no corpo com a ficha que sairia hoje (a da esteira com os votos por
+// cima, como em "Usar na ficha"). Nada é gravado até apertar "Forçar publicação".
+function verComoFica(p) {
+  const { ficha, medida } = fichaDosJogos(p.item, p.resumo);
+  const cat = CATEGORIAS[ficha.cat] ? ficha.cat : '';
+  const palco = el('div', { class: 'mg-corpo mgn-ver-corpo' });
+  const boneco = el('div', { class: 'mg-boneco' });
+  boneco.innerHTML = svgAvatar();
+  palco.append(boneco);
+  if (cat) {
+    // Medida do molde (votos ou esteira) levada ao corpo; sem ela, o lugar padrão.
+    const m = medida || p.item.medida;
+    const a = m ? ancoraNoCorpo(CATEGORIAS[cat].regiao, m) : ancoraPadrao(cat);
+    const prop = p.item.w && p.item.h ? p.item.w / p.item.h : 1;
+    palco.append(el('div', {
+      class: 'mg-peca', style: {
+        left: `${a.x / CONFIG.STAGE_W * 100}%`, top: `${a.y / CONFIG.STAGE_H * 100}%`,
+        width: `${a.w / CONFIG.STAGE_W * 100}%`, height: `${a.w / prop / CONFIG.STAGE_H * 100}%`, cursor: 'default',
+      },
+    }, el('img', { src: p.src, alt: '' })));
+  }
+  const rar = RARIDADE[ficha.raridade];
+  const linha = (rot, valor, deOnde) => el('li', {}, el('small', {}, rot), el('b', {}, valor || '–'),
+    deOnde ? el('em', {}, deOnde) : null);
+  const votou = (k) => (p.resumo[k] ? 'dos jogos' : 'da esteira');
+  const lugar = !cat ? 'sem tipo, não dá para pôr no corpo'
+    : p.resumo.ajuste ? `mediana de ${p.resumo.ajuste.medidas} ajuste${p.resumo.ajuste.medidas > 1 ? 's' : ''}`
+      : (medida || p.item.medida) ? 'medida da esteira' : 'lugar padrão do tipo';
+  const pronta = !p.faltam.length;
+
+  const caixa = el('div', { class: 'mgn-ver' },
+    el('div', { class: 'mgn-ver-palco' }, cat ? palco : el('img', { src: p.src, alt: '', class: 'mgn-ver-solta' })),
+    el('div', { class: 'mgn-ver-ficha' },
+      el('h3', {}, ficha.nome || (cat ? rotuloCategoria(cat) : 'Peça sem nome')),
+      el('p', { class: pronta ? 'mgn-ver-ok' : 'mgn-ver-falta' },
+        pronta ? 'Pronta: todas as entradas fecharam.' : `Ainda falta: ${p.faltam.map(e => NOME_ENTRADA[e]).join(', ')}.`),
+      el('ul', {},
+        linha('tipo', cat ? rotuloCategoria(cat) : '', votou('cat')),
+        linha('raridade', rar?.nome, p.v.raridade ? `${p.total} votos` : 'da esteira'),
+        linha('cor', ficha.cor, votou('cor')),
+        linha('marca', ficha.marca || (p.resumo.marca ? 'sem marca' : ''), votou('marca')),
+        linha('no corpo', '', lugar)),
+      el('button', { type: 'button', class: 'btn-admin mgn-forcar', onclick: () => forcar(p, ficha, caixa) }, 'Forçar publicação'),
+      el('small', {}, 'Publica agora com esta ficha, mesmo que falte entrada. A peça entra no jogo e sai dos mini games.')));
+  mostrar(caixa, { sim: 'Fechar' });
+}
+
+async function forcar(p, ficha, caixa) {
+  if (!CATEGORIAS[ficha.cat]) return toast('Sem tipo não dá para publicar. Escolha o tipo na esteira.', 'aviso');
+  const ok = await confirmar(`Publicar "${ficha.nome || rotuloCategoria(ficha.cat)}" agora?`
+    + (p.faltam.length ? ` Ainda falta ${p.faltam.map(e => NOME_ENTRADA[e]).join(', ')}.` : ''),
+  { sim: 'Publicar', nao: 'Cancelar' });
+  if (!ok) return;
+  try {
+    const corpo = fichaDosJogos(p.item, p.resumo);
+    const { item: peca } = await chamar(`/api/esteira/${encodeURIComponent(p.id)}/publicar`, 'POST',
+      { ficha: corpo.ficha, medida: corpo.medida || p.item.medida || null });
+    caixa.closest('.modal')?.querySelector('.pergunta-botoes .btn-dark')?.click();   // fecha o "Ver como fica"
+    toast(`${peca?.nome || 'Peça'} entrou no jogo.`, peca?.raridade);
+    carregar();
+  } catch (e) {
+    toast(`Não deu: ${e.message}`, 'aviso');
+  }
 }

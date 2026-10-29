@@ -109,8 +109,10 @@ function cartao(item, resumo) {
     }, 'Usar na ficha') : null);
 }
 
-// Leva o que os jogadores disseram para a ficha da esteira (só o que tem voto).
-export async function usarNaFicha(item, resumo) {
+// A ficha da esteira com o que os jogadores disseram por cima (só o que tem
+// voto): { ficha, medida? }. É o que "Usar na ficha" grava e o que "Forçar
+// publicação" publica.
+export function fichaDosJogos(item, resumo = {}) {
   const ficha = { ...(item.ficha || {}) };
   if (resumo.cat && CATEGORIAS[resumo.cat.valor]) ficha.cat = resumo.cat.valor;
   if (!ficha.cat) ficha.cat = item.sugestao?.cat || '';
@@ -127,6 +129,11 @@ export async function usarNaFicha(item, resumo) {
   if (resumo.ajuste && CATEGORIAS[ficha.cat]) {
     corpo.medida = { x: resumo.ajuste.x, y: resumo.ajuste.y, w: resumo.ajuste.w };
   }
+  return corpo;
+}
+
+export async function usarNaFicha(item, resumo) {
+  const corpo = fichaDosJogos(item, resumo);
   try {
     await chamar(`/api/esteira/${encodeURIComponent(item.id)}`, 'PUT', corpo);
     toast('Ficha da esteira atualizada. Revise e publique por lá.');

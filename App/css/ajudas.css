@@ -379,3 +379,19 @@ body.mgn-aberta { overflow: hidden; }
   .mgn-peca > .btn-ghost { grid-column: 1 / -1; }
   .mgn-nums { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Ver como fica: a peça no corpo e a ficha que sairia hoje (adminjogosnumeros.js). */
+.mgn-peca-acoes { display: grid; gap: 6px; }
+.mgn-ver { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; text-align: left; }
+.mgn-ver-palco { flex: 0 0 auto; margin: 0 auto; background: var(--papel); border-radius: 14px; padding: 8px; }
+.mgn-ver-corpo { height: min(380px, 50vh); }
+.mgn-ver-solta { width: 160px; height: 160px; object-fit: contain; display: block; }
+.mgn-ver-ficha { flex: 1 1 200px; display: grid; gap: 8px; min-width: 0; }
+.mgn-ver-ficha h3 { margin: 0; font-size: 17px; }
+.mgn-ver-ficha p { margin: 0; font-size: 13px; }
+.mgn-ver-ok { color: #2e7d32; }
+.mgn-ver-falta { color: #b26a00; }
+.mgn-ver-ficha ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.mgn-ver-ficha li { display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; font-size: 13px; align-items: baseline; }
+.mgn-ver-ficha li small, .mgn-ver-ficha li em, .mgn-ver-ficha > small { color: var(--tinta-suave); font-size: 12px; }
+.mgn-forcar { justify-self: start; margin-top: 4px; }
