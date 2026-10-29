@@ -250,7 +250,7 @@ function linhaPeca(p) {
         votos,
         el('small', {}, p.total ? `${v.pct}% gostei · ${p.total}/${min} votos` : `0/${min} votos`)),
       el('div', { class: 'mgn-resps' },
-        resp('cor', 'cor'), resp('marca', 'marca'),
+        resp('cor', 'cor'), resp('marca', 'marca', (m) => m || 'sem marca'),
         resp('tipo', 'cat', (c) => (CATEGORIAS[c] ? rotuloCategoria(c) : c)),
         resumo.ajuste ? el('span', {}, el('small', {}, 'ajuste'), `${resumo.ajuste.medidas} medida${resumo.ajuste.medidas > 1 ? 's' : ''}`)
           : el('span', { class: 'falta' }, el('small', {}, 'ajuste'), '–'))),
