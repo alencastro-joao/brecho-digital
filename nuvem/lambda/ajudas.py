@@ -29,8 +29,14 @@ copiada para o site (`assets/jogos/<id>.webp`) e a lista pública fica em
 Nada mexe na ficha sozinho: o admin vê o resumo (GET /api/admin/ajudas) e
 leva para a ficha da esteira o que quiser.
 
-**Os números ficam todos em JOGOS, VOTOS_MIN e FAIXAS logo abaixo** — são as
-regras do jogo, quem decide é o João.
+**Peça pronta** é a que já tem resposta firme nas cinco entradas: raridade,
+ajuste, tipo, cor e marca (`pendencias`). Entrada que fechou sai do jogo: a
+peça para de aparecer no Avaliar ou no Ajustar, e o Preencher só pergunta o
+que falta (voto em entrada fechada nem é gravado).
+
+**Os números ficam todos em JOGOS, VOTOS_MIN, AJUSTES_MIN, ESCOLHA_MIN,
+ESCOLHA_DESEMPATE, MARCA_IGUAIS e FAIXAS logo abaixo** — são as regras do
+jogo, quem decide é o João.
 """
 
 import json
@@ -38,6 +44,7 @@ import os
 import re
 import time
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import boto3
@@ -50,6 +57,7 @@ LISTA = 'assets/jogos.json'
 _dynamo = boto3.client('dynamodb')
 _s3 = boto3.client('s3')
 _cache = {'ids': None, 'em': 0}
+_grupo = ThreadPoolExecutor(max_workers=10)   # o pool de conexões do boto3 é de 10
 BRASILIA = timezone(timedelta(hours=-3))
 
 # ----------------------------- Regras (João) ------------------------------
@@ -62,6 +70,14 @@ JOGOS = {
 }
 # Votos que a peça precisa antes de ganhar raridade sugerida.
 VOTOS_MIN = 10
+# Medidas do Ajustar para a mediana valer.
+AJUSTES_MIN = 3
+# Tipo e cor: com ESCOLHA_MIN respostas todas iguais, fecha. Se dividiu, espera
+# chegar a ESCOLHA_DESEMPATE e a mais votada leva (empate segue esperando).
+ESCOLHA_MIN = 3
+ESCOLHA_DESEMPATE = 5
+# Marca: basta esta quantidade de respostas iguais.
+MARCA_IGUAIS = 2
 # Rodada do Avaliar: subir este número zera todos os votos (os antigos ficam
 # no banco, mas ninguém lê) e deixa todo mundo votar de novo em todas as peças.
 RODADA_AVALIAR = 2
@@ -273,12 +289,17 @@ def _anotar(jogo, pid, dados):
                             ExpressionAttributeValues={':nada': {'L': []}, ':nova': {'L': [medida]},
                                                        ':max': {'N': str(MAX_AJUSTES)}})
     else:
+        # Entrada que já fechou não recebe voto: a resposta não muda depois de pronta.
+        atual = _dynamo.get_item(TableName=TABELA, Key=chave).get('Item')
+        fechadas = set(ENTRADAS) - set(pendencias(atual))
         nomes = {}
         partes = []
         for i, campo in enumerate(('cat', 'cor', 'marca')):
-            if dados[campo]:
+            if dados[campo] and campo not in fechadas:
                 nomes['#c%d' % i] = '%s:%s' % (campo, dados[campo])
                 partes.append('#c%d :um' % i)
+        if not partes:
+            return
         _dynamo.update_item(TableName=TABELA, Key=chave,
                             UpdateExpression='ADD ' + ', '.join(partes),
                             ExpressionAttributeNames=nomes, ExpressionAttributeValues=um)
@@ -301,7 +322,11 @@ def estado(usuario):
         r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_feitas(uid, jogo)}})
         saida[jogo] = {**_situacao(uid, jogo),
                        'pecas': sorted((r.get('Item') or {}).get('ids', {}).get('SS', []))}
-    return {'jogos': saida, 'itens': ler_lista()}
+    itens = ler_lista()
+    # O que falta em cada peça: o jogo pula a peça (ou a pergunta) que já fechou.
+    lidas = _ler_pecas({i['id'] for i in itens})
+    return {'jogos': saida, 'itens': itens,
+            'faltam': {i['id']: pendencias(lidas.get(i['id'])) for i in itens}}
 
 
 def ajudar(usuario, jogo, corpo):
@@ -351,7 +376,19 @@ def _mais_votado(item, campo):
     if not votos:
         return None
     n, valor = max(votos)
-    return {'valor': valor, 'votos': n, 'total': sum(x for x, _ in votos)}
+    total = sum(x for x, _ in votos)
+    return {'valor': valor, 'votos': n, 'total': total,
+            'pronto': _decidido(campo, [x for x, _ in votos], total)}
+
+
+def _decidido(campo, contagens, total):
+    """A resposta mais votada já vale? `contagens` é quantos votos tem cada valor."""
+    maior = max(contagens, default=0)
+    if campo == 'marca':
+        return maior >= MARCA_IGUAIS
+    if total >= ESCOLHA_MIN and len(contagens) == 1:
+        return True
+    return total >= ESCOLHA_DESEMPATE and contagens.count(maior) == 1
 
 
 def resumo_da_peca(item):
@@ -368,7 +405,32 @@ def resumo_da_peca(item):
         'cor': _mais_votado(item, 'cor'),
         'marca': _mais_votado(item, 'marca'),
         'cat': _mais_votado(item, 'cat'),
+        'faltam': pendencias(item),
     }
+
+
+ENTRADAS = ('raridade', 'ajuste', 'cat', 'cor', 'marca')
+
+
+def pendencias(item):
+    """As entradas que ainda não fecharam. Vazio quer dizer peça pronta."""
+    item = item or {}
+    votos = sum(int(item.get(_campo_voto(v), {}).get('N', 0)) for v in ('sim', 'nao', 'meh'))
+    feito = {
+        'raridade': votos >= VOTOS_MIN,
+        'ajuste': len(item.get('ajustes', {}).get('L', [])) >= AJUSTES_MIN,
+    }
+    for campo in ('cat', 'cor', 'marca'):
+        feito[campo] = bool((_mais_votado(item, campo) or {}).get('pronto'))
+    return [e for e in ENTRADAS if not feito[e]]
+
+
+def _ler_pecas(ids):
+    """{id: item AJUDA#PECA#} das peças que já receberam ajuda. GetItem em
+    paralelo, como contas.pegar_varios: o papel da Lambda não tem BatchGetItem."""
+    def ler(pid):
+        return pid, _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_peca(pid)}}).get('Item')
+    return {pid: item for pid, item in _grupo.map(ler, sorted(ids)) if item}
 
 
 def _somar_cota(cotas, item):
@@ -405,4 +467,6 @@ def resumo():
         if not inicio:
             break
     return {'pecas': pecas, 'cotas': cotas, 'nosJogos': sorted(_ids_nos_jogos()),
-            'regras': {'jogos': JOGOS, 'votosMin': VOTOS_MIN, 'faixas': FAIXAS}}
+            'regras': {'jogos': JOGOS, 'votosMin': VOTOS_MIN, 'faixas': FAIXAS,
+                       'ajustesMin': AJUSTES_MIN, 'escolhaMin': ESCOLHA_MIN,
+                       'escolhaDesempate': ESCOLHA_DESEMPATE, 'marcaIguais': MARCA_IGUAIS}}

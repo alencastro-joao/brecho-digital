@@ -95,7 +95,9 @@ class Ajudas(unittest.TestCase):
         self.assertEqual(p['votos']['pct'], 90)
         self.assertEqual(p['votos']['raridade'], 'legendary')
         self.assertEqual(p['ajuste'], {'x': 305, 'y': 510, 'w': 210, 'medidas': 2})
-        self.assertEqual(p['cor'], {'valor': 'preto', 'votos': 2, 'total': 2})
+        self.assertEqual(p['cor'], {'valor': 'preto', 'votos': 2, 'total': 2, 'pronto': False})
+        # Raridade fechou; ajuste tem 2 de 3, cor e tipo menos de 3, marca 1 de 2.
+        self.assertEqual(p['faltam'], ['ajuste', 'cat', 'cor', 'marca'])
         self.assertEqual(p['marca']['valor'], 'nike')
         self.assertEqual(p['cat']['valor'], 'pants')
         dia = next(iter(ajudas.resumo()['cotas']['avaliar'].values()))
@@ -122,6 +124,40 @@ class Ajudas(unittest.TestCase):
         # Sem categoria também entra: os jogadores dizem o tipo.
         ajudas.colocar('eabc12345', {'estado': 'pronta', 'previa': 'esteira/eabc12345.webp'})
         self.assertEqual(ajudas.ler_lista()[0]['cat'], '')
+
+    def test_tipo_e_cor_tres_iguais_ou_maioria_de_cinco(self):
+        def votar(uid, cor):
+            ajudas.ajudar({'id': uid}, 'preencher', {'peca': 'epeca0004', 'cor': cor})
+        cor = lambda: ajudas.resumo()['pecas'][0]['cor']  # noqa: E731
+        for i in range(3):
+            votar('a%d' % i, 'Azul')
+        self.assertTrue(cor()['pronto'])
+        # Fechou: voto novo nem entra.
+        votar('a9', 'Verde')
+        self.assertEqual(cor()['total'], 3)
+        # Dividiu nos 3 primeiros: espera chegar a 5 e a maioria leva.
+        for i, c in enumerate(('Azul', 'Verde', 'Azul', 'Verde')):
+            ajudas.ajudar({'id': 'b%d' % i}, 'preencher', {'peca': 'epeca0005', 'cor': c})
+        cor5 = lambda: next(p for p in ajudas.resumo()['pecas'] if p['peca'] == 'epeca0005')['cor']  # noqa: E731
+        self.assertFalse(cor5()['pronto'])
+        ajudas.ajudar({'id': 'b9'}, 'preencher', {'peca': 'epeca0005', 'cor': 'Azul'})
+        self.assertEqual((cor5()['valor'], cor5()['pronto']), ('azul', True))
+
+    def test_marca_duas_iguais_e_peca_pronta(self):
+        pid = 'epeca0006'
+        for i in range(ajudas.VOTOS_MIN):
+            ajudas.ajudar({'id': 'v%d' % i}, 'avaliar', {'peca': pid, 'voto': 'sim'})
+        for i in range(ajudas.AJUSTES_MIN):
+            ajudas.ajudar({'id': 'v%d' % i}, 'ajustar', {'peca': pid, 'ancora': {'x': 300, 'y': 500, 'w': 200}})
+        ajudas.ajudar({'id': 'v0'}, 'preencher', {'peca': pid, 'cat': 'pants', 'cor': 'Preto', 'marca': 'Nike'})
+        ajudas.ajudar({'id': 'v1'}, 'preencher', {'peca': pid, 'cat': 'pants', 'cor': 'Preto', 'marca': 'Adidas'})
+        self.assertEqual(ajudas.resumo()['pecas'][0]['faltam'], ['cat', 'cor', 'marca'])
+        ajudas.ajudar({'id': 'v2'}, 'preencher', {'peca': pid, 'cat': 'pants', 'cor': 'Preto', 'marca': 'nike'})
+        self.assertEqual(ajudas.resumo()['pecas'][0]['faltam'], [])
+        self.assertEqual(ajudas.pendencias(None), list(ajudas.ENTRADAS))
+        lidas = ajudas._ler_pecas({pid, 'epeca0007'})
+        self.assertEqual(ajudas.pendencias(lidas.get(pid)), [])
+        self.assertNotIn('epeca0007', lidas)
 
     def test_faixas(self):
         self.assertIsNone(ajudas.raridade_sugerida(3, 3))

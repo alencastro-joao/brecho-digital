@@ -13,10 +13,12 @@ const JOGOS = [
   { id: 'preencher', nome: 'Preencher', faz: 'cor, marca e tipo', cor: '#ffcc80' },
 ];
 const FILTROS = [
-  ['todas', 'Todas'], ['faltam', 'Faltam votos'], ['prontas', 'Com raridade'],
+  ['todas', 'Todas'], ['prontas', 'Prontas'], ['faltam', 'Faltam votos'], ['comRaridade', 'Com raridade'],
   ['divididas', 'Respostas divididas'], ['semAjuste', 'Sem ajuste'], ['nada', 'Ninguém mexeu'],
 ];
 const ORDENS = [['votos', 'Mais votos'], ['gostei', 'Mais gostadas'], ['menos', 'Menos gostadas']];
+
+const NOME_ENTRADA = { raridade: 'raridade', ajuste: 'ajuste', cat: 'tipo', cor: 'cor', marca: 'marca' };
 
 let dados = null;
 let filtro = 'todas';
@@ -74,6 +76,8 @@ function preparar(r, esteira) {
       src: item.previa || `assets/jogos/${id}.webp`,
       cat: item.ficha?.cat || item.sugestao?.cat || '',
       divididas, mexeu: porPeca.has(id),
+      // Entradas que ainda não fecharam (ajudas.py, pendencias). Vazio = pronta.
+      faltam: p.faltam ?? ['raridade', 'ajuste', 'cat', 'cor', 'marca'],
     };
   });
   return { r, min, pecas, regras: r.regras?.jogos || {} };
@@ -90,12 +94,15 @@ function desenhar() {
   const { r, min, pecas } = dados;
   const hoje = diaBrasilia(0);
   const somaHoje = (k) => JOGOS.reduce((t, j) => t + (r.cotas?.[j.id]?.[hoje]?.[k] || 0), 0);
-  const prontas = pecas.filter(p => p.total >= min).length;
+  const comRaridade = pecas.filter(p => p.total >= min).length;
+  const prontas = pecas.filter(p => !p.faltam.length).length;
+  const pctDe = (n) => (pecas.length ? `${Math.round(n * 100 / pecas.length)}%` : '');
 
   $('#mgn-corpo').replaceChildren(
     el('div', { class: 'mgn-kpis' },
       kpi('Peças nos jogos', pecas.length),
-      kpi('Com raridade sugerida', prontas, pecas.length ? `${Math.round(prontas * 100 / pecas.length)}%` : ''),
+      kpi('Prontas', prontas, pctDe(prontas)),
+      kpi('Com raridade sugerida', comRaridade, pctDe(comRaridade)),
       kpi('Ajudas hoje', somaHoje('ajudas')),
       kpi('Fichas dadas hoje', somaHoje('fichas')),
       kpi('Jogadas hoje', somaHoje('pessoas'), 'pessoa × jogo')),
@@ -103,7 +110,7 @@ function desenhar() {
       el('div', { class: 'mgn-jogos' }, ...JOGOS.map(cartaoJogo))),
     el('div', { class: 'mgn-duas' },
       secao('Raridade que os votos sugerem', `Precisa de ${min} votos para ganhar raridade.`, raridades()),
-      secao('O que falta', 'Quantas peças ainda não têm cada coisa.', faltas())),
+      secao('O que falta', 'Peças em que cada entrada ainda não fechou. Tipo e cor: 3 iguais, ou a maioria de 5.', faltas())),
     destaques(),
     secao('Peças', null, controles(), el('div', { class: 'mgn-lista', id: 'mgn-lista' })));
   desenharLista();
@@ -160,13 +167,14 @@ function raridades() {
 
 function faltas() {
   const { pecas, min } = dados;
+  const regras = dados.r.regras || {};
   const t = pecas.length || 1;
   const itens = [
-    ['Votos suficientes', pecas.filter(p => p.total < min).length],
-    ['Ajuste no corpo', pecas.filter(p => !p.resumo.ajuste).length],
-    ['Cor', pecas.filter(p => !p.resumo.cor).length],
-    ['Marca', pecas.filter(p => !p.resumo.marca).length],
-    ['Tipo', pecas.filter(p => !p.resumo.cat).length],
+    [`Raridade (${min} votos)`, pecas.filter(p => p.faltam.includes('raridade')).length],
+    [`Ajuste (${regras.ajustesMin ?? 3} medidas)`, pecas.filter(p => p.faltam.includes('ajuste')).length],
+    ['Cor', pecas.filter(p => p.faltam.includes('cor')).length],
+    [`Marca (${regras.marcaIguais ?? 2} iguais)`, pecas.filter(p => p.faltam.includes('marca')).length],
+    ['Tipo', pecas.filter(p => p.faltam.includes('cat')).length],
     ['Qualquer ajuda', pecas.filter(p => !p.mexeu).length],
   ];
   return el('div', { class: 'mgn-faltas' }, ...itens.map(([rot, n]) => el('div', { class: 'mgn-dia' },
@@ -200,7 +208,8 @@ function filtrar(f) {
   return {
     todas: pecas,
     faltam: pecas.filter(p => p.total < min),
-    prontas: pecas.filter(p => p.v.raridade),
+    prontas: pecas.filter(p => !p.faltam.length),
+    comRaridade: pecas.filter(p => p.v.raridade),
     divididas: pecas.filter(p => p.divididas.length),
     semAjuste: pecas.filter(p => !p.resumo.ajuste),
     nada: pecas.filter(p => !p.mexeu),
@@ -235,7 +244,8 @@ function linhaPeca(p) {
     el('img', { src: p.src, alt: '', loading: 'lazy' }),
     el('div', { class: 'mgn-peca-info' },
       el('header', {}, el('b', {}, p.nome || tipo), p.nome ? el('small', {}, tipo) : null,
-        rar ? el('span', { class: 'mgn-rar', style: { background: rar.bg, borderColor: rar.aura || rar.cor } }, rar.nome) : null),
+        rar ? el('span', { class: 'mgn-rar', style: { background: rar.bg, borderColor: rar.aura || rar.cor } }, rar.nome) : null,
+        el('small', {}, p.faltam.length ? `falta: ${p.faltam.map(e => NOME_ENTRADA[e]).join(', ')}` : 'pronta')),
       el('div', { class: 'mgn-peca-votos' },
         votos,
         el('small', {}, p.total ? `${v.pct}% gostei · ${p.total}/${min} votos` : `0/${min} votos`)),
