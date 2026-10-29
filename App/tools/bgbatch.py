@@ -570,16 +570,22 @@ def _juntar_detalhe(global_, detalhe):
     return np.maximum(detalhe, certa)
 
 
+# Dentro do contorno, alpha abaixo disso é buraco de verdade, não miolo claro.
+BURACO = 0.08
+
+
 def _tapar_miolo(alpha, parede=0.3):
     """Peça clara em fundo claro (calça desbotada, tênis branco, regata
     branca) sai com o contorno firme e o miolo meio transparente. Tudo que o
-    contorno cerca e não se liga à borda da foto é peça: fica opaco."""
+    contorno cerca e não se liga à borda da foto é peça: fica opaco. Só não
+    o que a IA deu como fundo puro (alça de bolsa, vão entre as pernas): ali é
+    buraco de verdade."""
     h, w = alpha.shape
     cerca = Image.fromarray(((alpha > parede) * 255).astype(np.uint8), 'L')
     cerca = ImageOps.expand(cerca, 1, fill=0)
     ImageDraw.floodfill(cerca, (0, 0), 128)
     dentro = np.asarray(cerca)[1:h + 1, 1:w + 1] != 128
-    return np.where(dentro, 1.0, alpha).astype(np.float32)
+    return np.where(dentro & (alpha > BURACO), 1.0, alpha).astype(np.float32)
 
 
 def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.4,
