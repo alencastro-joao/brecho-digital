@@ -110,7 +110,15 @@ ESCADA = ['birefnet-general', 'birefnet-lite', 'isnet']
 # Alpha abaixo disso conta como fundo para estimar a cor do halo.
 FUNDO_LIMITE = 0.05
 # A caixa da passada global ganha esta folga antes da passada de detalhe.
-FOLGA_DETALHE = 0.06
+FOLGA_DETALHE = 0.08
+# A caixa sai de tudo que a passada global achou com pelo menos esta certeza:
+# manga, alça e barra costumam vir fracas (0.2–0.5) e não podem ficar de fora.
+LIMITE_CAIXA = 0.2
+# Onde a passada global tinha certeza, a peça fica, diga o detalhe o que disser.
+CERTEZA_GLOBAL = 0.8
+# Se o detalhe cobre menos que isso da área global, ele achou só uma estampa
+# ou um bolso dentro da peça: descarta e fica com a global.
+COBERTURA_MINIMA = 0.85
 # Espaço que o download nunca encosta. O disco de sistema em zero byte trava
 # o Windows, e o modelo é grande o bastante para chegar lá sozinho.
 FOLGA_DISCO = int(os.environ.get('BGBATCH_FOLGA_MB') or 250) * 1024 * 1024
@@ -549,7 +557,20 @@ def _refinar_ladrilhos(rodar, rgb_plena, alpha, tiles):
 
 
 # ============================ Recorte =====================================
-def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.8,
+def _juntar_detalhe(global_, detalhe):
+    """Alpha da caixa juntando as duas passadas. O modelo procura o objeto
+    que mais chama atenção no quadro: ampliado na caixa, às vezes elege a
+    estampa ou um detalhe e apaga o resto da peça. Então o detalhe só refina a
+    borda — nunca tira o que a global marcou com certeza — e, se encolher
+    demais a peça, é ignorado."""
+    area_global = float((global_ > 0.5).sum())
+    if area_global and (detalhe > 0.5).sum() < area_global * COBERTURA_MINIMA:
+        return global_
+    certa = np.where(global_ > CERTEZA_GLOBAL, global_, 0.0)
+    return np.maximum(detalhe, certa)
+
+
+def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.4,
              limpar=True, maior_lado=2048, quieto=False, baixar=True):
     """A foto crua entra, o recorte RGBA sai — já aparado na peça.
 
@@ -565,7 +586,7 @@ def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.8,
 
     # 1. onde está a peça
     global_ = _redimensionar(rodar(rgb), (w, h))
-    caixa = _caixa(global_)
+    caixa = _caixa(global_, limite=LIMITE_CAIXA)
     if caixa is None:
         raise ValueError('nao achei objeto nenhum nessa foto')
 
@@ -573,8 +594,9 @@ def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.8,
     x0, y0, x1, y1 = caixa
     recorte = rgb.crop(caixa)
     if min(recorte.size) >= 16 and max(recorte.size) < max(w, h) * 0.995:
-        alpha = np.zeros((h, w), np.float32)
-        alpha[y0:y1, x0:x1] = _redimensionar(rodar(recorte), recorte.size)
+        alpha = global_.copy()           # fora da caixa vale a global
+        alpha[y0:y1, x0:x1] = _juntar_detalhe(
+            global_[y0:y1, x0:x1], _redimensionar(rodar(recorte), recorte.size))
     else:
         alpha = global_                  # a peça já ocupava a foto inteira
 
@@ -634,7 +656,7 @@ def main():
                     help='maior lado do master (0 = resolucao original)')
     ap.add_argument('--tiles', type=int, default=0,
                     help='refina a borda em NxN pedacos em alta (0 = desligado)')
-    ap.add_argument('--nitidez', type=float, default=1.8,
+    ap.add_argument('--nitidez', type=float, default=1.4,
                     help='contraste da borda; 1.0 desliga')
     ap.add_argument('--sem-limpeza', action='store_true',
                     help='nao descontamina a cor da borda')
