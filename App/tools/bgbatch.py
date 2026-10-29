@@ -55,7 +55,7 @@ except ImportError:
     sys.exit('numpy nao encontrado. Instale com:  python -m pip install numpy')
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageDraw, ImageOps
 except ImportError:
     sys.exit('Pillow nao encontrado. Instale com:  python -m pip install pillow')
 
@@ -570,6 +570,18 @@ def _juntar_detalhe(global_, detalhe):
     return np.maximum(detalhe, certa)
 
 
+def _tapar_miolo(alpha, parede=0.3):
+    """Peça clara em fundo claro (calça desbotada, tênis branco, regata
+    branca) sai com o contorno firme e o miolo meio transparente. Tudo que o
+    contorno cerca e não se liga à borda da foto é peça: fica opaco."""
+    h, w = alpha.shape
+    cerca = Image.fromarray(((alpha > parede) * 255).astype(np.uint8), 'L')
+    cerca = ImageOps.expand(cerca, 1, fill=0)
+    ImageDraw.floodfill(cerca, (0, 0), 128)
+    dentro = np.asarray(cerca)[1:h + 1, 1:w + 1] != 128
+    return np.where(dentro, 1.0, alpha).astype(np.float32)
+
+
 def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.4,
              limpar=True, maior_lado=2048, quieto=False, baixar=True):
     """A foto crua entra, o recorte RGBA sai — já aparado na peça.
@@ -603,6 +615,8 @@ def recortar(img, modelo=PADRAO, pasta_modelo=None, tiles=0, nitidez=1.4,
     # 3. faixa de incerteza em pedaços (opcional)
     if tiles and int(tiles) > 1:
         alpha = _refinar_ladrilhos(rodar, rgb, alpha, int(tiles))
+
+    alpha = _tapar_miolo(alpha)
 
     # 4. borda: contraste e descontaminação de cor
     if nitidez and abs(float(nitidez) - 1.0) > 1e-6:
