@@ -107,7 +107,7 @@ class Ajudas(unittest.TestCase):
         p = ajudas.resumo()['pecas'][0]
         self.assertEqual(p['votos']['pct'], 90)
         self.assertEqual(p['votos']['raridade'], 'legendary')
-        self.assertEqual(p['ajuste'], {'x': 305, 'y': 510, 'w': 210, 'medidas': 2})
+        self.assertEqual(p['ajuste'], {'x': 305, 'y': 510, 'w': 210, 'rot': 0, 'medidas': 2})
         self.assertEqual(p['cor'], {'valor': 'preto', 'votos': 2, 'total': 2, 'pronto': False})
         # Raridade fechou; ajuste tem 2 de 3, cor e tipo menos de 3, marca 1 de 2.
         self.assertEqual(p['faltam'], ['ajuste', 'cat', 'cor', 'marca'])

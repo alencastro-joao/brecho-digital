@@ -224,7 +224,7 @@ def _validar(jogo, corpo):
     if jogo == 'ajustar':
         a = corpo.get('ancora') or {}
         return pid, {'x': _numero(a.get('x'), 0, 600), 'y': _numero(a.get('y'), 0, 1200),
-                     'w': _numero(a.get('w'), 10, 700)}
+                     'w': _numero(a.get('w'), 10, 700), 'rot': _numero(a.get('rot', 0), -45, 45)}
     cor, marca = _texto(corpo.get('cor'), 24), _texto(corpo.get('marca'), 40)
     cat = str(corpo.get('cat') or '').strip().lower()
     cat = cat if CAT_OK.match(cat) else ''
@@ -419,7 +419,8 @@ def resumo_da_peca(item):
         'votos': {'sim': sim, 'nao': nao, 'meh': meh,
                   'pct': round(_pct(sim, nao, meh)) if sim + nao + meh else None,
                   'raridade': raridade_sugerida(sim, nao, meh)},
-        'ajuste': ({k: round(_mediana([a[k] for a in ajustes]), 1) for k in ('x', 'y', 'w')}
+        # Medida antiga não tem 'rot': conta como sem giro.
+        'ajuste': ({k: round(_mediana([a.get(k, 0) for a in ajustes]), 1) for k in ('x', 'y', 'w', 'rot')}
                    | {'medidas': len(ajustes)}) if ajustes else None,
         'cor': _mais_votado(item, 'cor'),
         'marca': _mais_votado(item, 'marca'),
