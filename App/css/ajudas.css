@@ -277,10 +277,105 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-voto-meh { color: #e0a81c; }
 .mg-voto-meh svg path { stroke: currentColor; stroke-width: 10; }
 
-/* Admin › Mini games › Como vão */
-.adm-num-bloco { margin: 0 0 16px; }
-.adm-num-bloco h3 { font-size: 15px; margin: 0 0 6px; }
-.adm-num-bloco ul { margin: 0; padding-left: 18px; font-size: 13px; }
-.adm-num-tabela { width: 100%; border-collapse: collapse; font-size: 13px; }
-.adm-num-tabela th, .adm-num-tabela td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--bb); white-space: nowrap; }
-.adm-num-bloco:first-child { overflow-x: auto; }
+/* ------------- Admin › Mini games › Como vão (tela cheia) ------------- */
+body.mgn-aberta { overflow: hidden; }
+.mgn-tela {
+  position: fixed; inset: 0; z-index: 790; overflow-y: auto;
+  background: var(--papel); color: var(--tinta);
+}
+.mgn-topo {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; background: var(--jogos); border-bottom: 1px solid var(--linha);
+}
+.mgn-topo h1 { flex: 1; font-size: 20px; margin: 0; }
+.mgn-topo .btn-ghost { background: var(--branco); }
+.mgn-corpo { max-width: 1180px; margin: 0 auto; padding: 20px 16px 60px; display: grid; gap: 18px; }
+.mgn-vazio { color: var(--tinta-suave); font-size: 14px; padding: 12px 0; }
+
+.mgn-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.mgn-kpi {
+  background: var(--branco); border: 1px solid var(--linha); border-radius: var(--raio);
+  padding: 14px 16px; box-shadow: var(--sombra); display: grid; gap: 2px;
+}
+.mgn-kpi b { font-size: 30px; line-height: 1.1; }
+.mgn-kpi span { font-size: 13px; color: var(--tinta-suave); }
+.mgn-kpi small { font-size: 11px; color: var(--tinta-suave); opacity: .8; }
+
+.mgn-secao {
+  background: var(--branco); border: 1px solid var(--linha); border-radius: var(--raio);
+  padding: 16px 18px; box-shadow: var(--sombra); min-width: 0;
+}
+.mgn-secao > header { margin-bottom: 12px; }
+.mgn-secao h2 { font-size: 16px; margin: 0; }
+.mgn-secao > header p { font-size: 12px; color: var(--tinta-suave); margin: 2px 0 0; }
+.mgn-duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+
+.mgn-barra { height: 10px; border-radius: 99px; background: var(--linha); overflow: hidden; }
+.mgn-barra span { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
+.mgn-dia { display: grid; grid-template-columns: 110px 1fr 36px; align-items: center; gap: 10px; font-size: 13px; margin: 5px 0; }
+.mgn-dia b { text-align: right; }
+
+.mgn-jogos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.mgn-jogo { border: 1px solid var(--linha); border-top: 6px solid var(--cor-jogo); border-radius: 14px; padding: 12px 14px; }
+.mgn-jogo header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.mgn-jogo h3 { font-size: 17px; margin: 0; }
+.mgn-jogo header small, .mgn-rot, .mgn-regra { font-size: 12px; color: var(--tinta-suave); }
+.mgn-rot { margin: 10px 0 4px; }
+.mgn-jogo .mgn-dia { grid-template-columns: 50px 1fr 32px; }
+.mgn-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0 0; }
+.mgn-nums div { background: var(--papel); border-radius: 10px; padding: 6px; text-align: center; }
+.mgn-nums dt { font-size: 10px; color: var(--tinta-suave); }
+.mgn-nums dd { margin: 0; font-size: 17px; font-weight: 700; }
+.mgn-regra { margin: 10px 0 0; }
+
+.mgn-pilha { display: flex; height: 26px; border-radius: 10px; overflow: hidden; gap: 2px; }
+.mgn-legenda { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+.mgn-legenda li { display: grid; grid-template-columns: 14px 1fr 36px 40px; align-items: center; gap: 8px; }
+.mgn-legenda i { width: 14px; height: 14px; border-radius: 4px; }
+.mgn-legenda b { text-align: right; }
+.mgn-legenda small { color: var(--tinta-suave); text-align: right; }
+
+.mgn-fila { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+.mgn-fila figure { margin: 0; text-align: center; }
+.mgn-fila img { width: 100%; aspect-ratio: 1; object-fit: contain; background: var(--papel); border-radius: 12px; }
+.mgn-fila figcaption { font-size: 12px; }
+
+.mgn-controles { display: grid; gap: 8px; margin-bottom: 12px; }
+.mgn-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mgn-chips button {
+  border: 1px solid var(--linha); background: var(--papel); border-radius: 99px;
+  padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--tinta);
+}
+.mgn-chips button.ativo { background: var(--tinta); color: var(--branco); border-color: var(--tinta); }
+
+.mgn-lista { display: grid; gap: 8px; }
+.mgn-peca {
+  display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center;
+  border: 1px solid var(--linha); border-radius: 14px; padding: 8px 12px 8px 8px;
+}
+.mgn-peca > img { width: 72px; height: 72px; object-fit: contain; background: var(--papel); border-radius: 10px; }
+.mgn-peca-info { display: grid; gap: 6px; min-width: 0; }
+.mgn-peca-info header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
+.mgn-peca-info header small { color: var(--tinta-suave); font-size: 12px; }
+.mgn-rar { font-size: 11px; font-weight: 700; border: 2px solid; border-radius: 99px; padding: 1px 8px; }
+.mgn-peca-votos { display: grid; grid-template-columns: minmax(80px, 220px) auto; align-items: center; gap: 10px; }
+.mgn-peca-votos small { font-size: 12px; color: var(--tinta-suave); }
+.mgn-votos { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--linha); }
+.mgn-votos .sim { background: #2fbf63; }
+.mgn-votos .meh { background: #ffd54f; }
+.mgn-votos .nao { background: #ef5350; }
+.mgn-resps { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.mgn-resps > span { background: var(--papel); border-radius: 8px; padding: 2px 8px; }
+.mgn-resps small { color: var(--tinta-suave); margin-right: 4px; }
+.mgn-resps em { font-style: normal; color: var(--tinta-suave); }
+.mgn-resps .falta { opacity: .5; }
+.mgn-resps .dividida { background: #fff3e0; outline: 1px solid #ffb74d; }
+
+@media (max-width: 560px) {
+  .mgn-topo { padding: 10px 12px; }
+  .mgn-topo h1 { font-size: 16px; }
+  .mgn-peca { grid-template-columns: 56px 1fr; }
+  .mgn-peca > img { width: 56px; height: 56px; }
+  .mgn-peca > .btn-ghost { grid-column: 1 / -1; }
+  .mgn-nums { grid-template-columns: repeat(2, 1fr); }
+}
