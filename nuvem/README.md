@@ -128,6 +128,26 @@ passa de 15 min em "processando".
 com erro na tela, com o botão "Tentar de novo". O log está em
 `/aws/lambda/brecho-esteira` (30 dias).
 
+**Pinterest com o site fechado** (29/10/2026). Antes, quem pedia cada rodada
+de leitura das pastas (~22 s, o tempo da API) era a página da esteira: fechada
+a aba, pasta grande parava no meio. Agora o EventBridge Scheduler chama a
+`brecho-api` a cada 15 min com `{"agendado": "reler-pinterest"}`
+(`esteira.rodar_agendado`). A rodada usa a mesma vez da tela, então com a
+esteira aberta uma das duas espera; se ainda sobra pasta para ler, a função
+chama a si mesma na hora (assíncrona), até acabar ou passar de
+`MAX_ENCADEADAS`. Pasta que o Pinterest recusou espera a próxima agenda. Os
+pins entram na fila de recorte normal. Pilha `brecho-pinterest`
+(`infra/pinterest.yaml`), fora da pilha da esteira porque o papel do GitHub
+não cria agenda nem papel; liga uma vez do PC:
+
+```bash
+bash nuvem/infra/publicar-pinterest.sh                    # a cada 15 min
+LIGADO=DISABLED bash nuvem/infra/publicar-pinterest.sh    # pausa
+```
+
+Custo: rodada sem pin novo é ~1 s de Lambda, coisa de centavo por mês; o que
+pesa é o recorte de cada pin que entra (ver acima).
+
 ## Publicar sozinho pelo GitHub
 
 `.github/workflows/publicar.yml` publica a cada push no `main`, só o pedaço que
