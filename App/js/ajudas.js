@@ -283,6 +283,7 @@ function jogoAjustar() {
     x: p.x + (Math.random() - 0.5) * 80,
     y: p.y + (Math.random() - 0.5) * 120,
     w: p.w * (0.75 + Math.random() * 0.5),
+    rot: 0,
   };
   const prop = peca.w && peca.h ? peca.w / peca.h : 1;
   const no = el('div', { class: 'mg-peca' }, imagem(peca, ''));
@@ -295,6 +296,8 @@ function jogoAjustar() {
   // quatro setas perto da peça, para o dedo não tapar o que se encaixa.
   const faixa = el('input', { type: 'range', min: '20', max: '600', 'aria-label': 'Tamanho da peça' });
   const tamanho = (w) => { medida.w = clamp(w, 20, 600); posicionar(); };
+  // Girar de 5 em 5 graus, até 45 para cada lado.
+  const girar = (g) => { medida.rot = clamp(medida.rot + g, -45, 45); posicionar(); };
   const alca = alcaMover(palco, (e) => pegar(e));
   // E as barras de posição do Stylist: em pé sobe e desce, deitada vai para os lados.
   const colunaY = el('div', { class: 'mg-pos-y' });
@@ -310,6 +313,7 @@ function jogoAjustar() {
     no.style.top = (medida.y / CONFIG.STAGE_H * 100) + '%';
     no.style.width = (medida.w / CONFIG.STAGE_W * 100) + '%';
     no.style.height = (medida.w / prop / CONFIG.STAGE_H * 100) + '%';
+    no.style.transform = `translate(-50%, -50%) rotate(${medida.rot}deg)`;
     faixa.value = Math.round(medida.w);
     alca.colocar([no]);
     barras?.atualizar();
@@ -348,12 +352,15 @@ function jogoAjustar() {
         el('button', { type: 'button', title: 'Aumentar', onclick: () => tamanho(medida.w * 1.06) }, '+'),
         faixa,
         el('button', { type: 'button', title: 'Diminuir', onclick: () => tamanho(medida.w * 0.94) }, '−')),
-      linhaX),
+      linhaX,
+      el('div', { class: 'mg-girar' },
+        el('button', { type: 'button', title: 'Girar para a esquerda', onclick: () => girar(-5) }, ico('girar-esq')),
+        el('button', { type: 'button', title: 'Girar para a direita', class: 'mg-girar-dir', onclick: () => girar(5) }, ico('girar-esq')))),
     el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) pela alça até o lugar certo.`),
     el('div', { class: 'mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         const m = ancoraNoMolde(CATEGORIAS[peca.cat].regiao, medida);
-        enviar({ ancora: { x: m.x, y: m.y, w: m.w } });
+        enviar({ ancora: { x: m.x, y: m.y, w: m.w, rot: medida.rot } });
       } }, ico('ok'), 'Pronto, ficou certo')));
   posicionar();
 }
