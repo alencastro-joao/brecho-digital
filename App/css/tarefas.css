@@ -404,12 +404,6 @@
   background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, .7), transparent 60%), #efe4d2;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, .6), inset 0 -4px 0 rgba(120, 90, 50, .12);
 }
-.tf-mural-faixa {
-  display: flex; align-items: center; gap: 6px; width: fit-content; margin: 0 auto 16px; padding: 6px 14px;
-  font-size: 12px; font-weight: 700; background: var(--perola); border: 2px solid var(--bb); border-radius: 20px;
-  box-shadow: inset 0 -3px 0 var(--pb);
-}
-.tf-mural-faixa .ico { width: 13px; height: 13px; }
 .tf-mural-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 14px; }
 .tf-papel {
   position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 160px; padding: 20px 12px 10px;

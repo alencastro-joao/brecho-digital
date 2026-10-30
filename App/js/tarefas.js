@@ -227,11 +227,7 @@ function renderMural() {
       : el('article', { class: 'tf-papel vazio fantasma', style: { '--rot': (i % 2 ? -1 : 1) + 'deg' } }));
   }
 
-  $('#tf-mural').replaceChildren(
-    el('div', { class: 'tf-mural-faixa' }, ico('relogio'),
-      livres ? 'Próxima missão em ' : 'Mural cheio · próxima em ',
-      el('b', {}, tempoAte(mural.proximaChegada() - agora))),
-    el('div', { class: 'tf-mural-grade' }, ...papeis));
+  $('#tf-mural').replaceChildren(el('div', { class: 'tf-mural-grade' }, ...papeis));
 }
 
 // ---------------------------------- Topo ----------------------------------
