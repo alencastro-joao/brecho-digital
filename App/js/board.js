@@ -931,13 +931,20 @@ function ligarControles() {
     board.assinatura[campo] = valor;
     renderAssinatura();
   };
-  on('#bd-assinatura', 'input', (e) => { board.assinatura.imagem = ''; assin('texto', e.target.value, 'assinatura-texto'); });
+  on('#bd-assinatura', 'input', (e) => { board.assinatura.imagem = ''; board.assinatura.removida = true; assin('texto', e.target.value, 'assinatura-texto'); });
   on('#bd-fonte', 'change', (e) => assin('fonte', e.target.value, null));
   on('#bd-pos-assinatura', 'change', (e) => assin('posicao', e.target.value, null));
   on('#bd-tam-assinatura', 'input', (e) => assin('tamanho', Number(e.target.value), 'assinatura-tam'));
   on('#bd-esp-assinatura', 'input', (e) => assin('espaco', Number(e.target.value), 'assinatura-esp'));
   on('#bd-cor-assinatura', 'input', (e) => assin('cor', e.target.value, 'assinatura-cor'));
   on('#bd-ver-assinatura', 'change', (e) => assin('visivel', e.target.checked, null));
+  // Tira a assinatura só desta colagem; "removida" impede a imagem enviada de voltar sozinha.
+  on('#bd-remover-assinatura', 'click', () => {
+    mudanca();
+    Object.assign(board.assinatura, { imagem: '', texto: '', removida: true });
+    $('#bd-assinatura').value = '';
+    renderAssinatura();
+  });
   on('#bd-salvar-assinatura', 'click', () => {
     db.state.usuario.assinatura = { ...board.assinatura };
     db.salvar();
@@ -1514,6 +1521,9 @@ export function aoEntrarNoBoard() {
   if (!board || (!board.id && !board.itens.length)) {
     board = novaColagem();
     fotoSalva = fotoDaMesa();
+  } else if (!board.assinatura.imagem && !board.assinatura.removida && db.state.usuario.assinaturaImagem) {
+    // A assinatura enviada aparece também na colagem que já estava aberta.
+    board.assinatura.imagem = db.state.usuario.assinaturaImagem;
   }
   montarBoard();
   montarPaleta();

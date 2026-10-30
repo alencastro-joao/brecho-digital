@@ -234,6 +234,28 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W * k, H * k);
 
+  // A assinatura faz parte do fundo: vem antes das peças, por baixo de tudo.
+  const a = board.assinatura;
+  if (a?.visivel && a.imagem) {
+    try {
+      const img = await carregarImagem(a.imagem);
+      const p = posAssinatura(board, W, H);
+      const ah = a.tamanho * 1.6 * k;
+      const aw = ah * img.naturalWidth / img.naturalHeight;
+      const x = p.align === 'centro' ? p.x * k - aw / 2 : p.align === 'direita' ? p.x * k - aw : p.x * k;
+      ctx.drawImage(img, x, p.y * k - ah, aw, ah);
+    } catch { /* sem a imagem, a colagem sai sem assinatura */ }
+  } else if (a?.visivel && a.texto?.trim()) {
+    const p = posAssinatura(board, W, H);
+    ctx.fillStyle = a.cor;
+    ctx.font = `${a.tamanho * k}px ${fonteCss(a.fonte)}`;
+    ctx.textAlign = p.align === 'centro' ? 'center' : (p.align === 'direita' ? 'right' : 'left');
+    ctx.textBaseline = 'alphabetic';
+    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = `${a.espaco * k}px`;
+    ctx.fillText(a.texto, p.x * k, p.y * k);
+    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = '0px';
+  }
+
   for (const it of [...board.itens].sort((a, b) => a.z - b.z)) {
     // Etiqueta de texto
     if (it.tipo === 'texto') {
@@ -275,27 +297,6 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
     }
     ctx.drawImage(img, -w / 2, -h / 2, w, h);
     ctx.restore();
-  }
-
-  const a = board.assinatura;
-  if (a?.visivel && a.imagem) {
-    try {
-      const img = await carregarImagem(a.imagem);
-      const p = posAssinatura(board, W, H);
-      const ah = a.tamanho * 1.6 * k;
-      const aw = ah * img.naturalWidth / img.naturalHeight;
-      const x = p.align === 'centro' ? p.x * k - aw / 2 : p.align === 'direita' ? p.x * k - aw : p.x * k;
-      ctx.drawImage(img, x, p.y * k - ah, aw, ah);
-    } catch { /* sem a imagem, a colagem sai sem assinatura */ }
-  } else if (a?.visivel && a.texto?.trim()) {
-    const p = posAssinatura(board, W, H);
-    ctx.fillStyle = a.cor;
-    ctx.font = `${a.tamanho * k}px ${fonteCss(a.fonte)}`;
-    ctx.textAlign = p.align === 'centro' ? 'center' : (p.align === 'direita' ? 'right' : 'left');
-    ctx.textBaseline = 'alphabetic';
-    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = `${a.espaco * k}px`;
-    ctx.fillText(a.texto, p.x * k, p.y * k);
-    if (ctx.letterSpacing !== undefined) ctx.letterSpacing = '0px';
   }
 
   return canvas;
