@@ -449,8 +449,8 @@ def rotas_de_esteira(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
         return responder(401, {'erro': 'entre na sua conta para continuar'})
-    if usuario['papel'] != 'admin':
-        return responder(403, {'erro': 'só o administrador mexe no acervo'})
+    if not usuario.get('esteira'):
+        return responder(403, {'erro': 'só quem tem a esteira mexe nela'})
 
     import esteira
     item_id, acao = ROTA_ESTEIRA.match(pedido.rota).groups()
@@ -520,8 +520,8 @@ def rotas_de_ajudas(pedido):
         return responder(401, {'erro': 'entre na sua conta para continuar'})
     import ajudas
     if pedido.rota == '/api/admin/ajudas':
-        if usuario['papel'] != 'admin':
-            return responder(403, {'erro': 'só o administrador vê o resumo das ajudas'})
+        if not usuario.get('esteira'):     # a esteira manda peças para os jogos
+            return responder(403, {'erro': 'só quem tem a esteira vê o resumo das ajudas'})
         if pedido.metodo == 'GET':
             return responder(200, ajudas.resumo())
         if pedido.metodo == 'POST':
