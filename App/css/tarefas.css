@@ -490,3 +490,40 @@
 @media (max-width: 480px) {
   .tf-topo .tf-nivel small { display: none; }
 }
+
+/* Animações dos post-its: chegar (cai e é preso no alfinete), ficar pronto
+   (carimbo), tocar (a folha se ergue antes de ir) e resgatar (sai voando). */
+.tf-papel.chegando { animation: papel-chega .55s cubic-bezier(.3, 1.4, .5, 1) both; }
+.tf-papel.chegando .tf-alfinete { animation: alfinete-prende .55s .35s ease-out both; }
+.tf-papel.concluindo { animation: papel-carimbo .6s ease-out both, premio 1.8s .6s ease-in-out infinite; }
+.tf-papel.puxando { animation: papel-puxa .28s ease-out forwards; }
+.tf-papel.arrancando { animation: papel-arranca .42s ease-in forwards; pointer-events: none; }
+@keyframes papel-chega {
+  0% { opacity: 0; transform: translateY(-40px) rotate(calc(var(--rot) - 8deg)) scale(1.05); }
+  70% { opacity: 1; transform: translateY(4px) rotate(calc(var(--rot) + 2deg)); }
+  100% { transform: rotate(var(--rot)); }
+}
+@keyframes alfinete-prende {
+  0% { transform: translateY(-14px) scale(1.4); opacity: 0; }
+  60% { transform: translateY(2px) scale(.9); opacity: 1; }
+  100% { transform: none; }
+}
+@keyframes papel-carimbo {
+  0% { transform: rotate(var(--rot)) scale(1); }
+  35% { transform: rotate(calc(var(--rot) - 4deg)) scale(1.08); }
+  65% { transform: rotate(calc(var(--rot) + 2deg)) scale(.98); }
+  100% { transform: rotate(var(--rot)) scale(1); }
+}
+@keyframes papel-puxa {
+  0% { transform: rotate(var(--rot)); }
+  40% { transform: rotate(calc(var(--rot) - 3deg)) translateY(-6px) scale(1.04); }
+  100% { transform: rotate(calc(var(--rot) + 2deg)) translateY(-10px) scale(1.06); box-shadow: 0 16px 22px -8px rgba(80, 60, 30, .4); }
+}
+@keyframes papel-arranca {
+  0% { transform: rotate(var(--rot)); }
+  30% { transform: rotate(calc(var(--rot) - 6deg)) translateY(-6px); }
+  100% { transform: rotate(calc(var(--rot) + 18deg)) translate(30px, -80px) scale(.7); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tf-papel.chegando, .tf-papel.chegando .tf-alfinete, .tf-papel.concluindo, .tf-papel.puxando, .tf-papel.arrancando { animation: none; }
+}

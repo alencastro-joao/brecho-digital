@@ -154,12 +154,21 @@ const tempoAte = (ms) => {
   return h ? `${h}h ${String(m).padStart(2, '0')}min` : `${Math.max(1, m)}min`;
 };
 
-function papel({ cor, icone, texto, feito, meta, premio, tempo, rot, classe = '', resgatar, abrir, nivel }) {
+// Animação de um papel e, depois dela, a ação (um toque só vale uma vez).
+function animarPapel(no, classe, som, depois, ms) {
+  if (no.dataset.indo) return;
+  no.dataset.indo = '1';
+  no.classList.add(classe);
+  tocar(som);
+  setTimeout(depois, ms);
+}
+
+function papel({ cor, icone, texto, feito, meta, premio, tempo, rot, classe = '', resgatar, abrir, nivel, efeito = '' }) {
   const pronta = feito >= meta;
-  return el('article', {
-    class: 'tf-papel' + (pronta ? ' pronta' : '') + (abrir && !pronta ? ' abre' : '') + classe,
+  const no = el('article', {
+    class: 'tf-papel' + (pronta ? ' pronta' : '') + (abrir && !pronta ? ' abre' : '') + classe + efeito,
     style: { '--cor': cor, '--rot': rot + 'deg' },
-    onclick: abrir && !pronta ? abrir : null,
+    onclick: abrir && !pronta ? () => animarPapel(no, 'puxando', 'papel', abrir, 280) : null,
   },
     el('span', { class: 'tf-alfinete', 'aria-hidden': 'true' }),
     el('div', { class: 'tf-papel-topo' },
@@ -171,10 +180,26 @@ function papel({ cor, icone, texto, feito, meta, premio, tempo, rot, classe = ''
       el('small', {}, `${Math.min(feito, meta)}/${meta}`)),
     el('footer', {},
       pronta
-        ? el('button', { type: 'button', class: 'tf-papel-premio resgatar', onclick: (e) => { e.stopPropagation(); resgatar(); } },
+        ? el('button', { type: 'button', class: 'tf-papel-premio resgatar', onclick: (e) => {
+          e.stopPropagation();
+          animarPapel(no, 'arrancando', 'rasgar', resgatar, 420);
+        } },
           'Resgatar ', premio)
         : el('span', { class: 'tf-papel-premio' }, premio),
       tempo ? el('small', { class: 'tf-papel-tempo' }, ico('relogio'), tempo) : null));
+  return no;
+}
+
+// O que o mural já mostrou: missão que aparece pela primeira vez cai no
+// alfinete; a que ficou pronta desde a última olhada ganha o carimbo. Fica no
+// save (vai junto na próxima gravação), para não repetir a cada visita.
+function efeitoDo(chave, pronta, sons) {
+  const mu = db.state.mural;
+  const vistos = mu.vistos ??= [];
+  const prontas = mu.prontasVistas ??= [];
+  if (!vistos.includes(chave)) { vistos.push(chave); sons.add('prender'); return ' chegando'; }
+  if (pronta && !prontas.includes(chave)) { prontas.push(chave); sons.add('ok'); return ' concluindo'; }
+  return '';
 }
 
 const premioEmFichas = (n, bau) => el('span', { class: 'tf-premio-n' }, `+${n}`,
@@ -185,12 +210,14 @@ function renderMural() {
   const lista = mural.missoes();
   const jogo = mural.missaoDeJogo();
   const papeis = [];
+  const sons = new Set();
 
   if (jogo) {
     const j = JOGO[jogo.jogo];
     papeis.push(papel({
       cor: 'var(--loja)', icone: j.icone, texto: mural.textoDoJogo(jogo), feito: jogo.feito, meta: jogo.meta,
       premio: premioEmFichas(jogo.fichas), rot: -1.2, classe: ' jogo', nivel: 'Ajudinha',
+      efeito: efeitoDo(`jogo:${mural.voltaDoJogo()}`, jogo.feito >= jogo.meta, sons),
       abrir: () => irPara('ajudas'),
       resgatar: () => {
         const r = mural.resgatarJogo();
@@ -211,6 +238,7 @@ function renderMural() {
       premio: premioEmFichas(nivel.fichas, m.dourada), tempo: prazo(m.vence - agora),
       classe: m.dourada ? ' dourada' : '', nivel: m.dourada ? `${nivel.nome} · dourada` : nivel.nome,
       abrir: mural.telaDa(m) ? () => irPara(mural.telaDa(m)) : null,
+      efeito: efeitoDo(m.uid, mural.completa(m), sons),
       resgatar: () => {
         const r = mural.resgatar(m.uid);
         if (!r) return;
@@ -229,6 +257,11 @@ function renderMural() {
   }
 
   $('#tf-mural').replaceChildren(el('div', { class: 'tf-mural-grade' }, ...papeis));
+  // Os vistos só guardam o que ainda está no mural.
+  const noMural = new Set([...lista.map(m => m.uid), `jogo:${mural.voltaDoJogo()}`]);
+  db.state.mural.vistos = db.state.mural.vistos.filter(k => noMural.has(k));
+  db.state.mural.prontasVistas = db.state.mural.prontasVistas.filter(k => noMural.has(k));
+  sons.forEach((som, i) => setTimeout(() => tocar(som), i * 180));
 }
 
 // ---------------------------------- Topo ----------------------------------

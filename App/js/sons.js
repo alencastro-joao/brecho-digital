@@ -94,6 +94,30 @@ function nota(c, freq, { em = 0, dur = 0.1, tipo = 'sine', vol = 0.1, ate = null
   o.stop(t + dur + 0.02);
 }
 
+// Chiado curto (ruído filtrado): o papel do mural. `de`/`ate` deslizam o
+// filtro, que é o que faz soar como folha amassando ou rasgando.
+function chiado(c, { em = 0, dur = 0.08, de = 2500, ate = null, q = 1.2, vol = 0.08 } = {}) {
+  const t = c.currentTime + em;
+  const n = Math.ceil(c.sampleRate * dur);
+  const buf = c.createBuffer(1, n, c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.random());
+  const fonte = c.createBufferSource();
+  fonte.buffer = buf;
+  const f = c.createBiquadFilter();
+  f.type = 'bandpass';
+  f.Q.value = q;
+  f.frequency.setValueAtTime(de, t);
+  if (ate) f.frequency.exponentialRampToValueAtTime(ate, t + dur);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  fonte.connect(f).connect(g).connect(mestre);
+  fonte.start(t);
+  fonte.stop(t + dur + 0.02);
+}
+
 // Escalinha subindo, para as coisas boas.
 const arpejo = (c, freqs, passo, opcoes) =>
   freqs.forEach((f, i) => nota(c, f, { em: i * passo, ...opcoes }));
@@ -149,6 +173,20 @@ const SONS = {
   // Tecla: o texto do tutorial sendo digitado. Um tique curtinho, cada um
   // num tom, para não soar como máquina.
   tecla: (c) => nota(c, 1500 + Math.random() * 600, { ate: 900, dur: 0.025, tipo: 'square', vol: 0.012 }),
+  // Mural: tocar no post-it (folha mexendo), resgatar (o papel saindo do
+  // alfinete) e missão nova chegando (o alfinete prendendo a folha).
+  papel: (c) => {
+    chiado(c, { dur: 0.07, de: 3200, ate: 1800, vol: 0.09 });
+    chiado(c, { em: 0.06, dur: 0.09, de: 2200, ate: 3600, vol: 0.06 });
+  },
+  rasgar: (c) => {
+    chiado(c, { dur: 0.22, de: 1400, ate: 5200, q: 0.9, vol: 0.1 });
+    chiado(c, { em: 0.05, dur: 0.12, de: 4200, ate: 2600, vol: 0.05 });
+  },
+  prender: (c) => {
+    chiado(c, { dur: 0.1, de: 1800, ate: 3000, vol: 0.06 });
+    nota(c, 1700, { em: 0.09, ate: 1200, dur: 0.05, tipo: 'triangle', vol: 0.05 });
+  },
   // Missão do tutorial concluída: fanfarra com brilho no fim.
   missao: (c) => {
     arpejo(c, [523, 659, 784], 0.08, { dur: 0.18, tipo: 'triangle', vol: 0.08 });
