@@ -16,11 +16,13 @@ import {
 // Progredir é sempre por aqui, pelo evento (ver MISSOES em config.js): todas as
 // missões do dia e da semana que escutam o evento andam juntas. A missão que
 // fecha credita o XP na hora, uma vez só; os marcos esperam o toque na tela.
-// Evento sem missão (colagem, seguir) não faz nada — a tela pode avisar sempre.
-export function progredirMissao(evento, delta = 1) {
+// Evento sem missão (seguir) não faz nada — a tela pode avisar sempre.
+// `chave` conta cada coisa uma vez só (a curtida de um post): ver progredirSemana.
+export function progredirMissao(evento, delta = 1, chave = null) {
   virarODiaSeNecessario();
+  // a semana conta mesmo depois que a diária fechou
+  if (progredirSemana(evento, delta, chave) === false) return;
   progredirIntro(evento);
-  progredirSemana(evento, delta);   // a semana conta mesmo depois que a diária fechou
   for (const missao of MISSOES.filter(m => m.evento === evento)) {
     const antes = state.missoes.progresso[missao.id] ?? 0;
     if (antes >= missao.meta) continue;
@@ -146,7 +148,7 @@ export function progredirSemana(evento, delta = 1, chave = null) {
   if (!missoes.length) return;
 
   if (chave != null) {
-    if (s.curtidos.includes(chave)) return;
+    if (s.curtidos.includes(chave)) return false;   // já contou nesta semana
     s.curtidos.push(chave);
   }
   for (const missao of missoes) {

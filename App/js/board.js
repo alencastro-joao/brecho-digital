@@ -1432,6 +1432,7 @@ async function publicarBoard() {
   if (!salvo.publicado) {
     db.state.stats.publicacoes += 1;
     db.progredirMissao('publicar');
+    db.progredirMissao('postar-colagem');
   }
   salvo.publicado = true;
   db.salvar();

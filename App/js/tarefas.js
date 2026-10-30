@@ -75,7 +75,7 @@ const premioNaSemana = () =>
 // O ícone de cada pedido, pelo evento que ele conta.
 const ICONE = {
   entrar: 'abrir', resgates: 'sacola', raras: 'brilho', looks: 'varinha',
-  publicar: 'camera', curtir: 'coracao',
+  publicar: 'camera', curtir: 'coracao', 'postar-colagem': 'quadro',
 };
 
 // ------------------------------- Coleções ---------------------------------
