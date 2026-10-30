@@ -169,6 +169,11 @@ def perfil_de(eu_id, alvo_id, completo=True):
             ' JOIN usuarios u ON u.id = a.para WHERE a.de=? ORDER BY u.id LIMIT ?',
             (alvo_id, LISTA_MAX)).fetchall()
         cartao['amigos'] = [_cartao(con, l, eu_id) for l in amigos]
+        lado = lambda sql: [_cartao(con, l, eu_id) for l in con.execute(sql, (alvo_id, LISTA_MAX)).fetchall()]
+        cartao['listaSeguindo'] = lado('SELECT u.* FROM segue s JOIN usuarios u ON u.id = s.para'
+                                       ' WHERE s.de=? ORDER BY u.id LIMIT ?')
+        cartao['listaSeguidores'] = lado('SELECT u.* FROM segue s JOIN usuarios u ON u.id = s.de'
+                                         ' WHERE s.para=? ORDER BY u.id LIMIT ?')
         return cartao
 
 

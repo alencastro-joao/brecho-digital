@@ -218,29 +218,33 @@ function renderUsuario() {
 
   // Numa conta real "segue você" é fato, então aparece antes de você seguir —
   // ao contrário dos fictícios, onde mostrar o sorteio cedo estragaria a graça.
-  $('#up-handle').replaceChildren(p.handle,
+  // O @ não aparece mais embaixo do nome (pedido do João, 30/10/2026), só o selo.
+  $('#up-handle').replaceChildren(
     ...(p.real && p.segueVoce ? [el('span', { class: 'pf-segue-voce' }, 'segue você')] : []));
+  $('#up-handle').hidden = !$('#up-handle').childNodes.length;
   // A cor favorita dela, discreta como no seu perfil: uma bolinha ao lado do nome.
   const fav = CORES_FAVORITAS.find(c => c.nome === p.corFavorita);
   $('#up-nome').replaceChildren(p.nome, fav
     ? el('span', { class: 'pf-cor-fav', style: { background: fav.hex }, title: `Cor favorita: ${fav.nome}` })
     : '');
-  $('#up-bio').textContent = p.bio;
-  $('#up-bio').hidden = !p.bio;
   $('#up-redes').replaceChildren(...chipsDeRedes(redesDoPerfil(p)));
 
-  // Três números, como no seu perfil; as curtidas vão no título.
+  // Os números, como no seu perfil; as curtidas vão no título.
   // Fictício: o sorteio não sabe que você o seguiu, então soma você à mão.
-  // Conta real: o servidor já contou — e, com a página completa, os amigos.
-  const stats = [
-    ['publicações', posts.length, `${plural(curtidas, 'curtida', 'curtidas')} nas publicações`],
-    ['seguidores', n.seguidores + (!p.real && segue ? 1 : 0), ''],
-    p.amigos
-      ? ['amigos', p.amigos.length, `segue ${plural(n.seguindo, 'pessoa', 'pessoas')}`]
-      : ['seguindo', n.seguindo, ''],
-  ];
-  $('#up-stats').replaceChildren(...stats.map(([rotulo, valor, dica]) =>
-    numeroDoPerfil(valor, rotulo, dica)));
+  // Conta real: o servidor já contou e, com a página completa, manda as listas:
+  // tocar no número abre as pessoas.
+  const nome = p.nome.split(' ')[0];
+  const lista = (ids, titulo, vazio) => ids
+    ? () => abrirListaDePessoas(titulo, ids.map(perfilPublico).filter(Boolean), { vazio })
+    : null;
+  $('#up-stats').replaceChildren(
+    numeroDoPerfil(posts.length, 'publicações', `${plural(curtidas, 'curtida', 'curtidas')} nas publicações`),
+    numeroDoPerfil(n.seguidores + (!p.real && segue ? 1 : 0), 'seguidores', '',
+      lista(p.listaSeguidores, `Seguidores de ${nome}`, 'Ninguém segue ainda.')),
+    numeroDoPerfil(n.seguindo, 'seguindo', '',
+      lista(p.listaSeguindo, `${nome} segue`, 'Não segue ninguém ainda.')),
+    ...(p.amigos ? [numeroDoPerfil(p.amigos.length, 'amigos', '',
+      lista(p.amigos, `Amigos de ${nome}`, 'Nenhum amigo ainda.'))] : []));
 
   $('#up-acoes').replaceChildren(
     el('button', {
@@ -279,10 +283,8 @@ function abasDosPosts(p, posts) {
     abrir: () => abrirPost(post.id),
   }));
   return [
-    { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-      itens: obras(posts.filter(post => post.tipo !== 'board')), vazio: 'Nenhum look ainda' },
-    { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-      itens: obras(posts.filter(post => post.tipo === 'board')), vazio: 'Nenhuma colagem ainda' },
+    { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
+      itens: obras(posts), vazio: 'Nenhum post ainda' },
     abaDeRoupasDe(p, []),
   ];
 }
@@ -353,19 +355,17 @@ function renderGaveta() {
   // Os looks e colagens são as mesmas abas da página inteira, numa grade só:
   // tocar abre o look por cima da gaveta, sem fechá-la.
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
-  const obras = abas.filter(a => a.id === 'looks' || a.id === 'colagens').flatMap(a => a.itens);
+  const obras = abas.find(a => a.id === 'posts').itens;
 
   $('#gv-corpo').replaceChildren(
     el('div', { class: 'gv-topo' },
       el('div', { class: 'gv-foto' }, cabeca(aparenciaDoPerfil(p), 96, roupasDoPerfil(p))),
       el('div', { class: 'gv-quem' },
         el('h2', { class: 'gv-nome' }, p.nome),
-        el('p', { class: 'gv-arroba' }, p.handle,
-          p.real && p.segueVoce ? el('span', { class: 'pf-segue-voce' }, 'segue você') : null),
+        p.real && p.segueVoce ? el('p', { class: 'gv-arroba' }, el('span', { class: 'pf-segue-voce' }, 'segue você')) : null,
         el('div', { class: 'gv-stats' },
           numeroDoPerfil(posts.length, 'publicações'),
           numeroDoPerfil(n.seguidores + (!p.real && segue ? 1 : 0), 'seguidores')))),
-    p.bio ? el('p', { class: 'gv-bio' }, p.bio) : null,
     el('div', { class: 'gv-acoes' },
       el('button', {
         class: segue ? 'btn-ghost' : 'btn-dark',
@@ -406,22 +406,22 @@ function montarGaveta() {
 function abasDaVitrine(p) {
   const favoritos = p.favoritos || {};
   const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
-  // Com `obras` a lista já vem na ordem do perfil dela; só os favoritos da
-  // versão antiga precisam ir com a estrela na frente.
-  const obras = (tipo, lista = []) => (p.obras ? lista : favoritasPrimeiro(lista)).map(obra => cartaoDeObra({
+  // Looks e colagens numa aba só (Posts): as favoritas na frente e, no resto,
+  // a ordem em que ela arrumou cada lista.
+  const obras = (tipo, lista = []) => lista.map(obra => ({ obra, tipo, favorito: obra.favorito }));
+  const cartao = ({ obra, tipo }) => cartaoDeObra({
     nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
     thumb: obra.thumb,
     solto: tipo === 'look' && Boolean(p.obras),
     tipo,
     selo: obra.favorito ? ico('estrela-cheia') : null,
     abrir: () => abrirObra(obra, tipo),
-  }));
+  });
   return [
+    { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
+      itens: favoritasPrimeiro([...obras('look', todas.looks), ...obras('colagem', todas.colagens)]).map(cartao),
+      vazio: 'Nenhum post ainda' },
     abaDeRoupasDe(p, doCatalogo(favoritos.pecas)),
-    { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-      itens: obras('look', todas.looks), vazio: 'Nenhum look ainda' },
-    { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-      itens: obras('colagem', todas.colagens), vazio: 'Nenhuma colagem ainda' },
   ];
 }
 
