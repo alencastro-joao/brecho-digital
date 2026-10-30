@@ -29,7 +29,7 @@ import { irPara, viewAtual } from './router.js';
 import { darPecasAleatorias } from './closet.js';
 import { renderConexoes, chipsDeRedes, minhasRedes } from './conexoes.js';
 import {
-  gerarPostsFicticios, aoAtualizarFeed, postsDoAutor, garantirFeed,
+  gerarPostsFicticios, aoAtualizarFeed, postsDoAutor, garantirFeed, irAoPost,
 } from './social.js';
 import { atualizarBadge, montarVitrine } from './vitrine.js';
 import { abrirLook } from './stylist.js';
@@ -232,9 +232,14 @@ function abaDeRoupas() {
 // mais velho, ou a ordem que você arrumou segurando e arrastando; a estrela
 // vira o selo no canto. O clique devolve ao editor de origem.
 function abaDePosts() {
-  const abrir = (item) => item.tipo === 'look'
-    ? () => { abrirLook(item.id); irPara('stylist'); }
-    : () => { irPara('board'); abrirBoard(item.id); };
+  // Publicado: vai ao feed, no post. Ainda não: volta ao editor.
+  const campo = { look: 'lookId', colagem: 'boardId' };
+  const abrir = (item) => () => {
+    const post = meusPosts().find(p => p[campo[item.tipo]] === item.id);
+    if (post) return irAoPost(post.id);
+    if (item.tipo === 'look') { abrirLook(item.id); irPara('stylist'); }
+    else { irPara('board'); abrirBoard(item.id); }
+  };
   return {
     id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
     itens: meusPostsDoPerfil().map(item => cartaoDaObra(item, abrir(item))),
