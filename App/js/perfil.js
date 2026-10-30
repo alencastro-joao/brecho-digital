@@ -210,9 +210,9 @@ const arrumar = (aba, ids) => { db.guardarOrdemDoPerfil(aba, ids); renderPerfil(
 
 // As três de vitrine seguem a mesma regra: aparece o que tem estrela. Vazia,
 // diz em poucas palavras o que falta e leva até lá.
-// A prévia do guarda-roupa: as favoritas primeiro e, para completar, as que
-// chegaram por último — ou a ordem que você arrumou (minhavitrine.js).
-// Segurar e arrastar uma peça muda a ordem; o "ver todas" fica no fim.
+// A prévia do guarda-roupa: só as favoritas ou, sem nenhuma, as mais raras
+// (usuario.js, gradeDaPrevia). Segurar e arrastar uma peça muda a ordem; o
+// "ver todas" fica no fim.
 function abaDeRoupas() {
   const favoritas = pecasFavoritas();
   const todas = minhasRoupas();

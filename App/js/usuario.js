@@ -16,7 +16,7 @@
 // mesmos seguidores e a mesma data de entrada, em qualquer navegador, sem
 // ninguém cadastrar nada. Quando existir backend, é essa função que some.
 
-import { PERFIS_MOCK, CATEGORIAS, RARIDADE, escalaGrade, CORES_FAVORITAS } from './config.js';
+import { PERFIS_MOCK, CATEGORIAS, RARIDADE, RARIDADES, escalaGrade, CORES_FAVORITAS } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
@@ -447,11 +447,19 @@ export const PREVIA_DE_ROUPAS = 15;
 // Tocar numa peça abre a ficha dela, e o deslizar segue pela lista inteira.
 export function gradeDaPrevia(pecas, favoritas, abrirTudo, { minha = false } = {}) {
   const marcadas = new Set(favoritas.map(p => p.id));
-  // Passou do tamanho da prévia: o último quadrinho vira o "ver todas", para a
-  // grade fechar certinho (15 = três ou cinco por fileira).
-  const cabem = pecas.length > PREVIA_DE_ROUPAS ? PREVIA_DE_ROUPAS - 1 : PREVIA_DE_ROUPAS;
-  const celulas = gradeDePecas(pecas.slice(0, cabem), {
-    favoritas: marcadas, abrir: (i) => abrirFichaDePeca(pecas, i, { minha }) });
+  // Só as favoritas (pedido do João, 30/10/2026); sem nenhuma, as mais raras
+  // primeiro. A ordem arrumada desempata.
+  const nivel = (id) => ORDEM_DE_RARIDADE.indexOf(raridadeDaPeca(id)?.id);
+  const escolhidas = marcadas.size
+    ? pecas.filter(p => marcadas.has(p.id))
+    : [...pecas].sort((a, b) => nivel(b.id) - nivel(a.id));
+  // Passou do tamanho da prévia, ou ficou peça de fora: o último quadrinho vira
+  // o "ver todas", para a grade fechar certinho (15 = três ou cinco por fileira).
+  const cabem = Math.min(escolhidas.length,
+    pecas.length > PREVIA_DE_ROUPAS ? PREVIA_DE_ROUPAS - 1 : PREVIA_DE_ROUPAS);
+  const previa = escolhidas.slice(0, cabem);
+  const celulas = gradeDePecas(previa, {
+    favoritas: marcadas, abrir: (i) => abrirFichaDePeca(previa, i, { minha }) });
   const sobra = pecas.length - cabem;
   if (sobra > 0) {
     celulas.push(el('button', { type: 'button', class: 'up-peca pf-ver-todas', onclick: abrirTudo },
@@ -459,6 +467,8 @@ export function gradeDaPrevia(pecas, favoritas, abrirTudo, { minha = false } = {
   }
   return celulas;
 }
+
+const ORDEM_DE_RARIDADE = RARIDADES.map(r => r.id);   // da comum à lendária
 
 // ------------------------- Guarda-roupa e wishlist -------------------------
 // Conta real: as listas que ela mandou (null quando a versão do app dela não
