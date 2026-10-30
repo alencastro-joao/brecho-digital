@@ -15,6 +15,7 @@ import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 
 const HORA = 3600e3;
+export const VAGAS = MURAL.vagas - 1;     // uma vaga do mural é sempre a da missão de jogo
 const MODELO = new Map(MURAL.missoes.map(m => [m.id, m]));
 export const modeloDe = (m) => MODELO.get(m.id);
 
@@ -136,7 +137,7 @@ export function atualizar(agora = Date.now()) {
   // Quem ficou dias fora não vê a fila inteira: só chega o que ainda não venceu.
   mu.proxima = Math.max(mu.proxima, agora - MURAL.duraHoras * HORA);
   while (mu.proxima <= agora) {
-    if (mu.missoes.length < MURAL.vagas) {
+    if (mu.missoes.length < VAGAS) {
       const m = novaMissao(mu.proxima, new Set(mu.missoes.map(chaveDe)));
       if (m && m.vence > agora) mu.missoes.push(m);
     }

@@ -1082,7 +1082,8 @@ export const MARCOS_SEMANA = { fichasPorMissao: 4, carimbo: { bau: 'epico' } };
 
 // ------------------------------ Mural -------------------------------------
 // As missões do mural de Tarefas (js/mural.js), em post-its que aparecem de
-// tempos em tempos: uma nova a cada `cadaHoras`, até `vagas` no mural, e cada
+// tempos em tempos: uma nova a cada `cadaHoras`, até `vagas` no mural (uma
+// delas é sempre a da missão de jogo), e cada
 // uma some `duraHoras` depois de chegar. O nível sorteia o prêmio. Cor e tipo
 // saem do acervo, ao acaso (o jogador vai atrás), só em combinações que
 // existem. Regras do João, 30/10/2026.
