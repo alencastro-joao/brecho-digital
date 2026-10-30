@@ -508,6 +508,19 @@ export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null, 
   document.body.classList.add('com-modal');
 }
 
+// A mesma janela, com pessoas: seguidores, seguindo e amigos do seu perfil.
+// Tocar numa pessoa fecha a lista e abre a página dela.
+export function abrirListaDePessoas(titulo, pessoas, { vazio = '' } = {}) {
+  aoFecharLista = null;
+  const fechar = () => { $('#modal-lista').hidden = true; destravarSeNada(); };
+  $('#lp-titulo').textContent = titulo;
+  $('#lp-corpo').replaceChildren(pessoas.length
+    ? el('div', { class: 'pf-grade pf-grade-pessoas' }, ...pessoas.map(p => botaoDePerfil(p, fechar)))
+    : el('p', { class: 'lp-vazio' }, vazio));
+  $('#modal-lista').hidden = false;
+  document.body.classList.add('com-modal');
+}
+
 // Só destrava a rolagem da página quando não sobrou modal aberto (a ficha da
 // peça abre por cima da lista).
 const destravarSeNada = () => {
@@ -742,11 +755,11 @@ export function cartaoDeObra({ id = null, nome, thumb, tipo, solto = false, selo
 
 // Um atalho para a página de alguém: a cabeça do avatar e o primeiro nome.
 // É a aba de amigos do seu perfil e a de pessoas daqui.
-export const botaoDePerfil = (p) =>
+export const botaoDePerfil = (p, antes = null) =>
   el('button', {
     class: 'pf-amigo',
     title: p.bio,
-    onclick: () => abrirPerfilDe(p.id),
+    onclick: () => { antes?.(); abrirPerfilDe(p.id); },
   },
     cabeca(aparenciaDoPerfil(p), 64, roupasDoPerfil(p)),
     el('small', {}, p.nome.split(' ')[0])
