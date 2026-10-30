@@ -209,6 +209,11 @@ def limpar_nome(nome, handle):
 DONO = (os.environ.get('DONO_EMAIL') or 'oliveijao@gmail.com').lower()
 
 
+# Quem usa a esteira de peças sem ser o dono (pedido do João, 30/10/2026). Só a
+# esteira: o resto do admin continua só do dono.
+ESTEIRA_EMAILS = {'galencastro07@gmail.com'}
+
+
 def _papel(item):
     return 'admin' if item.get('papel') == 'admin' and item.get('email_normal') == DONO else 'usuario'
 
@@ -222,6 +227,7 @@ def _publico(item):
         'handle': '@' + item['handle'],
         'nome': item['nome'],
         'papel': _papel(item),
+        'esteira': _papel(item) == 'admin' or item.get('email_normal') in ESTEIRA_EMAILS,
         'criadoEm': item['criado_em'],
     }
 

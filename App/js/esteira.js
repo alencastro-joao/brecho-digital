@@ -1290,7 +1290,7 @@ async function iniciar() {
     return;
   }
   $('#es-conta').textContent = conta.nome || conta.email || '';
-  if (conta.papel !== 'admin') {
+  if (conta.papel !== 'admin' && !conta.esteira) {
     aviso.hidden = false;
     aviso.replaceChildren(el('p', {}, 'Esta página é só do administrador.'));
     return;
