@@ -159,12 +159,16 @@ export function renderPerfil() {
 // ------------------------------- Coleções ---------------------------------
 // Uma aba: os emblemas das coleções começadas — as completas primeiro, depois
 // as mais adiantadas — e, no fim, o atalho para a tela de Coleções, onde mora
-// a lista inteira.
-function abaDeColecoes() {
-  const todas = GRUPOS_DE_COLECAO.flatMap(([, , lista]) => lista());
+// a lista inteira. No perfil de outra pessoa (usuario.js) vem só a conta das
+// peças dela, sem o atalho.
+export function abaDeColecoes(todas = GRUPOS_DE_COLECAO.flatMap(([, , lista]) => lista()), { minha = true } = {}) {
   const comecadas = todas.filter(c => c.tem > 0)
     .sort((a, b) => Number(b.completa) - Number(a.completa) || b.pct - a.pct);
   const completas = todas.filter(c => c.completa).length;
+  if (!minha) {
+    return { id: 'colecoes', icone: 'trofeu', rotulo: 'Coleções', grade: 'pf-grade-colecoes',
+      itens: comecadas.map(emblema), vazio: 'Nenhuma coleção começada' };
+  }
   return {
     id: 'colecoes', icone: 'trofeu', rotulo: 'Coleções', grade: 'pf-grade-colecoes',
     itens: comecadas.length ? [...comecadas.map(emblema), el('button', {

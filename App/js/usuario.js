@@ -26,7 +26,8 @@ import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipsDeRedes } from './conexoes.js';
-import { colecoesDaPeca, chipDaColecao } from './colecoes.js';
+import { colecoesDaPeca, chipDaColecao, todasAsColecoes } from './colecoes.js';
+import { abaDeColecoes } from './perfil.js';
 import { deslizavel, trocarComSlide } from './deslizar.js';
 import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
@@ -259,7 +260,7 @@ function renderUsuario() {
   $('#up-listas').replaceChildren(...botoesDeListas(p.nome.split(' ')[0], roupas, desejos));
 
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
-  abas.push(abaDePessoas(p));
+  abas.push(abaDeColecoesDe(p), abaDePessoas(p));
   pintarAbas($('#up-abas'), $('#up-conteudo'), abas, abaAtual,
     (id) => { abaAtual = id; renderUsuario(); });
   if (postAberto) renderPostAberto();
@@ -299,6 +300,16 @@ function abaDeRoupasDe(p, favoritas) {
       () => abrirListaDePecas(`Guarda-roupa de ${p.nome.split(' ')[0]}`, todas)),
     vazio: 'Nenhuma roupa ainda',
   };
+}
+
+// As coleções dela, contadas pelas peças do guarda-roupa que ela mostra.
+function abaDeColecoesDe(p) {
+  const tem = new Set((guardaRoupaDe(p) || []).map(x => x.id));
+  const todas = todasAsColecoes().map(c => {
+    const n = (c.ids || []).filter(id => tem.has(id)).length;
+    return { ...c, tem: n, completa: c.total > 0 && n >= c.total, pct: c.total ? n / c.total : 0 };
+  });
+  return abaDeColecoes(todas, { minha: false });
 }
 
 // ------------------------------- A gaveta ---------------------------------
@@ -659,7 +670,7 @@ function abaDePessoas(p) {
     ? p.amigos.map(perfilPublico).filter(Boolean).map(botaoDePerfil)
     : botoesDeOutrosPerfis(p.id);
   return {
-    id: 'pessoas', icone: 'usuario', rotulo: p.amigos ? 'Amigos' : 'Pessoas', grade: 'pf-grade-pessoas',
+    id: 'pessoas', icone: 'usuario', rotulo: 'Amigos', grade: 'pf-grade-pessoas',
     itens: [...pessoas, botaoProcurar(() => abrirBuscaDePessoas(renderUsuario))],
   };
 }
