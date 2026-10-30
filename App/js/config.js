@@ -1663,7 +1663,7 @@ export const INTRO = [
     premio: { bau: 'incomum' } },
   // Logo depois do primeiro baú: a tela onde ele (e todo baú) fica guardado.
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
-    dica: 'Você ganhou um baú! Todo baú fica guardado aqui, na tela de Baús, dentro de Tarefas. Toque nele para abrir.',
+    dica: 'Você ganhou um baú! Todo baú fica guardado aqui, em Baús (o botão redondo no topo de Tarefas). Toque nele para abrir.',
     premio: { xp: 20 } },
   { ir: 'closet', demo: 'peca', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
@@ -1692,12 +1692,15 @@ export const INTRO = [
   { evento: 'seguir', ir: 'social', lugar: 'cima', nome: 'Siga alguém',
     dica: 'Aqui ficam os looks de todo mundo. Toque em Seguir em quem você curtir. Para achar amigos, busque pelo nome ou @.',
     premio: { fichas: 2 } },
-  { ir: 'ajudas', lugar: 'baixo', nome: 'Mini games',
-    dica: 'Em 🎲 Jogos, na tela de Tarefas, você ajuda a loja e ganha fichas. Avaliar: arraste a peça para gostei ou não gostei. ' +
-      'Ajustar: encaixe a peça no corpo. Preencher: diga a cor e a marca. A barra de cada jogo enche a cada ajuda; ' +
-      'cheia, vira 1 ficha. Tem um limite por dia.' },
-  { evento: 'carimbo', ir: 'tarefas', lugar: 'cima', nome: 'Carimbe o seu dia',
-    dica: 'Aqui ficam as missões do dia, e cada uma paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um baú. ' +
+  // `aba` abre Tarefas já nessa aba (Mural, ou 'hoje' para o Diário).
+  { ir: 'tarefas', aba: 'mural', lugar: 'baixo', nome: 'O mural de missões',
+    dica: 'Aqui chegam missões em post-its, uma a cada 2 horas, e cada uma some em 12 horas. ' +
+      'Toque no post-it para ir fazer a missão. Pronta, toque em Resgatar para levar as fichas.' },
+  { ir: 'tarefas', aba: 'mural', lugar: 'baixo', nome: 'Ajudinha',
+    dica: 'O post-it de Ajudinha abre um mini game para ajudar a loja: avaliar, ajustar ou preencher peças. ' +
+      'Cumpra a meta e resgate as fichas no mural.' },
+  { evento: 'carimbo', ir: 'tarefas', aba: 'hoje', lugar: 'cima', nome: 'Carimbe o seu dia',
+    dica: 'Na aba Diário ficam as missões do dia, e cada uma paga 2 fichas. Com as 5 feitas, carimbe o dia e ganhe um baú. ' +
       '5 dias carimbados na semana dão mais um baú.',
     premio: { bau: 'epico', fichas: 1, xp: 50 } },
 ];

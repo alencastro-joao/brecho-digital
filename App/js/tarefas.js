@@ -76,6 +76,11 @@ export function renderTarefas() {
 // A aba aberta (Mural, Diário ou Semana). Começa no Mural, a não ser que só o
 // dia ou a semana tenham prêmio esperando.
 let aba = null;
+// O tutorial abre Tarefas já numa aba: o Mural ou o Diário ('hoje').
+export function abrirNaAba(id) {
+  aba = id;
+  if (viewAtual() === 'tarefas') renderTarefas(); else irPara('tarefas');
+}
 const premioNoDia = () => !!db.marcoDoDiaPronto() || db.bauDosDiasPronto();
 const premioNaSemana = () =>
   db.carimboDaSemanaPronto() || db.bauEspecialPronto();
