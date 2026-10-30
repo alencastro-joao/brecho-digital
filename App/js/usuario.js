@@ -283,9 +283,11 @@ function abasDosPosts(p, posts) {
     abrir: () => abrirPost(post.id),
   }));
   return [
-    { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
-      itens: obras(posts), vazio: 'Nenhum post ainda' },
+    { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
+      itens: obras(posts.filter(post => post.tipo === 'board')), vazio: 'Nenhuma colagem ainda' },
     abaDeRoupasDe(p, []),
+    { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
+      itens: obras(posts.filter(post => post.tipo !== 'board')), vazio: 'Nenhum look ainda' },
   ];
 }
 
@@ -355,7 +357,7 @@ function renderGaveta() {
   // Os looks e colagens são as mesmas abas da página inteira, numa grade só:
   // tocar abre o look por cima da gaveta, sem fechá-la.
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
-  const obras = abas.find(a => a.id === 'posts').itens;
+  const obras = abas.filter(a => a.id === 'looks' || a.id === 'colagens').flatMap(a => a.itens);
 
   $('#gv-corpo').replaceChildren(
     el('div', { class: 'gv-topo' },
@@ -406,22 +408,22 @@ function montarGaveta() {
 function abasDaVitrine(p) {
   const favoritos = p.favoritos || {};
   const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
-  // Looks e colagens numa aba só (Posts): as favoritas na frente e, no resto,
-  // a ordem em que ela arrumou cada lista.
-  const obras = (tipo, lista = []) => lista.map(obra => ({ obra, tipo, favorito: obra.favorito }));
-  const cartao = ({ obra, tipo }) => cartaoDeObra({
+  // Com `obras` a lista já vem na ordem do perfil dela; só os favoritos da
+  // versão antiga precisam ir com a estrela na frente.
+  const obras = (tipo, lista = []) => (p.obras ? lista : favoritasPrimeiro(lista)).map(obra => cartaoDeObra({
     nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
     thumb: obra.thumb,
     solto: tipo === 'look' && Boolean(p.obras),
     tipo,
     selo: obra.favorito ? ico('estrela-cheia') : null,
     abrir: () => abrirObra(obra, tipo),
-  });
+  }));
   return [
-    { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
-      itens: favoritasPrimeiro([...obras('look', todas.looks), ...obras('colagem', todas.colagens)]).map(cartao),
-      vazio: 'Nenhum post ainda' },
+    { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
+      itens: obras('colagem', todas.colagens), vazio: 'Nenhuma colagem ainda' },
     abaDeRoupasDe(p, doCatalogo(favoritos.pecas)),
+    { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
+      itens: obras('look', todas.looks), vazio: 'Nenhum look ainda' },
   ];
 }
 
