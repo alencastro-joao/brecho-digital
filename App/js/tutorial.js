@@ -29,6 +29,7 @@ import { abrirColecao } from './colecoes.js';
 import { el, $ } from './util.js';
 import { emoHtml, ico } from './icones.js';
 import { abrirPecaNoCloset } from './closet.js';
+import { abrirNaAba } from './tarefas.js';
 import { tocar } from './sons.js';
 import { sugerirInstalar } from './instalar.js';
 
@@ -367,12 +368,13 @@ function pecaParaMostrar() {
 }
 
 // "Ir para lá": a missão da coleção abre direto a coleção da cor do presente,
-// e o passo do closet já abre uma peça da pessoa.
+// o passo do closet já abre uma peça da pessoa e o de Tarefas, a aba dele.
 function irParaMissao(m) {
   const cor = db.state.presenteCor;
   const peca = m.demo === 'peca' && pecaParaMostrar();
   if (m.ir === 'colecoes' && cor) abrirColecao(idDaCor(cor));
   else if (peca) abrirPecaNoCloset(peca);
+  else if (m.aba) abrirNaAba(m.aba);
   else irPara(m.ir);
 }
 
