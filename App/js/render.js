@@ -299,7 +299,6 @@ export async function renderizarBoard(board, { escala = 1 } = {}) {
     ctx.restore();
   }
 
-
   return canvas;
 }
 
