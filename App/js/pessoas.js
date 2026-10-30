@@ -138,6 +138,8 @@ const leitoresDeSeguidores = new Set();
 let ultimosSeguidores = null;
 // Quantas contas reais seguem você, pela última leitura do servidor.
 export const quantosMeSeguem = () => ultimosSeguidores?.length ?? 0;
+// E quem são (os ids; os cartões ficam guardados, ver `guardar`).
+export const quemMeSegue = () => ultimosSeguidores ?? [];
 
 export function aoLerSeguidores(fn) {
   leitoresDeSeguidores.add(fn);

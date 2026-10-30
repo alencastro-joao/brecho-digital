@@ -1,8 +1,8 @@
 // Perfil: a sua página no brechó, no jeito do Instagram.
 //
-// Em cima, o retrato redondo com o nível no anel em volta, o nome, o @, a bio,
-// os três números e os botões. Embaixo, abas com a grade de cada uma: roupas,
-// looks, colagens, coleções e amigos.
+// Em cima, o retrato redondo com o nível no anel em volta, o nome, os números
+// e os botões. Embaixo, abas com a grade de cada uma: posts (looks e colagens
+// juntos), roupas, coleções e amigos.
 //
 // A vitrine é curada: mostra só o que você marcou com a estrela — ver
 // favoritos.js. Ter 60 peças não vira uma parede de 60 peças; o perfil é o que
@@ -35,17 +35,17 @@ import { atualizarBadge, montarVitrine } from './vitrine.js';
 import { abrirLook } from './stylist.js';
 import { abrirBoard } from './board.js';
 import { abrirBuscaDePessoas } from './busca.js';
-import { sincronizarSocial, quantosMeSeguem } from './pessoas.js';
+import { sincronizarSocial, quantosMeSeguem, quemMeSegue } from './pessoas.js';
 import { PALETAS, paletaAtual, escolherPaleta } from './paleta.js';
 import { GRUPOS_DE_COLECAO, capaDaColecao, abrirColecao } from './colecoes.js';
 import { escalaGrade, logoDaColecao, CORES_FAVORITAS } from './config.js';
 import { brilhoDoEstilo } from './efeitos.js';
 import {
   perfilPublico, gradeDaPrevia, abrirListaDePecas, segueDeVolta, cartaoDeObra, botaoDePerfil, botaoProcurar, botoesDeListas,
-  retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas,
+  retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas, abrirListaDePessoas,
 } from './usuario.js';
 import { ico } from './icones.js';
-import { pecasFavoritas, minhasRoupas, meusLooks, minhasColagens } from './minhavitrine.js';
+import { pecasFavoritas, minhasRoupas, meusPostsDoPerfil } from './minhavitrine.js';
 
 // Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
 const meusPosts = () => postsDoAutor(db.state.usuario.id);
@@ -114,26 +114,28 @@ export function renderPerfil() {
     dica: xp.maximo ? `Nível máximo (${xp.nivel})` : `Nível ${xp.nivel}: faltam ${xp.xpFaltando} XP para o ${xp.nivel + 1}`,
   });
 
-  $('#perfil-handle').textContent = u.handle;
   // A cor favorita, discreta: uma bolinha ao lado do nome.
   const fav = CORES_FAVORITAS.find(c => c.nome === u.corFavorita);
   $('#perfil-nome').replaceChildren(u.nome, fav
     ? el('span', { class: 'pf-cor-fav', style: { background: fav.hex }, title: `Cor favorita: ${fav.nome}` })
     : '');
-  $('#perfil-bio').textContent = u.bio;
-  $('#perfil-bio').hidden = !u.bio;
   renderConta();
   $('#perfil-redes').replaceChildren(...chipsDeRedes(minhasRedes()));
 
-  // Três números; o resto vai no título, para quem passar o mouse. Amigos
-  // abre a aba deles.
+  // Os números; o resto vai no título, para quem passar o mouse. Seguidores,
+  // seguindo e amigos abrem a lista dessas pessoas.
   const amigos = meusAmigos();
+  const seguindo = u.seguindo.map(perfilPublico).filter(Boolean);
+  const seguidores = quemMeSegue().map(perfilPublico).filter(Boolean);
   $('#perfil-stats').replaceChildren(
     numeroDoPerfil(db.state.inventario.length, 'peças',
       `${plural(db.state.looks.length, 'look', 'looks')} · ${plural(db.state.boards.length, 'colagem', 'colagens')}`),
-    numeroDoPerfil(quantosMeSeguem(), 'seguidores', `você segue ${plural(u.seguindo.length, 'pessoa', 'pessoas')}`),
+    numeroDoPerfil(quantosMeSeguem(), 'seguidores', '',
+      () => abrirListaDePessoas('Seguidores', seguidores, { vazio: 'Ninguém segue você ainda.' })),
+    numeroDoPerfil(u.seguindo.length, 'seguindo', '',
+      () => abrirListaDePessoas('Seguindo', seguindo, { vazio: 'Você ainda não segue ninguém.' })),
     numeroDoPerfil(amigos.length, 'amigos', `${plural(curtidas, 'curtida', 'curtidas')} nos seus posts`,
-      () => { abaAtual = 'amigos'; renderPerfil(); }));
+      () => abrirListaDePessoas('Amigos', amigos, { vazio: 'Amigo é quem você segue e segue você de volta.' })));
 
   // Vestir-se é a casa das roupinhas (o vestiário): saiu da barra de baixo e
   // mora aqui, em destaque, ao lado de quem você é.
@@ -149,7 +151,7 @@ export function renderPerfil() {
   $('#perfil-listas').replaceChildren(...botoesDeListas('', roupas, desejos, { minha: true, aoFechar: renderPerfil }));
 
   pintarAbas($('#perfil-abas'), $('#perfil-conteudo'), [
-    abaDeRoupas(), ...abasDeObras(), abaDeColecoes(), abaDeAmigos(amigos),
+    abaDePosts(), abaDeRoupas(), abaDeColecoes(), abaDeAmigos(amigos),
   ], abaAtual, (id) => { abaAtual = id; renderPerfil(); });
   renderConexoes(renderPerfil);
 }
@@ -221,26 +223,21 @@ function abaDeRoupas() {
   };
 }
 
-// Todos os looks do Stylist e todas as colagens: as (até três) favoritas na
-// frente, depois do mais novo para o mais velho, ou a ordem que você arrumou
-// segurando e arrastando; a estrela vira o selo no canto. O clique devolve ao
-// editor de origem.
-function abasDeObras() {
-  const obras = (lista, tipo, abrir) => lista
-    .map(item => cartaoDaObra({ ...item, tipo }, () => abrir(item.id)));
-  return [{
-    id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-    itens: obras(meusLooks(), 'look', (id) => { abrirLook(id); irPara('stylist'); }),
-    reordenar: (ids) => arrumar('looks', ids),
-    vazio: 'Monte o seu primeiro look',
+// Os posts, como no Instagram: os looks do Stylist e as colagens numa grade só,
+// cada um na proporção dele. As favoritas na frente, depois do mais novo para o
+// mais velho, ou a ordem que você arrumou segurando e arrastando; a estrela
+// vira o selo no canto. O clique devolve ao editor de origem.
+function abaDePosts() {
+  const abrir = (item) => item.tipo === 'look'
+    ? () => { abrirLook(item.id); irPara('stylist'); }
+    : () => { irPara('board'); abrirBoard(item.id); };
+  return {
+    id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
+    itens: meusPostsDoPerfil().map(item => cartaoDaObra(item, abrir(item))),
+    reordenar: (ids) => arrumar('posts', ids),
+    vazio: 'Monte o seu primeiro look ou colagem',
     botao: ['Abrir o Stylist', () => irPara('stylist')],
-  }, {
-    id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-    itens: obras(minhasColagens(), 'colagem', (id) => { irPara('board'); abrirBoard(id); }),
-    reordenar: (ids) => arrumar('colagens', ids),
-    vazio: 'Monte a sua primeira colagem',
-    botao: ['Abrir a Colagem', () => irPara('board')],
-  }];
+  };
 }
 
 // O look sai solto, sem moldura: o boneco inteiro, desenhado com o personagem
@@ -272,12 +269,11 @@ const abaDeAmigos = (amigos) => ({
 });
 
 // ----------------------------- Editar perfil ------------------------------
-// Nome, @ e bio são o que os outros leem na sua página. O formulário toma o
-// lugar do nome, da bio e dos botões enquanto está aberto.
+// Nome e @ são o que os outros leem na sua página. O formulário toma o lugar
+// do nome e dos botões enquanto está aberto.
 function montarEdicao() {
   // Nome e @ são da conta: vão para o servidor, valem em qualquer navegador e
-  // o @ é único entre todo mundo (por isso o servidor pode recusar). A bio é do
-  // save, e continua local.
+  // o @ é único entre todo mundo (por isso o servidor pode recusar).
   $('#perfil-editar').addEventListener('submit', async (e) => {
     e.preventDefault();
     const u = db.state.usuario;
@@ -294,7 +290,6 @@ function montarEdicao() {
       return toast(erro.message, 'aviso');
     }
 
-    u.bio = $('#pf-bio').value.trim();
     db.salvar();
     fecharEdicao();
     renderPerfil();
@@ -308,7 +303,6 @@ function abrirEdicao() {
   const u = db.state.usuario;
   $('#pf-nome').value = u.nome;
   $('#pf-handle').value = u.handle.replace(/^@+/, '');
-  $('#pf-bio').value = u.bio;
   $('#pf-topo').classList.add('editando');
   $('#perfil-editar').hidden = false;
   $('#pf-nome').focus();
