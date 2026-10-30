@@ -1,4 +1,4 @@
-// A ordem das abas do seu perfil — Colagens, Roupas e Stylists —, a mesma no
+// A ordem das abas do seu perfil — Posts, Roupas, Stylists e Colagens —, a mesma no
 // seu perfil (perfil.js) e no que os outros veem (pessoas.js manda as listas
 // já nesta ordem).
 //
@@ -47,3 +47,9 @@ export const minhasRoupas = () => naOrdem(
 export const meusLooks = () => naOrdem(favoritasPrimeiro(porData(db.state.looks)), db.ordemDoPerfil('looks'));
 
 export const minhasColagens = () => naOrdem(favoritasPrimeiro(porData(db.state.boards)), db.ordemDoPerfil('colagens'));
+
+// A aba Posts do seu perfil: looks e colagens juntos, na mesma regra.
+export const meusPostsDoPerfil = () => naOrdem(favoritasPrimeiro(porData([
+  ...db.state.looks.map(o => ({ ...o, tipo: 'look' })),
+  ...db.state.boards.map(o => ({ ...o, tipo: 'colagem' })),
+])), db.ordemDoPerfil('posts'));

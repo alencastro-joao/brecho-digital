@@ -26,7 +26,8 @@ import { ico, emo } from './icones.js';
 import { abrirBuscaDePessoas } from './busca.js';
 import { perfilDe, podeAbrir, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import { chipsDeRedes } from './conexoes.js';
-import { colecoesDaPeca, chipDaColecao } from './colecoes.js';
+import { colecoesDaPeca, chipDaColecao, todasAsColecoes } from './colecoes.js';
+import { abaDeColecoes } from './perfil.js';
 import { deslizavel, trocarComSlide } from './deslizar.js';
 import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
@@ -259,7 +260,7 @@ function renderUsuario() {
   $('#up-listas').replaceChildren(...botoesDeListas(p.nome.split(' ')[0], roupas, desejos));
 
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
-  abas.push(abaDePessoas(p));
+  abas.push(abaDeColecoesDe(p), abaDePessoas(p));
   pintarAbas($('#up-abas'), $('#up-conteudo'), abas, abaAtual,
     (id) => { abaAtual = id; renderUsuario(); });
   if (postAberto) renderPostAberto();
@@ -283,11 +284,9 @@ function abasDosPosts(p, posts) {
     abrir: () => abrirPost(post.id),
   }));
   return [
-    { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-      itens: obras(posts.filter(post => post.tipo === 'board')), vazio: 'Nenhuma colagem ainda' },
+    { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
+      itens: obras(posts), vazio: 'Nenhum post ainda' },
     abaDeRoupasDe(p, []),
-    { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-      itens: obras(posts.filter(post => post.tipo !== 'board')), vazio: 'Nenhum look ainda' },
   ];
 }
 
@@ -301,6 +300,16 @@ function abaDeRoupasDe(p, favoritas) {
       () => abrirListaDePecas(`Guarda-roupa de ${p.nome.split(' ')[0]}`, todas)),
     vazio: 'Nenhuma roupa ainda',
   };
+}
+
+// As coleções dela, contadas pelas peças do guarda-roupa que ela mostra.
+function abaDeColecoesDe(p) {
+  const tem = new Set((guardaRoupaDe(p) || []).map(x => x.id));
+  const todas = todasAsColecoes().map(c => {
+    const n = (c.ids || []).filter(id => tem.has(id)).length;
+    return { ...c, tem: n, completa: c.total > 0 && n >= c.total, pct: c.total ? n / c.total : 0 };
+  });
+  return abaDeColecoes(todas, { minha: false });
 }
 
 // ------------------------------- A gaveta ---------------------------------
@@ -357,7 +366,7 @@ function renderGaveta() {
   // Os looks e colagens são as mesmas abas da página inteira, numa grade só:
   // tocar abre o look por cima da gaveta, sem fechá-la.
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
-  const obras = abas.filter(a => a.id === 'looks' || a.id === 'colagens').flatMap(a => a.itens);
+  const obras = abas.find(a => a.id === 'posts').itens;
 
   $('#gv-corpo').replaceChildren(
     el('div', { class: 'gv-topo' },
@@ -408,22 +417,22 @@ function montarGaveta() {
 function abasDaVitrine(p) {
   const favoritos = p.favoritos || {};
   const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
-  // Com `obras` a lista já vem na ordem do perfil dela; só os favoritos da
-  // versão antiga precisam ir com a estrela na frente.
-  const obras = (tipo, lista = []) => (p.obras ? lista : favoritasPrimeiro(lista)).map(obra => cartaoDeObra({
+  // Looks e colagens numa aba só (Posts): as favoritas na frente e, no resto,
+  // a ordem em que ela arrumou cada lista.
+  const obras = (tipo, lista = []) => lista.map(obra => ({ obra, tipo, favorito: obra.favorito }));
+  const cartao = ({ obra, tipo }) => cartaoDeObra({
     nome: obra.nome || (tipo === 'look' ? 'Look' : 'Colagem'),
     thumb: obra.thumb,
     solto: tipo === 'look' && Boolean(p.obras),
     tipo,
     selo: obra.favorito ? ico('estrela-cheia') : null,
     abrir: () => abrirObra(obra, tipo),
-  }));
+  });
   return [
-    { id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-      itens: obras('colagem', todas.colagens), vazio: 'Nenhuma colagem ainda' },
+    { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
+      itens: favoritasPrimeiro([...obras('look', todas.looks), ...obras('colagem', todas.colagens)]).map(cartao),
+      vazio: 'Nenhum post ainda' },
     abaDeRoupasDe(p, doCatalogo(favoritos.pecas)),
-    { id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-      itens: obras('look', todas.looks), vazio: 'Nenhum look ainda' },
   ];
 }
 
@@ -661,7 +670,7 @@ function abaDePessoas(p) {
     ? p.amigos.map(perfilPublico).filter(Boolean).map(botaoDePerfil)
     : botoesDeOutrosPerfis(p.id);
   return {
-    id: 'pessoas', icone: 'usuario', rotulo: p.amigos ? 'Amigos' : 'Pessoas', grade: 'pf-grade-pessoas',
+    id: 'pessoas', icone: 'usuario', rotulo: 'Amigos', grade: 'pf-grade-pessoas',
     itens: [...pessoas, botaoProcurar(() => abrirBuscaDePessoas(renderUsuario))],
   };
 }
