@@ -12,6 +12,7 @@ import * as db from './db.js';
 import { ferramenta, nivelDaFerramenta } from './config.js';
 import { toast } from './util.js';
 import { deslizarTela } from './movimento.js';
+import { iniciarModais } from './modais.js';
 
 const ganchos = new Map();
 export const onEnter = (view, fn) => ganchos.set(view, fn);
@@ -51,6 +52,28 @@ export function irPara(view, param = null) {
   // a comparação precisa ser da hash inteira, não só do nome da tela.
   if (location.hash === destino) { aplicar(view); return; }
   location.hash = destino;
+  marcarEntrada();
+}
+
+// Cada entrada do histórico leva `rota`: quantas telas do app há antes dela.
+// Com alguma antes, o ‹ das telas volta para de onde a pessoa veio (o perfil
+// de quem ela visitava, a coleção aberta...); sem nenhuma (link aberto direto),
+// vai para a tela de cima de sempre.
+let entradaAtual = 0;
+
+function marcarEntrada() {
+  if (history.state?.rota == null) history.replaceState({ ...history.state, rota: entradaAtual + 1 }, '');
+  entradaAtual = history.state.rota;
+}
+
+// Guarda na entrada atual do histórico o que a tela quer reencontrar quando a
+// pessoa voltar a ela (a aba escolhida, a rolagem).
+export const lembrar = (dados) => history.replaceState({ ...history.state, ...dados }, '');
+export const lembrado = (chave) => history.state?.[chave];
+
+export function voltar(view, param = null) {
+  if ((history.state?.rota ?? 0) > 0) history.back();
+  else irPara(view, param);
 }
 
 function aplicar(view) {
@@ -65,7 +88,7 @@ function aplicar(view) {
     deslizarTela(document.querySelector(`.view[data-view="${view}"]`),
       VIEWS.indexOf(view) > VIEWS.indexOf(anterior) ? 1 : -1);
   }
-  ganchos.get(view)?.();
+  ganchos.get(view)?.(anterior);
 }
 
 // O botão Criar não é uma tela: abre um menu pequeno colado nele, com o
@@ -110,6 +133,9 @@ export function iniciarRouter() {
     b.addEventListener('click', () => irPara(b.dataset.goto)));
   montarMenuCriar();
   document.querySelector('.logo-mini')?.addEventListener('click', () => irPara('vitrine'));
-  window.addEventListener('hashchange', () => aplicar(viewAtual()));
+  if (history.state?.rota == null) history.replaceState({ ...history.state, rota: 0 }, '');
+  entradaAtual = history.state.rota;
+  window.addEventListener('hashchange', () => { marcarEntrada(); aplicar(viewAtual()); });
+  iniciarModais();
   aplicar(viewAtual());
 }

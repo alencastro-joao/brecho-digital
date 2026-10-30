@@ -358,7 +358,7 @@ function selecionar(peca) {
 
   if (celular()) {
     tela()?.classList.add('detalhe');
-    if (!naPeca()) history.pushState({ closetPeca: true }, '');
+    if (!naPeca()) history.pushState({ ...history.state, closetPeca: true }, '');
   }
 
   const moldura = $('#preview-moldura');

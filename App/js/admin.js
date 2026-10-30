@@ -13,11 +13,11 @@ import { renderRoupasAvatar } from './adminroupas.js';
 import { montarJogosAdmin } from './adminjogos.js';
 import * as db from './db.js';
 import { renderPainel } from './painel.js';
-import { irPara } from './router.js';
+import { irPara, voltar } from './router.js';
 import { el, $, toast } from './util.js';
 
 export function montarAdmin() {
-  $('#adm-voltar').addEventListener('click', () => irPara('perfil'));
+  $('#adm-voltar').addEventListener('click', () => voltar('perfil'));
 
   $('#adm-fichas').addEventListener('click', () => {
     db.ganharFicha(5);

@@ -17,15 +17,14 @@ import { aparenciaAtual } from './avatar.js';
 import * as db from './db.js';
 import { el, $, toast } from './util.js';
 import { ico, emo } from './icones.js';
-import { irPara, viewAtual } from './router.js';
+import { irPara, paramAtual, viewAtual, voltar } from './router.js';
 import { mostrar } from './janela.js';
 import { abrirPecaNoCloset } from './closet.js';
 import { flutuarTexto } from './animacoes.js';
 
 let grupo = 'marcas';
 let expandida = null;        // emblema da lista aberto mostrando as peças
-let aberta = null;           // id da coleção aberta na tela dela; null = lista
-let pedida = null;           // a que abrirColecao pediu para a próxima entrada
+let aberta = null;           // id da coleção aberta (a hash #/colecoes/<id>); null = lista
 
 // Quantas peças o cartão da lista mostra. As que você tem vêm primeiro; o
 // resto fica na tela da coleção.
@@ -195,17 +194,16 @@ function voarParaTarefas(c, de) {
 
 export function montarColecoes() {
   db.onChange(() => { if (viewAtual() === 'colecoes') renderColecoes(); });
-  $('#col-voltar').addEventListener('click', () => {
-    if (aberta) { aberta = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; }
-    else irPara('tarefas');
-  });
+  // A coleção aberta é uma entrada no histórico: o ‹ e o voltar do aparelho
+  // voltam para a lista, ou para quem a abriu (o perfil, a ficha da peça).
+  $('#col-voltar').addEventListener('click', () => voltar(aberta ? 'colecoes' : 'tarefas'));
 }
+
+const grupoDa = (id) => Object.keys(COLECOES_DO_GRUPO).find(k => COLECOES_DO_GRUPO[k]().some(c => c.id === id));
 
 // Abre a tela de uma coleção (pelo emblema do perfil, por exemplo).
 export function abrirColecao(id) {
-  const g = Object.keys(COLECOES_DO_GRUPO).find(k => COLECOES_DO_GRUPO[k]().some(c => c.id === id));
-  if (g) { grupo = g; pedida = id; }
-  irPara('colecoes');
+  irPara('colecoes', grupoDa(id) ? id : null);
 }
 
 export function renderColecoes() {
@@ -296,7 +294,7 @@ function tituloDaColecao(c, tag = 'h2') {
 function cartaoDaColecao(c) {
   const aberto = expandida === c.id;
   const abrir = () => {
-    if (aberto) { aberta = c.id; expandida = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; }
+    if (aberto) { expandida = null; abrirColecao(c.id); }
     else { expandida = c.id; renderColecoes(); }
   };
   const emblema = el('span', {
@@ -317,7 +315,7 @@ function cartaoDaColecao(c) {
 function painelDaColecao(c) {
   const ids = temPrimeiro(c.ids);
   const fechar = () => { expandida = null; renderColecoes(); };
-  const abrir = () => { aberta = c.id; expandida = null; renderColecoes(); $('.view-colecoes').scrollTop = 0; };
+  const abrir = () => { expandida = null; abrirColecao(c.id); };
   const emblema = el('span', {
     class: 'col-disco' + (c.completa ? ' completa' : ''),
     style: { '--pct': (c.pct * 100) + '%' },
@@ -534,7 +532,9 @@ function itemDaColecao(id, c) {
 // Entrar pela navegação abre a lista; pelo emblema, a coleção dele.
 export function aoEntrarNasColecoes() {
   novaNaVisita = null;
-  aberta = pedida;
-  pedida = null;
+  aberta = paramAtual();
+  const g = aberta && grupoDa(aberta);
+  if (g) grupo = g;
   renderColecoes();
+  if (aberta) $('.view-colecoes').scrollTop = 0;
 }

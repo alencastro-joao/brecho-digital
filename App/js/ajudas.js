@@ -22,7 +22,7 @@ import { el, $, clamp, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
 import { barrasPosicao } from './barrapos.js';
-import { irPara } from './router.js';
+import { irPara, voltar } from './router.js';
 import { missaoDeJogo, contarJogo, textoDoJogo } from './mural.js';
 
 const JOGOS = [
@@ -54,7 +54,7 @@ async function chamar(rota, corpo) {
 
 export function montarAjudas() {
   // Voltar leva de novo ao mural; a missão guarda o que já foi feito.
-  $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; irPara('tarefas'); });
+  $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; voltar('tarefas'); });
   // Tocar nas fichas abre as mesmas Trocas de Tarefas.
   $('#mg-fichas').addEventListener('click', () => abrirTrocas(renderFichas));
 }
