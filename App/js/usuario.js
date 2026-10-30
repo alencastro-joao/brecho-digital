@@ -33,7 +33,7 @@ import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
 import { irPara, paramAtual, viewAtual } from './router.js';
 import {
-  cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed,
+  cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed, irAoPost,
 } from './social.js';
 
 
@@ -281,7 +281,7 @@ function abasDosPosts(p, posts) {
     tipo: post.tipo === 'board' ? 'colagem' : 'look',
     selo: post.curtido ? ico('coracao-cheio') : null,
     resumo: [ico('coracao-cheio'), ` ${post.curtidas || 0}`, ' ', emo('💬'), ` ${(post.comentarios || []).length}`],
-    abrir: () => abrirPost(post.id),
+    abrir: () => irAoPostDe(post.id),
   }));
   return [
     { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
@@ -311,6 +311,9 @@ function abaDeColecoesDe(p) {
   });
   return abaDeColecoes(todas, { minha: false });
 }
+
+// Tocar num post leva ao feed, nele; da gaveta, ela fecha antes.
+const irAoPostDe = (id) => { fecharGaveta(); irAoPost(id); };
 
 // ------------------------------- A gaveta ---------------------------------
 // Tocar no avatar ou no nome de alguém no feed não tira você do feed: o perfil
@@ -426,7 +429,10 @@ function abasDaVitrine(p) {
     solto: tipo === 'look' && Boolean(p.obras),
     tipo,
     selo: obra.favorito ? ico('estrela-cheia') : null,
-    abrir: () => abrirObra(obra, tipo),
+    abrir: () => {
+      const post = obra.id && postsDe(p.id).find(x => (tipo === 'look' ? x.lookId : x.boardId) === obra.id);
+      return post ? irAoPostDe(post.id) : abrirObra(obra, tipo);
+    },
   });
   return [
     { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',

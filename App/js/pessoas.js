@@ -242,12 +242,14 @@ const fotoDoPerfil = () => ({
   },
   obras: {
     looks: meusLooks().slice(0, OBRAS_NO_PERFIL).map(o => ({
+      id: o.id,
       nome: o.nome || '',
       desenho: o.camadas || [],
       pecas: [...new Set((o.camadas || []).map(c => c.itemId).filter(Boolean))],
       favorito: Boolean(o.favorito),
     })),
     colagens: minhasColagens().slice(0, OBRAS_NO_PERFIL).map(o => ({
+      id: o.id,
       nome: o.nome || '',
       thumb: o.thumb || '',
       pecas: [...new Set((o.itens || []).map(c => c.itemId).filter(Boolean))],

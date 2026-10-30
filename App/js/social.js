@@ -253,11 +253,33 @@ export async function montarSocial() {
   await semearFeed();
   if (!aba) aba = 'tudo';
   render();
+  rolarAoAlvo();
   pintarPontinhoDoFeed();
   // Quem entrou no brechó desde a última vez aparece na coluna sem ninguém
   // digitar nada.
   atualizarPessoas();
   await atualizarFeed();
+  rolarAoAlvo();
+  postAlvo = null;
+}
+
+// Tocar num post do perfil leva ao feed, já nele (pedido do João,
+// 30/10/2026): abre em Tudo, com o lote grande o bastante para o card estar
+// lá, e rola até ele.
+let postAlvo = null;
+export function irAoPost(id) {
+  postAlvo = id;
+  aba = 'tudo';
+  if (viewAtual() !== 'social') return irPara('social');
+  render();                  // já no feed (a gaveta): só rola
+  rolarAoAlvo();
+  postAlvo = null;
+}
+
+function rolarAoAlvo() {
+  if (!postAlvo) return;
+  const card = $('#feed')?.querySelector(`.post[data-post="${CSS.escape(postAlvo)}"]`);
+  card?.scrollIntoView({ block: modo === 'desfile' ? 'start' : 'center' });
 }
 
 async function atualizarFeed() {
@@ -457,6 +479,7 @@ function renderFeed() {
     colunasDesenhadas = colunasDoMural(feed);
     mural = montarMural(colunasDesenhadas);
   }
+  if (postAlvo) mostrando = Math.max(mostrando, posts.findIndex(p => p.id === postAlvo) + 1);
   const feitos = Math.min(posts.length, Math.max(mostrando, LOTE));
   porNoFeed(mural, posts.slice(0, feitos));
   const fim = feitos < posts.length || temMaisNoFeed()
