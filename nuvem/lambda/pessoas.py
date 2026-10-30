@@ -210,11 +210,16 @@ def perfil_de(eu_id, alvo_id, completo=True):
     for chave in ('favoritos', 'obras', 'guardaRoupa', 'wishlist'):
         if publico.get(chave) is not None:
             cartao[chave] = publico[chave]
-    # Amigo é mão dupla: ela segue e é seguida de volta.
+    # Amigo é mão dupla: ela segue e é seguida de volta. Quem ela segue e quem
+    # a segue vão junto, para a página abrir essas listas ao tocar no número.
+    seguindo = sorted(item.get('seguindo') or ())[:LISTA_MAX]
+    seguidores = sorted(item.get('seguidores') or ())[:LISTA_MAX]
     mutuos = set(item.get('seguindo') or ()) & set(item.get('seguidores') or ())
     ids = sorted(mutuos)[:LISTA_MAX]
-    donos = _cartoes(ids, eu)
+    donos = _cartoes(set(ids) | set(seguindo) | set(seguidores), eu)
     cartao['amigos'] = [donos[i] for i in ids if i in donos]
+    cartao['listaSeguindo'] = [donos[i] for i in seguindo if i in donos]
+    cartao['listaSeguidores'] = [donos[i] for i in seguidores if i in donos]
     return cartao
 
 

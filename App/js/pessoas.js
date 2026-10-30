@@ -79,6 +79,8 @@ function paraPerfil(c) {
     guardaRoupa: c.guardaRoupa,
     wishlist: c.wishlist,
     amigos: c.amigos?.map(a => guardar(a).id),
+    listaSeguindo: c.listaSeguindo?.map(a => guardar(a).id),
+    listaSeguidores: c.listaSeguidores?.map(a => guardar(a).id),
   };
 }
 
@@ -87,7 +89,7 @@ function guardar(cartao) {
   // Um cartão curto (busca, feed, seguir) não apaga o que a página já trouxe.
   const antes = reais.get(perfil.id);
   if (antes) {
-    for (const k of ['favoritos', 'obras', 'guardaRoupa', 'wishlist', 'amigos']) perfil[k] ??= antes[k];
+    for (const k of ['favoritos', 'obras', 'guardaRoupa', 'wishlist', 'amigos', 'listaSeguindo', 'listaSeguidores']) perfil[k] ??= antes[k];
   }
   reais.set(perfil.id, perfil);
   return perfil;
