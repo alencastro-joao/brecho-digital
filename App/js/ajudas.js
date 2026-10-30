@@ -23,7 +23,7 @@ import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
 import { barrasPosicao } from './barrapos.js';
 import { irPara, voltar } from './router.js';
-import { missaoDeJogo, contarJogo, textoDoJogo } from './mural.js';
+import { missaoDeJogo, contarJogo, textoDoJogo, caberNoQueTem } from './mural.js';
 
 const JOGOS = [
   { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: 'var(--board)' },
@@ -38,6 +38,7 @@ let faltam = {};          // id → entradas que ainda não fecharam (ajudas.py,
 let jogo = null;          // o jogo da missão
 let peca = null;          // peça na tela
 let enviando = false;
+let aCaminho = 0;          // ajudas enviadas que o servidor ainda não respondeu (a barra já as mostra)
 let pendente = null;      // Avaliar: último voto, ainda não enviado ({ peca, voto }), para poder voltar
 
 async function chamar(rota, corpo) {
@@ -53,6 +54,9 @@ async function chamar(rota, corpo) {
 }
 
 export function montarAjudas() {
+  // Saiu do jogo por qualquer caminho (barra, voltar do aparelho): o último
+  // voto do Avaliar ainda guardado vai, para a missão contar.
+  window.addEventListener('hashchange', () => { if (!location.hash.startsWith('#/ajudas')) soltarPendente(); });
   // Voltar leva de novo ao mural; a missão guarda o que já foi feito.
   $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; voltar('tarefas'); });
   // Tocar nas fichas abre as mesmas Trocas de Tarefas.
@@ -81,6 +85,8 @@ export async function aoEntrarNasAjudas() {
       'Os jogos precisam de internet e da sua conta. Tente de novo daqui a pouco.'));
     return;
   }
+  // A meta da missão desce até o que dá para fazer hoje (ou troca de jogo).
+  if (caberNoQueTem(ajudasLivres()) && missaoDeJogo()?.jogo !== jogo) return aoEntrarNasAjudas();
   if (jogo) proxima();
 }
 
@@ -92,7 +98,7 @@ const renderFichas = () => $('#mg-fichas').replaceChildren(
 function renderCota() {
   const m = missaoDeJogo();
   if (!m || m.jogo !== jogo) return $('#mg-cota').replaceChildren();
-  const feito = Math.min(m.meta, m.feito + (pendente ? 1 : 0));
+  const feito = Math.min(m.meta, m.feito + (pendente ? 1 : 0) + aCaminho);
   const pronta = feito >= m.meta;
   $('#mg-cota').replaceChildren(el('div', { class: 'mg-progresso' + (pronta ? ' ganhou' : '') },
     el('span', { class: 'mg-progresso-ico' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' })),
@@ -105,14 +111,33 @@ function renderCota() {
 // O que cada jogo responde. Peça sem nada em `faltam` ainda não recebeu ajuda.
 const ENTRADAS_DO_JOGO = { avaliar: ['raridade'], ajustar: ['ajuste'], preencher: ['cat', 'cor', 'marca'] };
 const falta = (it, entrada) => (faltam[it.id] ?? [entrada]).includes(entrada);
-const faltaNoJogo = (it) => ENTRADAS_DO_JOGO[jogo].some(e => falta(it, e));
+const faltaNoJogo = (it, j = jogo) => ENTRADAS_DO_JOGO[j].some(e => falta(it, e));
+
+// Peças que ainda dá para ajudar em cada jogo (as que a pessoa não fez e que
+// não fecharam o que o jogo pergunta).
+const candidatas = (j) => {
+  const feitas = new Set(estado[j].pecas);
+  return itens.filter(i => !feitas.has(i.id) && faltaNoJogo(i, j) && (j !== 'ajustar' || CATEGORIAS[i.cat]));
+};
+
+// Quantas ajudas ainda cabem em cada jogo hoje: as peças que faltam (no
+// Preencher, os campos) e o limite do dia do servidor.
+function ajudasLivres() {
+  const livres = {};
+  for (const j of Object.keys(estado)) {
+    const cands = candidatas(j);
+    const n = j === 'preencher' ? cands.reduce((t, i) => t + ENTRADAS_DO_JOGO.preencher.filter(e => falta(i, e)).length, 0) : cands.length;
+    const cota = Math.max(0, (estado[j].limite ?? Infinity) - (estado[j].feitas ?? 0));
+    livres[j] = Math.min(n, j === 'preencher' ? cota * 3 : cota);
+  }
+  return livres;
+}
 
 // A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou
 // e as que já fecharam o que este jogo pergunta.
 function escolherPeca() {
-  const feitas = new Set(estado[jogo].pecas);
   // Só o Ajustar precisa da categoria (é dela o lugar padrão no corpo).
-  const cands = itens.filter(i => !feitas.has(i.id) && faltaNoJogo(i) && (jogo !== 'ajustar' || CATEGORIAS[i.cat]));
+  const cands = candidatas(jogo);
   cands.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
   // Entre as 10 mais novas, uma qualquer: duas pessoas ao mesmo tempo não
   // ficam votando sempre na mesma.
@@ -152,6 +177,7 @@ function soltarPendente() {
 }
 
 async function gravar(jogo, peca, corpo) {
+  aCaminho += 1;
   try {
     const r = await chamar('/api/ajudas/' + jogo, { peca: peca.id, ...corpo });
     const s = estado[jogo];
@@ -169,6 +195,8 @@ async function gravar(jogo, peca, corpo) {
     }
   } catch (e) {
     toast(`Não deu para enviar: ${e.message}`, 'aviso');
+  } finally {
+    aCaminho -= 1;
   }
 }
 
@@ -187,6 +215,10 @@ function jogoAvaliar() {
     soltarPendente();
     pendente = { peca, voto };
     estado.avaliar.pecas.push(peca.id);     // some da fila enquanto espera
+    // O voto que fecha a missão vai na hora: senão a missão ficaria um voto
+    // atrás até o próximo (ou até sair do jogo).
+    const m = missaoDeJogo();
+    if (m?.jogo === 'avaliar' && m.feito + aCaminho + 1 >= m.meta) soltarPendente();
     setTimeout(proxima, 220);
   };
   const desfazer = () => {

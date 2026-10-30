@@ -62,11 +62,13 @@ _grupo = ThreadPoolExecutor(max_workers=10)   # o pool de conexões do boto3 é 
 BRASILIA = timezone(timedelta(hours=-3))
 
 # ----------------------------- Regras (João) ------------------------------
-# limite: ajudas por janela. janela: 'dia' ou 'hora' (Brasília).
+# limite: ajudas por janela. janela: 'dia' ou 'hora' (Brasília). Só segura
+# quem chama a rota em loop: a missão de jogo pede até 15 por vez, uma a cada
+# 2h, e um limite menor travava a missão no meio (30/10/2026).
 JOGOS = {
-    'avaliar':   {'limite': 25, 'janela': 'dia'},
-    'ajustar':   {'limite': 16, 'janela': 'dia'},
-    'preencher': {'limite': 20, 'janela': 'dia'},
+    'avaliar':   {'limite': 120, 'janela': 'dia'},
+    'ajustar':   {'limite': 80, 'janela': 'dia'},
+    'preencher': {'limite': 80, 'janela': 'dia'},
 }
 # Votos que a peça precisa antes de ganhar raridade sugerida.
 VOTOS_MIN = 10

@@ -39,7 +39,7 @@ class Ajudas(unittest.TestCase):
                           AttributeDefinitions=[{'AttributeName': 'pk', 'AttributeType': 'S'}],
                           KeySchema=[{'AttributeName': 'pk', 'KeyType': 'HASH'}])
         self._ids = ajudas._ids_nos_jogos
-        ajudas._ids_nos_jogos = lambda: {'epeca%04d' % i for i in range(100)}
+        ajudas._ids_nos_jogos = lambda: {'epeca%04d' % i for i in range(200)}
 
     def tearDown(self):
         ajudas._ids_nos_jogos = self._ids
@@ -51,7 +51,7 @@ class Ajudas(unittest.TestCase):
             r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca%04d' % i, 'gostei': True})
             self.assertTrue(r['ok'])
             self.assertNotIn('semPremio', r)
-        r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0099', 'gostei': True})
+        r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0199', 'gostei': True})
         # Depois do limite a ajuda é gravada, mas não conta para a missão.
         self.assertTrue(r['ok'])
         self.assertTrue(r['semPremio'])
