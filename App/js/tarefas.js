@@ -219,7 +219,7 @@ function renderMural() {
     }));
   }
 
-  const livres = MURAL.vagas - lista.length;
+  const livres = mural.VAGAS - lista.length;
   for (let i = 0; i < livres; i++) {
     papeis.push(i === 0
       ? el('article', { class: 'tf-papel vazio', style: { '--rot': '1deg' } },
