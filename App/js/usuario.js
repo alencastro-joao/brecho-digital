@@ -515,7 +515,7 @@ export function abrirListaDePessoas(titulo, pessoas, { vazio = '' } = {}) {
   const fechar = () => { $('#modal-lista').hidden = true; destravarSeNada(); };
   $('#lp-titulo').textContent = titulo;
   $('#lp-corpo').replaceChildren(pessoas.length
-    ? el('div', { class: 'pf-grade pf-grade-pessoas' }, ...pessoas.map(p => botaoDePerfil(p, fechar)))
+    ? el('div', { class: 'pf-grade pf-grade-pessoas' }, ...pessoas.map(p => botaoDePerfil(p, { antes: fechar })))
     : el('p', { class: 'lp-vazio' }, vazio));
   $('#modal-lista').hidden = false;
   document.body.classList.add('com-modal');
@@ -755,7 +755,7 @@ export function cartaoDeObra({ id = null, nome, thumb, tipo, solto = false, selo
 
 // Um atalho para a página de alguém: a cabeça do avatar e o primeiro nome.
 // É a aba de amigos do seu perfil e a de pessoas daqui.
-export const botaoDePerfil = (p, antes = null) =>
+export const botaoDePerfil = (p, { antes } = {}) =>
   el('button', {
     class: 'pf-amigo',
     title: p.bio,
