@@ -15,14 +15,14 @@ import { BAUS } from './config.js';
 import * as db from './db.js';
 import { el, $ } from './util.js';
 import { ico } from './icones.js';
-import { irPara, viewAtual } from './router.js';
+import { viewAtual, voltar } from './router.js';
 import { sortearPecas, entregarPecas, mostrarBau } from './tarefas.js';
 
 // Do mais raro para o mais comum: o que a pessoa mais quer abrir vem primeiro.
 const TIPOS = Object.keys(BAUS).reverse();
 
 export function montarBaus() {
-  $('#bs-voltar').addEventListener('click', () => irPara('tarefas'));
+  $('#bs-voltar').addEventListener('click', () => voltar('tarefas'));
   $('#bs-todos').addEventListener('click', abrirTodos);
   db.onChange(() => { if (viewAtual() === 'baus') renderBaus(); });
   // O último toque: é de onde sai o baú pego num botão.

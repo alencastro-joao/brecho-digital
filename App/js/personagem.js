@@ -20,7 +20,7 @@ import {
 } from './avatar.js';
 import { recorteNaRegiao } from './proporcao.js';
 import { el, $, toast } from './util.js';
-import { irPara } from './router.js';
+import { irPara, voltar } from './router.js';
 
 // Trabalha numa cópia: só vai para o perfil quando você salva.
 let rascunho = null;
@@ -326,7 +326,7 @@ export function montarPersonagem() {
     if (b.dataset.aba === 'roupas') { irParaRoupas(); return; }
     abrirAba(b.dataset.aba);
   });
-  $('#pg-voltar').addEventListener('click', () => irPara('perfil'));
+  $('#pg-voltar').addEventListener('click', () => voltar('perfil'));
   $('#pg-padrao').addEventListener('click', () => {
     rascunho = { ...APARENCIA_PADRAO };
     renderTudo();

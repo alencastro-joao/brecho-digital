@@ -31,7 +31,7 @@ import { abaDeColecoes } from './perfil.js';
 import { deslizavel, trocarComSlide } from './deslizar.js';
 import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
-import { irPara, paramAtual, viewAtual } from './router.js';
+import { irPara, lembrado, lembrar, paramAtual, viewAtual, voltar } from './router.js';
 import {
   cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed, irAoPost,
 } from './social.js';
@@ -138,7 +138,16 @@ export function montarUsuario() {
   montarGaveta();   // primeiro: o Esc dela olha os modais antes que eles fechem
   montarListaDePecas();
   montarFichaDePeca();
-  $('#up-voltar').addEventListener('click', () => irPara('social'));
+  $('#up-voltar').addEventListener('click', () => voltar('social'));
+  let guardar;
+  $('.view-usuario').addEventListener('scroll', (e) => {
+    clearTimeout(guardar);
+    const alto = e.currentTarget.scrollTop;
+    const onde = location.hash;
+    guardar = setTimeout(() => {
+      if (location.hash === onde && viewAtual() === 'usuario' && !history.state?.camada) lembrar({ rolagem: alto });
+    }, 150);
+  }, { passive: true });
 
   const modal = $('#modal-post');
   $('#up-post-fechar').addEventListener('click', fecharPost);
@@ -171,12 +180,13 @@ export async function aoEntrarNoUsuario() {
     if (paramAtual() !== id || viewAtual() !== 'usuario') return;
   }
 
-  if (idAtual !== id) abaAtual = null;
+  // Voltar para um perfil reabre a aba e a altura em que ele estava; perfil
+  // novo começa na primeira aba, do topo (pular de um perfil para outro é a
+  // mesma tela com outro parâmetro, e herdaria a altura do anterior).
+  abaAtual = lembrado('aba') ?? null;
   idAtual = id;
   renderUsuario();
-  // Pular de um perfil para outro é a mesma tela com outro parâmetro: sem isto,
-  // a página nova abriria na altura em que a anterior tinha parado.
-  $('.view-usuario').scrollTop = 0;
+  $('.view-usuario').scrollTop = lembrado('rolagem') || 0;
 
   // O cartão de uma conta real envelhece — seguidores, "segue você", o rosto
   // que ela trocou —, então abrir a página o renova em segundo plano. As
@@ -262,7 +272,7 @@ function renderUsuario() {
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
   abas.push(abaDeColecoesDe(p), abaDePessoas(p));
   pintarAbas($('#up-abas'), $('#up-conteudo'), abas, abaAtual,
-    (id) => { abaAtual = id; renderUsuario(); });
+    (id) => { abaAtual = id; lembrar({ aba: id }); renderUsuario(); });
   if (postAberto) renderPostAberto();
 }
 
