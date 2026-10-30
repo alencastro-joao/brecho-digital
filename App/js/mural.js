@@ -51,11 +51,18 @@ export function textoDa(m) {
   switch (md.evento) {
     case 'curtir': return `Curtir ${m.meta} posts`;
     case 'garimpar': return md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
-    case 'publicar': return `Publicar um look ou colagem com ${coisa(a, 1, { artigo: true })}`;
+    case 'publicar': return `Publicar ${m.onde === 'colagem' ? 'uma colagem' : 'um look'} com ${coisa(a, 1, { artigo: true })}`;
     case 'look': return md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;
     case 'colagem': return md.mesma ? `Publicar uma colagem com ${m.meta} peças da mesma cor` : `Publicar uma colagem com ${coisa(a, 1, { artigo: true })}`;
     default: return '';
   }
+}
+
+// Onde se cumpre cada missão: tocar no post-it leva para lá.
+export function telaDa(m) {
+  const md = modeloDe(m);
+  const ev = md?.evento === 'publicar' ? m.onde || 'look' : md?.evento;
+  return { curtir: 'social', garimpar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
 }
 
 export const NOMES_JOGO = { avaliar: 'Avaliar', ajustar: 'Ajustar', preencher: 'Preencher' };
@@ -96,6 +103,8 @@ function novaMissao(chegou, ocupadas) {
     return {
       uid: chegou.toString(36) + Math.random().toString(36).slice(2, 5),
       id: md.id, nivel, meta: md.meta, feito: 0, alvo,
+      // 'publicar' sorteia onde: look ou colagem.
+      ...(md.evento === 'publicar' ? { onde: umDe(['look', 'colagem']) } : {}),
       dourada: Math.random() * 100 < MURAL.dourada,
       chegou, vence: chegou + MURAL.duraHoras * HORA,
     };
@@ -180,7 +189,7 @@ export function contar(evento, { peca = null, raridade = null, ids = [] } = {}) 
     else if (md.evento === 'garimpar' && evento === 'garimpar') {
       const ok = md.raridade ? ['epic', 'legendary'].includes(raridade) : pecaCombina(peca, m.alvo);
       if (ok) m.feito += 1;
-    } else if (md.evento === evento || (md.evento === 'publicar' && (evento === 'look' || evento === 'colagem'))) {
+    } else if (md.evento === evento || (md.evento === 'publicar' && evento === (m.onde || evento))) {
       if (md.mesma) m.feito = Math.max(m.feito, Math.min(m.meta, maiorGrupoDeCor(pecas)));
       else if (pecas.some(p => pecaCombina(p, m.alvo))) m.feito = m.meta;
     }

@@ -190,7 +190,7 @@ function renderMural() {
     const j = JOGO[jogo.jogo];
     papeis.push(papel({
       cor: 'var(--loja)', icone: j.icone, texto: mural.textoDoJogo(jogo), feito: jogo.feito, meta: jogo.meta,
-      premio: premioEmFichas(jogo.fichas), rot: -1.2, classe: ' jogo', nivel: 'Jogo',
+      premio: premioEmFichas(jogo.fichas), rot: -1.2, classe: ' jogo', nivel: 'Ajudinha',
       abrir: () => irPara('ajudas'),
       resgatar: () => {
         const r = mural.resgatarJogo();
@@ -199,7 +199,7 @@ function renderMural() {
     }));
   } else {
     papeis.push(el('article', { class: 'tf-papel vazio jogo', style: { '--rot': '-1deg' } },
-      el('b', {}, 'Novo jogo'), el('small', {}, `em ${tempoAte(mural.voltaDoJogo() - agora)}`)));
+      el('b', {}, 'Nova ajudinha'), el('small', {}, `em ${tempoAte(mural.voltaDoJogo() - agora)}`)));
   }
 
   for (const m of lista) {
@@ -210,6 +210,7 @@ function renderMural() {
       texto: mural.textoDa(m), feito: m.feito, meta: m.meta, rot: giro(m.uid),
       premio: premioEmFichas(nivel.fichas, m.dourada), tempo: prazo(m.vence - agora),
       classe: m.dourada ? ' dourada' : '', nivel: m.dourada ? `${nivel.nome} · dourada` : nivel.nome,
+      abrir: mural.telaDa(m) ? () => irPara(mural.telaDa(m)) : null,
       resgatar: () => {
         const r = mural.resgatar(m.uid);
         if (!r) return;
