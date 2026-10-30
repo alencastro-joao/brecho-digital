@@ -1395,9 +1395,8 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
-  // `oculto`: só aparece no admin (esteira, editar peça) até o João liberar.
   fluminense: {
-    nome: 'Fluminense', brilho: '#7a1230', icone: 'assets/temas/fluminense.svg', oculto: true,
+    nome: 'Fluminense', brilho: '#7a1230', icone: 'assets/temas/fluminense.svg',
     itens: [],
     libera: [],
     pecas: [],
