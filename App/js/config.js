@@ -1389,9 +1389,15 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
-  // `oculto`: só aparece no admin (esteira, editar peça) até o João liberar.
   flamengo: {
-    nome: 'Flamengo', brilho: '#c8102e', icone: 'assets/temas/flamengo.svg', oculto: true,
+    nome: 'Flamengo', brilho: '#c8102e', icone: 'assets/temas/flamengo.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  // `oculto`: só aparece no admin (esteira, editar peça) até o João liberar.
+  fluminense: {
+    nome: 'Fluminense', brilho: '#7a1230', icone: 'assets/temas/fluminense.svg', oculto: true,
     itens: [],
     libera: [],
     pecas: [],
