@@ -170,6 +170,8 @@ button:disabled { cursor: not-allowed; opacity: .4; }
   background-size: 18px 18px;
   background-position: 0 0, 0 9px, 9px -9px, -9px 0;
 }
+/* Verde chromakey (o padrão): o recorte salta e qualquer sobra de fundo aparece. */
+.es-fundo-verde .es-cartao-imagem { background: #00b140; }
 .es-cartao-imagem img { max-width: 86%; max-height: 86%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .14)); }
 .es-cartao-espera { font-size: 13px; color: var(--tinta-suave); }
 .es-cartao.processando .es-cartao-espera,

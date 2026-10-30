@@ -16,7 +16,7 @@
   <span class="es-conta" id="es-conta"></span>
 </header>
 
-<main class="es-main" id="es-main" hidden>
+<main class="es-main es-fundo-verde" id="es-main" hidden>
   <!-- Entrada: soltar arquivos (computador) ou fotografar (celular). -->
   <section class="es-entrada" id="es-solta" tabindex="0">
     <p class="es-entrada-titulo">Solte as fotos aqui</p>
@@ -35,6 +35,9 @@
     <!-- Liga e desliga o palpite da IA nas fotos que chegarem daqui para a frente. -->
     <button class="es-btn mini es-auto" type="button" id="es-auto" aria-pressed="true" disabled
       title="Com ele ligado, a nuvem já preenche categoria, cor e marca das peças que chegarem">Auto preencher: …</button>
+    <!-- O que fica atrás das peças nos cartões: verde chromakey ou xadrez. -->
+    <button class="es-btn mini es-auto" type="button" id="es-fundo" disabled
+      title="Troca o fundo atrás das peças nos cartões">Fundo: …</button>
     <form class="es-pinterest" id="es-pinterest">
       <input type="url" id="es-pinterest-link" placeholder="ou cole o link de uma pasta do Pinterest para vincular"
         aria-label="Link de uma pasta do Pinterest" autocomplete="off">
