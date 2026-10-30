@@ -41,16 +41,22 @@ class AjustesDaEsteira(unittest.TestCase):
         _s3.delete_bucket(Bucket=esteira.DADOS)
 
     def test_padrao_e_ligado(self):
-        self.assertEqual(esteira.ajustes(), {'autoPreencher': True})
+        self.assertEqual(esteira.ajustes(), {'autoPreencher': True, 'fundo': 'verde'})
 
     def test_desligar_e_religar(self):
-        self.assertEqual(esteira.mudar_ajustes({'autoPreencher': False}), {'autoPreencher': False})
-        self.assertEqual(esteira.ajustes(), {'autoPreencher': False})
+        self.assertIs(esteira.mudar_ajustes({'autoPreencher': False})['autoPreencher'], False)
+        self.assertIs(esteira.ajustes()['autoPreencher'], False)
         esteira.mudar_ajustes({'autoPreencher': 1})
         self.assertIs(esteira.ajustes()['autoPreencher'], True)
 
     def test_ignora_chave_desconhecida(self):
-        self.assertEqual(esteira.mudar_ajustes({'outra': 'x'}), {'autoPreencher': True})
+        self.assertEqual(esteira.mudar_ajustes({'outra': 'x'}), {'autoPreencher': True, 'fundo': 'verde'})
+
+    def test_trocar_fundo(self):
+        self.assertEqual(esteira.mudar_ajustes({'fundo': 'xadrez'})['fundo'], 'xadrez')
+        self.assertEqual(esteira.ajustes()['fundo'], 'xadrez')
+        esteira.mudar_ajustes({'fundo': 'roxo'})
+        self.assertEqual(esteira.ajustes()['fundo'], 'xadrez')
 
 
 if __name__ == '__main__':

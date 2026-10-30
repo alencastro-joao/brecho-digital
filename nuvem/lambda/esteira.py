@@ -26,7 +26,7 @@ Tudo o que é da esteira mora no bucket de dados, que é privado:
     esteira/<id>.png              o recorte em alta (vira mestres/<peça>.png)
     esteira/pins/<pin>            marca de "esse pin já entrou" (ver Pinterest)
     esteira/config/pinterest.json as pastas do Pinterest vinculadas
-    esteira/config/ajustes.json   liga/desliga o preenchimento automático da ficha
+    esteira/config/ajustes.json   preenchimento automático da ficha e fundo dos cartões
 
 A prévia chega à tela por URL assinada de leitura, que vence em uma hora.
 """
@@ -336,10 +336,18 @@ def _guardar_leitura(mudadas):
 
 
 # --- Ajustes da esteira ----------------------------------------------------
-# Hoje só um: se o trabalhador preenche a ficha sozinho (palpite da IA e cor
+# autoPreencher: se o trabalhador preenche a ficha sozinho (palpite da IA e cor
 # medida). Desligado, a peça chega com a ficha em branco e nem chama a IA.
+# fundo: o que fica atrás das peças nos cartões (verde chromakey ou xadrez).
 AJUSTES = 'esteira/config/ajustes.json'
-AJUSTES_PADRAO = {'autoPreencher': True}
+AJUSTES_PADRAO = {'autoPreencher': True, 'fundo': 'verde'}
+FUNDOS = ('verde', 'xadrez')
+
+
+def _ajuste_valido(chave, valor):
+    if chave == 'fundo':
+        return valor if valor in FUNDOS else None
+    return bool(valor)
 
 
 def ajustes():
@@ -351,12 +359,16 @@ def ajustes():
         if e.response['Error']['Code'] not in ('NoSuchKey', '404'):
             raise
         guardados = {}
-    return {**AJUSTES_PADRAO, **{k: v for k, v in guardados.items() if k in AJUSTES_PADRAO}}
+    return {**AJUSTES_PADRAO, **{k: v for k, v in guardados.items()
+                                 if k in AJUSTES_PADRAO and _ajuste_valido(k, v) is not None}}
 
 
 def mudar_ajustes(corpo):
-    """PUT /api/esteira/ajustes: só as chaves conhecidas, sempre booleanas."""
-    novos = {**ajustes(), **{k: bool(v) for k, v in (corpo or {}).items() if k in AJUSTES_PADRAO}}
+    """PUT /api/esteira/ajustes: só as chaves conhecidas, com valor válido."""
+    novos = ajustes()
+    for k, v in (corpo or {}).items():
+        if k in AJUSTES_PADRAO and _ajuste_valido(k, v) is not None:
+            novos[k] = _ajuste_valido(k, v)
     _s3.put_object(Bucket=DADOS, Key=AJUSTES,
                    Body=json.dumps(novos).encode('utf-8'),
                    ContentType='application/json; charset=utf-8')

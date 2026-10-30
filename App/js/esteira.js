@@ -806,8 +806,11 @@ function pintarAuto() {
 
 async function lerAuto() {
   try {
-    autoPreencher = (await api('/ajustes')).autoPreencher !== false;
+    const a = await api('/ajustes');
+    autoPreencher = a.autoPreencher !== false;
     pintarAuto();
+    fundo = a.fundo === 'xadrez' ? 'xadrez' : 'verde';
+    pintarFundo();
   } catch { /* fica desabilitado: sem saber o estado, não mexe */ }
 }
 
@@ -821,6 +824,28 @@ async function alternarAuto() {
     toast(`Não deu para mudar: ${e.message}`, 'aviso');
   }
   pintarAuto();
+}
+
+// O fundo atrás das peças nos cartões: verde chromakey (padrão) ou xadrez.
+// Também mora nos ajustes da nuvem.
+let fundo = 'verde';
+
+function pintarFundo() {
+  const b = $('#es-fundo');
+  b.disabled = false;
+  b.textContent = `Fundo: ${fundo === 'verde' ? 'verde' : 'xadrez'}`;
+  $('#es-main').classList.toggle('es-fundo-verde', fundo === 'verde');
+}
+
+async function alternarFundo() {
+  const b = $('#es-fundo');
+  b.disabled = true;
+  try {
+    fundo = (await api('/ajustes', { metodo: 'PUT', corpo: { fundo: fundo === 'verde' ? 'xadrez' : 'verde' } })).fundo;
+  } catch (e) {
+    toast(`Não deu para mudar: ${e.message}`, 'aviso');
+  }
+  pintarFundo();
 }
 
 // ============================== Molde =====================================
@@ -1254,6 +1279,7 @@ function ligarLote() {
   });
   $('#es-lote-cortar').addEventListener('click', () => abrirCorte(marcadas()[0]));
   $('#es-auto').addEventListener('click', alternarAuto);
+  $('#es-fundo').addEventListener('click', alternarFundo);
   $('#es-lote-descartar').addEventListener('click', () => descartar(marcadas()));
   $('#es-pub-medidas').addEventListener('click', publicarMedidas);
   $('#es-medir-todas').addEventListener('click', medirTodas);
