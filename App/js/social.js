@@ -1086,13 +1086,13 @@ export async function alternarCurtida(post, botao) {
   if (post.real) {
     try { await curtirPublicacao(post); }
     catch (e) { return toast(e.message || 'Não consegui curtir agora.', 'aviso'); }
-    if (conta) { db.progredirSemana('curtir', 1, post.id); db.salvar(); }
+    if (conta) { db.progredirMissao('curtir', 1, post.id); db.salvar(); }
     pulsar(antes, antes + (liberando ? 1 : -1));
     return;
   }
   post.curtido = !post.curtido;
   post.curtidas = Math.max(0, post.curtidas + (post.curtido ? 1 : -1));
-  if (conta) db.progredirSemana('curtir', 1, post.id);
+  if (conta) db.progredirMissao('curtir', 1, post.id);
   db.salvar();
   repintar();
   pulsar(antes, post.curtidas);

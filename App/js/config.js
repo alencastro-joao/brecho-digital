@@ -1054,10 +1054,10 @@ export const ASSINATURA_PADRAO = {
 // já nasce feita (quem vê a lista está no app): é o progresso de presente.
 export const MISSOES = [
   { id: 'entrar',   evento: 'entrar',   nome: 'Entrar no app',    meta: 1, xp: 0 },
-  { id: 'garimpo1', evento: 'resgates', nome: 'Garimpar 1 peça',  meta: 1, xp: 20 },
   { id: 'resgates', evento: 'resgates', nome: 'Garimpar 3 peças', meta: CONFIG.RESGATES_POR_DIA, xp: 30 },
-  { id: 'looks',    evento: 'looks',    nome: 'Montar 1 look',    meta: 1, xp: 35 },
   { id: 'publicar', evento: 'publicar', nome: 'Publicar 1 look',  meta: 1, xp: 30 },
+  { id: 'colagem',  evento: 'postar-colagem', nome: 'Postar uma colagem', meta: 1, xp: 35 },
+  { id: 'curtir',   evento: 'curtir',   nome: 'Curtir 3 posts',   meta: 3, xp: 20 },
 ];
 
 // Cada missão do dia fechada paga 2 fichas na hora. As 5 feitas liberam o
