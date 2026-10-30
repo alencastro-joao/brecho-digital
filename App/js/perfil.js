@@ -1,8 +1,8 @@
 // Perfil: a sua página no brechó, no jeito do Instagram.
 //
 // Em cima, o retrato redondo com o nível no anel em volta, o nome, os números
-// e os botões. Embaixo, abas com a grade de cada uma: colagens, roupas, looks,
-// coleções e amigos.
+// e os botões. Embaixo, abas com a grade de cada uma: posts (looks e colagens
+// juntos), roupas, coleções e amigos.
 //
 // A vitrine é curada: mostra só o que você marcou com a estrela — ver
 // favoritos.js. Ter 60 peças não vira uma parede de 60 peças; o perfil é o que
@@ -45,7 +45,7 @@ import {
   retratoDoPerfil, pintarFoto, numeroDoPerfil, pintarAbas, abrirListaDePessoas,
 } from './usuario.js';
 import { ico } from './icones.js';
-import { pecasFavoritas, minhasRoupas, meusLooks, minhasColagens } from './minhavitrine.js';
+import { pecasFavoritas, minhasRoupas, meusPostsDoPerfil } from './minhavitrine.js';
 
 // Os seus posts moram no feed compartilhado (e, sem rede, no save até subirem).
 const meusPosts = () => postsDoAutor(db.state.usuario.id);
@@ -151,7 +151,7 @@ export function renderPerfil() {
   $('#perfil-listas').replaceChildren(...botoesDeListas('', roupas, desejos, { minha: true, aoFechar: renderPerfil }));
 
   pintarAbas($('#perfil-abas'), $('#perfil-conteudo'), [
-    abaDeColagens(), abaDeRoupas(), abaDeLooks(), abaDeColecoes(), abaDeAmigos(amigos),
+    abaDePosts(), abaDeRoupas(), abaDeColecoes(), abaDeAmigos(amigos),
   ], abaAtual, (id) => { abaAtual = id; renderPerfil(); });
   renderConexoes(renderPerfil);
 }
@@ -223,28 +223,22 @@ function abaDeRoupas() {
   };
 }
 
-// Todos os looks do Stylist e todas as colagens, cada um na sua aba: as (até
-// três) favoritas na frente, depois do mais novo para o mais velho, ou a ordem
-// que você arrumou segurando e arrastando; a estrela vira o selo no canto. O
-// clique devolve ao editor de origem.
-const obras = (lista, tipo, abrir) => lista
-  .map(item => cartaoDaObra({ ...item, tipo }, () => abrir(item.id)));
-
-const abaDeColagens = () => ({
-  id: 'colagens', icone: 'quadro', rotulo: 'Colagens', grade: 'pf-grade-obras',
-  itens: obras(minhasColagens(), 'colagem', (id) => { irPara('board'); abrirBoard(id); }),
-  reordenar: (ids) => arrumar('colagens', ids),
-  vazio: 'Monte a sua primeira colagem',
-  botao: ['Abrir a Colagem', () => irPara('board')],
-});
-
-const abaDeLooks = () => ({
-  id: 'looks', icone: 'varinha', rotulo: 'Stylists', grade: 'pf-grade-obras',
-  itens: obras(meusLooks(), 'look', (id) => { abrirLook(id); irPara('stylist'); }),
-  reordenar: (ids) => arrumar('looks', ids),
-  vazio: 'Monte o seu primeiro look',
-  botao: ['Abrir o Stylist', () => irPara('stylist')],
-});
+// Os posts, como no Instagram: os looks do Stylist e as colagens numa grade só,
+// cada um na proporção dele. As favoritas na frente, depois do mais novo para o
+// mais velho, ou a ordem que você arrumou segurando e arrastando; a estrela
+// vira o selo no canto. O clique devolve ao editor de origem.
+function abaDePosts() {
+  const abrir = (item) => item.tipo === 'look'
+    ? () => { abrirLook(item.id); irPara('stylist'); }
+    : () => { irPara('board'); abrirBoard(item.id); };
+  return {
+    id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
+    itens: meusPostsDoPerfil().map(item => cartaoDaObra(item, abrir(item))),
+    reordenar: (ids) => arrumar('posts', ids),
+    vazio: 'Monte o seu primeiro look ou colagem',
+    botao: ['Abrir o Stylist', () => irPara('stylist')],
+  };
+}
 
 // O look sai solto, sem moldura: o boneco inteiro, desenhado com o personagem
 // de agora (o cabelo e o corpo do save podem ser de quando ele foi salvo).
