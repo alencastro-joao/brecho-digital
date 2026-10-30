@@ -142,9 +142,9 @@
 .bd-alcas .alca-so { bottom: -9px; left: -9px; }
 .bd-alcas .alca-se { bottom: -9px; right: -9px; }
 
-/* Assinatura */
+/* Assinatura: fica no fundo, por baixo das peças (vem antes de .pr-itens). */
 .pr-assinatura { pointer-events: none; }
-.pr-assinatura span {
+.pr-assinatura span, .pr-assinatura img {
   position: absolute; white-space: nowrap; line-height: 1;
 }
 
