@@ -11,10 +11,10 @@ Três jogos, um por tarefa do cadastro:
     preencher  a pessoa diz a cor e a marca. A resposta mais votada vence.
                Marca deixada em branco conta como "sem marca".
 
-Cada jogo paga fichas a cada `porFicha` ajudas e tem um teto de ajudas por
-janela (dia ou hora, no horário de Brasília). As fichas moram no save (o
-navegador soma o que esta resposta disser); a contagem e o teto moram aqui,
-senão bastava chamar a rota em loop.
+As ajudas não pagam ficha: quem paga é a missão de jogo do mural de Tarefas
+(js/mural.js), que conta as ajudas aceitas aqui. Cada jogo tem um teto de
+ajudas por janela (dia ou hora, no horário de Brasília); a contagem e o teto
+moram aqui, senão bastava chamar a rota em loop.
 
 Itens do DynamoDB:
 
@@ -62,15 +62,12 @@ _grupo = ThreadPoolExecutor(max_workers=10)   # o pool de conexões do boto3 é 
 BRASILIA = timezone(timedelta(hours=-3))
 
 # ----------------------------- Regras (João) ------------------------------
-# porFicha: quantas ajudas valem 1 ficha. limite: ajudas por janela.
-# janela: 'dia' ou 'hora' (Brasília).
+# limite: ajudas por janela. janela: 'dia' ou 'hora' (Brasília).
 JOGOS = {
-    'avaliar':   {'porFicha': 5, 'limite': 25, 'janela': 'dia'},
-    'ajustar':   {'porFicha': 4, 'limite': 16, 'janela': 'dia'},
-    'preencher': {'porFicha': 4, 'limite': 20, 'janela': 'dia'},
+    'avaliar':   {'limite': 25, 'janela': 'dia'},
+    'ajustar':   {'limite': 16, 'janela': 'dia'},
+    'preencher': {'limite': 20, 'janela': 'dia'},
 }
-# Teto de fichas por dia somando os três jogos (João, 29/10/2026).
-TETO_FICHAS_DIA = 5
 # Votos que a peça precisa antes de ganhar raridade sugerida.
 VOTOS_MIN = 10
 # Medidas do Ajustar para a mediana valer.
@@ -314,27 +311,17 @@ def _situacao(uid, jogo, n=None):
     if n is None:
         r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_cota(uid, jogo)}})
         n = int((r.get('Item') or {}).get('n', {}).get('N', 0))
-    return {'feitas': n, 'limite': regra['limite'], 'porFicha': regra['porFicha'],
+    return {'feitas': n, 'limite': regra['limite'],
             'janela': regra['janela'], 'vira': _janela(jogo)[1].isoformat()}
-
-
-def _fichas_hoje(uid):
-    """Fichas que as cotas de hoje já valem, somando os jogos."""
-    total = 0
-    for jogo, regra in JOGOS.items():
-        r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_cota(uid, jogo)}})
-        total += int((r.get('Item') or {}).get('n', {}).get('N', 0)) // regra['porFicha']
-    return total
 
 
 def estado(usuario):
     """O que a tela precisa: a cota de cada jogo e as peças já ajudadas."""
     uid = usuario['id']
     saida = {}
-    teto = {'fichasHoje': min(_fichas_hoje(uid), TETO_FICHAS_DIA), 'tetoDia': TETO_FICHAS_DIA}
     for jogo in JOGOS:
         r = _dynamo.get_item(TableName=TABELA, Key={'pk': {'S': _pk_feitas(uid, jogo)}})
-        saida[jogo] = {**_situacao(uid, jogo), **teto,
+        saida[jogo] = {**_situacao(uid, jogo),
                        'pecas': sorted((r.get('Item') or {}).get('ids', {}).get('SS', []))}
     itens = ler_lista()
     # O que falta em cada peça: o jogo pula a peça (ou a pergunta) que já fechou.
@@ -344,10 +331,10 @@ def estado(usuario):
 
 
 def ajudar(usuario, jogo, corpo):
-    """Grava uma ajuda. Devolve a cota nova e quantas fichas ela pagou."""
+    """Grava uma ajuda. Devolve a cota nova (`semPremio`: passou do limite e não conta)."""
     pid, dados = _validar(jogo, corpo or {})
     uid = usuario['id']
-    # Passou do limite a pessoa continua ajudando; só não ganha mais ficha.
+    # Passou do limite a ajuda ainda é gravada, mas não conta para a missão.
     n = _contar(uid, jogo)
     if not _marcar_feita(uid, jogo, pid):
         if n is not None:
@@ -360,17 +347,10 @@ def ajudar(usuario, jogo, corpo):
         if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
             raise
     if n is None:
-        return {'ok': True, 'fichas': 0, 'semPremio': True, **_situacao(uid, jogo)}
-    fichas = 1 if n % JOGOS[jogo]['porFicha'] == 0 else 0
-    hoje = _fichas_hoje(uid)
-    teto = {'fichasHoje': min(hoje, TETO_FICHAS_DIA), 'tetoDia': TETO_FICHAS_DIA}
-    # Bateu o teto do dia somando os jogos: a ajuda conta, a ficha não vem.
-    if fichas and hoje > TETO_FICHAS_DIA:
-        return {'ok': True, 'fichas': 0, 'semPremio': True, **_situacao(uid, jogo, n), **teto}
-    return {'ok': True, 'fichas': fichas, **_situacao(uid, jogo, n), **teto}
+        return {'ok': True, 'semPremio': True, **_situacao(uid, jogo)}
+    return {'ok': True, **_situacao(uid, jogo, n)}
 
 
-# ------------------------------- Resumo -----------------------------------
 def _pct(sim, nao, meh=0):
     total = sim + nao + meh
     return (sim + meh / 2) * 100 / total if total else None
@@ -461,10 +441,9 @@ def _somar_cota(cotas, item):
     n = int(item.get('n', {}).get('N', 0))
     regra = JOGOS[jogo]
     dia = cotas.setdefault(jogo, {}).setdefault(janela, {'pessoas': 0, 'ajudas': 0,
-                                                         'fichas': 0, 'noLimite': 0})
+                                                         'noLimite': 0})
     dia['pessoas'] += 1
     dia['ajudas'] += n
-    dia['fichas'] += n // regra['porFicha']
     dia['noLimite'] += 1 if n >= regra['limite'] else 0
 
 

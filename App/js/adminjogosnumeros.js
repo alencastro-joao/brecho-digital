@@ -211,7 +211,7 @@ function hojeNosJogos() {
   const soma = (k) => JOGOS.reduce((t, j) => t + (r.cotas?.[j.id]?.[hoje]?.[k] || 0), 0);
   return secao('', 'Hoje nos jogos', 'As contagens somem do banco depois de 2 dias.',
     el('p', { class: 'mgn-total' },
-      el('b', {}, String(soma('ajudas'))), ' ajudas · ', el('b', {}, String(soma('fichas'))), ' fichas · ',
+      el('b', {}, String(soma('ajudas'))), ' ajudas · ',
       el('b', {}, String(soma('pessoas'))), ' jogadas'),
     el('div', { class: 'mgn-jogos' }, ...JOGOS.map(cartaoJogo)));
 }
@@ -219,7 +219,7 @@ function hojeNosJogos() {
 function cartaoJogo(j) {
   const { r, pecas, regras } = dados;
   const g = regras[j.id] || {};
-  const dia = (n) => r.cotas?.[j.id]?.[diaBrasilia(n)] || { pessoas: 0, ajudas: 0, fichas: 0, noLimite: 0 };
+  const dia = (n) => r.cotas?.[j.id]?.[diaBrasilia(n)] || { pessoas: 0, ajudas: 0, noLimite: 0 };
   const hoje = dia(0), ontem = dia(1);
   // Quantas peças ainda esperam por este jogo (alguma entrada dele aberta).
   const faltam = pecas.filter(p => j.entradas.some(e => p.faltam.includes(e))).length;
@@ -230,11 +230,11 @@ function cartaoJogo(j) {
     el('p', { class: 'mgn-jogo-hoje' }, el('b', {}, String(hoje.ajudas)), ' ajudas hoje',
       el('small', {}, `ontem ${ontem.ajudas}`)),
     el('p', { class: 'mgn-jogo-nums' },
-      `${hoje.pessoas} pessoa${hoje.pessoas === 1 ? '' : 's'} · ${hoje.fichas} ficha${hoje.fichas === 1 ? '' : 's'} · `,
+      `${hoje.pessoas} pessoa${hoje.pessoas === 1 ? '' : 's'} · `,
       el('span', { class: hoje.noLimite ? 'limite' : '' }, `${hoje.noLimite} no limite`)),
     el('p', { class: 'mgn-jogo-falta' }, `Falta em ${faltam} de ${pecas.length} peças${detalhe}`),
     barra(pecas.length ? (pecas.length - faltam) * 100 / pecas.length : 0, j.cor),
-    el('p', { class: 'mgn-regra' }, `1 ficha a cada ${g.porFicha} · até ${g.limite} por ${g.janela}`));
+    el('p', { class: 'mgn-regra' }, `Até ${g.limite} ajudas por ${g.janela} · as fichas vêm das missões do mural`));
 }
 
 function raridades() {

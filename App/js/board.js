@@ -27,6 +27,7 @@ import { ligarPinca } from './pinca.js';
 import { criarDesfazer } from './desfazer.js';
 import { criarPainel, idNovo, nomeLivre } from './painelsalvos.js';
 import { espalhar } from './movimento.js';
+import { contar as contarNoMural } from './mural.js';
 
 const W = BOARD.W;
 
@@ -1433,6 +1434,7 @@ async function publicarBoard() {
     db.state.stats.publicacoes += 1;
     db.progredirMissao('publicar');
     db.progredirMissao('postar-colagem');
+    contarNoMural('colagem', { ids: salvo.itens.map(it => it.itemId).filter(Boolean) });
   }
   salvo.publicado = true;
   db.salvar();

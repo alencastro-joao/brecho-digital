@@ -28,6 +28,7 @@ import { criarDesfazer } from './desfazer.js';
 import { criarPainel, idNovo, nomeLivre } from './painelsalvos.js';
 import { animando, cairNoCorpo } from './movimento.js';
 import { barrasPosicao } from './barrapos.js';
+import { contar as contarNoMural } from './mural.js';
 
 let camadas = [];
 let selecionado = null;
@@ -810,6 +811,7 @@ async function publicarLook() {
   if (!look.publicado) {
     db.state.stats.publicacoes += 1;
     db.progredirMissao('publicar');
+    contarNoMural('look', { ids: look.camadas.map(c => c.itemId) });
   }
   look.publicado = true;
   db.salvar();

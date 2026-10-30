@@ -251,7 +251,7 @@ export function adicionarPeca(item, { origem = 'vitrine', raridade = null } = {}
 // de missão que caiu no sino. Voltar a foto e tirar a peça deixa o save como se
 // o toque não tivesse acontecido; sem isso, pegar e desfazer em sequência
 // fechava a missão de resgates.
-const FOTO_DO_RESGATE = ['fichas', 'stats', 'missoes', 'semana', 'progresso', 'intro', 'avisos', 'baus'];
+const FOTO_DO_RESGATE = ['fichas', 'stats', 'missoes', 'semana', 'progresso', 'intro', 'avisos', 'baus', 'mural'];
 
 export function fotografarResgate() {
   const foto = { resgates: state.dia.resgates };

@@ -1080,6 +1080,48 @@ export const MISSOES_SEMANA = [
 // mensal) abrem o Baú lendário (BAU_ESPECIAL).
 export const MARCOS_SEMANA = { fichasPorMissao: 4, carimbo: { bau: 'epico' } };
 
+// ------------------------------ Mural -------------------------------------
+// As missões do mural de Tarefas (js/mural.js), em post-its que aparecem de
+// tempos em tempos: uma nova a cada `cadaHoras`, até `vagas` no mural, e cada
+// uma some `duraHoras` depois de chegar. O nível sorteia o prêmio. Cor e tipo
+// saem do acervo, ao acaso (o jogador vai atrás), só em combinações que
+// existem. Regras do João, 30/10/2026.
+export const MURAL = {
+  vagas: 6, cadaHoras: 2, duraHoras: 12,
+  niveis: {
+    facil:   { nome: 'Fácil',   fichas: 3,  chance: 50, bau: 'incomum' },
+    medio:   { nome: 'Médio',   fichas: 5,  chance: 35, bau: 'raro' },
+    dificil: { nome: 'Difícil', fichas: 10, chance: 15, bau: 'epico' },
+  },
+  // Dourada: paga as fichas do nível e mais o baú dele (`bau` acima).
+  dourada: 10,
+  // evento: o que a tela avisa (mural.contar). filtro: o que a peça precisa ter
+  // ('cor', 'cat' ou os dois); mesma: N peças da mesma cor no mesmo post.
+  missoes: [
+    { id: 'curtir',         nivel: 'facil',   evento: 'curtir',   meta: 5 },
+    { id: 'garimpar-cor',   nivel: 'facil',   evento: 'garimpar', meta: 1, filtro: ['cor'] },
+    { id: 'garimpar-tipo',  nivel: 'facil',   evento: 'garimpar', meta: 1, filtro: ['cat'] },
+    { id: 'publicar-cor',   nivel: 'facil',   evento: 'publicar', meta: 1, filtro: ['cor'] },
+    { id: 'publicar-tipo',  nivel: 'facil',   evento: 'publicar', meta: 1, filtro: ['cat'] },
+    { id: 'garimpar-tipo2', nivel: 'medio',   evento: 'garimpar', meta: 2, filtro: ['cat'] },
+    { id: 'garimpar-cor2',  nivel: 'medio',   evento: 'garimpar', meta: 2, filtro: ['cor'] },
+    { id: 'look-cor',       nivel: 'medio',   evento: 'look',     meta: 3, mesma: 'cor' },
+    { id: 'colagem-cor',    nivel: 'medio',   evento: 'colagem',  meta: 3, mesma: 'cor' },
+    { id: 'garimpar-epica', nivel: 'dificil', evento: 'garimpar', meta: 1, raridade: 'epic' },
+    { id: 'look-cor-tipo',  nivel: 'dificil', evento: 'look',     meta: 1, filtro: ['cor', 'cat'] },
+    { id: 'colagem-cor-tipo', nivel: 'dificil', evento: 'colagem', meta: 1, filtro: ['cor', 'cat'] },
+  ],
+  // A missão de jogo: uma por vez, numa vaga só dela. Feita e resgatada, a
+  // próxima chega `esperaHoras` depois. Fichas: `fichas` a cada `cada` ajudas
+  // (no Preencher, cada campo respondido conta 1).
+  jogos: {
+    esperaHoras: 2,
+    avaliar:   { metas: [5, 10, 15], cada: 5, fichas: 2 },
+    ajustar:   { metas: [3, 6, 9],   cada: 3, fichas: 2 },
+    preencher: { metas: [3, 5, 8],   cada: 1, fichas: 1 },
+  },
+};
+
 // Baú dos dias: 5 dias carimbados na mesma semana dão um Baú raro.
 export const PREMIO_SEMANA = {
   carimbos: 5,

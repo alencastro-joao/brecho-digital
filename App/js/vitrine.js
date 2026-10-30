@@ -38,6 +38,7 @@ import { confirmar, mostrar } from './janela.js';
 import { irPara } from './router.js';
 import { chegarNaArara, voar } from './movimento.js';
 import { tocar } from './sons.js';
+import { contar as contarNoMural } from './mural.js';
 
 let mural, passThroughInstalado = false, resizeTimer;
 
@@ -818,6 +819,7 @@ async function pegar(id, noDOM) {
   db.state.stats.resgates += 1;
   db.progredirMissao('resgates');
   if (['rare', 'epic', 'legendary'].includes(raridade)) db.progredirMissao('raras');
+  contarNoMural('garimpar', { peca, raridade: nova?.raridade ?? raridade });
   db.salvar();
 
   voarParaOCloset(noDOM);

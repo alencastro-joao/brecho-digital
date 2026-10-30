@@ -802,29 +802,24 @@
   <!-- As missões do dia, a trilha de níveis e a cápsula: o que o app pede de
        você. Quem você é fica no perfil. -->
   <section class="view view-tarefas" data-view="tarefas" hidden>
-    <!-- Lista limpa: nível e fichas numa fileira, as abas Hoje e Semana, um
-         bloco por pedido e a trilha dos carimbos até o baú. Explicação só
-         aparece se a pessoa tocar (no baú, nas fichas). -->
+    <!-- Nível, fichas, Baús e Coleções numa fileira; as abas Mural, Diário e
+         Semana; o mural de missões em post-its (js/mural.js) ou a lista do
+         dia ou da semana; embaixo, a prateleira dos baús e a fita das coleções. -->
     <div class="tarefas-wrapper">
       <header class="tarefas-head">
         <h1>Tarefas</h1>
         <div class="tf-topo" id="tarefas-faixa"></div>
       </header>
       <div class="tf-abas" id="tf-abas" role="tablist"></div>
-      <section class="tf-painel">
+      <section class="tf-mural" id="tf-mural"></section>
+      <section class="tf-painel" id="tf-painel" hidden>
         <div class="tf-lista" id="tf-lista"></div>
         <div class="tf-rodape" id="tf-rodape"></div>
         <div class="tf-trilha" id="tf-trilha"></div>
         <div class="tf-bau-aberto" id="tf-bau-aberto" hidden></div>
       </section>
-      <!-- As portas para os baús guardados e para as coleções. -->
-      <div class="tf-portas">
-        <button type="button" class="tf-colecoes tf-baus" id="tarefas-baus"></button>
-        <button type="button" class="tf-colecoes" id="tarefas-colecoes"></button>
-        <button type="button" class="tf-colecoes tf-jogos" id="tarefas-jogos" title="Mini games">
-          <span class="tf-col-ico"><i data-e="🎲"></i></span><strong>Jogos</strong><small></small><span class="tf-col-seta" aria-hidden="true">›</span>
-        </button>
-      </div>
+      <section class="tf-secao tf-prateleira" id="tarefas-baus"></section>
+      <section class="tf-secao tf-fita" id="tarefas-colecoes"></section>
     </div>
   </section>
 
@@ -896,17 +891,16 @@
   </section>
 
   <!-- ====================== MINI GAMES ====================== -->
-  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre pelo botão Jogos da tela de Tarefas. -->
+  <!-- Ajudar a cadastrar as peças: avaliar, ajustar, preencher (js/ajudas.js). Abre pela missão de jogo do mural de Tarefas. -->
   <section class="view view-ajudas" data-view="ajudas" hidden>
     <div class="mg-wrapper">
       <!-- Topo no jeito de Tarefas: voltar, o nome do jogo e as fichas. -->
       <header class="mg-topo">
-        <button type="button" class="mg-voltar" id="mg-voltar" title="Voltar aos mini games" hidden>‹</button>
-        <div class="mg-titulo"><span id="mg-titulo-ico"></span><strong id="mg-titulo">Mini games</strong></div>
+        <button type="button" class="mg-voltar" id="mg-voltar" title="Voltar ao mural">‹</button>
+        <div class="mg-titulo"><span id="mg-titulo-ico"></span><strong id="mg-titulo">Jogos</strong></div>
         <button type="button" class="mg-fichas" id="mg-fichas" title="Fichas: toque para ver as trocas"></button>
       </header>
-      <div class="mg-menu" id="mg-menu"></div>
-      <section class="mg-painel" id="mg-painel" hidden>
+      <section class="mg-painel" id="mg-painel">
         <div class="mg-cota" id="mg-cota"></div>
         <div class="mg-palco" id="mg-palco"></div>
       </section>
