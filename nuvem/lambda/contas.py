@@ -211,7 +211,7 @@ DONO = (os.environ.get('DONO_EMAIL') or 'oliveijao@gmail.com').lower()
 
 # Quem usa a esteira de peças sem ser o dono (pedido do João, 30/10/2026). Só a
 # esteira: o resto do admin continua só do dono.
-ESTEIRA_EMAILS = {'galencastro07@gmail.com'}
+ESTEIRA_EMAILS = {'galencastro7@gmail.com'}
 
 
 def _papel(item):
