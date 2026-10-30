@@ -45,33 +45,17 @@ class Ajudas(unittest.TestCase):
         ajudas._ids_nos_jogos = self._ids
         _ddb.delete_table(TableName='brecho-ajudas')
 
-    def test_ficha_a_cada_x_e_limite(self):
+    def test_limite_da_janela(self):
         regra = ajudas.JOGOS['avaliar']
-        fichas = 0
         for i in range(regra['limite']):
             r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca%04d' % i, 'gostei': True})
             self.assertTrue(r['ok'])
-            fichas += r['fichas']
-        self.assertEqual(fichas, regra['limite'] // regra['porFicha'])
+            self.assertNotIn('semPremio', r)
         r = ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0099', 'gostei': True})
-        # Depois do limite a ajuda vale, mas não paga ficha.
+        # Depois do limite a ajuda é gravada, mas não conta para a missão.
         self.assertTrue(r['ok'])
-        self.assertEqual(r['fichas'], 0)
         self.assertTrue(r['semPremio'])
         self.assertEqual(r['feitas'], regra['limite'])
-
-    def test_teto_de_fichas_somando_os_jogos(self):
-        # 25 avaliações = 5 fichas; o Ajustar depois disso não paga mais.
-        for i in range(25):
-            ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca%04d' % i, 'gostei': True})
-        fichas = 0
-        for i in range(4):
-            r = ajudas.ajudar(ANA, 'ajustar', {'peca': 'epeca%04d' % i,
-                                               'ancora': {'x': 300, 'y': 500, 'w': 200}})
-            fichas += r['fichas']
-        self.assertEqual(fichas, 0)
-        self.assertTrue(r['semPremio'])
-        self.assertEqual(ajudas.estado(ANA)['jogos']['ajustar']['fichasHoje'], ajudas.TETO_FICHAS_DIA)
 
     def test_mesma_peca_nao_conta_duas_vezes(self):
         self.assertTrue(ajudas.ajudar(ANA, 'avaliar', {'peca': 'epeca0001', 'gostei': True})['ok'])

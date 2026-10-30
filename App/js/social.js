@@ -40,6 +40,11 @@ import {
 } from './publicacoes.js';
 import { festejar } from './animacoes.js';
 import { cascataDoFeed, pulsoCurtida } from './movimento.js';
+import { contar as contarNoMural } from './mural.js';
+
+// Curtida que conta (a primeira de cada post na semana) anda nas missões do
+// dia, da semana e do mural.
+const curtiu = (post) => { if (db.progredirMissao('curtir', 1, post.id) !== false) contarNoMural('curtir'); };
 
 const sou = (id) => id === db.state.usuario.id;
 
@@ -1086,13 +1091,13 @@ export async function alternarCurtida(post, botao) {
   if (post.real) {
     try { await curtirPublicacao(post); }
     catch (e) { return toast(e.message || 'Não consegui curtir agora.', 'aviso'); }
-    if (conta) { db.progredirMissao('curtir', 1, post.id); db.salvar(); }
+    if (conta) { curtiu(post); db.salvar(); }
     pulsar(antes, antes + (liberando ? 1 : -1));
     return;
   }
   post.curtido = !post.curtido;
   post.curtidas = Math.max(0, post.curtidas + (post.curtido ? 1 : -1));
-  if (conta) db.progredirMissao('curtir', 1, post.id);
+  if (conta) curtiu(post);
   db.salvar();
   repintar();
   pulsar(antes, post.curtidas);

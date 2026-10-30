@@ -1,15 +1,15 @@
-// Mini games de ajuda: os jogadores ajudam a cadastrar as peças da esteira e
-// ganham fichas por isso. Botão do dado na barra (#/ajudas): abre num menu de
-// três botões grandes, um por jogo.
+// Jogos de ajuda: os jogadores ajudam a cadastrar as peças da esteira. Não
+// têm menu nem botão próprio: abrem pela missão de jogo do mural de Tarefas
+// (js/mural.js), tocando no post-it, e é ela que paga as fichas.
 //
 //   Avaliar    a peça aparece; arrastar para a direita é "gostei", para a
 //              esquerda "não gostei"; "tanto faz" vale meio. A média dos votos sugere a raridade.
 //   Ajustar    encaixar a peça no corpo (arrastar e mudar o tamanho).
-//   Preencher  dizer a cor e a marca da peça.
+//   Preencher  dizer o tipo, a cor e a marca da peça.
 //
-// Quem conta as ajudas, paga a ficha e segura o limite é o servidor
-// (nuvem/lambda/ajudas.py, onde também moram os números): aqui só se mostra o
-// que ele diz e soma a ficha que ele mandar.
+// Quem conta as ajudas e segura o limite do dia é o servidor
+// (nuvem/lambda/ajudas.py): ajuda aceita anda a missão; passou do limite
+// (`semPremio`), não anda.
 
 import { CONFIG, CATEGORIAS, ORDEM_CATEGORIAS, CORES, ancoraPadrao } from './config.js';
 import { rotuloCategoria } from './catalog.js';
@@ -22,20 +22,22 @@ import { el, $, clamp, toast } from './util.js';
 import { ico, emo } from './icones.js';
 import { alcaMover } from './alcamover.js';
 import { barrasPosicao } from './barrapos.js';
+import { irPara } from './router.js';
+import { missaoDeJogo, contarJogo, textoDoJogo } from './mural.js';
 
 const JOGOS = [
-  { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: 'var(--board)', desc: 'Arraste: gostei ou não gostei.' },
-  { id: 'ajustar', nome: 'Ajustar', icone: 'mover', cor: 'var(--inventario)', desc: 'Encaixe a peça no corpo.' },
-  { id: 'preencher', nome: 'Preencher', icone: 'editar', cor: 'var(--tarefas)', desc: 'Diga a cor e a marca.' },
+  { id: 'avaliar', nome: 'Avaliar', icone: 'coracao-cheio', cor: 'var(--board)' },
+  { id: 'ajustar', nome: 'Ajustar', icone: 'mover', cor: 'var(--inventario)' },
+  { id: 'preencher', nome: 'Preencher', icone: 'editar', cor: 'var(--tarefas)' },
 ];
+export const JOGO = Object.fromEntries(JOGOS.map(j => [j.id, j]));
 
 let estado = null;        // resposta de GET /api/ajudas (a cota de cada jogo)
 let itens = [];           // as fotos da esteira que o admin mandou para os jogos
 let faltam = {};          // id → entradas que ainda não fecharam (ajudas.py, pendencias)
-let jogo = null;          // null = o menu dos três botões
+let jogo = null;          // o jogo da missão
 let peca = null;          // peça na tela
 let enviando = false;
-let premiado = null;      // jogo que acabou de pagar ficha (a barra mostra cheia)
 let pendente = null;      // Avaliar: último voto, ainda não enviado ({ peca, voto }), para poder voltar
 
 async function chamar(rota, corpo) {
@@ -51,14 +53,22 @@ async function chamar(rota, corpo) {
 }
 
 export function montarAjudas() {
-  $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; renderMenu(); });
+  // Voltar leva de novo ao mural; a missão guarda o que já foi feito.
+  $('#mg-voltar').addEventListener('click', () => { soltarPendente(); jogo = null; irPara('tarefas'); });
   // Tocar nas fichas abre as mesmas Trocas de Tarefas.
   $('#mg-fichas').addEventListener('click', () => abrirTrocas(renderFichas));
 }
 
 export async function aoEntrarNasAjudas() {
-  jogo = null;
-  renderMenu();
+  const m = missaoDeJogo();
+  if (!m) { irPara('tarefas'); return; }
+  jogo = m.jogo;
+  const j = JOGO[jogo];
+  $('#mg-titulo').textContent = j.nome;
+  $('#mg-titulo-ico').replaceChildren(ico(j.icone));
+  $('#mg-titulo-ico').style.setProperty('--cor', j.cor);
+  renderFichas();
+  renderCota();
   $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' }, 'Carregando…'));
   try {
     const r = await chamar('/api/ajudas');
@@ -68,77 +78,28 @@ export async function aoEntrarNasAjudas() {
   } catch {
     estado = null;
     $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
-      'Os mini games precisam de internet e da sua conta. Tente de novo daqui a pouco.'));
+      'Os jogos precisam de internet e da sua conta. Tente de novo daqui a pouco.'));
     return;
   }
-  renderMenu();
-}
-
-// O menu: três quadrados grandes, cada um com sua cor e símbolo.
-function renderMenu() {
-  const noMenu = !jogo;
-  const j = JOGOS.find(x => x.id === jogo);
-  $('#mg-menu').hidden = !noMenu;
-  $('#mg-painel').hidden = noMenu && !!estado;
-  $('#mg-voltar').hidden = noMenu;
-  $('#mg-titulo').textContent = noMenu ? 'Mini games' : j.nome;
-  $('#mg-titulo-ico').replaceChildren(ico(noMenu ? 'dado' : j.icone));
-  $('#mg-titulo-ico').style.setProperty('--cor', noMenu ? 'var(--loja)' : j.cor);
-  renderFichas();
-  if (!noMenu) return;
-  $('#mg-cota').replaceChildren();
-  if (estado) $('#mg-palco').replaceChildren();
-  $('#mg-menu').replaceChildren(...JOGOS.map(j => {
-    const s = estado?.[j.id];
-    return el('button', {
-      type: 'button', class: 'mg-quadrado', style: { '--cor': j.cor },
-      onclick: () => { if (!estado) return; jogo = j.id; renderMenu(); proxima(); },
-    }, ico(j.icone), el('strong', {}, j.nome),
-    s ? barra(s, j.id, true) : el('small', {}, ''));
-  }));
-}
-
-// A barra enche a cada ajuda; cheia, paga a ficha e volta a zero. No limite
-// da janela ela fica cheia e cinza, com o aviso.
-function barra(s, id, curta = false) {
-  const esgotou = s.feitas >= s.limite || s.fichasHoje >= s.tetoDia;
-  const ganhou = premiado === id;
-  const cheia = esgotou || ganhou;
-  const passo = s.feitas % s.porFicha;
-  const pct = cheia ? 100 : passo / s.porFicha * 100;
-  const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
-  const texto = esgotou ? `Fichas ${quando} já ganhas`
-    : ganhou ? '+1 ficha!'
-    : curta ? `${passo}/${s.porFicha}` : `${passo}/${s.porFicha} para 1 ficha · ${s.feitas}/${s.limite} ${quando}`;
-  return el('div', { class: 'mg-barra' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : '') },
-    el('div', { class: 'mg-barra-trilho' }, el('div', { class: 'mg-barra-cheio', style: { width: pct + '%' } })),
-    el('small', {}, texto));
+  if (jogo) proxima();
 }
 
 const renderFichas = () => $('#mg-fichas').replaceChildren(
   el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(db.fichas())));
 
-// A linha de progresso dentro do jogo, no molde dos pedidos de Tarefas.
+// A barra da missão, no molde dos pedidos de Tarefas: enche até a meta. O
+// voto do Avaliar ainda guardado (pendente) já aparece.
 function renderCota() {
-  const s = estado?.[jogo];
-  if (!s) return $('#mg-cota').replaceChildren();
-  const esgotou = s.feitas >= s.limite || s.fichasHoje >= s.tetoDia;
-  const ganhou = premiado === jogo;
-  const passo = s.feitas % s.porFicha;
-  const pct = esgotou || ganhou ? 100 : passo / s.porFicha * 100;
-  const quando = s.janela === 'hora' ? 'desta hora' : 'de hoje';
-  // Uma moedinha por ficha da janela: as já ganhas ficam apagadas.
-  const total = Math.floor(s.limite / s.porFicha), ganhas = Math.min(total, Math.floor(s.feitas / s.porFicha));
-  $('#mg-cota').replaceChildren(el('div', {
-    class: 'mg-progresso' + (esgotou ? ' esgotou' : '') + (ganhou ? ' ganhou' : ''),
-  },
+  const m = missaoDeJogo();
+  if (!m || m.jogo !== jogo) return $('#mg-cota').replaceChildren();
+  const feito = Math.min(m.meta, m.feito + (pendente ? 1 : 0));
+  const pronta = feito >= m.meta;
+  $('#mg-cota').replaceChildren(el('div', { class: 'mg-progresso' + (pronta ? ' ganhou' : '') },
     el('span', { class: 'mg-progresso-ico' }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' })),
     el('div', { class: 'mg-progresso-info' },
-      el('strong', {}, esgotou ? `Fichas ${quando} já ganhas` : ganhou ? '+1 ficha!' : 'Próxima ficha',
-        el('span', { class: 'mg-restam', title: `${total - ganhas} de ${total} fichas ${quando}` },
-          ...Array.from({ length: total }, (_, i) => el('span', { class: 'mg-moedinha' + (i < ganhas ? ' gasta' : '') })))),
-      el('div', { class: 'mg-progresso-barra' }, el('span', { style: { width: pct + '%' } }))),
-    el('small', {}, esgotou ? `${s.feitas}/${s.limite}` : `${ganhou ? s.porFicha : passo}/${s.porFicha}`)));
+      el('strong', {}, pronta ? `Missão feita! Resgate +${m.fichas} no mural` : `${textoDoJogo(m)} · +${m.fichas}`),
+      el('div', { class: 'mg-progresso-barra' }, el('span', { style: { width: (feito / m.meta * 100) + '%' } }))),
+    el('small', {}, `${feito}/${m.meta}`)));
 }
 
 // O que cada jogo responde. Peça sem nada em `faltam` ainda não recebeu ajuda.
@@ -194,20 +155,17 @@ async function gravar(jogo, peca, corpo) {
   try {
     const r = await chamar('/api/ajudas/' + jogo, { peca: peca.id, ...corpo });
     const s = estado[jogo];
-    Object.assign(s, { feitas: r.feitas, limite: r.limite, porFicha: r.porFicha, vira: r.vira });
-    // O teto de fichas do dia é um só para os três jogos.
-    if (r.tetoDia) for (const c of Object.values(estado)) Object.assign(c, { fichasHoje: r.fichasHoje, tetoDia: r.tetoDia });
+    Object.assign(s, { feitas: r.feitas, limite: r.limite, vira: r.vira });
     if ((r.ok || r.motivo === 'repetida') && !s.pecas.includes(peca.id)) s.pecas.push(peca.id);
-    if (r.ok && !r.fichas && !r.semPremio) tocar('xp');     // a barra subiu
-    if (r.fichas) {
-      db.ganharFicha(r.fichas);
-      tocar('missao');
-      db.salvar();
-      toast(`+${r.fichas} ficha${r.fichas > 1 ? 's' : ''} por ajudar!`);
-      renderFichas();
-      // A barra fica cheia um instante antes de zerar.
-      premiado = jogo;
-      setTimeout(() => { premiado = null; if (jogo) renderCota(); }, 1200);
+    if (r.ok && !r.semPremio) {
+      // No Preencher, cada campo respondido conta.
+      const n = jogo === 'preencher' ? ['cat', 'cor', 'marca'].filter(k => corpo[k]).length : 1;
+      const antes = missaoDeJogo();
+      const faltava = antes && antes.jogo === jogo && antes.feito < antes.meta;
+      contarJogo(jogo, n);
+      const m = missaoDeJogo();
+      if (faltava && m.feito >= m.meta) { tocar('missao'); toast('Missão feita! Resgate no mural.', 'rare'); }
+      else tocar('xp');
     }
   } catch (e) {
     toast(`Não deu para enviar: ${e.message}`, 'aviso');

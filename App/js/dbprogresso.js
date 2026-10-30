@@ -21,7 +21,7 @@ import {
 export function progredirMissao(evento, delta = 1, chave = null) {
   virarODiaSeNecessario();
   // a semana conta mesmo depois que a diária fechou
-  if (progredirSemana(evento, delta, chave) === false) return;
+  if (progredirSemana(evento, delta, chave) === false) return false;
   progredirIntro(evento);
   for (const missao of MISSOES.filter(m => m.evento === evento)) {
     const antes = state.missoes.progresso[missao.id] ?? 0;

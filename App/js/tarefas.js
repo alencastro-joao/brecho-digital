@@ -1,20 +1,21 @@
-// Tarefas: o que o app pede de você — os pedidos do dia e da semana, os
-// carimbos, as fichas e a trilha de níveis.
+// Tarefas: o que o app pede de você — o mural de missões, os pedidos do dia e
+// da semana, os carimbos, as fichas e a trilha de níveis.
 //
-// A tela é uma lista limpa: nível e fichas numa fileira, as abas Hoje e
+// No topo, nível, fichas e os botões redondos de Baús e Coleções. Abas Mural,
+// Diário e Semana: o Mural tem as missões em post-its (js/mural.js); Diário e
 // Semana, um bloco por pedido (fica verde quando fecha) e a trilha dos
-// carimbos até o baú. A explicação de cada coisa só aparece num toque. Os
+// carimbos até o baú. Embaixo, a prateleira dos baús guardados e a fita das
+// coleções. A explicação de cada coisa só aparece num toque. Os
 // baús ganhos vão fechados para a tela de Baús (js/baus.js). O
 // formato das missões segue o Pokémon TCG Pocket (lista fixa, cumprir parte já
 // paga); os prêmios dos marcos esperam um toque para sair.
 
 import {
   MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
-  RARIDADE, escalaGrade, BAUS, CHANCE_NO_BAU, PREMIOS_DE_NIVEL,
+  RARIDADE, escalaGrade, BAUS, CHANCE_NO_BAU, PREMIOS_DE_NIVEL, MURAL, logoDaColecao,
 } from './config.js';
 import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
-import { mostrar } from './janela.js';
 import * as estoque from './estoque.js';
 import {
   el, $, toast, hojeISO, msAteMeiaNoite, msAteSegunda, formatarContagem, formatarDias,
@@ -25,6 +26,8 @@ import { todasAsColecoes, abrirColecao } from './colecoes.js';
 import { abrirFichaDePeca } from './usuario.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
+import * as mural from './mural.js';
+import { JOGO } from './ajudas.js';
 
 export function montarTarefas() {
   // Missão fecha em qualquer tela: resgatar na vitrine, salvar um look,
@@ -40,6 +43,8 @@ export function montarTarefas() {
   $('#tn-todos').addEventListener('click', pegarTodos);
   modal.addEventListener('click', (e) => { if (e.target === modal) fecharTrilha(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) fecharTrilha(); });
+  // O mural anda sozinho (missão chega, vence, prazo diminui): repinta a cada minuto.
+  setInterval(() => { if (viewAtual() === 'tarefas') renderTarefas(); else renderPontinho(); }, 60e3);
   renderTarefas();
 }
 
@@ -52,21 +57,24 @@ function zerarTrilha() {
 export function renderTarefas() {
   zerarTrilha();
   db.virarODiaSeNecessario();   // o dia e a semana podem ter virado com a aba aberta
-  if (!aba) aba = premioNaSemana() && !premioNoDia() ? 'semana' : 'hoje';
+  if (mural.atualizar()) { db.salvar(); return; }   // gravar repinta
+  if (!aba) aba = mural.prontas() ? 'mural' : premioNoDia() ? 'hoje' : premioNaSemana() ? 'semana' : 'mural';
   // Chegou: as fichas e a aba aberta já foram vistas (fora desta pintura,
   // porque marcar grava e repinta).
-  const vistas = [...db.novidadesDoTopo(), ...(aba === 'hoje' ? db.novidadesDoDia() : db.novidadesDaSemana())];
+  const vistas = [...db.novidadesDoTopo(), ...(aba === 'hoje' ? db.novidadesDoDia() : aba === 'semana' ? db.novidadesDaSemana() : [])];
   if (db.naoVistas(vistas).length) setTimeout(() => db.marcarVistas(vistas));
   renderTopo();
   renderAbas();
-  if (aba === 'hoje') renderDia(); else renderSemana();
-  renderCartaoColecoes();
-  renderCartaoBaus();
+  $('#tf-mural').hidden = aba !== 'mural';
+  $('#tf-painel').hidden = aba === 'mural';
+  if (aba === 'mural') renderMural(); else if (aba === 'hoje') renderDia(); else renderSemana();
+  renderFitaColecoes();
+  renderPrateleira();
   renderPontinho();
 }
 
-// A aba aberta (Hoje ou Semana). Começa no Hoje, a não ser que só a semana
-// tenha prêmio esperando.
+// A aba aberta (Mural, Diário ou Semana). Começa no Mural, a não ser que só o
+// dia ou a semana tenham prêmio esperando.
 let aba = null;
 const premioNoDia = () => !!db.marcoDoDiaPronto() || db.bauDosDiasPronto();
 const premioNaSemana = () =>
@@ -79,50 +87,152 @@ const ICONE = {
 };
 
 // ------------------------------- Coleções ---------------------------------
-// O botão que leva à tela de Coleções. Com item do avatar esperando escolha,
-// ele vira o presente e abre direto a coleção.
-function renderCartaoColecoes() {
-  const botao = $('#tarefas-colecoes');
+// A fita das coleções: um logo por coleção, coloridas as completas. Com item
+// do avatar esperando escolha, o botão redondo do topo vira o presente.
+function renderFitaColecoes() {
+  const fita = $('#tarefas-colecoes');
   const todas = todasAsColecoes();
-  botao.hidden = !todas.length;
+  fita.hidden = !todas.length;
   if (!todas.length) return;
-  const comEscolha = todas.find(c => c.livres > 0);
   const completas = todas.filter(c => c.completa).length;
-  botao.classList.toggle('escolha', !!comEscolha);
-  botao.classList.toggle('ponto-novo', db.naoVistas(db.novidadesDasColecoes()).length > 0);
-  botao.title = comEscolha ? `${comEscolha.marca}: escolha um item do avatar` : '';
-  botao.onclick = () => comEscolha ? abrirColecao(comEscolha.id) : irPara('colecoes');
-  botao.replaceChildren(
-    el('span', { class: 'tf-col-ico' }, ico(comEscolha ? 'presente' : 'trofeu')),
-    el('strong', {}, 'Coleções'),
-    el('small', {}, `${completas}/${todas.length}`),
-    el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
+  const ordem = [...todas].sort((a, b) => (b.completa - a.completa) || (b.pct - a.pct));
+  fita.replaceChildren(
+    el('button', { type: 'button', class: 'tf-sec-topo', onclick: () => irPara('colecoes') },
+      el('b', {}, ico('trofeu'), 'Coleções'), el('small', {}, `${completas}/${todas.length} ›`)),
+    el('div', { class: 'tf-logos' }, ...ordem.map(c => {
+      const logo = logoDaColecao(c);
+      return el('button', {
+        type: 'button', class: 'tf-logo' + (c.completa ? ' ok' : ''), title: c.marca,
+        style: c.hex ? { '--cor': c.hex } : {}, onclick: () => abrirColecao(c.id),
+      }, logo ? el('img', { src: logo, alt: c.marca, loading: 'lazy' }) : el('span', {}, c.marca[0]));
+    })));
+}
+
+// --------------------------------- Baús -----------------------------------
+// A prateleira: os baús guardados, um por tipo (com quantos), e as vagas
+// vazias. Tocar leva à tela de Baús, onde eles abrem.
+const VAGAS_DA_PRATELEIRA = 4;
+function renderPrateleira() {
+  const baus = db.bausGuardados();
+  const tipos = Object.keys(BAUS).reverse().filter(t => baus.some(b => b.tipo === t));
+  const novos = db.naoVistas(db.novidadesDosBaus()).length > 0;
+  const vagas = Array.from({ length: Math.max(0, VAGAS_DA_PRATELEIRA - tipos.length) },
+    () => el('span', { class: 'tf-pbau vazio' }));
+  $('#tarefas-baus').replaceChildren(
+    el('button', { type: 'button', class: 'tf-sec-topo', onclick: () => irPara('baus') },
+      el('b', {}, ico('presente'), 'Baús'), el('small', {}, baus.length ? 'toque para abrir' : 'nenhum guardado')),
+    el('div', { class: 'tf-prateleira-baus' },
+      ...tipos.slice(0, VAGAS_DA_PRATELEIRA).map((t, i) => {
+        const n = baus.filter(b => b.tipo === t).length;
+        return el('button', {
+          type: 'button', class: `tf-pbau bau-${t}` + (i === 0 ? ' pronto' : '') + (i === 0 && novos ? ' ponto-novo' : ''),
+          title: `Abrir ${BAUS[t].nome.toLowerCase()}`, onclick: () => irPara('baus'),
+        }, ico('presente'), el('small', {}, BAUS[t].nome.replace('Baú ', '')),
+        n > 1 ? el('span', { class: 'tf-pbau-qtd' }, `×${n}`) : null);
+      }), ...vagas));
 }
 
 function renderPontinho() {
-  const tem = db.temNovidade();
+  const tem = db.temNovidade() || mural.prontas() > 0;
   for (const botao of document.querySelectorAll('[data-goto="tarefas"]')) {
     botao.classList.toggle('tem-premio', tem);
   }
 }
 
-// --------------------------------- Baús -----------------------------------
-// O botão da tela de Baús: quantos esperam abrir, com o pontinho vermelho
-// enquanto houver algum.
-function renderCartaoBaus() {
-  const n = db.bausGuardados().length;
-  const botao = $('#tarefas-baus');
-  botao.classList.toggle('escolha', n > 0);
-  botao.classList.toggle('ponto-novo', db.naoVistas(db.novidadesDosBaus()).length > 0);
-  botao.onclick = () => irPara('baus');
-  $('#tarefas-jogos').onclick = () => irPara('ajudas');
-  botao.replaceChildren(
-    el('span', { class: 'tf-col-ico' }, ico('presente')),
-    el('strong', {}, 'Baús'),
-    el('small', {}, n ? String(n) : ''),
-    el('span', { class: 'tf-col-seta', 'aria-hidden': 'true' }, '›'));
+// ---------------------------------- Mural ---------------------------------
+// As missões em post-its, a de jogo primeiro, e as vagas que faltam. A
+// primeira vaga vazia diz quando chega a próxima.
+const COR_DO_NIVEL = { facil: 'var(--stylist)', medio: 'var(--inventario)', dificil: 'var(--board)' };
+const ICONE_DO_EVENTO = { curtir: 'coracao', garimpar: 'sacola', publicar: 'camera', look: 'varinha', colagem: 'quadro' };
+const giro = (uid) => ((parseInt(String(uid).slice(-3), 36) || 0) % 5 - 2) * 0.8;   // cada papel torto de um jeito
+const prazo = (ms) => {
+  const h = Math.floor(ms / 3600e3), m = Math.floor(ms / 60e3) % 60;
+  return h ? `${h}h` : `${Math.max(1, m)}min`;
+};
+const tempoAte = (ms) => {
+  const h = Math.floor(ms / 3600e3), m = Math.floor(ms / 60e3) % 60;
+  return h ? `${h}h ${String(m).padStart(2, '0')}min` : `${Math.max(1, m)}min`;
+};
+
+function papel({ cor, icone, texto, feito, meta, premio, tempo, rot, classe = '', resgatar, abrir, nivel }) {
+  const pronta = feito >= meta;
+  return el('article', {
+    class: 'tf-papel' + (pronta ? ' pronta' : '') + (abrir && !pronta ? ' abre' : '') + classe,
+    style: { '--cor': cor, '--rot': rot + 'deg' },
+    onclick: abrir && !pronta ? abrir : null,
+  },
+    el('span', { class: 'tf-alfinete', 'aria-hidden': 'true' }),
+    el('div', { class: 'tf-papel-topo' },
+      el('span', { class: 'tf-papel-ico' }, ico(icone)),
+      nivel ? el('small', { class: 'tf-nivel-chip' }, nivel) : null),
+    el('b', {}, texto),
+    el('div', { class: 'tf-papel-prog' },
+      el('div', { class: 'tf-barra' }, el('span', { style: { width: (Math.min(feito, meta) / meta * 100) + '%' } })),
+      el('small', {}, `${Math.min(feito, meta)}/${meta}`)),
+    el('footer', {},
+      pronta
+        ? el('button', { type: 'button', class: 'tf-papel-premio resgatar', onclick: (e) => { e.stopPropagation(); resgatar(); } },
+          'Resgatar ', premio)
+        : el('span', { class: 'tf-papel-premio' }, premio),
+      tempo ? el('small', { class: 'tf-papel-tempo' }, ico('relogio'), tempo) : null));
 }
 
+const premioEmFichas = (n, bau) => el('span', { class: 'tf-premio-n' }, `+${n}`,
+  el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), bau ? ico('presente') : null);
+
+function renderMural() {
+  const agora = Date.now();
+  const lista = mural.missoes();
+  const jogo = mural.missaoDeJogo();
+  const papeis = [];
+
+  if (jogo) {
+    const j = JOGO[jogo.jogo];
+    papeis.push(papel({
+      cor: 'var(--loja)', icone: j.icone, texto: mural.textoDoJogo(jogo), feito: jogo.feito, meta: jogo.meta,
+      premio: premioEmFichas(jogo.fichas), rot: -1.2, classe: ' jogo', nivel: 'Jogo',
+      abrir: () => irPara('ajudas'),
+      resgatar: () => {
+        const r = mural.resgatarJogo();
+        if (r) { tocar('missao'); toast(`+${r.fichas} fichas.`, 'rare'); }
+      },
+    }));
+  } else {
+    papeis.push(el('article', { class: 'tf-papel vazio jogo', style: { '--rot': '-1deg' } },
+      el('b', {}, 'Novo jogo'), el('small', {}, `em ${tempoAte(mural.voltaDoJogo() - agora)}`)));
+  }
+
+  for (const m of lista) {
+    const md = mural.modeloDe(m);
+    const nivel = MURAL.niveis[m.nivel];
+    papeis.push(papel({
+      cor: COR_DO_NIVEL[m.nivel], icone: md.raridade ? 'brilho' : ICONE_DO_EVENTO[md.evento] || 'estrela',
+      texto: mural.textoDa(m), feito: m.feito, meta: m.meta, rot: giro(m.uid),
+      premio: premioEmFichas(nivel.fichas, m.dourada), tempo: prazo(m.vence - agora),
+      classe: m.dourada ? ' dourada' : '', nivel: m.dourada ? `${nivel.nome} · dourada` : nivel.nome,
+      resgatar: () => {
+        const r = mural.resgatar(m.uid);
+        if (!r) return;
+        tocar('missao');
+        toast(r.bau ? `+${r.fichas} fichas e ${r.bau}!` : `+${r.fichas} fichas.`, 'rare');
+      },
+    }));
+  }
+
+  const livres = MURAL.vagas - lista.length;
+  for (let i = 0; i < livres; i++) {
+    papeis.push(i === 0
+      ? el('article', { class: 'tf-papel vazio', style: { '--rot': '1deg' } },
+        el('b', {}, 'Nova missão'), el('small', {}, `em ${tempoAte(mural.proximaChegada() - agora)}`))
+      : el('article', { class: 'tf-papel vazio fantasma', style: { '--rot': (i % 2 ? -1 : 1) + 'deg' } }));
+  }
+
+  $('#tf-mural').replaceChildren(
+    el('div', { class: 'tf-mural-faixa' }, ico('relogio'),
+      livres ? 'Próxima missão em ' : 'Mural cheio · próxima em ',
+      el('b', {}, tempoAte(mural.proximaChegada() - agora))),
+    el('div', { class: 'tf-mural-grade' }, ...papeis));
+}
 
 // ---------------------------------- Topo ----------------------------------
 // Nível e fichas numa fileira. As fichas mostram só quantas você tem; tocar
@@ -187,6 +297,8 @@ export function abrirTrocas(aoFechar = renderTopo) {
 
 function renderTopo() {
   const p = db.progresso();
+  const todas = todasAsColecoes();
+  const comEscolha = todas.find(c => c.livres > 0);
   const n = db.fichas();
   const podeAlguma = TROCAS.some(t => n >= t.preco());
 
@@ -201,7 +313,18 @@ function renderTopo() {
     el('button', {
       type: 'button', class: 'tf-fichas' + (podeAlguma ? ' pronto' : ''),
       title: 'Fichas: toque para ver as trocas', onclick: () => abrirTrocas(),
-    }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(n))));
+    }, el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), el('b', {}, String(n))),
+    el('button', {
+      type: 'button', class: 'tf-redondo' + (db.naoVistas(db.novidadesDosBaus()).length ? ' ponto-novo' : ''),
+      title: 'Baús', 'aria-label': 'Baús', onclick: () => irPara('baus'),
+    }, ico('presente')),
+    el('button', {
+      type: 'button',
+      class: 'tf-redondo' + (comEscolha ? ' escolha' : '') + (db.naoVistas(db.novidadesDasColecoes()).length ? ' ponto-novo' : ''),
+      title: comEscolha ? `${comEscolha.marca}: escolha um item do avatar` : 'Coleções', 'aria-label': 'Coleções',
+      onclick: () => comEscolha ? abrirColecao(comEscolha.id) : irPara('colecoes'),
+    }, ico(comEscolha ? 'presente' : 'trofeu'),
+    todas.length ? el('small', {}, `${todas.filter(c => c.completa).length}/${todas.length}`) : null));
 }
 
 // ---------------------------------- Abas -----------------------------------
@@ -211,9 +334,15 @@ function renderAbas() {
     'aria-selected': String(aba === id), title: prazo,
     onclick: () => { if (aba !== id) { aba = id; renderTarefas(); } },
   }, nome, el('small', {}, `${feitas}/${total}`));
+  const noMural = mural.missoes().length + (mural.missaoDeJogo() ? 1 : 0);
+  const prontas = mural.prontas();
   $('#tf-abas').replaceChildren(
-    el('button', { type: 'button', class: 'tf-info-btn', 'aria-label': 'Como funcionam as missões', title: 'Como funcionam as missões', onclick: infoMissoes }, 'i'),
-    botao('hoje', 'Hoje', db.missoesFeitas(), MISSOES.length, db.naoVistas(db.novidadesDoDia()).length > 0,
+    el('button', {
+      type: 'button', role: 'tab', class: (aba === 'mural' ? 'on' : '') + (prontas && aba !== 'mural' ? ' tem-premio' : ''),
+      'aria-selected': String(aba === 'mural'),
+      onclick: () => { if (aba !== 'mural') { aba = 'mural'; renderTarefas(); } },
+    }, ico('alfinete'), 'Mural', el('small', {}, String(noMural))),
+    botao('hoje', 'Diário', db.missoesFeitas(), MISSOES.length, db.naoVistas(db.novidadesDoDia()).length > 0,
       `Zeram em ${formatarContagem(msAteMeiaNoite())}`),
     botao('semana', 'Semana', db.semanaisFeitas(), MISSOES_SEMANA.length, db.naoVistas(db.novidadesDaSemana()).length > 0,
       `Zeram em ${formatarDias(msAteSegunda())}`));
@@ -234,15 +363,6 @@ function pedido(m, atual, { resgatada, fichas, resgatar }) {
         if (resgatar(m.id)) toast(`+${fichas} fichas.`, 'rare');
       } }, `Resgatar +${fichas}`)
       : el('small', {}, ok ? '' : `${feito}/${m.meta}`));
-}
-
-// O (i): onde achar cada coisa e como os prêmios funcionam.
-function infoMissoes() {
-  mostrar(el('div', { class: 'tf-info-txt' },
-    el('p', {}, el('b', {}, 'Fichas: '), 'ao concluir uma missão, toque em "Resgatar" para guardar as fichas: 2 por missão do dia e 4 por missão da semana. As fichas ficam no topo desta tela, junto do nível.'),
-    el('p', {}, el('b', {}, 'Carimbo: '), 'com as 5 missões resgatadas, o botão "Carimbar" aparece embaixo da lista. Dia carimbado guarda um Baú incomum; semana carimbada, um Baú épico.'),
-    el('p', {}, el('b', {}, 'Baús: '), '5 dias carimbados na semana dão um Baú raro; 4 semanas carimbadas, um Baú lendário. Todos vão para a tela de Baús, onde são abertos.')),
-  { titulo: 'Como funcionam as missões' });
 }
 
 function botaoPremio(texto, acao) {

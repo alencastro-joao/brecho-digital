@@ -35,12 +35,13 @@ Telas (`App/js/` + o `.css` de mesmo nome em `App/css/`):
 | Vitrine do dia, dono da loja | `vitrine.js`, `npc.js`, `sorteio.js` |
 | Guarda-roupa, organizar | `closet.js`, `ordenacao.js`, `agrupamento.js`, `deslizar.js` |
 | Stylist (avatar), personagem | `stylist.js`, `avatar.js`, `render.js`, `personagem.js`, `proporcao.js` |
+| Jogos de ajuda (abrem pela missão de jogo do mural) | `ajudas.js` |
 | Inventário / roupinhas desenhadas | `vestiario.js`, `roupinhas.js` |
 | Colagem | `board.js`, `boardgeo.js` |
 | Feed, posts | `social.js`, `publicacoes.js` |
 | Perfil próprio / de outra pessoa | `perfil.js`, `usuario.js`, `minhavitrine.js`, `favoritos.js` |
 | Pessoas, busca, seguir | `pessoas.js`, `busca.js` |
-| Tarefas, baús, nível, tutorial | `tarefas.js`, `baus.js`, `nivel.js`, `tutorial.js`, `presente.js` |
+| Tarefas, mural de missões, baús, nível, tutorial | `tarefas.js`, `mural.js`, `baus.js`, `nivel.js`, `tutorial.js`, `presente.js` |
 | Coleções (marcas) | `colecoes.js` (logos em `App/assets/marcas/`, gerados por `tools/logos.py`) |
 | Avisos, janelas, ícones, paleta | `avisos.js`, `janela.js`, `icones.js`, `paleta.js` |
 | Login | `auth.js`, `telaauth.js` |
