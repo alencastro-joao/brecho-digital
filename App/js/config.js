@@ -1056,7 +1056,7 @@ export const MISSOES = [
   { id: 'entrar',   evento: 'entrar',   nome: 'Entrar no app',    meta: 1, xp: 0 },
   { id: 'resgates', evento: 'resgates', nome: 'Garimpar 3 peças', meta: CONFIG.RESGATES_POR_DIA, xp: 30 },
   { id: 'publicar', evento: 'publicar', nome: 'Publicar 1 look',  meta: 1, xp: 30 },
-  { id: 'colagem',  evento: 'postar-colagem', nome: 'Postar uma colagem', meta: 1, xp: 35 },
+  { id: 'colagem',  evento: 'postar-colagem', nome: 'Publicar 1 colagem', meta: 1, xp: 35 },
   { id: 'curtir',   evento: 'curtir',   nome: 'Curtir 3 posts',   meta: 3, xp: 20 },
 ];
 
