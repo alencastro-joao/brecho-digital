@@ -79,7 +79,7 @@ export function colecoesPorCor() {
 
 export function colecoesPorEstilo() {
   const prog = db.progressoDasColecoes();
-  return Object.entries(ESTILOS).map(([id, e]) => comProgresso({
+  return Object.entries(ESTILOS).filter(([, e]) => !e.oculto).map(([id, e]) => comProgresso({
     id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho, icone: e.icone,
     itens: itensQueLibera(idDoEstilo(id)),
     efeito: { texto: `2 itens de ${e.nome} vestidos acendem um brilho no avatar` },

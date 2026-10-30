@@ -1389,6 +1389,13 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
+  // `oculto`: só aparece no admin (esteira, editar peça) até o João liberar.
+  flamengo: {
+    nome: 'Flamengo', brilho: '#c8102e', icone: 'assets/temas/flamengo.svg', oculto: true,
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
 };
 
 // Coleções de cor: todas as peças da loja de uma cor. Cada uma libera 3 itens
