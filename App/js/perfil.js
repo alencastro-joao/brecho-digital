@@ -349,6 +349,7 @@ function montarAjustes() {
   $('#pf-menu-assinaturas').addEventListener('click', () => { mostrarMenu(false); abrirAssinaturas(); });
   // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
   $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
+  $('#pf-menu-esteira').addEventListener('click', () => { location.href = 'esteira.html'; });
   // Volume: muda ali mesmo, sem fechar o menu, tocando um "tic" para ouvir a
   // altura. O alto-falante silencia e, mudo, volta ao volume de antes.
   const barra = $('#pf-volume');
@@ -490,6 +491,8 @@ function renderConta() {
   const papel = conta.papel === 'admin' ? ' · administrador' : '';
   $('#conta-resumo').textContent = `${conta.email} · ${conta.handle}${papel}`;
   $('#pf-menu-admin').hidden = conta.papel !== 'admin';
+  // Quem tem só a esteira (contas.ESTEIRA_EMAILS) entra por aqui.
+  $('#pf-menu-esteira').hidden = conta.papel === 'admin' || !conta.esteira;
 }
 
 // ------------------------- Limpeza de contas (admin) -----------------------
