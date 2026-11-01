@@ -534,9 +534,11 @@
 }
 
 /* ------------------------- Post-it de data comemorativa ------------------- */
-/* O post-it do evento no mural (js/eventos.js): papel laranja e a abóbora no
-   lugar do alfinete. */
+/* O post-it do evento no mural (js/eventos.js): papel laranja, roxo ou verde
+   (sorteado por post-it, escolha do João) e a abóbora no lugar do alfinete. */
 .tf-papel.ev-halloween { --cor: #ffa24a; color: #3a1a06; }
+.tf-papel.ev-halloween.ev-roxo { --cor: #b98ae8; color: #2a1240; }
+.tf-papel.ev-halloween.ev-verde { --cor: #9fd47a; color: #1d3a10; }
 .tf-papel.ev-halloween .tf-alfinete {
   width: 30px; height: 30px; margin-left: -15px; top: -16px; display: grid; place-items: center;
   background: none; box-shadow: none;
@@ -544,6 +546,10 @@
 .tf-papel.ev-halloween .tf-alfinete .ico { width: 30px; height: 30px; }
 .tf-papel.ev-halloween .tf-papel-ico { background: #fff4e6; }
 .tf-papel.ev-halloween .tf-nivel-chip { color: #7a3608; }
+.tf-papel.ev-halloween.ev-roxo .tf-papel-ico { background: #f3eaff; }
+.tf-papel.ev-halloween.ev-roxo .tf-nivel-chip { color: #4a2378; }
+.tf-papel.ev-halloween.ev-verde .tf-papel-ico { background: #effae6; }
+.tf-papel.ev-halloween.ev-verde .tf-nivel-chip { color: #2f5a1a; }
 
 /* O baú escolhido, ainda fechado, esperando o "Abrir" (js/baus.js). */
 .bp-palco { position: relative; }

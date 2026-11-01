@@ -213,13 +213,17 @@ const premioEmFichas = (n, bau) => el('span', { class: 'tf-premio-n' }, `+${n}`,
 
 // O post-it de data comemorativa (eventos.js): papel do evento, alfinete de
 // abóbora, e o prêmio é o baú dele (mais a roupinha, quando for a vez).
+// A cor do papel sai do uid: cada post-it fica sempre com a mesma.
+const CORES_DO_EVENTO = ['ev-laranja', 'ev-roxo', 'ev-verde'];
+const corDoPapel = (uid) => CORES_DO_EVENTO[[...String(uid)].reduce((t, c) => t + c.charCodeAt(0), 0) % CORES_DO_EVENTO.length];
+
 function papelDeEvento(m, agora, sons) {
   const bau = bauDoEvento(m);
   const roupinha = roupinhaDoProximo(m);
   const md = mural.telaDa(m);
   return papel({
     cor: '#ffb066', icone: iconeDoBau(bau), texto: mural.textoDa(m), feito: m.feito, meta: m.meta,
-    rot: giro(m.uid), tempo: prazo(m.vence - agora), classe: ` evento ev-${bau}`, nivel: nomeDoEvento(m),
+    rot: giro(m.uid), tempo: prazo(m.vence - agora), classe: ` evento ev-${bau} ${corDoPapel(m.uid)}`, nivel: nomeDoEvento(m),
     alfinete: iconeDoBau(bau),
     premio: el('span', { class: 'tf-premio-n' }, ico(iconeDoBau(bau)), 'Baú', roupinha ? ico('camiseta') : null),
     abrir: md ? () => irPara(md) : null,
