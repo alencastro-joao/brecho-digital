@@ -1489,11 +1489,11 @@ export const ESTILOS = {
   // Halloween (João, 01/11/2026): marque o tema "Halloween" na esteira ou no
   // editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e dos
   // presentes (catalog.itensDaLoja): ela só sai do Baú de Halloween. A
-  // coleção libera as 3 roupinhas, como as outras de Temas. `completo`: só
-  // aparece em Coleções quando tiver peças e os desenhos das roupinhas.
+  // coleção libera as 3 roupinhas, como as outras de Temas; já aparece em
+  // Coleções antes delas existirem (João, 01/11/2026).
   halloween: {
     nome: 'Halloween', brilho: '#ff7a1a', icone: 'assets/temas/halloween.svg',
-    exclusivo: true, completo: true,
+    exclusivo: true,
     itens: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
     libera: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
     pecas: [],

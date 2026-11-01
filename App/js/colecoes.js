@@ -9,7 +9,7 @@
 // Nada aqui é gravado: o progresso é o guarda-roupa lido na hora
 // (db.progressoDasColecoes), do mesmo jeito que o nível é lido do XP.
 
-import { CONFIG, BAUS, COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao,
+import { CONFIG, COLECOES, ESTILOS, COLECOES_DE_COR, hexDaCor, idDaCor, idDoEstilo, escalaGrade, RARIDADE, logoDaColecao,
          migrarCategoria } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { ROUPINHAS, roupinha, svgRoupinha, pecasParaEscolha, escolhasDaColecao } from './roupinhas.js';
@@ -78,12 +78,7 @@ export function colecoesPorCor() {
 
 export function colecoesPorEstilo() {
   const prog = db.progressoDasColecoes();
-  // `completo`: o tema espera ter peças no acervo (um baú cheio, se for de
-  // evento) e o desenho de cada roupinha.
-  const minimo = (id) => Object.values(BAUS).find(b => b.tema === id)?.max ?? 1;
-  const pronto = ([id, e]) => !e.completo
-    || (prog[idDoEstilo(id)]?.total >= minimo(id) && (e.libera || []).every(r => roupinha(r)));
-  return Object.entries(ESTILOS).filter(([, e]) => !e.oculto).filter(pronto).map(([id, e]) => comProgresso({
+  return Object.entries(ESTILOS).filter(([, e]) => !e.oculto).map(([id, e]) => comProgresso({
     id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho, icone: e.icone,
     itens: itensQueLibera(idDoEstilo(id)),
     efeito: { texto: `2 itens de ${e.nome} vestidos acendem um brilho no avatar` },
