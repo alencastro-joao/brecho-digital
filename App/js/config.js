@@ -1489,13 +1489,13 @@ export const ESTILOS = {
   // Halloween (João, 01/11/2026): marque o tema "Halloween" na esteira ou no
   // editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e dos
   // presentes (catalog.itensDaLoja): ela só sai do Baú de Halloween. A
-  // coleção libera as 3 roupinhas, como as outras de Temas; já aparece em
+  // coleção libera a camisa de teia e as 3 roupinhas, como as outras de Temas; já aparece em
   // Coleções antes delas existirem (João, 01/11/2026).
   halloween: {
     nome: 'Halloween', brilho: '#ff7a1a', icone: 'assets/temas/halloween.svg',
     exclusivo: true,
-    itens: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
-    libera: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
+    itens: ['camisa-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
+    libera: ['camisa-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
     pecas: [],
   },
 };
@@ -1637,6 +1637,9 @@ export const CAMISAS_SELECOES = [
   { id: 'camisa-jamaica-bandeira', nome: 'Camisa da Jamaica', base: 'camiseta-longa', cor: 'Verde', versao: 'v1' },
   { id: 'camisa-jamaica-preta', nome: 'Camisa preta da Jamaica', base: 'camiseta-longa', cor: 'Preto', versao: 'v1' },
   { id: 'cropped-jamaica-bandeira', nome: 'Cropped da Jamaica', base: 'camiseta', cor: 'Verde', versao: 'v1' },
+  // Halloween (João, 01/11/2026): teia branca grande saindo do ombro esquerdo,
+  // na camiseta longa preta; vem da coleção Halloween.
+  { id: 'camisa-teia', nome: 'Camiseta longa com teia', base: 'camiseta-longa', cor: 'Preto', versao: 'v1' },
 ];
 // Os desenhos extras, na ordem em que entram nas coleções de cor.
 export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_ESPIRAL, CAMISETA_FLOR_DE_LIS, CINTO_CINZA, ...CROPPEDS_VERDES];
