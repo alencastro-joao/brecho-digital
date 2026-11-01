@@ -13,7 +13,7 @@
 import { MURAL, BAUS, migrarCategoria } from './config.js';
 import { catalogo, itensDaLoja, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
-import { contarNoEvento } from './eventos.js';
+import { postitDoEvento, contarNoPostit, premiarPostit, textoDoPostit, modeloDoEvento } from './eventos.js';
 
 const HORA = 3600e3;
 export const VAGAS = MURAL.vagas - 1;     // uma vaga do mural é sempre a da missão de jogo
@@ -46,6 +46,7 @@ function coisa(alvo, n, { artigo = false } = {}) {
 }
 
 export function textoDa(m) {
+  if (m.evento) return textoDoPostit(m);
   const md = modeloDe(m);
   if (!md) return '';
   const a = m.alvo || {};
@@ -61,7 +62,7 @@ export function textoDa(m) {
 
 // Onde se cumpre cada missão: tocar no post-it leva para lá.
 export function telaDa(m) {
-  const md = modeloDe(m);
+  const md = m.evento ? modeloDoEvento(m) : modeloDe(m);
   const ev = md?.evento === 'publicar' ? m.onde || 'look' : md?.evento;
   return { curtir: 'social', garimpar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
 }
@@ -93,6 +94,12 @@ function alvoPara(md) {
 }
 
 function novaMissao(chegou, ocupadas) {
+  // Data comemorativa: às vezes o post-it é do evento (eventos.js).
+  const doEvento = postitDoEvento(ocupadas);
+  if (doEvento) {
+    return { uid: chegou.toString(36) + Math.random().toString(36).slice(2, 5), ...doEvento,
+             chegou, vence: chegou + MURAL.duraHoras * HORA };
+  }
   const nivel = porChance(Object.fromEntries(Object.entries(MURAL.niveis).map(([k, n]) => [k, n.chance])));
   // Sem repetir o que já está no mural (mesmo modelo e mesmo alvo).
   for (let tentativa = 0; tentativa < 12; tentativa++) {
@@ -155,7 +162,7 @@ function mural() {
   return db.state.mural;
 }
 
-const chaveDe = (m) => m.id + JSON.stringify(m.alvo || {});
+const chaveDe = (m) => m.evento ? `${m.evento}:${m.id}` : m.id + JSON.stringify(m.alvo || {});
 export const completa = (m) => m.feito >= m.meta;
 
 // Põe o mural em dia: tira as vencidas (as feitas esperam o resgate), faz
@@ -205,11 +212,15 @@ function maiorGrupoDeCor(pecas) {
 // evento: 'curtir'; 'garimpar' com { peca, raridade }; 'look' ou 'colagem'
 // com { ids } (as peças do post). Não grava: quem chamou já grava.
 export function contar(evento, { peca = null, raridade = null, ids = [] } = {}) {
-  contarNoEvento(evento, { peca, raridade, ids });   // a trilha do evento aberto, se houver
   atualizar();
   const pecas = ids.map(id => pecaDoCatalogo(id)).filter(Boolean);
   for (const m of mural().missoes) {
     if (completa(m) || m.vence <= Date.now()) continue;
+    if (m.evento) {
+      contarNoPostit(m, evento, { peca, raridade, pecas });
+      m.feito = Math.min(m.feito, m.meta);
+      continue;
+    }
     const md = modeloDe(m);
     if (!md) continue;
     if (md.evento === 'curtir' && evento === 'curtir') m.feito += 1;
@@ -237,6 +248,14 @@ export function contarJogo(jogo, n = 1) {
 export function resgatar(uid) {
   const m = mural().missoes.find(x => x.uid === uid);
   if (!m || !completa(m) || m.pega) return null;
+  if (m.evento) {
+    // Post-it de evento: sem fichas; o baú do evento e, às vezes, a roupinha.
+    m.pega = true;
+    const r = premiarPostit(m);
+    mural().missoes = mural().missoes.filter(x => x !== m);
+    db.salvar();
+    return { fichas: 0, ...r };
+  }
   const n = MURAL.niveis[m.nivel];
   m.pega = true;
   db.ganharFicha(n.fichas);

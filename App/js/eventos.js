@@ -1,128 +1,82 @@
-// Eventos: a trilha de missões de uma data comemorativa (EVENTOS em
-// config.js), num cartão no topo de Tarefas enquanto o evento está aberto.
+// Eventos: os post-its de uma data comemorativa (EVENTOS em config.js) no
+// mural de Tarefas. Quem desenha e guarda o mural é mural.js / tarefas.js;
+// aqui ficam as regras do evento: quando ele está aberto, o post-it que ele
+// manda, o que conta para esse post-it e o prêmio dele.
 //
-// Uma missão por vez, na ordem. Cumprida, ela espera o toque em "Pegar", que
-// entrega o prêmio (roupinha e/ou baú do evento) e abre a próxima. Quem conta
-// é mural.contar(): todo garimpo, look, colagem e curtida já passa por lá.
-//
-// state.trilhas[id do evento] = { passo, feito }
-//   passo: a missão da vez (índice em `missoes`); igual ao total = completa.
-//   feito: quanto da missão da vez já foi feito.
+// Um post-it de evento é uma missão do mural com `evento` (o id do evento):
+//   { uid, evento, id (de ev.missoes), meta, feito, alvo: {}, chegou, vence }
+// state.eventosFeitos[id do evento]: quantos post-its dele a conta cumpriu.
 // state.premiosDeEvento: ids das roupinhas ganhas (desbloqueio 'evento').
 
-import { EVENTOS, BAUS, iconeDoBau } from './config.js';
+import { EVENTOS, BAUS } from './config.js';
 import { ROUPINHA } from './roupinhas.js';
-import { catalogo, item as pecaDoCatalogo } from './catalog.js';
+import { catalogo } from './catalog.js';
 import * as db from './db.js';
-import { el, $, hojeISO, toast } from './util.js';
-import { ico } from './icones.js';
+import { hojeISO } from './util.js';
 
 // O baú do evento já tem o que dar: alguma peça do acervo com o tema dele.
 export const temPecasDoEvento = (ev) => {
   const tema = BAUS[ev.bau]?.tema;
   return !tema || catalogo.itens.some(i => i.tema === tema);
 };
-// A trilha só aparece com tudo no jogo (João, 01/11/2026): as peças
-// exclusivas do baú e os desenhos de todas as roupinhas que ela dá.
-const trilhaPronta = (ev) => temPecasDoEvento(ev) && ev.missoes.every(m => !m.roupinha || ROUPINHA[m.roupinha]);
+// Os post-its só aparecem com tudo no jogo (João, 01/11/2026): as peças
+// exclusivas do baú e os desenhos de todas as roupinhas que o evento dá.
+const eventoPronto = (ev) => temPecasDoEvento(ev) && (ev.roupinhas || []).every(r => ROUPINHA[r.id]);
 
-// O evento aberto hoje com a trilha pronta (o primeiro, se houver dois).
+// O evento aberto hoje e pronto (o primeiro, se houver dois).
 export const eventoAberto = (hoje = hojeISO()) =>
-  EVENTOS.find(e => e.missoes?.length && hoje >= e.desde && hoje <= e.ate && trilhaPronta(e)) ?? null;
+  EVENTOS.find(e => e.missoes?.length && hoje >= e.desde && hoje <= e.ate && eventoPronto(e)) ?? null;
 
-function trilha(ev) {
-  const s = db.state;
-  s.trilhas ??= {};
-  return (s.trilhas[ev.id] ??= { passo: 0, feito: 0 });
+const eventoDe = (m) => EVENTOS.find(e => e.id === m.evento) ?? null;
+export const modeloDoEvento = (m) => eventoDe(m)?.missoes.find(x => x.id === m.id) ?? null;
+
+// Na chegada de um post-it: 1 chance em `postitCada` de ser do evento aberto,
+// com uma missão que ainda não está no mural. null = post-it normal.
+export function postitDoEvento(emUso = new Set()) {
+  const ev = eventoAberto();
+  if (!ev || Math.random() * (ev.postitCada || 3) >= 1) return null;
+  const livres = ev.missoes.filter(md => !emUso.has(`${ev.id}:${md.id}`));
+  if (!livres.length) return null;
+  const md = livres[Math.floor(Math.random() * livres.length)];
+  return { evento: ev.id, id: md.id, meta: md.meta, feito: 0, alvo: {} };
 }
-
-const daVez = (ev) => ev.missoes[trilha(ev).passo] ?? null;
-const pronta = (ev) => { const m = daVez(ev); return !!m && trilha(ev).feito >= m.meta; };
-export const premioDeEventoPronto = () => { const ev = eventoAberto(); return !!ev && pronta(ev); };
 
 const corDe = (p) => (p?.cor || '').toLowerCase();
 const temCor = (p, cores) => !cores || cores.some(c => c.toLowerCase() === corDe(p));
 
 // Mesmos eventos de mural.contar: 'garimpar' com { peca, raridade }; 'look'
-// ou 'colagem' com { ids }; 'curtir'. Não grava: quem chamou já grava.
-export function contarNoEvento(evento, { peca = null, raridade = null, ids = [] } = {}) {
-  const ev = eventoAberto();
-  if (!ev) return;
-  const m = daVez(ev);
-  const t = trilha(ev);
-  if (!m || m.evento !== evento || t.feito >= m.meta) return;
-  if (evento === 'curtir') t.feito += 1;
+// ou 'colagem' com { pecas }; 'curtir'.
+export function contarNoPostit(m, evento, { peca = null, raridade = null, pecas = [] } = {}) {
+  const md = modeloDoEvento(m);
+  if (!md || md.evento !== evento) return;
+  if (evento === 'curtir') m.feito += 1;
   else if (evento === 'garimpar') {
-    if (temCor(peca, m.cores) && (!m.raridades || m.raridades.includes(raridade))) t.feito += 1;
+    if (temCor(peca, md.cores) && (!md.raridades || md.raridades.includes(raridade))) m.feito += 1;
   } else {
-    const pecas = ids.map(id => pecaDoCatalogo(id)).filter(Boolean);
-    const ok = m.todas ? pecas.length > 0 && pecas.every(p => temCor(p, m.cores)) : pecas.some(p => temCor(p, m.cores));
-    if (ok) t.feito = m.meta;
+    const ok = md.todas ? pecas.length > 0 && pecas.every(p => temCor(p, md.cores)) : pecas.some(p => temCor(p, md.cores));
+    if (ok) m.feito = m.meta;
   }
-  t.feito = Math.min(t.feito, m.meta);
-  if (t.feito >= m.meta) toast(`${ev.nome}: missão cumprida! Pegue o prêmio em Tarefas.`, 'rare');
 }
 
-// Entrega o prêmio da missão da vez e abre a próxima.
-function pegar(ev) {
-  if (!pronta(ev)) return;
-  const m = daVez(ev);
-  const t = trilha(ev);
-  t.passo += 1;
-  t.feito = 0;
-  const ganhou = [];
-  if (m.roupinha) {
-    db.state.premiosDeEvento = [...new Set([...(db.state.premiosDeEvento ?? []), m.roupinha])];
-    ganhou.push(nomeDaRoupinha(m));
-  }
-  if (m.bau) {
-    db.guardarBau(ev.bau, 'evento', ev.nome);   // grava e voa até Tarefas
-    ganhou.push(BAUS[ev.bau].nome);
-  }
-  db.salvar();
-  if (ganhou.length) toast(`+${ganhou.join(' e ')}`, 'rare');
+// A roupinha que o próximo post-it cumprido dá, se der uma.
+export function roupinhaDoProximo(m) {
+  const ev = eventoDe(m);
+  const n = (db.state.eventosFeitos?.[ev?.id] ?? 0) + 1;
+  return ev?.roupinhas?.find(r => r.apos === n) ?? null;
 }
 
-// O que a missão dá, em texto: "Chapéu de bruxa + Baú de Halloween".
-const nomeDaRoupinha = (m) => ROUPINHA[m.roupinha]?.nome ?? m.nomeDaRoupinha ?? 'Roupinha';
-function textoDoPremio(ev, m) {
-  return [m.roupinha && nomeDaRoupinha(m), m.bau && BAUS[ev.bau].nome].filter(Boolean).join(' + ');
+// O prêmio do post-it cumprido: o baú do evento e, no N-ésimo, a roupinha.
+// Devolve { bau, roupinha } com os nomes (roupinha null quando não tem).
+export function premiarPostit(m) {
+  const ev = eventoDe(m);
+  if (!ev) return { bau: null, roupinha: null };
+  const r = roupinhaDoProximo(m);
+  db.state.eventosFeitos = { ...(db.state.eventosFeitos ?? {}), [ev.id]: (db.state.eventosFeitos?.[ev.id] ?? 0) + 1 };
+  if (r) db.state.premiosDeEvento = [...new Set([...(db.state.premiosDeEvento ?? []), r.id])];
+  db.guardarBau(ev.bau, 'evento', ev.nome);   // grava e voa até Tarefas
+  return { bau: BAUS[ev.bau].nome, roupinha: r ? (ROUPINHA[r.id]?.nome ?? r.nome) : null };
 }
 
-const diaEMes = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
-
-// O cartão no topo de Tarefas: os passos da trilha e a missão da vez.
-export function renderEvento() {
-  const box = $('#tarefas-evento');
-  if (!box) return;
-  const ev = eventoAberto();
-  box.hidden = !ev;
-  if (!ev) return;
-  const t = trilha(ev);
-  const total = ev.missoes.length;
-  const m = daVez(ev);
-  const passos = ev.missoes.map((x, i) => el('span', {
-    class: 'ev-passo' + (i < t.passo ? ' ok' : i === t.passo ? ' vez' : ''),
-    title: `${x.nome} · ${textoDoPremio(ev, x)}`,
-  }, i < t.passo ? ico('ok') : ico(x.roupinha ? 'camiseta' : iconeDoBau(ev.bau))));
-
-  const corpo = m
-    ? el('div', { class: 'ev-missao' + (pronta(ev) ? ' pronta' : '') },
-        el('div', { class: 'ev-texto' },
-          el('b', {}, m.nome),
-          el('small', {}, 'Prêmio: ' + textoDoPremio(ev, m))),
-        pronta(ev)
-          ? el('button', { type: 'button', class: 'btn-dark ev-pegar', onclick: () => pegar(ev) }, 'Pegar')
-          : el('span', { class: 'ev-conta' }, `${t.feito}/${m.meta}`))
-    : el('div', { class: 'ev-missao completa' },
-        el('div', { class: 'ev-texto' }, el('b', {}, 'Trilha completa!'),
-          el('small', {}, 'Você pegou todos os prêmios de ' + ev.nome + '.')));
-
-  box.className = `tf-secao tf-evento ev-${ev.bau}`;
-  box.replaceChildren(
-    el('div', { class: 'tf-sec-topo' },
-      el('b', {}, '🎃 ', ev.nome),
-      el('small', {}, `até ${diaEMes(ev.ate)} · ${Math.min(t.passo, total)}/${total}`)),
-    el('div', { class: 'ev-passos' }, ...passos),
-    corpo);
-}
+export const textoDoPostit = (m) => modeloDoEvento(m)?.nome ?? '';
+export const nomeDoEvento = (m) => eventoDe(m)?.nome ?? '';
+export const bauDoEvento = (m) => eventoDe(m)?.bau ?? null;

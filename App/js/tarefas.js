@@ -27,7 +27,7 @@ import { abrirFichaDePeca } from './usuario.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
 import * as mural from './mural.js';
-import { renderEvento, premioDeEventoPronto } from './eventos.js';
+import { roupinhaDoProximo, nomeDoEvento, bauDoEvento } from './eventos.js';
 import { JOGO } from './ajudas.js';
 
 export function montarTarefas() {
@@ -69,7 +69,6 @@ export function renderTarefas() {
   $('#tf-mural').hidden = aba !== 'mural';
   $('#tf-painel').hidden = aba === 'mural';
   if (aba === 'mural') renderMural(); else if (aba === 'hoje') renderDia(); else renderSemana();
-  renderEvento();
   renderFitaColecoes();
   renderPrateleira();
   renderPontinho();
@@ -140,7 +139,7 @@ function renderPrateleira() {
 }
 
 function renderPontinho() {
-  const tem = db.temNovidade() || mural.prontas() > 0 || premioDeEventoPronto();
+  const tem = db.temNovidade() || mural.prontas() > 0;
   for (const botao of document.querySelectorAll('[data-goto="tarefas"]')) {
     botao.classList.toggle('tem-premio', tem);
   }
@@ -170,14 +169,14 @@ function animarPapel(no, classe, som, depois, ms) {
   setTimeout(depois, ms);
 }
 
-function papel({ cor, icone, texto, feito, meta, premio, tempo, rot, classe = '', resgatar, abrir, nivel, efeito = '' }) {
+function papel({ cor, icone, texto, feito, meta, premio, tempo, rot, classe = '', resgatar, abrir, nivel, efeito = '', alfinete = null }) {
   const pronta = feito >= meta;
   const no = el('article', {
     class: 'tf-papel' + (pronta ? ' pronta' : '') + (abrir && !pronta ? ' abre' : '') + classe + efeito,
     style: { '--cor': cor, '--rot': rot + 'deg' },
     onclick: abrir && !pronta ? () => animarPapel(no, 'puxando', 'papel', abrir, 280) : null,
   },
-    el('span', { class: 'tf-alfinete', 'aria-hidden': 'true' }),
+    el('span', { class: 'tf-alfinete', 'aria-hidden': 'true' }, alfinete ? ico(alfinete) : null),
     el('div', { class: 'tf-papel-topo' },
       el('span', { class: 'tf-papel-ico' }, ico(icone)),
       nivel ? el('small', { class: 'tf-nivel-chip' }, nivel) : null),
@@ -212,6 +211,28 @@ function efeitoDo(chave, pronta, sons) {
 const premioEmFichas = (n, bau) => el('span', { class: 'tf-premio-n' }, `+${n}`,
   el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), bau ? ico('presente') : null);
 
+// O post-it de data comemorativa (eventos.js): papel do evento, alfinete de
+// abóbora, e o prêmio é o baú dele (mais a roupinha, quando for a vez).
+function papelDeEvento(m, agora, sons) {
+  const bau = bauDoEvento(m);
+  const roupinha = roupinhaDoProximo(m);
+  const md = mural.telaDa(m);
+  return papel({
+    cor: '#ffb066', icone: iconeDoBau(bau), texto: mural.textoDa(m), feito: m.feito, meta: m.meta,
+    rot: giro(m.uid), tempo: prazo(m.vence - agora), classe: ` evento ev-${bau}`, nivel: nomeDoEvento(m),
+    alfinete: iconeDoBau(bau),
+    premio: el('span', { class: 'tf-premio-n' }, ico(iconeDoBau(bau)), 'Baú', roupinha ? ico('camiseta') : null),
+    abrir: md ? () => irPara(md) : null,
+    efeito: efeitoDo(m.uid, mural.completa(m), sons),
+    resgatar: () => {
+      const r = mural.resgatar(m.uid);
+      if (!r) return;
+      tocar('missao');
+      toast(r.roupinha ? `+${r.bau} e ${r.roupinha}!` : `+${r.bau}!`, 'rare');
+    },
+  });
+}
+
 function renderMural() {
   const agora = Date.now();
   const lista = mural.missoes();
@@ -237,6 +258,7 @@ function renderMural() {
   }
 
   for (const m of lista) {
+    if (m.evento) { papeis.push(papelDeEvento(m, agora, sons)); continue; }
     const md = mural.modeloDe(m);
     const nivel = MURAL.niveis[m.nivel];
     papeis.push(papel({

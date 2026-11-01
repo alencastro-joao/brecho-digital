@@ -1221,27 +1221,35 @@ export const BAUS = {
 // conta ganha um `bau` de presente ao entrar no jogo, uma vez só por `id`.
 // Para repetir em outro ano, crie outro com id novo.
 //
-// `missoes`: a trilha do evento em Tarefas, uma por vez, na ordem. Cada uma
-// cumprida espera o toque em "Pegar": `roupinha` (id de ROUPINHAS, que tem
-// desbloqueio { tipo: 'evento' }) e/ou `bau: true` (um `bau` do evento). A
-// roupinha fica ganha no save mesmo antes do desenho existir: quando ele
-// entrar em ROUPINHAS, já aparece liberada para quem cumpriu a missão.
+// Post-its do evento (pedido do João, 01/11/2026): enquanto ele está aberto,
+// cada post-it novo do mural tem 1 chance em `postitCada` de ser do evento,
+// com uma das `missoes` sorteada. Some em 12h como os outros (MURAL).
+// Cumprido, dá um `bau` do evento; o N-ésimo cumprido (`roupinhas[].apos`)
+// também dá a roupinha (id de ROUPINHAS, com desbloqueio { tipo: 'evento' }).
+// A roupinha fica ganha no save mesmo antes do desenho existir.
 // evento: 'garimpar' (peça da vitrine), 'look' ou 'colagem' (publicar),
 // 'curtir'. cores: a cor da peça (qualquer uma da lista); todas: na colagem,
 // toda peça precisa ter uma dessas cores; raridades: a raridade da peça.
 export const EVENTOS = [
   {
     id: 'halloween-2026', bau: 'halloween', nome: 'Halloween', desde: '2026-11-01', ate: '2026-11-15',
+    postitCada: 3,
     missoes: [
-      { id: 'laranja',  nome: 'Garimpar 2 peças laranja', evento: 'garimpar', meta: 2,
-        cores: ['Laranja'], roupinha: 'chapeu-bruxa', nomeDaRoupinha: 'Chapéu de bruxa' },
-      { id: 'look-preto', nome: 'Publicar 1 look com uma peça preta', evento: 'look', meta: 1,
-        cores: ['Preto'], bau: true },
-      { id: 'colagem-preta', nome: 'Publicar 1 colagem só com peças pretas', evento: 'colagem', meta: 1,
-        cores: ['Preto'], todas: true, roupinha: 'capa-vampiro', nomeDaRoupinha: 'Capa de vampiro' },
-      { id: 'curtir', nome: 'Curtir 10 posts no feed', evento: 'curtir', meta: 10, bau: true },
+      { id: 'laranja', nome: 'Garimpar 2 peças laranja', evento: 'garimpar', meta: 2, cores: ['Laranja'] },
+      { id: 'look-preto', nome: 'Publicar um look com uma peça preta', evento: 'look', meta: 1, cores: ['Preto'] },
+      { id: 'colagem-preta', nome: 'Publicar uma colagem só com peças pretas', evento: 'colagem', meta: 1,
+        cores: ['Preto'], todas: true },
+      { id: 'curtir', nome: 'Curtir 10 posts', evento: 'curtir', meta: 10 },
       { id: 'rara', nome: 'Garimpar 1 peça rara laranja ou preta', evento: 'garimpar', meta: 1,
-        cores: ['Laranja', 'Preto'], raridades: ['rare', 'epic', 'legendary'], roupinha: 'abobora', nomeDaRoupinha: 'Cabeça de abóbora', bau: true },
+        cores: ['Laranja', 'Preto'], raridades: ['rare', 'epic', 'legendary'] },
+    ],
+    // As roupinhas do evento: os post-its só chegam quando os desenhos delas
+    // existirem. Como elas são ganhas ainda está para o João decidir; quando
+    // decidir, `apos: N` dá a roupinha no N-ésimo post-it cumprido.
+    roupinhas: [
+      { id: 'chapeu-bruxa', nome: 'Chapéu de bruxa' },
+      { id: 'capa-vampiro', nome: 'Capa de vampiro' },
+      { id: 'abobora', nome: 'Cabeça de abóbora' },
     ],
   },
 ];
