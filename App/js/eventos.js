@@ -6,7 +6,7 @@
 // Um post-it de evento é uma missão do mural com `evento` (o id do evento):
 //   { uid, evento, id (de ev.missoes), meta, feito, alvo: {}, chegou, vence }
 // state.eventosFeitos[id do evento]: quantos post-its dele a conta cumpriu.
-// state.premiosDeEvento: ids das roupinhas ganhas (desbloqueio 'evento').
+// As roupinhas do evento vêm da coleção do tema (ESTILOS), não daqui.
 
 import { EVENTOS, BAUS } from './config.js';
 import { ROUPINHA } from './roupinhas.js';
@@ -58,23 +58,13 @@ export function contarNoPostit(m, evento, { peca = null, raridade = null, pecas 
   }
 }
 
-// A roupinha que o próximo post-it cumprido dá, se der uma.
-export function roupinhaDoProximo(m) {
-  const ev = eventoDe(m);
-  const n = (db.state.eventosFeitos?.[ev?.id] ?? 0) + 1;
-  return ev?.roupinhas?.find(r => r.apos === n) ?? null;
-}
-
-// O prêmio do post-it cumprido: o baú do evento e, no N-ésimo, a roupinha.
-// Devolve { bau, roupinha } com os nomes (roupinha null quando não tem).
+// O prêmio do post-it cumprido: o baú do evento. Devolve { bau } com o nome.
 export function premiarPostit(m) {
   const ev = eventoDe(m);
-  if (!ev) return { bau: null, roupinha: null };
-  const r = roupinhaDoProximo(m);
+  if (!ev) return { bau: null };
   db.state.eventosFeitos = { ...(db.state.eventosFeitos ?? {}), [ev.id]: (db.state.eventosFeitos?.[ev.id] ?? 0) + 1 };
-  if (r) db.state.premiosDeEvento = [...new Set([...(db.state.premiosDeEvento ?? []), r.id])];
   db.guardarBau(ev.bau, 'evento', ev.nome);   // grava e voa até Tarefas
-  return { bau: BAUS[ev.bau].nome, roupinha: r ? (ROUPINHA[r.id]?.nome ?? r.nome) : null };
+  return { bau: BAUS[ev.bau].nome };
 }
 
 export const textoDoPostit = (m) => modeloDoEvento(m)?.nome ?? '';

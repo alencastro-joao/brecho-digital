@@ -27,7 +27,7 @@ import { abrirFichaDePeca } from './usuario.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
 import * as mural from './mural.js';
-import { roupinhaDoProximo, nomeDoEvento, bauDoEvento } from './eventos.js';
+import { nomeDoEvento, bauDoEvento } from './eventos.js';
 import { JOGO } from './ajudas.js';
 
 export function montarTarefas() {
@@ -212,27 +212,26 @@ const premioEmFichas = (n, bau) => el('span', { class: 'tf-premio-n' }, `+${n}`,
   el('span', { class: 'ficha-moeda', 'aria-hidden': 'true' }), bau ? ico('presente') : null);
 
 // O post-it de data comemorativa (eventos.js): papel do evento, alfinete de
-// abóbora, e o prêmio é o baú dele (mais a roupinha, quando for a vez).
+// abóbora, e o prêmio é o baú dele.
 // A cor do papel sai do uid: cada post-it fica sempre com a mesma.
 const CORES_DO_EVENTO = ['ev-laranja', 'ev-roxo', 'ev-verde'];
 const corDoPapel = (uid) => CORES_DO_EVENTO[[...String(uid)].reduce((t, c) => t + c.charCodeAt(0), 0) % CORES_DO_EVENTO.length];
 
 function papelDeEvento(m, agora, sons) {
   const bau = bauDoEvento(m);
-  const roupinha = roupinhaDoProximo(m);
   const md = mural.telaDa(m);
   return papel({
     cor: '#ffb066', icone: iconeDoBau(bau), texto: mural.textoDa(m), feito: m.feito, meta: m.meta,
     rot: giro(m.uid), tempo: prazo(m.vence - agora), classe: ` evento ev-${bau} ${corDoPapel(m.uid)}`, nivel: nomeDoEvento(m),
     alfinete: iconeDoBau(bau),
-    premio: el('span', { class: 'tf-premio-n' }, ico(iconeDoBau(bau)), 'Baú', roupinha ? ico('camiseta') : null),
+    premio: el('span', { class: 'tf-premio-n' }, ico(iconeDoBau(bau)), 'Baú'),
     abrir: md ? () => irPara(md) : null,
     efeito: efeitoDo(m.uid, mural.completa(m), sons),
     resgatar: () => {
       const r = mural.resgatar(m.uid);
       if (!r) return;
       tocar('missao');
-      toast(r.roupinha ? `+${r.bau} e ${r.roupinha}!` : `+${r.bau}!`, 'rare');
+      toast(`+${r.bau}!`, 'rare');
     },
   });
 }

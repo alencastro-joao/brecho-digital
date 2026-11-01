@@ -1224,9 +1224,8 @@ export const BAUS = {
 // Post-its do evento (pedido do João, 01/11/2026): enquanto ele está aberto,
 // cada post-it novo do mural tem 1 chance em `postitCada` de ser do evento,
 // com uma das `missoes` sorteada. Some em 12h como os outros (MURAL).
-// Cumprido, dá um `bau` do evento; o N-ésimo cumprido (`roupinhas[].apos`)
-// também dá a roupinha (id de ROUPINHAS, com desbloqueio { tipo: 'evento' }).
-// A roupinha fica ganha no save mesmo antes do desenho existir.
+// Cumprido, dá um `bau` do evento. As roupinhas vêm da coleção do tema
+// (ESTILOS), com as peças exclusivas que saem desse baú.
 // evento: 'garimpar' (peça da vitrine), 'look' ou 'colagem' (publicar),
 // 'curtir'. cores: a cor da peça (qualquer uma da lista); todas: na colagem,
 // toda peça precisa ter uma dessas cores; raridades: a raridade da peça.
@@ -1243,9 +1242,7 @@ export const EVENTOS = [
       { id: 'rara', nome: 'Garimpar 1 peça rara laranja ou preta', evento: 'garimpar', meta: 1,
         cores: ['Laranja', 'Preto'], raridades: ['rare', 'epic', 'legendary'] },
     ],
-    // As roupinhas do evento: os post-its só chegam quando os desenhos delas
-    // existirem. Como elas são ganhas ainda está para o João decidir; quando
-    // decidir, `apos: N` dá a roupinha no N-ésimo post-it cumprido.
+    // Os post-its só chegam quando os desenhos destas roupinhas existirem.
     roupinhas: [
       { id: 'chapeu-bruxa', nome: 'Chapéu de bruxa' },
       { id: 'capa-vampiro', nome: 'Capa de vampiro' },
@@ -1489,14 +1486,16 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
-  // Peças exclusivas do Baú de Halloween: marque o tema "Halloween" na esteira
-  // ou no editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e
-  // dos presentes (catalog.itensDaLoja); `oculto` não mostra o tema em Coleções.
-  // `itens`: as roupinhas de Halloween (estilo, para o brilho no avatar).
+  // Halloween (João, 01/11/2026): marque o tema "Halloween" na esteira ou no
+  // editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e dos
+  // presentes (catalog.itensDaLoja): ela só sai do Baú de Halloween. A
+  // coleção libera as 3 roupinhas, como as outras de Temas. `completo`: só
+  // aparece em Coleções quando tiver peças e os desenhos das roupinhas.
   halloween: {
-    nome: 'Halloween', brilho: '#ff7a1a', oculto: true, exclusivo: true,
+    nome: 'Halloween', brilho: '#ff7a1a', icone: 'assets/temas/halloween.svg',
+    exclusivo: true, completo: true,
     itens: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
-    libera: [],
+    libera: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
     pecas: [],
   },
 };
