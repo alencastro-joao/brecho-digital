@@ -836,6 +836,17 @@
     </div>
   </div>
 
+  <!-- O baú escolhido na tela de Baús, ainda fechado: só abre no botão (js/baus.js). -->
+  <div class="modal bau-modal" id="modal-bau-pronto" hidden>
+    <div class="bau-palco bp-palco" role="dialog" aria-modal="true" aria-labelledby="bp-nome">
+      <button class="modal-x bp-x" id="bp-fechar" title="Fechar" aria-label="Fechar"><i data-i="x"></i></button>
+      <div class="bau-caixa" id="bp-caixa"></div>
+      <h2 id="bp-nome"></h2>
+      <small class="bp-info" id="bp-info"></small>
+      <button type="button" class="btn-premio" id="bp-abrir">Abrir</button>
+    </div>
+  </div>
+
   <!-- O baú abrindo: treme, abre e as peças pulam. Tocar numa abre a ficha. -->
   <div class="modal bau-modal" id="modal-bau" hidden>
     <div class="bau-palco">
