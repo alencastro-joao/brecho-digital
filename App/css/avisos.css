@@ -102,7 +102,7 @@
 .aviso-icone.nivel { background: var(--premio-claro); color: var(--premio-texto); }
 .aviso-icone.loja { background: var(--loja); color: #2f6b34; }
 .aviso-icone.wishlist { background: var(--board); color: #b0285a; }
-.aviso-icone.presente { background: #2a1840; color: #ff7a1a; }
+.aviso-icone.presente { background: #1d1a1f; color: #ff7a1a; }
 
 .avisos-vazio {
   padding: 4px 16px 16px; font-size: 12.5px; line-height: 1.5; color: var(--tinta-suave);
