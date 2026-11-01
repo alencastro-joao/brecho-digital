@@ -9,7 +9,8 @@
 // Cada atributo age numa área, para os bônus não se somarem no mesmo número:
 //   marca  → garimpo (o efeito próprio de cada coleção, em config.COLECOES)
 //   cor    → loja (mais peças daquela cor na arara)
-//   estilo → visual (brilho no avatar)
+//   estilo → visual (brilho no avatar); o tema com `efeito` em ESTILOS
+//            também age no jogo (ex.: Halloween → mais XP)
 //
 // Aqui só se calcula o que está ativo; quem aplica cada efeito é a tela dele.
 
@@ -35,7 +36,7 @@ const TIPOS = {
 function textoDoEfeito(tipo, valor, pct) {
   if (tipo === 'marca') return colecao(valor)?.efeito.texto ?? '';
   if (tipo === 'cor') return `Mais peças ${valor.toLowerCase()} na sua arara`;
-  return `Brilho ${ESTILOS[valor]?.nome ?? valor} no seu avatar`;
+  return ESTILOS[valor]?.efeito?.texto ?? `Brilho ${ESTILOS[valor]?.nome ?? valor} no seu avatar`;
 }
 
 const degrauDe = (n) => [...DEGRAUS].reverse().find(d => n >= d.n) ?? null;
@@ -90,6 +91,14 @@ export function efeitosDoLook(equipado) {
 export function bonusDeEfeito(equipado, tipoDoEfeito) {
   return efeitosDoLook(equipado)
     .filter(e => e.ativo && e.tipo === 'marca' && colecao(e.valor)?.efeito.tipo === tipoDoEfeito)
+    .reduce((soma, e) => soma + e.pct, 0);
+}
+
+// O mesmo para os temas (ESTILOS[].efeito): o brilho continua, e o tema com
+// efeito soma o bônus. Ex.: bonusDoEstilo(equipado, 'xp') → 10 (por cento).
+export function bonusDoEstilo(equipado, tipoDoEfeito) {
+  return efeitosDoLook(equipado)
+    .filter(e => e.ativo && e.tipo === 'estilo' && ESTILOS[e.valor]?.efeito?.tipo === tipoDoEfeito)
     .reduce((soma, e) => soma + e.pct, 0);
 }
 
