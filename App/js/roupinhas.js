@@ -1388,6 +1388,13 @@ export const METAS = {
     rotulo: (d) => `Feche as missões do dia ${d.meta}×`,
     atual: (p) => p.dias, meta: (d) => d.meta,
   },
+  // Roupinha de data comemorativa: sai da trilha de missões do evento
+  // (EVENTOS em config.js, js/eventos.js). Fora dela, não abre.
+  evento: {
+    rotulo: (d) => `Prêmio da trilha de ${d.nome} em Tarefas`,
+    atual: (p, d) => (p.premiosDeEvento ?? []).includes(d.item) ? 1 : 0,
+    meta: () => 1,
+  },
   // Os itens de uma coleção não abrem sozinhos: você escolhe. A 3ª peça da
   // coleção dá a primeira escolha e os degraus seguintes (+5, +10, +15...) dão mais uma (ver
   // escolhasDaColecao); o item abre quando é escolhido (db.escolherItem).

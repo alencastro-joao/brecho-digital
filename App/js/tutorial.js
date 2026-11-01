@@ -20,7 +20,7 @@
 // "Recomeçar missões de introdução", ou abrir o site com ?tutorial.
 
 import { INTRO, RARIDADE, RARIDADES, BAUS, faixasDeTroca, idDaCor } from './config.js';
-import { catalogo, nomeDaPeca, imagemDaPeca } from './catalog.js';
+import { catalogo, itensDaLoja, nomeDaPeca, imagemDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import { irPara } from './router.js';
@@ -123,7 +123,7 @@ function sortearPecas(faixas) {
   const out = [];
   for (const pedida of faixas) {
     for (const faixa of faixasDeTroca(pedida)) {
-      const lista = catalogo.itens.filter(it => !escolhidas.has(it.id) &&
+      const lista = itensDaLoja().filter(it => !escolhidas.has(it.id) &&
         !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
       if (!lista.length) continue;
       const item = lista[Math.floor(Math.random() * lista.length)];

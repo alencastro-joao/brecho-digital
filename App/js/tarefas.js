@@ -12,9 +12,9 @@
 
 import {
   MISSOES, MISSOES_SEMANA, MARCOS_DIA, MARCOS_SEMANA, PREMIO_SEMANA, BAU_ESPECIAL, FICHAS, premioDoBau, faixasDeTroca,
-  RARIDADE, escalaGrade, BAUS, CHANCE_NO_BAU, PREMIOS_DE_NIVEL, MURAL, logoDaColecao,
+  RARIDADE, escalaGrade, BAUS, iconeDoBau, CHANCE_NO_BAU, PREMIOS_DE_NIVEL, MURAL, logoDaColecao,
 } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
+import { catalogo, itensDaLoja, item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 import {
@@ -27,6 +27,7 @@ import { abrirFichaDePeca } from './usuario.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
 import * as mural from './mural.js';
+import { renderEvento, premioDeEventoPronto } from './eventos.js';
 import { JOGO } from './ajudas.js';
 
 export function montarTarefas() {
@@ -68,6 +69,7 @@ export function renderTarefas() {
   $('#tf-mural').hidden = aba !== 'mural';
   $('#tf-painel').hidden = aba === 'mural';
   if (aba === 'mural') renderMural(); else if (aba === 'hoje') renderDia(); else renderSemana();
+  renderEvento();
   renderFitaColecoes();
   renderPrateleira();
   renderPontinho();
@@ -132,13 +134,13 @@ function renderPrateleira() {
         return el('button', {
           type: 'button', class: `tf-pbau bau-${t}` + (i === 0 ? ' pronto' : '') + (i === 0 && novos ? ' ponto-novo' : ''),
           title: `Abrir ${BAUS[t].nome.toLowerCase()}`, onclick: () => irPara('baus'),
-        }, ico('presente'), el('small', {}, BAUS[t].nome.replace('Baú ', '')),
+        }, ico(iconeDoBau(t)), el('small', {}, BAUS[t].nome.replace(/^Baú (de )?/, '')),
         n > 1 ? el('span', { class: 'tf-pbau-qtd' }, `×${n}`) : null);
       }), ...vagas));
 }
 
 function renderPontinho() {
-  const tem = db.temNovidade() || mural.prontas() > 0;
+  const tem = db.temNovidade() || mural.prontas() > 0 || premioDeEventoPronto();
   for (const botao of document.querySelectorAll('[data-goto="tarefas"]')) {
     botao.classList.toggle('tem-premio', tem);
   }
@@ -515,22 +517,30 @@ function sortearRaridadeDoBau() {
   return opcoes[0][0];
 }
 
+// Baú de evento (`tema` em BAUS) sorteia das peças exclusivas do tema; sem
+// nenhuma disponível, aquela peça sai das normais da loja.
 export function sortearPecas(bauId) {
-  const { min, max } = BAUS[bauId];
+  const { min, max, tema } = BAUS[bauId];
   const qtd = min + Math.floor(Math.random() * (max - min + 1));
   const escolhidas = new Set();
   const sorteadas = [];
-  for (let i = 0; i < qtd; i++) {
-    const pedida = sortearRaridadeDoBau();
+  const daLoja = itensDaLoja();
+  const fontes = tema ? [catalogo.itens.filter(it => it.tema === tema), daLoja] : [daLoja];
+  const tirar = (fonte, pedida) => {
     for (const faixa of faixasDeTroca(pedida)) {
-      const lista = catalogo.itens.filter(it => !escolhidas.has(it.id) &&
+      const lista = fonte.filter(it => !escolhidas.has(it.id) &&
         !db.temPeca(it.id) && db.raridadeDoDia(it.id) === faixa && !estoque.esgotada(it.id, faixa));
       if (!lista.length) continue;
       const item = lista[Math.floor(Math.random() * lista.length)];
       escolhidas.add(item.id);
       sorteadas.push({ item, raridade: faixa });
-      break;
+      return true;
     }
+    return false;
+  };
+  for (let i = 0; i < qtd; i++) {
+    const pedida = sortearRaridadeDoBau();
+    fontes.some(f => tirar(f, pedida));
   }
   return sorteadas;
 }
@@ -640,7 +650,7 @@ export function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {})
   const modal = $('#modal-bau');
   const caixa = $('#bau-caixa');
   caixa.className = 'bau-caixa' + (bau ? ' bau-' + bau : '');
-  caixa.replaceChildren(ico('presente'));
+  caixa.replaceChildren(ico(iconeDoBau(bau)));
   $('#bau-nome').textContent = nome;
   $('#bau-extra').textContent = [xp ? `+${xp} XP` : '', extra].filter(Boolean).join(' · ');
   const passo = Math.min(0.2, 1.8 / Math.max(1, lista.length));

@@ -17,7 +17,7 @@
 // ninguém cadastrar nada. Quando existir backend, é essa função que some.
 
 import { PERFIS_MOCK, CATEGORIAS, RARIDADE, RARIDADES, escalaGrade, CORES_FAVORITAS } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
+import { catalogo, itensDaLoja, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
 import { aparenciaDoPerfil, cabeca } from './avatar.js';
@@ -496,7 +496,7 @@ const DESEJOS_DE_EXEMPLO = 8;
 
 function sorteioDoAcervo(id, fio, quantos, fora = new Set()) {
   const rnd = mulberry32(sementeDoTexto(id + fio));
-  const ordem = shuffle([...catalogo.itens].sort((a, b) => a.id < b.id ? -1 : 1), rnd);
+  const ordem = shuffle([...itensDaLoja()].sort((a, b) => a.id < b.id ? -1 : 1), rnd);
   return ordem.filter(peca => !fora.has(peca.id)).slice(0, quantos);
 }
 

@@ -32,7 +32,7 @@
 // novo, e quem herdou o save de antes das contas também não perde o dele.
 
 import { PRESENTE, RARIDADE, COLECOES_DE_COR, normalizarMarca } from './config.js';
-import { catalogo, nomeDaPeca, rotuloCategoria } from './catalog.js';
+import { catalogo, itensDaLoja, nomeDaPeca, rotuloCategoria } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
 
@@ -70,7 +70,7 @@ export const modeloDa = (it) => {
 // peças que parece de uma.
 function pecasPorFaixa(cat, modelosFora, corFora = null) {
   const por = Object.fromEntries(PRESENTE.faixas.map(f => [f, []]));
-  for (const it of catalogo.itens) {
+  for (const it of itensDaLoja()) {
     if (it.cat !== cat || db.temPeca(it.id) || modelosFora.has(modeloDa(it))) continue;
     if (corFora && normalizarMarca(it.cor) === corFora) continue;
     const faixa = db.raridadeDoDia(it.id);
@@ -83,7 +83,7 @@ function pecasPorFaixa(cat, modelosFora, corFora = null) {
 // qualquer categoria.
 function pecasDaCor(cor, modelosFora) {
   const alvo = normalizarMarca(cor);
-  return catalogo.itens.filter(it => {
+  return itensDaLoja().filter(it => {
     if (normalizarMarca(it.cor) !== alvo || db.temPeca(it.id) || modelosFora.has(modeloDa(it))) return false;
     const faixa = db.raridadeDoDia(it.id);
     return PRESENTE.faixas.includes(faixa) && !estoque.esgotada(it.id, faixa);
@@ -124,7 +124,7 @@ function trioDaCor(modelosUsados, rnd, forcada = null) {
 
 function trioForcado(cor, modelosUsados, rnd) {
   const alvo = normalizarMarca(cor);
-  const deQualquerFaixa = () => catalogo.itens.filter(it => normalizarMarca(it.cor) === alvo &&
+  const deQualquerFaixa = () => itensDaLoja().filter(it => normalizarMarca(it.cor) === alvo &&
     !db.temPeca(it.id) && !modelosUsados.has(modeloDa(it)) &&
     !estoque.esgotada(it.id, db.raridadeDoDia(it.id)));
   const itens = [];
