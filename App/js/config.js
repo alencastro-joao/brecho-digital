@@ -1494,6 +1494,9 @@ export const ESTILOS = {
   halloween: {
     nome: 'Halloween', brilho: '#ff7a1a', icone: 'assets/temas/halloween.svg',
     exclusivo: true,
+    // Vestir 2 ou mais roupinhas do tema dá +5% a +20% de XP em tudo (João,
+    // 01/11/2026: efeito útil o ano todo, não só no evento). Ver efeitos.js.
+    efeito: { tipo: 'xp', texto: 'Mais XP em tudo o que você ganha' },
     itens: ['camisa-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
     libera: ['camisa-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
     pecas: [],

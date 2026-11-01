@@ -8,9 +8,10 @@ import {
   MARCOS_SEMANA, BAU_ESPECIAL, EVENTOS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta,
 } from './config.js';
 import {
-  adicionarPeca, fichas, podeTrocarFichas, progressoDasColecoes, salvar, state,
+  adicionarPeca, fichas, podeTrocarFichas, progressoDasColecoes, roupasEquipadas, salvar, state,
   virarASemanaSeNecessario, virarODiaSeNecessario,
 } from './db.js';
+import { bonusDoEstilo } from './efeitos.js';
 
 // --- Missões (diárias) ----------------------------------------------------
 // Progredir é sempre por aqui, pelo evento (ver MISSOES em config.js): todas as
@@ -396,8 +397,9 @@ export const xpTotal = () => state.progresso.xp;
 export const nivel = () => nivelPorXP(state.progresso.xp);
 export const progresso = () => progressoDoNivel(state.progresso.xp);
 
+// Tema com efeito de XP vestido (ESTILOS[].efeito, ex.: Halloween): +5% a +20%.
 export function ganharXP(quantidade, motivo = '') {
-  const qtd = Math.max(0, Math.round(quantidade));
+  const qtd = Math.max(0, Math.round(quantidade * (1 + bonusDoEstilo(roupasEquipadas(), 'xp') / 100)));
   if (!qtd) return null;
 
   const antes = nivel();
