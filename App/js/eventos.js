@@ -12,14 +12,23 @@
 
 import { EVENTOS, BAUS, iconeDoBau } from './config.js';
 import { ROUPINHA } from './roupinhas.js';
-import { item as pecaDoCatalogo } from './catalog.js';
+import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import { el, $, hojeISO, toast } from './util.js';
 import { ico } from './icones.js';
 
-// O evento aberto hoje que tem trilha (o primeiro, se houver dois).
+// O baú do evento já tem o que dar: alguma peça do acervo com o tema dele.
+export const temPecasDoEvento = (ev) => {
+  const tema = BAUS[ev.bau]?.tema;
+  return !tema || catalogo.itens.some(i => i.tema === tema);
+};
+// A trilha só aparece com tudo no jogo (João, 01/11/2026): as peças
+// exclusivas do baú e os desenhos de todas as roupinhas que ela dá.
+const trilhaPronta = (ev) => temPecasDoEvento(ev) && ev.missoes.every(m => !m.roupinha || ROUPINHA[m.roupinha]);
+
+// O evento aberto hoje com a trilha pronta (o primeiro, se houver dois).
 export const eventoAberto = (hoje = hojeISO()) =>
-  EVENTOS.find(e => e.missoes?.length && hoje >= e.desde && hoje <= e.ate) ?? null;
+  EVENTOS.find(e => e.missoes?.length && hoje >= e.desde && hoje <= e.ate && trilhaPronta(e)) ?? null;
 
 function trilha(ev) {
   const s = db.state;

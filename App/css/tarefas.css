@@ -272,7 +272,7 @@
 .bau-caixa.bau-raro { color: #2f7ff0; border-color: #b9d6f2; }
 .bau-caixa.bau-epico { color: #9b46f0; border-color: #c3a6f2; }
 .bau-caixa.bau-lendario { color: var(--premio-texto); border-color: var(--premio-borda); background: var(--premio-claro) var(--brilho-topo); box-shadow: 0 0 30px color-mix(in srgb, var(--premio) 70%, transparent); }
-.bau-caixa.bau-halloween { border-color: #ff7a1a; background: #1d1a1f; box-shadow: inset 0 -5px 0 #000, 0 0 26px color-mix(in srgb, #ff7a1a 45%, transparent); }
+.bau-caixa.bau-halloween { border-color: #f2a66b; }
 .bau-saiu {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 0;
   max-height: 52vh; overflow-y: auto; padding: 6px;
@@ -350,8 +350,7 @@
 .bs-bau small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
 .bs-bau.bau-lendario { background: var(--premio-claro); border-color: var(--premio-borda); box-shadow: inset 0 -3px 0 var(--premio-borda); }
 .bs-bau.bau-lendario .bau-caixa { box-shadow: 0 0 18px color-mix(in srgb, var(--premio) 70%, transparent); }
-.bs-bau.bau-halloween { background: #2a262c; border-color: #ff7a1a; box-shadow: inset 0 -3px 0 #b8520a; color: #ffd9b8; }
-.bs-bau.bau-halloween small { color: #c9a98e; }
+.bs-bau.bau-halloween { background: #fff1e3; border-color: #f2a66b; box-shadow: inset 0 -3px 0 #f2a66b; }
 .bs-qtd {
   position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 10px;
   background: var(--tinta); color: #fff; font-size: 12px; font-weight: 800;
@@ -477,9 +476,8 @@
 .tf-pbau.pronto { background: var(--premio-claro); border-color: var(--premio-borda); animation: premio 1.8s ease-in-out infinite; }
 .tf-pbau.vazio { border-style: dashed; background: transparent; box-shadow: none; }
 /* Baú de evento: a cor dele vale mesmo quando é o primeiro (pronto). */
-.tf-pbau.bau-halloween { background: #1d1a1f; border-color: #ff7a1a; }
-.tf-pbau.bau-halloween .ico { color: #ff7a1a; }
-.tf-pbau.bau-halloween small { color: #ffb066; }
+.tf-pbau.bau-halloween { background: var(--perola); border-color: #f2a66b; }
+.tf-pbau.bau-halloween small { color: #b8520a; }
 .tf-pbau.ponto-novo::after { top: 6px; right: 6px; }
 .tf-pbau-qtd {
   position: absolute; top: -6px; left: -6px; padding: 1px 6px; font-size: 10px; font-weight: 800;

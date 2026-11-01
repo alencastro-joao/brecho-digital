@@ -279,9 +279,10 @@ export function abrirBauGuardado(id, sorteadas = []) {
 // --- Baús de evento --------------------------------------------------------
 // Dentro da janela de um evento (EVENTOS), a conta ganha o baú dele uma vez.
 // Devolve os eventos que deram baú agora (para o aviso na tela).
-export function ganharBausDeEvento(hoje = hojeISO()) {
+// `pronto(e)`: quem chama diz se o baú já tem o que dar (as peças do tema).
+export function ganharBausDeEvento(hoje = hojeISO(), pronto = () => true) {
   const pegos = state.eventos ?? [];
-  const novos = EVENTOS.filter(e => hoje >= e.desde && hoje <= e.ate && !pegos.includes(e.id));
+  const novos = EVENTOS.filter(e => hoje >= e.desde && hoje <= e.ate && !pegos.includes(e.id) && pronto(e));
   if (!novos.length) return [];
   state.eventos = [...pegos, ...novos.map(e => e.id)];
   for (const e of novos) guardarBau(e.bau, 'evento', e.nome);

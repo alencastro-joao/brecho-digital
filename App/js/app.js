@@ -39,6 +39,7 @@ import { montarPersonagem, aoEntrarNoPersonagem } from './personagem.js';
 import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
 import { montarAvisos, avisarPresente } from './avisos.js';
+import { temPecasDoEvento } from './eventos.js';
 import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
 import { lembrarDeInstalar } from './instalar.js';
 import { toast } from './util.js';
@@ -201,8 +202,9 @@ async function iniciar() {
   // plano); o closet repinta a ficha aberta na próxima vez que mudar.
   numerarAntigas(db.state.inventario).then(n => { if (n) db.salvar(); });
 
-  // Data comemorativa: o baú do evento vai para a tela de Baús.
-  for (const e of db.ganharBausDeEvento()) avisarPresente(`Presente de ${e.nome}: um ${BAUS[e.bau].nome} para você.`);
+  // Data comemorativa: o baú do evento vai para a tela de Baús, assim que o
+  // acervo tiver as peças exclusivas dele.
+  for (const e of db.ganharBausDeEvento(undefined, temPecasDoEvento)) avisarPresente(`Presente de ${e.nome}: um ${BAUS[e.bau].nome} para você.`);
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
   if (nova || pediuTutorialNaUrl()) comecarIntro();
