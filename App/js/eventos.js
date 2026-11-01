@@ -6,6 +6,7 @@
 // Um post-it de evento é uma missão do mural com `evento` (o id do evento):
 //   { uid, evento, id (de ev.missoes), meta, feito, alvo: {}, chegou, vence }
 // state.eventosFeitos[id do evento]: quantos post-its dele a conta cumpriu.
+// state.eventosGarantidos: eventos em que a conta já ganhou o post-it garantido.
 // As roupinhas do evento vêm da coleção do tema (ESTILOS), não daqui.
 
 import { EVENTOS, BAUS } from './config.js';
@@ -34,13 +35,28 @@ export const modeloDoEvento = (m) => eventoDe(m)?.missoes.find(x => x.id === m.i
 
 // Na chegada de um post-it: 1 chance em `postitCada` de ser do evento aberto,
 // com uma missão que ainda não está no mural. null = post-it normal.
-export function postitDoEvento(emUso = new Set()) {
+export function postitDoEvento(emUso = new Set(), forcar = false) {
   const ev = eventoAberto();
-  if (!ev || Math.random() * (ev.postitCada || 3) >= 1) return null;
+  if (!ev || (!forcar && Math.random() * (ev.postitCada || 3) >= 1)) return null;
   const livres = ev.missoes.filter(md => !emUso.has(`${ev.id}:${md.id}`));
   if (!livres.length) return null;
   const md = livres[Math.floor(Math.random() * livres.length)];
   return { evento: ev.id, id: md.id, meta: md.meta, feito: 0, alvo: {} };
+}
+
+// Todo mundo ganha um post-it do evento assim que ele abre (João,
+// 01/11/2026: "pra entenderem como funciona pra ganhar os baús"), uma vez por
+// conta e evento; depois volta a regra de 1 a cada `postitCada`. `temDoEvento`:
+// o mural já tem um post-it desse evento (conta como o garantido).
+export function postitGarantido(emUso = new Set(), temDoEvento = false) {
+  const ev = eventoAberto();
+  const dados = db.state;
+  if (!ev || (dados.eventosGarantidos ?? []).includes(ev.id)) return null;
+  const marcar = () => { dados.eventosGarantidos = [...(dados.eventosGarantidos ?? []), ev.id]; };
+  if (temDoEvento || (dados.eventosFeitos?.[ev.id] ?? 0) > 0) { marcar(); return null; }
+  const p = postitDoEvento(emUso, true);
+  if (p) marcar();
+  return p;
 }
 
 const corDe = (p) => (p?.cor || '').toLowerCase();

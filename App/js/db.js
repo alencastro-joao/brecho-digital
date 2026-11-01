@@ -103,6 +103,7 @@ function estadoInicial() {
     semanasFechadas: 0,        // semanas carimbadas desde o último baú semanal
     eventos: [],               // ids de EVENTOS cujo baú de presente já veio
     eventosFeitos: {},         // post-its de evento cumpridos, por evento (js/eventos.js)
+    eventosGarantidos: [],     // eventos cujo post-it garantido a conta já ganhou (js/eventos.js)
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0, semanasCompletas: 0 },
     // O sino (js/avisos.js): a lista, até onde você já viu, e a última foto de
