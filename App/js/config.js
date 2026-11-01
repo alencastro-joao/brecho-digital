@@ -1742,7 +1742,7 @@ export const INTRO = [
     premio: { xp: 20, fichas: 1 } },
   { ir: 'vestiario', lugar: 'cima', nome: 'Combos',
     dica: 'Itens vestidos com a mesma marca, cor ou estilo fazem combo: 2 ativam um efeito, 3 ou mais reforçam. ' +
-      'Cor dá mais XP, marca ajuda no garimpo e estilo faz o avatar brilhar. Veja os ativos em Efeitos.' },
+      'Cor dá mais XP, marca ajuda no garimpo e alguns temas dão bônus. Veja os ativos em Efeitos.' },
   { evento: 'looks', ir: 'stylist', lugar: 'cima', nome: 'Monte e salve um look',
     dica: 'No Stylist, o avatar veste as peças do seu closet. Toque nelas (ou sorteie um look) e salve.',
     premio: { xp: 40 } },
