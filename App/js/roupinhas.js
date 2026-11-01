@@ -63,6 +63,15 @@ export function escurecer(hex, t = 0.34) {
     .map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
+// Sola dos tênis e coturno é sempre preta; o cadarço é preto no calçado claro
+// e branco no escuro, para nunca sumir no couro da mesma cor.
+const SOLA = '#1a1a1a';
+function corCadarco(hex) {
+  const n = parseInt(String(hex).slice(1), 16);
+  const lum = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return lum > 140 ? '#1a1a1a' : '#f5f5f2';
+}
+
 // ------------------------- Geometria dos membros --------------------------
 // Braço e perna do corpo são curvas cúbicas com os mesmos Y nos dois corpos —
 // só o X muda, e está em CORPOS[*].medidas. A manga e a calça reaproveitam a
@@ -681,12 +690,12 @@ export const ROUPINHAS = [
     arte: (m) => nosPes(cx => `
       <rect x="${cx - 27}" y="1050" width="54" height="58" rx="16"/>
       <ellipse cx="${cx}" cy="1110" rx="${m.pe + 8}" ry="30"/>`),
-    detalhe: (m) => nosPes(cx => `
+    detalhe: (m, cor) => nosPes(cx => `
       <path d="M${cx - m.pe - 8} 1116 C${cx - m.pe} 1142 ${cx + m.pe} 1142 ${cx + m.pe + 8} 1116
                C${cx + m.pe + 6} 1134 ${cx - m.pe - 6} 1134 ${cx - m.pe - 8} 1116 Z"
-            fill="rgba(0,0,0,.3)"/>
+            fill="${SOLA}"/>
       <path d="M${cx - 17} 1066 L${cx + 17} 1078 M${cx - 17} 1086 L${cx + 17} 1098"
-            fill="none" stroke="rgba(0,0,0,.26)" stroke-width="5" stroke-linecap="round"/>`),
+            fill="none" stroke="${corCadarco(cor)}" stroke-width="5" stroke-linecap="round"/>`),
   },
   {
     id: 'sapatilha', nome: 'Sapatilha', slot: 'pes', raridade: 'uncommon',
@@ -713,12 +722,12 @@ export const ROUPINHAS = [
     desbloqueio: { tipo: 'dias', meta: 3 },
     arte: (m, x) => pernas(m, x, { de: 1000 }, 20, 'butt')
       + nosPes(cx => `<ellipse cx="${cx}" cy="1106" rx="${m.pe + 12}" ry="34"/>`),
-    detalhe: (m) => nosPes(cx => `
+    detalhe: (m, cor) => nosPes(cx => `
       <path d="M${cx - 19} 1020 L${cx + 19} 1032 M${cx - 19} 1042 L${cx + 19} 1054
                M${cx - 19} 1064 L${cx + 19} 1076" fill="none"
-            stroke="rgba(255,255,255,.4)" stroke-width="5" stroke-linecap="round"/>
+            stroke="${corCadarco(cor)}" stroke-width="5" stroke-linecap="round"/>
       <path d="M${cx - m.pe - 10} 1122 L${cx + m.pe + 10} 1122" fill="none"
-            stroke="rgba(0,0,0,.35)" stroke-width="16" stroke-linecap="round"/>`),
+            stroke="${SOLA}" stroke-width="16" stroke-linecap="round"/>`),
   },
 
   {
@@ -762,10 +771,10 @@ export const ROUPINHAS = [
     arte: (m, x) => pernas(m, x, { de: 1006 }, 16, 'butt')
       + nosPes(cx => `<ellipse cx="${cx}" cy="1110" rx="${m.pe + 10}" ry="30"/>`),
     detalhe: (m, cor) => nosPes(cx => `
-      <ellipse cx="${cx}" cy="1126" rx="${m.pe + 10}" ry="14" fill="rgba(0,0,0,.3)"/>
+      <ellipse cx="${cx}" cy="1126" rx="${m.pe + 10}" ry="14" fill="${SOLA}"/>
       <path d="M${cx - 17} 1032 L${cx + 17} 1044 M${cx - 17} 1054 L${cx + 17} 1066
                M${cx - 17} 1076 L${cx + 17} 1088" fill="none"
-            stroke="${escurecer(cor, .35)}" stroke-width="5" stroke-linecap="round"/>`),
+            stroke="${corCadarco(cor)}" stroke-width="5" stroke-linecap="round"/>`),
   },
   {
     id: 'galocha', nome: 'Galocha', slot: 'pes', raridade: 'uncommon',
