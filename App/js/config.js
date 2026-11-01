@@ -1214,7 +1214,7 @@ export const BAUS = {
   // em primeiro na tela de Baús (que lista do fim para o começo).
   // `tema`: as peças saem só das exclusivas desse tema (ESTILOS); se elas
   // acabarem, o baú completa com peças normais.
-  halloween: { nome: 'Baú de Halloween', min: 5, max: 8, tema: 'halloween', icone: 'abobora' },
+  halloween: { nome: 'Baú de Halloween', min: 3, max: 5, tema: 'halloween', icone: 'abobora' },
 };
 
 // Datas comemorativas: entre `desde` e `ate` (inclusive, data local), cada
