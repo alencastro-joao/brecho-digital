@@ -18,7 +18,7 @@ import {
   ADMIN, CONFIG, COLLAB, FICHAS, RARIDADE, RARIDADES, CATEGORIAS, chanceNaLoja, tamanhoNoMural,
   COLECOES, normalizarMarca,
 } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
+import { catalogo, itensDaLoja, item as pecaDoCatalogo, nomeDaPeca, proporcao, aplicarContorno,
          imagemDaPeca, trocarImagem } from './catalog.js';
 import * as db from './db.js';
 import * as estoque from './estoque.js';
@@ -122,7 +122,7 @@ function sortearArara(iso) {
 
   // Peça do guarda-roupa fica de fora — menos a que saiu daqui hoje, que guarda
   // a vaga até a meia-noite.
-  const candidatas = catalogo.itens.filter(i =>
+  const candidatas = itensDaLoja().filter(i =>
     !COLLAB.itens.includes(i.id)
     && (!db.temPeca(i.id) || levadaHoje(i.id, iso))
     // Tiragem esgotada: todas as cópias já estão em algum guarda-roupa.

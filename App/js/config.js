@@ -1212,14 +1212,38 @@ export const BAUS = {
   lendario: { nome: 'Baú lendário', min: 10, max: 15 },
   // Baús de evento: só chegam pelos EVENTOS abaixo. Por último aqui, ficam
   // em primeiro na tela de Baús (que lista do fim para o começo).
-  halloween: { nome: 'Baú de Halloween', min: 5, max: 8 },
+  // `tema`: as peças saem só das exclusivas desse tema (ESTILOS); se elas
+  // acabarem, o baú completa com peças normais.
+  halloween: { nome: 'Baú de Halloween', min: 5, max: 8, tema: 'halloween', icone: 'abobora' },
 };
 
 // Datas comemorativas: entre `desde` e `ate` (inclusive, data local), cada
 // conta ganha um `bau` de presente ao entrar no jogo, uma vez só por `id`.
 // Para repetir em outro ano, crie outro com id novo.
+//
+// `missoes`: a trilha do evento em Tarefas, uma por vez, na ordem. Cada uma
+// cumprida espera o toque em "Pegar": `roupinha` (id de ROUPINHAS, que tem
+// desbloqueio { tipo: 'evento' }) e/ou `bau: true` (um `bau` do evento). A
+// roupinha fica ganha no save mesmo antes do desenho existir: quando ele
+// entrar em ROUPINHAS, já aparece liberada para quem cumpriu a missão.
+// evento: 'garimpar' (peça da vitrine), 'look' ou 'colagem' (publicar),
+// 'curtir'. cores: a cor da peça (qualquer uma da lista); todas: na colagem,
+// toda peça precisa ter uma dessas cores; raridades: a raridade da peça.
 export const EVENTOS = [
-  { id: 'halloween-2026', bau: 'halloween', nome: 'Halloween', desde: '2026-10-24', ate: '2026-11-07' },
+  {
+    id: 'halloween-2026', bau: 'halloween', nome: 'Halloween', desde: '2026-11-01', ate: '2026-11-15',
+    missoes: [
+      { id: 'laranja',  nome: 'Garimpar 2 peças laranja', evento: 'garimpar', meta: 2,
+        cores: ['Laranja'], roupinha: 'chapeu-bruxa', nomeDaRoupinha: 'Chapéu de bruxa' },
+      { id: 'look-preto', nome: 'Publicar 1 look com uma peça preta', evento: 'look', meta: 1,
+        cores: ['Preto'], bau: true },
+      { id: 'colagem-preta', nome: 'Publicar 1 colagem só com peças pretas', evento: 'colagem', meta: 1,
+        cores: ['Preto'], todas: true, roupinha: 'capa-vampiro', nomeDaRoupinha: 'Capa de vampiro' },
+      { id: 'curtir', nome: 'Curtir 10 posts no feed', evento: 'curtir', meta: 10, bau: true },
+      { id: 'rara', nome: 'Garimpar 1 peça rara laranja ou preta', evento: 'garimpar', meta: 1,
+        cores: ['Laranja', 'Preto'], raridades: ['rare', 'epic', 'legendary'], roupinha: 'abobora', nomeDaRoupinha: 'Cabeça de abóbora', bau: true },
+    ],
+  },
 ];
 
 // A raridade de cada peça de baú, em %: a mesma para os cinco baús (o que
@@ -1227,6 +1251,9 @@ export const EVENTOS = [
 // arara. Comum e incomum são o normal; épica é um "oooh"; lendária é festa.
 // Por peça: num baú lendário (10 a 15 peças) sai uma lendária ~6% das vezes
 // e pelo menos uma épica ~30%.
+// O ícone do baú: o presente, ou o do baú de evento (`icone` acima).
+export const iconeDoBau = (tipo) => BAUS[tipo]?.icone || 'presente';
+
 export const CHANCE_NO_BAU = { common: 55, uncommon: 30, rare: 11.5, epic: 3, legendary: 0.5 };
 
 export function premioDoNivel(n) {
@@ -1451,6 +1478,16 @@ export const ESTILOS = {
   fluminense: {
     nome: 'Fluminense', brilho: '#7a1230', icone: 'assets/temas/fluminense.svg',
     itens: [],
+    libera: [],
+    pecas: [],
+  },
+  // Peças exclusivas do Baú de Halloween: marque o tema "Halloween" na esteira
+  // ou no editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e
+  // dos presentes (catalog.itensDaLoja); `oculto` não mostra o tema em Coleções.
+  // `itens`: as roupinhas de Halloween (estilo, para o brilho no avatar).
+  halloween: {
+    nome: 'Halloween', brilho: '#ff7a1a', oculto: true, exclusivo: true,
+    itens: ['chapeu-bruxa', 'capa-vampiro', 'abobora'],
     libera: [],
     pecas: [],
   },

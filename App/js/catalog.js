@@ -7,7 +7,7 @@
 // problema, como no documento de upload/formatação. Peça sem contorno cai no
 // hit-test por canal alpha de alpha.js.
 
-import { CONFIG, CATEGORIAS, migrarCategoria } from './config.js';
+import { CONFIG, CATEGORIAS, ESTILOS, migrarCategoria } from './config.js';
 import * as db from './db.js';
 import { lerAcervo } from './roupasavatar.js';
 
@@ -94,6 +94,12 @@ export function esquecerPeca(id) {
 }
 
 export const item = (id) => catalogo.porId.get(id);
+// Peça exclusiva de evento (tema com `exclusivo` em config.ESTILOS, como o
+// Halloween): só sai do baú do evento. Fica fora da vitrine, dos outros baús,
+// dos presentes, das missões e dos perfis de exemplo.
+export const exclusiva = (it) => !!ESTILOS[it?.tema]?.exclusivo;
+export const itensDaLoja = () => catalogo.itens.filter(i => !exclusiva(i));
+
 export const itensDaCategoria = (cat) => catalogo.itens.filter(i => i.cat === cat);
 export function nomeDaPeca(it) {
   if (!it) return 'Peça';

@@ -15,7 +15,7 @@
 // Um toque abre o look grande (abrirPostGrande); dois toques curtem.
 
 import { PERFIS_MOCK, COMENTARIOS_MOCK, NOMES_LOOK_MOCK, COLLAB, RARIDADE } from './config.js';
-import { catalogo, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
+import { catalogo, itensDaLoja, item as pecaDoCatalogo, nomeDaPeca, aplicarContorno } from './catalog.js';
 import * as db from './db.js';
 import { miniatura, miniaturaBoard, imagemDoFeed, imagemDoFeedColagem } from './render.js';
 import { el, $, mulberry32, sementeDoTexto, shuffle, escolher, tempoRelativo, toast } from './util.js';
@@ -171,7 +171,7 @@ async function criarPostFicticio(rnd = Math.random, idadeHoras = null, quem = nu
 const VERSAO_SEED = 6;
 
 function acervoParaLooks() {
-  return catalogo.itens.filter(i => !COLLAB.itens.includes(i.id));
+  return itensDaLoja().filter(i => !COLLAB.itens.includes(i.id));
 }
 
 // Versão 5: os perfis de exemplo passaram a postar no servidor, iguais para

@@ -11,7 +11,7 @@
 // prêmio do tutorial, o botão tocado ou o meio da tela) e voa num arco até o
 // botão de Tarefas, que dá um pulinho ao receber.
 
-import { BAUS } from './config.js';
+import { BAUS, iconeDoBau } from './config.js';
 import * as db from './db.js';
 import { el, $ } from './util.js';
 import { ico } from './icones.js';
@@ -61,7 +61,7 @@ function voar(tipo) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { receber(alvo); return; }
 
   const tam = 64;
-  const voando = el('div', { class: `bau-caixa bau-voando bau-${tipo}`, 'aria-hidden': 'true' }, ico('presente'));
+  const voando = el('div', { class: `bau-caixa bau-voando bau-${tipo}`, 'aria-hidden': 'true' }, ico(iconeDoBau(tipo)));
   Object.assign(voando.style, { left: `${de.x - tam / 2}px`, top: `${de.y - tam / 2}px` });
   document.body.append(voando);
   if (deCartao) noCartao.style.visibility = 'hidden';
@@ -103,7 +103,7 @@ export function renderBaus() {
       class: `bs-bau bau-${tipo}` + (deste.some(b => novosNaVisita.has(`bau:${b.id}`)) ? ' ponto-novo' : ''),
       onclick: () => abrir(deste[0]),
     },
-      el('div', { class: `bau-caixa bau-${tipo}` }, ico('presente')),
+      el('div', { class: `bau-caixa bau-${tipo}` }, ico(iconeDoBau(tipo))),
       ...(deste.length > 1 ? [el('span', { class: 'bs-qtd' }, `×${deste.length}`)] : []),
       el('strong', {}, nome),
       el('small', {}, `${min} a ${max} peças`));

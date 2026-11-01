@@ -38,7 +38,7 @@ import { sincronizarSocial, agendarPerfil } from './pessoas.js';
 import { montarPersonagem, aoEntrarNoPersonagem } from './personagem.js';
 import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
-import { montarAvisos } from './avisos.js';
+import { montarAvisos, avisarPresente } from './avisos.js';
 import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
 import { lembrarDeInstalar } from './instalar.js';
 import { toast } from './util.js';
@@ -202,7 +202,7 @@ async function iniciar() {
   numerarAntigas(db.state.inventario).then(n => { if (n) db.salvar(); });
 
   // Data comemorativa: o baú do evento vai para a tela de Baús.
-  for (const e of db.ganharBausDeEvento()) toast(`Presente de ${e.nome}! +${BAUS[e.bau].nome}`, 'rare');
+  for (const e of db.ganharBausDeEvento()) avisarPresente(`Presente de ${e.nome}: um ${BAUS[e.bau].nome} para você.`);
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
   if (nova || pediuTutorialNaUrl()) comecarIntro();

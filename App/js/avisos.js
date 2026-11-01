@@ -152,6 +152,12 @@ function conferirDia() {
            texto: 'Dia novo: loja e missões renovadas.' });
 }
 
+// Presente de data comemorativa (EVENTOS em config.js): o baú já está na tela
+// de Baús, e o aviso leva até lá.
+export function avisarPresente(texto) {
+  avisar({ tipo: 'presente', ir: ['baus'], texto });
+}
+
 // O botão de repor do admin: a loja trocou sem o dia virar.
 export function avisarLojaReposta() {
   avisar({ tipo: 'loja', ir: ['vitrine'], texto: 'Loja reposta.' });
@@ -189,7 +195,7 @@ function reler() {
 // -------------------------------- Tela -------------------------------------
 const ICONE = {
   curtida: 'coracao-cheio', comentario: '“', seguidor: '+', missao: 'ok', nivel: 'estrela-cheia', loja: 'atualizar',
-  wishlist: 'coracao',
+  wishlist: 'coracao', presente: 'abobora',
 };
 
 let botao, painel, contador, listaEl;

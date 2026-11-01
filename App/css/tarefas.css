@@ -272,7 +272,7 @@
 .bau-caixa.bau-raro { color: #2f7ff0; border-color: #b9d6f2; }
 .bau-caixa.bau-epico { color: #9b46f0; border-color: #c3a6f2; }
 .bau-caixa.bau-lendario { color: var(--premio-texto); border-color: var(--premio-borda); background: var(--premio-claro) var(--brilho-topo); box-shadow: 0 0 30px color-mix(in srgb, var(--premio) 70%, transparent); }
-.bau-caixa.bau-halloween { color: #ff7a1a; border-color: #7b3fc4; background: #2a1840; box-shadow: inset 0 -5px 0 #1a0f2a, 0 0 26px color-mix(in srgb, #ff7a1a 55%, transparent); }
+.bau-caixa.bau-halloween { border-color: #7b3fc4; background: radial-gradient(circle at 50% 30%, #4b2a78, #1f1236); box-shadow: inset 0 -5px 0 #140b24, 0 0 26px color-mix(in srgb, #ff8a2a 45%, transparent); }
 .bau-saiu {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 0;
   max-height: 52vh; overflow-y: auto; padding: 6px;
@@ -350,7 +350,7 @@
 .bs-bau small { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
 .bs-bau.bau-lendario { background: var(--premio-claro); border-color: var(--premio-borda); box-shadow: inset 0 -3px 0 var(--premio-borda); }
 .bs-bau.bau-lendario .bau-caixa { box-shadow: 0 0 18px color-mix(in srgb, var(--premio) 70%, transparent); }
-.bs-bau.bau-halloween { background: #fff1e6; border-color: #f2a66b; box-shadow: inset 0 -3px 0 #f2a66b; }
+.bs-bau.bau-halloween { background: #efe6fb; border-color: #b79be6; box-shadow: inset 0 -3px 0 #b79be6; }
 .bs-qtd {
   position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 10px;
   background: var(--tinta); color: #fff; font-size: 12px; font-weight: 800;
@@ -478,7 +478,7 @@
 /* Baú de evento: a cor dele vale mesmo quando é o primeiro (pronto). */
 .tf-pbau.bau-halloween { background: #2a1840; border-color: #7b3fc4; }
 .tf-pbau.bau-halloween .ico { color: #ff7a1a; }
-.tf-pbau.bau-halloween small { color: #ffb980; }
+.tf-pbau.bau-halloween small { color: #ffb066; }
 .tf-pbau.ponto-novo::after { top: 6px; right: 6px; }
 .tf-pbau-qtd {
   position: absolute; top: -6px; left: -6px; padding: 1px 6px; font-size: 10px; font-weight: 800;
@@ -533,3 +533,28 @@
 @media (prefers-reduced-motion: reduce) {
   .tf-papel.chegando, .tf-papel.chegando .tf-alfinete, .tf-papel.concluindo, .tf-papel.puxando, .tf-papel.arrancando { animation: none; }
 }
+
+/* ---------------------------- Trilha de evento ---------------------------- */
+/* O cartão da data comemorativa (js/eventos.js), acima das abas: os passos da
+   trilha e a missão da vez, com o "Pegar" quando ela é cumprida. */
+.tf-evento.ev-halloween { background: #2a1840; border-color: #7b3fc4; color: #f6ecff; }
+.tf-evento.ev-halloween .tf-sec-topo b { color: #ffb066; }
+.tf-evento.ev-halloween .tf-sec-topo small { color: #cdb8ee; }
+.ev-passos { display: flex; gap: 6px; margin-bottom: 10px; }
+.ev-passo {
+  flex: 1; height: 30px; border-radius: 10px; display: grid; place-items: center;
+  background: rgba(255, 255, 255, .08); color: #a58bd0; border: 2px solid transparent;
+}
+.ev-passo .ico { width: 16px; height: 16px; }
+.ev-passo.ok { background: #ff7a1a; color: #2a1840; }
+.ev-passo.vez { border-color: #ff7a1a; color: #ffb066; }
+.ev-missao {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
+  background: rgba(255, 255, 255, .1);
+}
+.ev-missao.pronta { background: rgba(255, 122, 26, .22); box-shadow: inset 0 0 0 2px #ff7a1a; }
+.ev-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ev-texto b { font-size: 14px; }
+.ev-texto small { font-size: 12px; color: #cdb8ee; }
+.ev-conta { font-weight: 800; font-size: 14px; color: #ffb066; }
+.tf-evento .ev-pegar { background: #ff7a1a; color: #2a1840; border-color: #ff7a1a; }

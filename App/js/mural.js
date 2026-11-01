@@ -11,8 +11,9 @@
 // }
 
 import { MURAL, BAUS, migrarCategoria } from './config.js';
-import { catalogo, item as pecaDoCatalogo } from './catalog.js';
+import { catalogo, itensDaLoja, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
+import { contarNoEvento } from './eventos.js';
 
 const HORA = 3600e3;
 export const VAGAS = MURAL.vagas - 1;     // uma vaga do mural é sempre a da missão de jogo
@@ -79,7 +80,7 @@ function porChance(pesos) {
 }
 
 // Peças do acervo com cor e tipo: o alvo sai delas, então sempre existe.
-const pecasComAlvo = () => catalogo.itens.filter(i => i.cor && TIPOS[migrarCategoria(i.cat)]);
+const pecasComAlvo = () => itensDaLoja().filter(i => i.cor && TIPOS[migrarCategoria(i.cat)]);
 
 function alvoPara(md) {
   if (!md.filtro) return {};
@@ -204,6 +205,7 @@ function maiorGrupoDeCor(pecas) {
 // evento: 'curtir'; 'garimpar' com { peca, raridade }; 'look' ou 'colagem'
 // com { ids } (as peças do post). Não grava: quem chamou já grava.
 export function contar(evento, { peca = null, raridade = null, ids = [] } = {}) {
+  contarNoEvento(evento, { peca, raridade, ids });   // a trilha do evento aberto, se houver
   atualizar();
   const pecas = ids.map(id => pecaDoCatalogo(id)).filter(Boolean);
   for (const m of mural().missoes) {

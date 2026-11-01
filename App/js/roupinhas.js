@@ -837,6 +837,37 @@ export const ROUPINHAS = [
                     <circle cx="334" cy="76" r="6" fill="#4f7cac"/>`,
   },
 
+  // Halloween: só saem da trilha de missões do evento (EVENTOS, js/eventos.js).
+  {
+    id: 'chapeu-bruxa', nome: 'Chapéu de bruxa', slot: 'cabeca', raridade: 'rare',
+    cabelo: 118,
+    cor: '#3b2a52',
+    desbloqueio: { tipo: 'evento', nome: 'Halloween', item: 'chapeu-bruxa' },
+    // Cone com a ponta tombada para trás e aba larga em volta da cabeça.
+    arte: () => `<path d="M252 100 C266 66 278 30 296 6 C306 -6 330 -10 346 0
+                          C324 2 314 16 318 34 C326 62 340 84 348 100 Z"/>
+                 <ellipse cx="300" cy="104" rx="100" ry="18"/>`,
+    detalhe: () => `
+      <path d="M254 90 C284 98 316 98 346 90 L349 100 C316 108 284 108 251 100 Z" fill="#ff7a1a"/>
+      <rect x="290" y="91" width="20" height="14" rx="3" fill="none" stroke="#ffd27a" stroke-width="4"/>`,
+  },
+  {
+    id: 'abobora', nome: 'Cabeça de abóbora', slot: 'cabeca', raridade: 'legendary',
+    cabelo: 999,   // cobre a cabeça inteira
+    cor: '#f07a1a',
+    desbloqueio: { tipo: 'evento', nome: 'Halloween', item: 'abobora' },
+    // Três gomos em volta da cabeça (elipse 300,112 de 56×70); o rosto é
+    // entalhado por cima, no detalhe.
+    arte: () => `<ellipse cx="262" cy="116" rx="44" ry="80"/>
+                 <ellipse cx="338" cy="116" rx="44" ry="80"/>
+                 <ellipse cx="300" cy="114" rx="52" ry="84"/>`,
+    detalhe: () => `
+      <path d="M296 34 C292 20 296 8 308 0 L316 6 C306 14 304 24 306 34 Z" fill="#3f7a2a"/>
+      <path d="M262 112 L284 96 L290 120 Z M338 112 L316 96 L310 120 Z" fill="#3a1a06"/>
+      <path d="M292 132 L308 132 L300 144 Z" fill="#3a1a06"/>
+      <path d="M254 154 C276 182 324 182 346 154 C338 160 330 162 324 162 L318 154 L312 166
+               C304 168 296 168 288 166 L282 154 L276 162 C268 162 260 160 254 154 Z" fill="#3a1a06"/>`,
+  },
   {
     id: 'boina', nome: 'Boina', slot: 'cabeca', raridade: 'uncommon',
     cabelo: 112,
@@ -1143,6 +1174,32 @@ export const ROUPINHAS = [
                             stroke="rgba(0,0,0,.3)" stroke-width="3"/>`,
   },
   {
+    id: 'capa-vampiro', nome: 'Capa de vampiro', slot: 'cintura', raridade: 'epic',
+    cor: '#1f1b26',
+    desbloqueio: { tipo: 'evento', nome: 'Halloween', item: 'capa-vampiro' },
+    // A capa de sempre, com a gola alta em pontas dos dois lados do pescoço.
+    atras: (m) => {
+      const o = m.ombro + 16, b = m.ombro + 82;
+      return `<path d="M${300 - o} 252 L${300 + o} 252
+        C${300 + o + 30} 500 ${300 + b - 10} 760 ${300 + b} 940
+        C${300 + b * .5} 970 ${300 - b * .5} 970 ${300 - b} 940
+        C${300 - b + 10} 760 ${300 - o - 30} 500 ${300 - o} 252 Z"/>`;
+    },
+    arte: (m) => {
+      const p = m.pescoco;
+      return `<path d="M${300 - p - 26} 248 C300 234 300 234 ${300 + p + 26} 248
+                       C300 288 300 288 ${300 - p - 26} 248 Z"/>
+              <path d="M${300 - p - 24} 252 L${300 - p - 60} 178 L${300 - p - 6} 228 Z"/>
+              <path d="M${300 + p + 24} 252 L${300 + p + 60} 178 L${300 + p + 6} 228 Z"/>`;
+    },
+    detalhe: (m) => {
+      const p = m.pescoco;
+      return `<path d="M${300 - p - 20} 244 L${300 - p - 50} 190 L${300 - p - 10} 230 Z
+                       M${300 + p + 20} 244 L${300 + p + 50} 190 L${300 + p + 10} 230 Z" fill="#a3172a"/>
+              <circle cx="300" cy="256" r="9" fill="#c9a23a" stroke="rgba(0,0,0,.3)" stroke-width="3"/>`;
+    },
+  },
+  {
     id: 'asas', nome: 'Asas', slot: 'cintura', raridade: 'legendary',
     cor: '#f2efe9',
     desbloqueio: { tipo: 'dias', meta: 7 },
@@ -1387,6 +1444,13 @@ export const METAS = {
   dias: {
     rotulo: (d) => `Feche as missões do dia ${d.meta}×`,
     atual: (p) => p.dias, meta: (d) => d.meta,
+  },
+  // Roupinha de data comemorativa: sai da trilha de missões do evento
+  // (EVENTOS em config.js, js/eventos.js). Fora dela, não abre.
+  evento: {
+    rotulo: (d) => `Prêmio da trilha de ${d.nome} em Tarefas`,
+    atual: (p, d) => (p.premiosDeEvento ?? []).includes(d.item) ? 1 : 0,
+    meta: () => 1,
   },
   // Os itens de uma coleção não abrem sozinhos: você escolhe. A 3ª peça da
   // coleção dá a primeira escolha e os degraus seguintes (+5, +10, +15...) dão mais uma (ver

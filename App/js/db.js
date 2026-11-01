@@ -102,6 +102,8 @@ function estadoInicial() {
     baus: [],                  // baús ganhos esperando abrir (tela de Baús)
     semanasFechadas: 0,        // semanas carimbadas desde o último baú semanal
     eventos: [],               // ids de EVENTOS cujo baú de presente já veio
+    trilhas: {},               // trilha de missões de cada evento: { passo, feito } (js/eventos.js)
+    premiosDeEvento: [],       // roupinhas ganhas nas trilhas de evento
     collab: { mes: COLLAB.mes, liberada: false },
     stats: { resgates: 0, looks: 0, publicacoes: 0, diasCompletos: 0, semanasCompletas: 0 },
     // O sino (js/avisos.js): a lista, até onde você já viu, e a última foto de
