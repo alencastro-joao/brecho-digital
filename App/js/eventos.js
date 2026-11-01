@@ -14,10 +14,12 @@ import { catalogo } from './catalog.js';
 import * as db from './db.js';
 import { hojeISO } from './util.js';
 
-// O baú do evento já tem o que dar: alguma peça do acervo com o tema dele.
+// O baú do evento já tem o que dar: pelo menos um baú cheio (o `max` dele) de
+// peças do acervo com o tema. Com menos, o presente e os post-its esperam
+// (João, 01/11/2026: "ainda não dê o baú, tem poucas roupas").
 export const temPecasDoEvento = (ev) => {
-  const tema = BAUS[ev.bau]?.tema;
-  return !tema || catalogo.itens.some(i => i.tema === tema);
+  const { tema, max = 1 } = BAUS[ev.bau] || {};
+  return !tema || catalogo.itens.filter(i => i.tema === tema).length >= max;
 };
 // Os post-its só aparecem com tudo no jogo (João, 01/11/2026): as peças
 // exclusivas do baú e os desenhos de todas as roupinhas que o evento dá.
