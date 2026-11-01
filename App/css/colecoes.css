@@ -224,18 +224,50 @@
 }
 .vs-efeito.ativo { border: 1px solid #cfe3c0; background: #f7fbf3; }
 .vs-efeito.completa { border-color: var(--premio-borda); background: var(--premio-claro); }
-.vs-efeito-topo { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.vs-efeitos-conta {
+  flex: none; padding: 2px 9px; border-radius: 999px;
+  background: #e3f0d6; color: #4f7a33; font-size: 11px; font-weight: 800;
+}
+.vs-efeitos-secao {
+  margin: 4px 2px 0; font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.vs-efeitos-secao:first-child { margin-top: 0; }
+.vs-efeito-topo { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vs-efeito-emblema {
+  flex: none; width: 26px; height: 26px; border-radius: 8px;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--papel); border: 1px solid var(--linha);
+}
+.vs-efeito-emblema img { width: 20px; height: 20px; object-fit: contain; }
+.vs-efeito-emblema.bolinha::after {
+  content: ''; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--cor, var(--linha)); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+}
+.vs-efeito-nome { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.vs-efeito-nome strong { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vs-efeito-tipo {
   font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--tinta-suave); flex: none;
+  color: var(--tinta-suave);
 }
-.vs-efeito-topo strong { font-size: 12.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vs-efeito-pct { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--tinta-suave); }
-.vs-efeito.ativo .vs-efeito-pct { color: #4f7a33; }
-.vs-efeito.completa .vs-efeito-pct { color: var(--premio-texto); }
+.vs-efeito-pct {
+  flex: none; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--tinta-suave); padding: 2px 8px; border-radius: 999px;
+  border: 1px dashed var(--linha);
+}
+.vs-efeito.ativo .vs-efeito-pct { color: #fff; background: #5f9140; border: 1px solid #5f9140; }
+.vs-efeito.completa .vs-efeito-pct { color: var(--premio-texto); background: var(--branco); border-color: var(--premio-borda); }
 .vs-efeito-texto { font-size: 11px; color: var(--tinta); line-height: 1.35; }
 .vs-efeito:not(.ativo) .vs-efeito-texto { color: var(--tinta-suave); }
-.vs-efeito-prox { font-size: 10.5px; color: var(--premio-texto); }
+.vs-efeito-extra { font-size: 10.5px; color: var(--tinta-suave); }
+.vs-efeito-regua { display: flex; align-items: center; gap: 7px; margin-top: 2px; min-width: 0; }
+.vs-efeito-pips { flex: none; display: flex; gap: 3px; }
+.vs-efeito-pips i { width: 7px; height: 7px; border-radius: 50%; background: var(--linha); }
+.vs-efeito.ativo .vs-efeito-pips i.cheio { background: #5f9140; }
+.vs-efeito:not(.ativo) .vs-efeito-pips i.cheio { background: var(--premio-texto); }
+.vs-efeito.completa .vs-efeito-pips i.cheio { background: var(--premio-texto); }
+.vs-efeito-prox { font-size: 10.5px; color: var(--premio-texto); min-width: 0; }
+.vs-efeito.ativo:not(.completa) .vs-efeito-prox { color: var(--tinta-suave); }
 
 /* ----------------------- Lista em grade de emblemas ---------------------- */
 .col-como summary {
