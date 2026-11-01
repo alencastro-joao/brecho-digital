@@ -2,7 +2,7 @@
 //
 // Todo baú vem para cá: o Baú dos dias, o Baú semanal, os da trilha de níveis
 // e os das missões do tutorial. Os do mesmo tipo ficam num cartão só, com a
-// quantidade, do mais raro para o mais comum. Tocar abre um (as peças são
+// quantidade, do mais raro para o mais comum. Tocar mostra o baú fechado, e o botão Abrir abre um (as peças são
 // sorteadas na hora, pela regra de BAUS e CHANCE_NO_BAU) com a mesma animação
 // de Tarefas. Baú novo acende o pontinho vermelho no caminho (o botão de
 // Tarefas, o botão Baús e o próprio baú) só até a pessoa chegar nesta tela.
@@ -24,6 +24,11 @@ const TIPOS = Object.keys(BAUS).reverse();
 export function montarBaus() {
   $('#bs-voltar').addEventListener('click', () => voltar('tarefas'));
   $('#bs-todos').addEventListener('click', abrirTodos);
+  const pronto = $('#modal-bau-pronto');
+  $('#bp-fechar').addEventListener('click', fecharPronto);
+  $('#bp-abrir').addEventListener('click', () => { const b = escolhido; fecharPronto(); if (b) abrir(b); });
+  pronto.addEventListener('click', (e) => { if (e.target === pronto) fecharPronto(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pronto.hidden) fecharPronto(); });
   db.onChange(() => { if (viewAtual() === 'baus') renderBaus(); });
   // O último toque: é de onde sai o baú pego num botão.
   document.addEventListener('pointerdown', (e) => { ultimoToque = { x: e.clientX, y: e.clientY, em: Date.now() }; }, true);
@@ -101,7 +106,7 @@ export function renderBaus() {
     return el('button', {
       type: 'button', title: `Abrir ${nome.toLowerCase()}`,
       class: `bs-bau bau-${tipo}` + (deste.some(b => novosNaVisita.has(`bau:${b.id}`)) ? ' ponto-novo' : ''),
-      onclick: () => abrir(deste[0]),
+      onclick: () => mostrarPronto(deste[0]),
     },
       el('div', { class: `bau-caixa bau-${tipo}` }, ico(iconeDoBau(tipo))),
       ...(deste.length > 1 ? [el('span', { class: 'bs-qtd' }, `×${deste.length}`)] : []),
@@ -114,6 +119,28 @@ export function renderBaus() {
   const todos = $('#bs-todos');
   todos.hidden = baus.length < 2;
   todos.textContent = `Abrir todos (${baus.length})`;
+}
+
+// Tocar no baú só o mostra, fechado, com o botão Abrir (pedido do João,
+// 01/11/2026): abrir é o segundo toque.
+let escolhido = null;
+function mostrarPronto(bau) {
+  escolhido = bau;
+  const { nome, min, max } = BAUS[bau.tipo];
+  const caixa = $('#bp-caixa');
+  caixa.className = `bau-caixa bau-${bau.tipo}`;
+  caixa.replaceChildren(ico(iconeDoBau(bau.tipo)));
+  $('#bp-nome').textContent = nome;
+  $('#bp-info').textContent = `${min} a ${max} peças` + (bau.de ? ` · ${bau.de}` : '');
+  $('#modal-bau-pronto').hidden = false;
+  document.body.classList.add('com-modal');
+  $('#bp-abrir').focus();
+}
+
+function fecharPronto() {
+  escolhido = null;
+  $('#modal-bau-pronto').hidden = true;
+  if (!document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
 }
 
 function abrir(bau) {
