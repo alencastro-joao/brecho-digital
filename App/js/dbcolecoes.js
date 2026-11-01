@@ -28,7 +28,6 @@ export const progressoDoJogador = () => ({
   publicacoes: state.stats.publicacoes ?? 0,
   dias: state.stats.diasCompletos ?? 0,
   colecoes: progressoDasColecoes(),
-  premiosDeEvento: state.premiosDeEvento ?? [],
 });
 
 // --- Coleções -------------------------------------------------------------

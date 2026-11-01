@@ -533,30 +533,23 @@
   .tf-papel.chegando, .tf-papel.chegando .tf-alfinete, .tf-papel.concluindo, .tf-papel.puxando, .tf-papel.arrancando { animation: none; }
 }
 
-/* ---------------------------- Trilha de evento ---------------------------- */
-/* O cartão da data comemorativa (js/eventos.js), acima das abas: os passos da
-   trilha e a missão da vez, com o "Pegar" quando ela é cumprida. */
-.tf-evento.ev-halloween { background: #1d1a1f; border-color: #ff7a1a; color: #fff3e8; }
-.tf-evento.ev-halloween .tf-sec-topo b { color: #ffb066; }
-.tf-evento.ev-halloween .tf-sec-topo small { color: #c9a98e; }
-.ev-passos { display: flex; gap: 6px; margin-bottom: 10px; }
-.ev-passo {
-  flex: 1; height: 30px; border-radius: 10px; display: grid; place-items: center;
-  background: rgba(255, 255, 255, .08); color: #a8968a; border: 2px solid transparent;
+/* ------------------------- Post-it de data comemorativa ------------------- */
+/* O post-it do evento no mural (js/eventos.js): papel laranja, roxo ou verde
+   (sorteado por post-it, escolha do João) e a abóbora no lugar do alfinete. */
+.tf-papel.ev-halloween { --cor: #ffa24a; color: #3a1a06; }
+.tf-papel.ev-halloween.ev-roxo { --cor: #b98ae8; color: #2a1240; }
+.tf-papel.ev-halloween.ev-verde { --cor: #9fd47a; color: #1d3a10; }
+.tf-papel.ev-halloween .tf-alfinete {
+  width: 30px; height: 30px; margin-left: -15px; top: -16px; display: grid; place-items: center;
+  background: none; box-shadow: none;
 }
-.ev-passo .ico { width: 16px; height: 16px; }
-.ev-passo.ok { background: #ff7a1a; color: #1d1a1f; }
-.ev-passo.vez { border-color: #ff7a1a; color: #ffb066; }
-.ev-missao {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
-  background: rgba(255, 255, 255, .1);
-}
-.ev-missao.pronta { background: rgba(255, 122, 26, .22); box-shadow: inset 0 0 0 2px #ff7a1a; }
-.ev-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ev-texto b { font-size: 14px; }
-.ev-texto small { font-size: 12px; color: #c9a98e; }
-.ev-conta { font-weight: 800; font-size: 14px; color: #ffb066; }
-.tf-evento .ev-pegar { background: #ff7a1a; color: #1d1a1f; border-color: #ff7a1a; }
+.tf-papel.ev-halloween .tf-alfinete .ico { width: 30px; height: 30px; }
+.tf-papel.ev-halloween .tf-papel-ico { background: #fff4e6; }
+.tf-papel.ev-halloween .tf-nivel-chip { color: #7a3608; }
+.tf-papel.ev-halloween.ev-roxo .tf-papel-ico { background: #f3eaff; }
+.tf-papel.ev-halloween.ev-roxo .tf-nivel-chip { color: #4a2378; }
+.tf-papel.ev-halloween.ev-verde .tf-papel-ico { background: #effae6; }
+.tf-papel.ev-halloween.ev-verde .tf-nivel-chip { color: #2f5a1a; }
 
 /* O baú escolhido, ainda fechado, esperando o "Abrir" (js/baus.js). */
 .bp-palco { position: relative; }
