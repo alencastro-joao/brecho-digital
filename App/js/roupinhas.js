@@ -1210,7 +1210,7 @@ for (const [nomeDaCor, itens] of Object.entries(COLECOES_DE_COR)) {
     ROUPINHAS.push({
       id, nome: t ? `${t.nome} ${t.cores[nomeDaCor]}` : nomeDaRoupaBase(b, nomeDaCor), slot: b.slot, raridade: 'common',
       cor: hex, corNome: nomeDaCor,
-      imagem: { href: t ? `assets/roupas/${t.id}-${slug}-${t.versao}.webp` : `assets/roupas/${b.id}-${slug}-${ROUPAS_BASE_VERSAO}.webp`, caixa: caixaAjustada(b.id, b.caixa) },
+      imagem: { href: t ? `assets/roupas/${t.id}-${slug}-${t.versao}.webp` : `assets/roupas/${b.id}-${slug}-${b.versao || ROUPAS_BASE_VERSAO}.webp`, caixa: caixaAjustada(b.id, b.caixa) },
       desbloqueio: { tipo: 'colecao', colecao: idDaCor(nomeDaCor), ordem, de: total, item: id },
     });
   });

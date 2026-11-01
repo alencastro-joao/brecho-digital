@@ -1529,7 +1529,8 @@ export const idDaCor = (nome) => 'cor-' + semAcento(nome);
 // `caixa` é [x, y, w, h] no palco 600×1200; `feminino` é a cor concordando.
 export const ROUPAS_BASE_VERSAO = 'v3';   // igual a VERSAO em tools/roupas_base.py
 export const ROUPAS_BASE = [
-  { id: 'tenis',    nome: 'Tênis',    slot: 'pes',    caixa: [179.2, 988.7, 241.6, 160.2], fem: false },
+  // Tênis em v4: sola preta e cadarço preto (branco no preto e no marrom).
+  { id: 'tenis',    nome: 'Tênis',    slot: 'pes',    caixa: [179.2, 988.7, 241.6, 160.2], fem: false, versao: 'v4' },
   { id: 'camiseta', nome: 'Camiseta', slot: 'torso',  caixa: [147.3, 241.1, 305.4, 229.2], fem: true },
   { id: 'calca',    nome: 'Calça',    slot: 'pernas', caixa: [168.8, 497.7, 263.1, 572.4], fem: true },
   { id: 'camiseta-longa', nome: 'Camiseta longa', slot: 'torso', caixa: [147.3, 241.1, 305.4, 362.1], fem: true },
