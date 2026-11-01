@@ -42,9 +42,9 @@
 // não aparece aqui; quem avisa que ela abriu é o toast, e daí ela entra no
 // saco como qualquer outra.
 
-import { RARIDADE } from './config.js';
+import { RARIDADE, ESTILOS, colecao, logoDaColecao, hexDaCor } from './config.js';
 import { SLOTS, ORDEM_SLOTS, roupinha, svgRoupinha, atributosDe } from './roupinhas.js';
-import { efeitosDoLook, brilhoDoEstilo } from './efeitos.js';
+import { efeitosDoLook, brilhoDoEstilo, estiloAtivo } from './efeitos.js';
 import * as db from './db.js';
 import { svgAvatar, aparenciaAtual } from './avatar.js';
 import { el, $, toast } from './util.js';
@@ -248,33 +248,74 @@ function renderPrevia() {
   $('#vs-despir').disabled = !Object.keys(db.roupasEquipadas()).length;
 }
 
-// O painel de efeitos: primeiro o que está ativo, depois o que está a uma
-// peça de ativar. Cor solta não entra na lista de "quase": todo item tem cor,
-// e seis linhas de "vista mais um azul" seriam barulho.
+// O painel de efeitos, em dois blocos: "Ligados agora" (o que já vale) e
+// "Falta pouco" (o que está a uma peça de ligar). Cada linha mostra de onde
+// vem o efeito (logo da marca, ícone do tema, bolinha da cor), o bônus, o que
+// ele faz e uma régua de bolinhas com as peças vestidas até o próximo degrau.
+// Cor solta não entra no "falta pouco": todo item tem cor, e seis linhas de
+// "vista mais um azul" seriam barulho.
 function renderEfeitos() {
-  const todos = efeitosDoLook(db.roupasEquipadas());
+  const equipado = db.roupasEquipadas();
+  const todos = efeitosDoLook(equipado);
   const ativos = todos.filter(e => e.ativo)
     .sort((a, b) => b.pct - a.pct || ORDEM_TIPO[a.tipo] - ORDEM_TIPO[b.tipo]);
   const quase = todos.filter(e => !e.ativo && e.tipo !== 'cor' && e.proximo)
     .sort((a, b) => ORDEM_TIPO[a.tipo] - ORDEM_TIPO[b.tipo]);
+  const brilho = estiloAtivo(equipado);
 
-  const linhas = [...ativos, ...quase].map(e => el('div', {
+  $('#vs-efeitos-conta').textContent = ativos.length
+    ? `${ativos.length} ${ativos.length === 1 ? 'ligado' : 'ligados'}` : '';
+  $('#vs-efeitos-conta').hidden = !ativos.length;
+
+  const blocos = [];
+  if (ativos.length) blocos.push(
+    el('h2', { class: 'vs-efeitos-secao' }, 'Ligados agora'),
+    ...ativos.map(e => linhaDeEfeito(e, brilho)));
+  if (quase.length) blocos.push(
+    el('h2', { class: 'vs-efeitos-secao' }, 'Falta pouco'),
+    ...quase.map(e => linhaDeEfeito(e, brilho)));
+  if (!blocos.length) blocos.push(el('p', { class: 'vs-efeitos-vazio' },
+    'Nenhum efeito ligado. Vista 2 itens com a mesma marca, cor ou tema para ligar um.'));
+  $('#vs-efeitos').replaceChildren(...blocos);
+}
+
+// O sinal de onde vem o efeito: logo da marca, ícone do tema ou a cor.
+function emblemaDoEfeito(e) {
+  const fonte = e.tipo === 'marca' ? (colecao(e.valor) && logoDaColecao(colecao(e.valor)))
+    : e.tipo === 'estilo' ? ESTILOS[e.valor]?.icone : null;
+  if (fonte) return el('span', { class: 'vs-efeito-emblema' }, el('img', { src: fonte, alt: '' }));
+  const cor = e.tipo === 'cor' ? hexDaCor(e.valor)
+    : e.tipo === 'estilo' ? ESTILOS[e.valor]?.brilho : null;
+  return el('span', { class: 'vs-efeito-emblema bolinha', style: cor ? `--cor:${cor}` : '' });
+}
+
+function linhaDeEfeito(e, brilho) {
+  const tema = e.tipo === 'estilo' ? ESTILOS[e.valor] : null;
+  const total = e.meta ?? e.n;
+  const pips = Array.from({ length: total }, (_, i) =>
+    el('i', { class: i < e.n ? 'cheio' : '' }));
+  const prox = e.completa ? [ico('brilho'), ' Coleção completa: bônus máximo']
+    : e.proximo ? [`${e.n} de ${e.proximo.n} vestidos · mais ${e.proximo.faltam} para +${e.proximo.pct}%`]
+      : [`${e.n} vestidos · bônus máximo`];
+  // O tema com efeito no jogo também dá o brilho; diz os dois, para ninguém
+  // achar que o brilho sumiu. Só o tema mais vestido brilha.
+  const extra = tema?.efeito && e.ativo && brilho?.valor === e.valor
+    ? el('small', { class: 'vs-efeito-extra' }, `E um brilho ${tema.nome} no seu avatar`) : null;
+
+  return el('div', {
     class: 'vs-efeito' + (e.ativo ? ' ativo' : '') + (e.completa ? ' completa' : ''),
   },
     el('div', { class: 'vs-efeito-topo' },
-      el('span', { class: 'vs-efeito-tipo' }, e.tipoNome),
-      el('strong', {}, e.nome),
-      el('span', { class: 'vs-efeito-pct' }, e.ativo ? `+${e.pct}%` : `${e.n}/${e.meta}`)),
+      emblemaDoEfeito(e),
+      el('span', { class: 'vs-efeito-nome' },
+        el('strong', {}, e.nome),
+        el('span', { class: 'vs-efeito-tipo' }, e.tipoNome)),
+      el('span', { class: 'vs-efeito-pct' }, e.ativo ? `+${e.pct}%` : `+${e.proximo.pct}%`)),
     el('small', { class: 'vs-efeito-texto' }, e.texto),
-    e.completa ? el('small', { class: 'vs-efeito-prox' }, ico('brilho'), ' Coleção completa vestida')
-      : e.proximo ? el('small', { class: 'vs-efeito-prox' },
-        `Mais ${e.proximo.faltam} ${e.proximo.faltam === 1 ? 'item' : 'itens'}: +${e.proximo.pct}%`)
-        : null));
-
-  $('#vs-efeitos').replaceChildren(...(linhas.length ? linhas : [
-    el('p', { class: 'vs-efeitos-vazio' },
-      'Vista 2 itens com a mesma marca, cor ou tema para ativar um efeito.'),
-  ]));
+    extra,
+    el('div', { class: 'vs-efeito-regua' },
+      el('span', { class: 'vs-efeito-pips' }, ...pips),
+      el('small', { class: 'vs-efeito-prox' }, ...prox)));
 }
 
 const ORDEM_TIPO = { marca: 0, estilo: 1, cor: 2 };
