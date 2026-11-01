@@ -1529,11 +1529,11 @@ export const idDaCor = (nome) => 'cor-' + semAcento(nome);
 // `caixa` é [x, y, w, h] no palco 600×1200; `feminino` é a cor concordando.
 export const ROUPAS_BASE_VERSAO = 'v3';   // igual a VERSAO em tools/roupas_base.py
 export const ROUPAS_BASE = [
-  // Tênis em v4: sola preta e cadarço preto (branco no preto e no marrom).
-  { id: 'tenis',    nome: 'Tênis',    slot: 'pes',    caixa: [179.2, 988.7, 241.6, 160.2], fem: false, versao: 'v4' },
+  // Tênis em v5: sola preta e cadarço preto (branco no preto e no marrom).
+  { id: 'tenis',    nome: 'Tênis',    slot: 'pes',    caixa: [179.2, 988.7, 241.6, 160.2], fem: false, versao: 'v5' },
   { id: 'camiseta', nome: 'Camiseta', slot: 'torso',  caixa: [147.3, 241.1, 305.4, 229.2], fem: true },
   { id: 'calca',    nome: 'Calça',    slot: 'pernas', caixa: [168.8, 497.7, 263.1, 572.4], fem: true },
-  { id: 'camiseta-longa', nome: 'Camiseta longa', slot: 'torso', caixa: [147.3, 241.1, 305.4, 362.1], fem: true },
+  { id: 'camiseta-longa', nome: 'Camiseta longa', slot: 'torso', caixa: [147.3, 241.1, 305.4, 320], fem: true },   // 12% mais curta que o desenho (362,1): a barra caía muito abaixo da cintura
 ];
 // Óculos de espinhos da artista (tools/oculos_espinhos.py), recolorido só em
 // algumas coleções de cor; entra logo depois das três roupas base. `caixa` é
