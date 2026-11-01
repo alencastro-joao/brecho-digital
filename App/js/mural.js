@@ -13,7 +13,7 @@
 import { MURAL, BAUS, migrarCategoria } from './config.js';
 import { catalogo, itensDaLoja, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
-import { postitDoEvento, contarNoPostit, premiarPostit, textoDoPostit, modeloDoEvento } from './eventos.js';
+import { postitDoEvento, postitGarantido, contarNoPostit, premiarPostit, textoDoPostit, modeloDoEvento } from './eventos.js';
 
 const HORA = 3600e3;
 export const VAGAS = MURAL.vagas - 1;     // uma vaga do mural é sempre a da missão de jogo
@@ -185,6 +185,15 @@ export function atualizar(agora = Date.now()) {
     }
     mu.proxima += MURAL.cadaHoras * HORA;
     mudou = true;
+  }
+  // O post-it garantido do evento: entra na primeira vaga livre.
+  if (mu.missoes.length < VAGAS) {
+    const ev = postitGarantido(new Set(mu.missoes.map(chaveDe)), mu.missoes.some(m => m.evento));
+    if (ev) {
+      mu.missoes.push({ uid: agora.toString(36) + Math.random().toString(36).slice(2, 5), ...ev,
+                        chegou: agora, vence: agora + MURAL.duraHoras * HORA });
+      mudou = true;
+    }
   }
   if (!mu.jogo && agora >= mu.jogoVolta) { mu.jogo = novoJogo(); mudou = true; }
   return mudou;
