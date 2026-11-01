@@ -7,7 +7,7 @@
 
 import { tratarAssinaturaAntiga } from './assinaturas.js';
 import './icones.js';   // troca os <i data-i>/<i data-e> do HTML antes de tudo
-import { ADMIN, aplicarPapel, liberarPraca } from './config.js';
+import { ADMIN, BAUS, aplicarPapel, liberarPraca } from './config.js';
 import * as auth from './auth.js';
 import { pedirConta, voltaDoGoogle } from './telaauth.js';
 import { carregarCatalogo, catalogo } from './catalog.js';
@@ -200,6 +200,9 @@ async function iniciar() {
   // As peças de antes da numeração ganham o nº da cópia (uma vez, em segundo
   // plano); o closet repinta a ficha aberta na próxima vez que mudar.
   numerarAntigas(db.state.inventario).then(n => { if (n) db.salvar(); });
+
+  // Data comemorativa: o baú do evento vai para a tela de Baús.
+  for (const e of db.ganharBausDeEvento()) toast(`Presente de ${e.nome}! +${BAUS[e.bau].nome}`, 'rare');
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
   if (nova || pediuTutorialNaUrl()) comecarIntro();

@@ -5,7 +5,7 @@
 import { hojeISO } from './util.js';
 import {
   PREMIOS_DE_NIVEL, premioDoNivel, MISSOES, INTRO, MISSOES_SEMANA, PREMIO_SEMANA, MARCOS_DIA,
-  MARCOS_SEMANA, BAU_ESPECIAL, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta,
+  MARCOS_SEMANA, BAU_ESPECIAL, EVENTOS, premioDoBau, nivelPorXP, progressoDoNivel, nivelDaFerramenta,
 } from './config.js';
 import {
   adicionarPeca, fichas, podeTrocarFichas, progressoDasColecoes, salvar, state,
@@ -274,6 +274,19 @@ export function abrirBauGuardado(id, sorteadas = []) {
   progredirMissao('abrir-bau');
   salvar();
   return { ...bau, pecas };
+}
+
+// --- Baús de evento --------------------------------------------------------
+// Dentro da janela de um evento (EVENTOS), a conta ganha o baú dele uma vez.
+// Devolve os eventos que deram baú agora (para o aviso na tela).
+export function ganharBausDeEvento(hoje = hojeISO()) {
+  const pegos = state.eventos ?? [];
+  const novos = EVENTOS.filter(e => hoje >= e.desde && hoje <= e.ate && !pegos.includes(e.id));
+  if (!novos.length) return [];
+  state.eventos = [...pegos, ...novos.map(e => e.id)];
+  for (const e of novos) guardarBau(e.bau, 'evento', e.nome);
+  salvar();
+  return novos;
 }
 
 // --- Trilha de níveis ------------------------------------------------------

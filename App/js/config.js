@@ -1210,7 +1210,17 @@ export const BAUS = {
   raro:     { nome: 'Baú raro',     min: 3,  max: 5 },
   epico:    { nome: 'Baú épico',    min: 5,  max: 8 },
   lendario: { nome: 'Baú lendário', min: 10, max: 15 },
+  // Baús de evento: só chegam pelos EVENTOS abaixo. Por último aqui, ficam
+  // em primeiro na tela de Baús (que lista do fim para o começo).
+  halloween: { nome: 'Baú de Halloween', min: 5, max: 8 },
 };
+
+// Datas comemorativas: entre `desde` e `ate` (inclusive, data local), cada
+// conta ganha um `bau` de presente ao entrar no jogo, uma vez só por `id`.
+// Para repetir em outro ano, crie outro com id novo.
+export const EVENTOS = [
+  { id: 'halloween-2026', bau: 'halloween', nome: 'Halloween', desde: '2026-10-24', ate: '2026-11-07' },
+];
 
 // A raridade de cada peça de baú, em %: a mesma para os cinco baús (o que
 // muda entre eles é a quantidade). Diferente da loja, que tem a cota fixa da
