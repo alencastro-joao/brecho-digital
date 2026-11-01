@@ -119,7 +119,11 @@ export const estiloAtivo = (equipado) => efeitosDoLook(equipado)
 
 // O brilho do estilo mais vestido, como filtro CSS para o SVG do avatar.
 // Cresce com o degrau: +5% é um contorno leve, +20% um halo forte.
+// Desligado a pedido do João (01/11/2026): o avatar fica sem brilho. Volta
+// trocando BRILHO_NO_AVATAR para true.
+const BRILHO_NO_AVATAR = false;
 export function brilhoDoEstilo(equipado) {
+  if (!BRILHO_NO_AVATAR) return '';
   const e = estiloAtivo(equipado);
   const cor = e && ESTILOS[e.valor]?.brilho;
   if (!cor) return '';
