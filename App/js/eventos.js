@@ -10,21 +10,15 @@
 // As roupinhas do evento vêm da coleção do tema (ESTILOS), não daqui.
 
 import { EVENTOS, BAUS } from './config.js';
-import { ROUPINHA } from './roupinhas.js';
-import { catalogo } from './catalog.js';
 import * as db from './db.js';
 import { hojeISO } from './util.js';
 
-// O baú do evento já tem o que dar: pelo menos um baú cheio (o `max` dele) de
-// peças do acervo com o tema. Com menos, o presente e os post-its esperam
-// (João, 01/11/2026: "ainda não dê o baú, tem poucas roupas").
-export const temPecasDoEvento = (ev) => {
-  const { tema, max = 1 } = BAUS[ev.bau] || {};
-  return !tema || catalogo.itens.filter(i => i.tema === tema).length >= max;
-};
-// Os post-its só aparecem com tudo no jogo (João, 01/11/2026): as peças
-// exclusivas do baú e os desenhos de todas as roupinhas que o evento dá.
-const eventoPronto = (ev) => temPecasDoEvento(ev) && (ev.roupinhas || []).every(r => ROUPINHA[r.id]);
+// O evento abre só pelas datas (João, 01/11/2026: "abrir já, sem nenhuma
+// espera"). Antes ele esperava um baú cheio de peças do tema e os desenhos das
+// roupinhas; agora o presente e os post-its saem na hora, e o baú completa
+// com peças da loja enquanto houver poucas do tema (tarefas.sortearPecas).
+export const temPecasDoEvento = () => true;
+const eventoPronto = () => true;
 
 // O evento aberto hoje e pronto (o primeiro, se houver dois).
 export const eventoAberto = (hoje = hojeISO()) =>
