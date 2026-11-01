@@ -1489,7 +1489,7 @@ export const ESTILOS = {
   // Halloween (João, 01/11/2026): marque o tema "Halloween" na esteira ou no
   // editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e dos
   // presentes (catalog.itensDaLoja): ela só sai do Baú de Halloween. A
-  // coleção libera a camisa de teia e as 3 roupinhas, como as outras de Temas; já aparece em
+  // coleção libera a camisa e a calça de teia e as 3 roupinhas, como as outras de Temas; já aparece em
   // Coleções antes delas existirem (João, 01/11/2026).
   halloween: {
     nome: 'Halloween', brilho: '#ff7a1a', icone: 'assets/temas/halloween.svg',
@@ -1497,8 +1497,8 @@ export const ESTILOS = {
     // Vestir 2 ou mais roupinhas do tema dá +5% a +20% de XP em tudo (João,
     // 01/11/2026: efeito útil o ano todo, não só no evento). Ver efeitos.js.
     efeito: { tipo: 'xp', texto: 'Mais XP em tudo o que você ganha' },
-    itens: ['camisa-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
-    libera: ['camisa-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
+    itens: ['camisa-teia', 'calca-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
+    libera: ['camisa-teia', 'calca-teia', 'chapeu-bruxa', 'capa-vampiro', 'abobora'],
     pecas: [],
   },
 };
@@ -1643,6 +1643,8 @@ export const CAMISAS_SELECOES = [
   // Halloween (João, 01/11/2026): teia branca grande saindo do ombro esquerdo,
   // na camiseta longa preta; vem da coleção Halloween.
   { id: 'camisa-teia', nome: 'Camiseta longa com teia', base: 'camiseta-longa', cor: 'Preto', versao: 'v1' },
+  // Calça preta com a mesma teia branca saindo da cintura (João, 01/11/2026).
+  { id: 'calca-teia', nome: 'Calça com teia', base: 'calca', cor: 'Preto', versao: 'v1' },
 ];
 // Os desenhos extras, na ordem em que entram nas coleções de cor.
 export const OCULOS_DESENHADOS = [OCULOS_ESPINHOS, OCULOS_MASCARA, CAMISETA_CAVEIRA, CAMISETA_SOL, CAMISETA_CREEPER, CAMISETA_FOICE_MARTELO, CAMISETA_ANKH, CAMISETA_KITTY, CAMISETA_ESPIRAL, CAMISETA_FLOR_DE_LIS, CINTO_CINZA, ...CROPPEDS_VERDES];
