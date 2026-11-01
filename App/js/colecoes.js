@@ -42,7 +42,7 @@ const COMO_SAI = 'Na 3ª peça da coleção o dono separa o primeiro item do ava
 const EXPLICACAO = {
   marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. ' + COMO_SAI + ' Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
   cores: 'Todas as peças da loja de uma mesma cor. Cada cor tem itens do avatar pintados nela. ' + COMO_SAI + ' Vestir 2 ou mais itens da mesma cor traz mais peças dessa cor na sua arara; vale pelo que você vestia ao abrir a loja no dia.',
-  estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. ' + COMO_SAI + ' Vestir 2 ou mais itens do mesmo tema acende um brilho no avatar.',
+  estilos: 'As peças da loja de cada tema. Cada tema tem itens do avatar. ' + COMO_SAI + ' Alguns temas têm um efeito quando você veste 2 ou mais itens deles.',
 };
 
 
@@ -81,7 +81,8 @@ export function colecoesPorEstilo() {
   return Object.entries(ESTILOS).filter(([, e]) => !e.oculto).map(([id, e]) => comProgresso({
     id: idDoEstilo(id), tipo: 'estilo', marca: e.nome, hex: e.brilho, icone: e.icone,
     itens: itensQueLibera(idDoEstilo(id)),
-    efeito: { texto: `2 itens de ${e.nome} vestidos acendem um brilho no avatar` },
+    // Sem brilho no avatar (João, 01/11/2026): só o tema com efeito mostra a linha.
+    efeito: e.efeito ? { texto: e.efeito.texto } : null,
   }, prog));                 // tema ainda sem peças também aparece ("em breve")
 }
 
@@ -388,8 +389,8 @@ function renderDetalhe(c) {
     c.total ? el('section', { class: 'col-album' },
       el('h3', {}, 'Álbum', el('small', {}, `${c.tem} de ${c.total}`)),
       el('div', { class: 'col-album-grade' }, ...emOrdem(c.ids).map((id, _, todas) => casaDoAlbum(id, todas)))) : null,
-    el('p', { class: 'col-det-efeito' }, ico('brilho'), ' Vestindo: ', c.efeito.texto,
-      el('small', {}, ` (${textoDoBonus(c)})`)),
+    c.efeito ? el('p', { class: 'col-det-efeito' }, ico('brilho'), ' Vestindo: ', c.efeito.texto,
+      el('small', {}, ` (${textoDoBonus(c)})`)) : null,
   ].filter(Boolean));
 }
 

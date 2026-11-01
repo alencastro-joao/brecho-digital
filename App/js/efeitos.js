@@ -36,7 +36,7 @@ const TIPOS = {
 function textoDoEfeito(tipo, valor, pct) {
   if (tipo === 'marca') return colecao(valor)?.efeito.texto ?? '';
   if (tipo === 'cor') return `Mais peças ${valor.toLowerCase()} na sua arara`;
-  return ESTILOS[valor]?.efeito?.texto ?? `Brilho ${ESTILOS[valor]?.nome ?? valor} no seu avatar`;
+  return ESTILOS[valor]?.efeito?.texto ?? `Combo ${ESTILOS[valor]?.nome ?? valor}`;
 }
 
 const degrauDe = (n) => [...DEGRAUS].reverse().find(d => n >= d.n) ?? null;
