@@ -149,11 +149,12 @@ function sortearArara(iso) {
   // muda quais são.
   const pctDaCor = (i) => cores.filter(c => normalizarMarca(c.cor) === normalizarMarca(i.cor))
     .reduce((soma, c) => soma + c.pct, 0);
-  const furarFila = (lista, pctDe) => {
-    const frente = lista.filter(i => { const pct = pctDe(i); return pct && sorte() < pct * 3 / 100; });
+  // A cor vale 1× o bônus mostrado (João, 02/11/2026: estava forte demais).
+  const furarFila = (lista, pctDe, vezes = 3) => {
+    const frente = lista.filter(i => { const pct = pctDe(i); return pct && sorte() < pct * vezes / 100; });
     return [...frente, ...lista.filter(i => !frente.includes(i))];
   };
-  if (cores.length) for (const r of RARIDADES) grupos[r.id] = furarFila(grupos[r.id], pctDaCor);
+  if (cores.length) for (const r of RARIDADES) grupos[r.id] = furarFila(grupos[r.id], pctDaCor, 1);
 
   const arara = [...congeladas];
   for (const r of [...RARIDADES].reverse()) {
