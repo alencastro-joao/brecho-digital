@@ -11,10 +11,20 @@ import {
 } from './db.js';
 
 // --- Dia ------------------------------------------------------------------
+// A loja repõe duas vezes por dia: à meia-noite e ao meio-dia (turno 0 e 1).
+export const turnoDaLoja = (d = new Date()) => (d.getHours() >= 12 ? 1 : 0);
+
 export function virarODiaSeNecessario() {
   const hoje = hojeISO();
+  if (state.dia.data === hoje && (state.dia.turno ?? 0) !== turnoDaLoja()) {
+    // Virou o turno: arara nova; os resgates do dia continuam contados.
+    Object.assign(state.dia, { turno: turnoDaLoja(), vitrine: null, estoque: null, loja: null, posicoes: {} });
+    salvar();
+    virarASemanaSeNecessario();
+    return true;
+  }
   if (state.dia.data !== hoje) {
-    state.dia = { data: hoje, resgates: 0, extras: 0, guardados: extrasQueSobraram(), posicoes: {} };
+    state.dia = { data: hoje, turno: turnoDaLoja(), resgates: 0, extras: 0, guardados: extrasQueSobraram(), posicoes: {} };
     state.missoes = missoesDoDia(hoje);   // vitrine nova, missões novas
     salvar();
     return true;
@@ -174,7 +184,8 @@ const numeroDe = (id) => {
 // ao último acesso do dia. Sem conta (antes do login) fica só a data.
 export function sementeDaLoja(iso = hojeISO()) {
   const id = state.usuario.id;
-  return id ? (sementeDoDia(iso) ^ Math.imul(numeroDe(id), 0x9E3779B1)) >>> 0 : sementeDoDia(iso);
+  const base = sementeDoDia(iso) + (iso === hojeISO() ? turnoDaLoja() * 7919 : 0);
+  return id ? (base ^ Math.imul(numeroDe(id), 0x9E3779B1)) >>> 0 : base;
 }
 
 // O que muda a sorte desta pessoa na loja.

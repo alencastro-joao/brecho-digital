@@ -80,6 +80,13 @@ export function msAteMeiaNoite() {
   return amanha - agora;
 }
 
+// A loja repõe à meia-noite e ao meio-dia: quanto falta para a próxima.
+export function msAteReposicao() {
+  const agora = new Date();
+  const alvo = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 12, 0, 5);
+  return agora < alvo ? alvo - agora : msAteMeiaNoite();
+}
+
 // A semana começa na segunda. A chave é a data dessa segunda, no mesmo formato
 // de hojeISO, então virar a semana é comparar dois textos.
 export function semanaISO(d = new Date()) {
