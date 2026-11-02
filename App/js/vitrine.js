@@ -30,7 +30,7 @@ import { avisarColecaoDaPeca, colecoesDaPeca, chipDaColecao, rendeEscolha } from
 import { avisarLojaReposta, conferirWishlist } from './avisos.js';
 import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
-  msAteMeiaNoite, formatarContagem, toast,
+  msAteMeiaNoite, msAteReposicao, formatarContagem, toast,
 } from './util.js';
 import { emo, ico } from './icones.js';
 import { botaoDesejo } from './usuario.js';
@@ -776,9 +776,19 @@ async function pegar(id, noDOM) {
   }
   if (db.resgatesRestantes(CONFIG.RESGATES_POR_DIA) <= 0) {
     falarDe('acabou');
-    toast(db.podeTrocarFichas()
-      ? `Sem resgates. Troque ${FICHAS.porResgate} fichas em Tarefas.`
-      : `Sem resgates. Volta em ${formatarContagem(msAteMeiaNoite())}.`, 'aviso');
+    if (db.podeTrocarFichas()) {
+      // Sem resgates mas com fichas: oferece comprar um (mesmo preço das Tarefas).
+      pegando.add(id);
+      const comprar = await confirmar(
+        `Você está sem resgates. Comprar 1 resgate por ${FICHAS.porResgate} fichas?`,
+        { sim: 'Comprar', nao: 'Agora não' });
+      pegando.delete(id);
+      if (!comprar || !db.trocarFichasPorResgate()) return;
+      toast('+1 resgate.', 'rare');
+      atualizarBadge();
+      return pegar(id, noDOM);
+    }
+    toast(`Sem resgates. Troque fichas em Tarefas (${FICHAS.porResgate} por resgate) ou espere ${formatarContagem(msAteMeiaNoite())}.`, 'aviso');
     $('#picks-badge')?.classList.add('shake');
     setTimeout(() => $('#picks-badge')?.classList.remove('shake'), 500);
     return;
@@ -1013,7 +1023,14 @@ function ligarAdmin() {
   }
 }
 
+function atualizarContadorDeRepor() {
+  const c = $('#repor-contador');
+  if (c) c.textContent = `repõe em ${formatarContagem(msAteReposicao())}`;
+}
+setInterval(atualizarContadorDeRepor, 30000);
+
 export function atualizarBadge() {
+  atualizarContadorDeRepor();
   renderFichaDeRepor();
   const restantes = db.resgatesRestantes(CONFIG.RESGATES_POR_DIA);
   const campo = $('#picks-left');
