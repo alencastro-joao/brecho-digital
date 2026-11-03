@@ -254,6 +254,9 @@ function jogoAvaliar() {
   carta.addEventListener('pointercancel', soltar);
 
   $('#mg-palco').replaceChildren(
+    // Avaliar é só votar: sem texto, sem nota escrita.
+    el('p', { class: 'mg-dica mg-dica-forte' }, 'Você gostou da peça? É só votar, ',
+      el('b', {}, 'não precisa escrever nada'), ': arraste para o lado ou toque num botão.'),
     el('div', { class: 'mg-mesa' }, carta),
     $('#mg-cota'),
     el('div', { class: 'mg-botoes mg-botoes-voto' },
