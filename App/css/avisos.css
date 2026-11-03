@@ -162,6 +162,3 @@
                  - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 }
-
-/* Contador discreto até a próxima reposição da loja (00h e 12h). */
-.repor-contador { font-size: 11px; opacity: .6; white-space: nowrap; align-self: center; }
