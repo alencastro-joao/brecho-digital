@@ -1023,14 +1023,18 @@ function ligarAdmin() {
   }
 }
 
-function atualizarContadorDeRepor() {
-  const c = $('#repor-contador');
-  if (c) c.textContent = `repõe em ${formatarContagem(msAteReposicao())}`;
+// Uma contagem só, dentro da caixa dos resgates: quando acabam, quanto falta
+// para voltarem; fora isso, quanto falta para a loja repor (00h e 12h).
+function atualizarContagemDaCaixa() {
+  const small = $('#picks-badge small');
+  if (!small) return;
+  small.textContent = db.resgatesRestantes(CONFIG.RESGATES_POR_DIA) === 0
+    ? `volta em ${formatarContagem(msAteMeiaNoite())}`
+    : `repõe em ${formatarContagem(msAteReposicao())}`;
 }
-setInterval(atualizarContadorDeRepor, 30000);
+setInterval(atualizarContagemDaCaixa, 30000);
 
 export function atualizarBadge() {
-  atualizarContadorDeRepor();
   renderFichaDeRepor();
   const restantes = db.resgatesRestantes(CONFIG.RESGATES_POR_DIA);
   const campo = $('#picks-left');
@@ -1040,10 +1044,7 @@ export function atualizarBadge() {
   // O total é sempre o fixo do dia; o resgate extra aparece só em cima (4/3).
   badge.querySelector('.picks-total').textContent = '/' + CONFIG.RESGATES_POR_DIA;
   badge.classList.toggle('esgotado', restantes === 0);
-  // Só fala quando esgota (quando volta); fora isso o número basta.
-  badge.querySelector('small').textContent = restantes === 0
-    ? `volta em ${formatarContagem(msAteMeiaNoite())}`
-    : '';
+  atualizarContagemDaCaixa();
   badge.onclick = abrirJanelaDosResgates;
   badge.onkeydown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirJanelaDosResgates(); }
