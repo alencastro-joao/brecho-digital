@@ -72,6 +72,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
 .mg-palco { display: grid; gap: 10px; justify-items: center; }
 .mg-vazio { text-align: center; opacity: .75; padding: 40px 8px; }
 .mg-dica { margin: 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.mg-dica-forte { font-size: 14px; color: var(--tinta); }
 .mg-mesa { position: relative; display: grid; place-items: center; width: 100%; padding: 4px 0; }
 .mg-mesa-baixa { min-height: 0; }
 .mg-mesa-baixa .mg-carta-img { max-height: min(220px, 30vh); }
