@@ -133,7 +133,7 @@ function renderPrateleira() {
         return el('button', {
           type: 'button', class: `tf-pbau bau-${t}` + (i === 0 ? ' pronto' : '') + (i === 0 && novos ? ' ponto-novo' : ''),
           title: `Abrir ${BAUS[t].nome.toLowerCase()}`, onclick: () => irPara('baus'),
-        }, ico(iconeDoBau(t)), el('small', {}, BAUS[t].nome.replace(/^Baú (de )?/, '')),
+        }, ico(iconeDoBau(t)), el('small', {}, BAUS[t].nome.replace(/^Baú (de )?/, '').replace(/^./, c => c.toUpperCase())),
         n > 1 ? el('span', { class: 'tf-pbau-qtd' }, `×${n}`) : null);
       }), ...vagas));
 }

@@ -478,6 +478,14 @@
 /* Baú de evento: a cor dele vale mesmo quando é o primeiro (pronto). */
 .tf-pbau.bau-halloween { background: var(--perola); border-color: #f2a66b; }
 .tf-pbau.bau-halloween small { color: #b8520a; }
+/* Cada raridade com a cor do baú aberto (.bau-caixa), no ícone e no nome. */
+.tf-pbau.bau-incomum { border-color: #9ae0b5; }
+.tf-pbau.bau-incomum :is(.ico, small) { color: #2fbf63; }
+.tf-pbau.bau-raro { border-color: #b9d6f2; }
+.tf-pbau.bau-raro :is(.ico, small) { color: #2f7ff0; }
+.tf-pbau.bau-epico { border-color: #c3a6f2; }
+.tf-pbau.bau-epico :is(.ico, small) { color: #9b46f0; }
+.tf-pbau.bau-lendario :is(.ico, small) { color: var(--premio-texto); }
 .tf-pbau.ponto-novo::after { top: 6px; right: 6px; }
 .tf-pbau-qtd {
   position: absolute; top: -6px; left: -6px; padding: 1px 6px; font-size: 10px; font-weight: 800;
