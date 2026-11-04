@@ -789,32 +789,15 @@ async function publicarLook() {
   let look = await salvarLook({ silencioso: true });
   if (!look) return;
 
-  // Este stylist já tem post no feed: pergunta se é para trocar o post antigo
-  // ou se este é outro look (aí vira um post novo, com cópia do look).
+  // Editando um look já publicado (aberto em "Meus stylists"): a versão nova
+  // substitui o post. Só aqui a pergunta de atualizar aparece.
   if (look.publicado && jaPublicado('lookId', look.id)) {
-    const atualizar = await confirmar(
-      `"${look.nome}" já está no feed. Atualizar o post antigo (curtidas e comentários ficam) ou postar este como um look novo?`,
-      { titulo: 'Atualizar ou postar novo?', sim: 'Atualizar o post', nao: 'Postar como novo' });
-    if (!atualizar) {
-      const copia = {
-        ...look,
-        id: idNovo('l'),
-        nome: nomeLivre(look.nome, db.state.looks),
-        criadoEm: new Date().toISOString(),
-        publicado: false,
-      };
-      db.state.looks.push(copia);
-      db.state.stats.looks += 1;
-      lookAtualId = copia.id;
-      $('#outfit-nome').value = copia.nome;
-      look = copia;
-      renderSalvos();
-    }
-  }
-  if (look.publicado && jaPublicado('lookId', look.id)) {
+    if (!await confirmar(`O post de "${look.nome}" já está no feed. As curtidas e os comentários continuam.`,
+      { titulo: 'Atualizar o post com esta versão?', sim: 'Atualizar' })) return;
     try {
       await publicarNoFeed({ ...await pacoteDoLook(look), atualizar: true });
-      return toast('Post atualizado no feed.');
+      toast('Post atualizado no feed.');
+      return limparPalco();
     } catch (e) {
       return toast(e.message || 'Não consegui atualizar o post agora.', 'aviso');
     }
@@ -837,6 +820,8 @@ async function publicarLook() {
   toast(onde === 'servidor'
     ? 'Publicado no feed.'
     : 'Sem conexão. Publica quando voltar.');
+  // Postou: o palco esvazia e o próximo stylist começa novo, sem ligação com este.
+  limparPalco();
 }
 
 // Os looks salvos moram só no painel "Meus stylists", aberto pelo botão em
