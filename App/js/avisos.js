@@ -26,6 +26,7 @@ import { ico } from './icones.js';
 import { balancarSino } from './movimento.js';
 
 const MAXIMO = 40;              // a lista guarda os mais novos; o resto cai
+const VALIDADE = 14 * 864e5;     // aviso mais velho que isso some sozinho
 const INTERVALO = 3 * 60e3;     // de quanto em quanto o feed e os seguidores são relidos
 
 const avisos = () => db.state.avisos;
@@ -39,6 +40,12 @@ function gravar() {
   queueMicrotask(() => { gravacao = false; db.salvar(); });
 }
 
+function expirar() {
+  const corte = new Date(Date.now() - VALIDADE).toISOString();
+  const a = avisos();
+  if (a.lista.some(x => x.em < corte)) { a.lista = a.lista.filter(x => x.em >= corte); gravar(); }
+}
+
 const naoLidos = () => {
   const visto = avisos().vistoEm || '';
   return avisos().lista.filter(a => a.em > visto);
@@ -47,7 +54,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1 }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -58,7 +65,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1 }) {
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd,
+    tipo, em: agora, ir, quem, junta, qtd, acao,
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -158,6 +165,12 @@ export function avisarPresente(texto) {
   avisar({ tipo: 'presente', ir: ['baus'], texto });
 }
 
+// Troca de peças (a tela das trocas chama): `acao` é a dica do que fazer ao
+// abrir, ex.: 'Ver opções'.
+export function avisarTroca({ texto, ir, quem = null, acao = null }) {
+  avisar({ tipo: 'troca', ir, quem, texto, acao });
+}
+
 // O botão de repor do admin: a loja trocou sem o dia virar.
 export function avisarLojaReposta() {
   avisar({ tipo: 'loja', ir: ['vitrine'], texto: 'Loja reposta.' });
@@ -195,7 +208,7 @@ function reler() {
 // -------------------------------- Tela -------------------------------------
 const ICONE = {
   curtida: 'coracao-cheio', comentario: '“', seguidor: '+', missao: 'ok', nivel: 'estrela-cheia', loja: 'atualizar',
-  wishlist: 'coracao', presente: 'abobora',
+  wishlist: 'coracao', presente: 'abobora', troca: '⇄',
 };
 
 let botao, painel, contador, listaEl;
@@ -203,9 +216,9 @@ let botao, painel, contador, listaEl;
 function linha(a, visto) {
   const novo = a.em > visto;
   const marca = a.quem
-    ? retratoDe(a.quem, 26)
+    ? retratoDe(a.quem, 38)
     : el('span', { class: `aviso-icone ${a.tipo}` }, ICONE[a.tipo]?.length > 1 ? ico(ICONE[a.tipo]) : ICONE[a.tipo] || '•');
-  return el('li', {},
+  return el('li', { class: `aviso-item ${a.tipo}` },
     el('button', {
       class: 'aviso' + (novo ? ' novo' : ''),
       onclick: () => { fechar(); irPara(...a.ir); },
@@ -213,8 +226,17 @@ function linha(a, visto) {
       marca,
       el('span', { class: 'aviso-texto' },
         a.texto,
-        el('small', {}, tempoRelativo(a.em))),
-    ));
+        el('small', {}, tempoRelativo(a.em)),
+        a.acao ? el('em', { class: 'aviso-acao' }, a.acao) : null),
+      novo ? el('span', { class: 'aviso-bolinha' }) : null,
+    ),
+    el('button', {
+      class: 'aviso-x', title: 'Apagar aviso', 'aria-label': 'Apagar aviso',
+      onclick: () => {
+        avisos().lista = avisos().lista.filter(x => x.id !== a.id);
+        gravar(); pintarLista(); pintar();
+      },
+    }, '✕'));
 }
 
 function pintar({ chegou = false } = {}) {
@@ -233,12 +255,19 @@ let vistoAoAbrir = '';
 
 function pintarLista() {
   const lista = avisos().lista;
-  listaEl.replaceChildren(...lista.map(a => linha(a, vistoAoAbrir)));
+  const hoje = hojeISO();
+  const deHoje = lista.filter(a => a.em.slice(0, 10) === hoje || a.em > vistoAoAbrir);
+  const antes = lista.filter(a => !deHoje.includes(a));
+  const grupo = (nome, itens) => itens.length
+    ? [el('li', { class: 'avisos-grupo' }, nome), ...itens.map(a => linha(a, vistoAoAbrir))] : [];
+  listaEl.replaceChildren(...grupo('Hoje', deHoje), ...grupo('Antes', antes));
   $('#avisos-vazio').hidden = lista.length > 0;
   $('#avisos-limpar').hidden = !lista.length;
+  $('#avisos-lidas').hidden = !lista.some(a => a.em > vistoAoAbrir);
 }
 
 function abrir() {
+  expirar();
   vistoAoAbrir = avisos().vistoEm || '';
   painel.hidden = false;
   botao.setAttribute('aria-expanded', 'true');
@@ -266,6 +295,12 @@ export function montarAvisos() {
     e.stopPropagation();
     painel.hidden ? abrir() : fechar();
   });
+  $('#avisos-lidas').addEventListener('click', () => {
+    vistoAoAbrir = avisos().vistoEm = new Date().toISOString();
+    gravar();
+    pintarLista();
+    pintar();
+  });
   $('#avisos-limpar').addEventListener('click', () => {
     avisos().lista = [];
     gravar();
@@ -285,6 +320,7 @@ export function montarAvisos() {
   db.onChange(() => pintar());
 
   // Os seguidores o boot acabou de ler (sincronizarSocial); o feed, não.
+  expirar();
   conferirDia();
   conferirWishlist();
   conferirFeed();
