@@ -280,12 +280,20 @@ function renderMural() {
     }));
   }
 
-  const livres = mural.VAGAS - lista.length;
+  const livres = mural.vagasDoNivel() - lista.length;
   for (let i = 0; i < livres; i++) {
     papeis.push(i === 0
       ? el('article', { class: 'tf-papel vazio', style: { '--rot': '1deg' } },
         el('b', {}, 'Nova missão'), el('small', {}, `em ${tempoAte(mural.proximaChegada() - agora)}`))
       : el('article', { class: 'tf-papel vazio fantasma', style: { '--rot': (i % 2 ? -1 : 1) + 'deg' } }));
+  }
+
+  // Os post-its que o nível ainda não libera: papéis trancados.
+  const trancados = mural.VAGAS_MAX - Math.max(mural.vagasDoNivel(), lista.length);
+  const nvLibera = mural.proximoNivelDeVaga();
+  for (let i = 0; i < trancados; i++) {
+    papeis.push(el('article', { class: 'tf-papel vazio fantasma', style: { '--rot': (i % 2 ? 1 : -1) + 'deg' } },
+      i === 0 && nvLibera ? el('small', {}, `Nível ${nvLibera}`) : null));
   }
 
   $('#tf-mural').replaceChildren(el('div', { class: 'tf-mural-grade' }, ...papeis));
