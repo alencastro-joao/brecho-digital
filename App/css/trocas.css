@@ -126,6 +126,22 @@ html body .troca-caixa { width: min(520px, 100%); max-height: min(92vh, 820px); 
   padding: 10px 12px; border-radius: 14px; background: var(--branco); border: 2px solid var(--linha);
   text-align: left;
 }
-.troca-card-emoji { grid-row: span 2; font-size: 24px; text-align: center; }
+.troca-card-ico { grid-row: span 2; display: grid; place-items: center; font-size: 24px; color: var(--tinta); }
+.troca-card-ico .ficha-moeda { width: 22px; height: 22px; }
 .troca-card strong { font-size: 14px; }
 .troca-card p { margin: 0; font-size: 13px; line-height: 1.35; color: var(--tinta-suave); }
+
+/* Propor, ver e responder: tela cheia, com os botões presos embaixo. */
+html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-filter: none; }
+html body .troca-tela > .troca-caixa {
+  width: 100%; max-width: none; height: 100%; max-height: none; border-radius: 0; border: 0;
+  padding: max(18px, env(safe-area-inset-top)) 16px 0; animation: none;
+}
+.troca-tela .troca-caixa > * { width: 100%; max-width: 640px; margin-inline: auto; }
+.troca-tela .troca-fig.troca-alvo { width: 130px; margin-inline: auto; }
+.troca-tela .troca-grade { max-height: none; overflow: visible; }
+.troca-tela .pergunta-botoes {
+  position: sticky; bottom: 0; margin-top: auto; padding: 12px 0 max(14px, env(safe-area-inset-bottom));
+  background: var(--perola-painel, var(--branco));
+}
+.troca-tela .troca-info-btn { top: max(14px, env(safe-area-inset-top)); width: 34px; max-width: none; margin: 0; }
