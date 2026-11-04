@@ -4,12 +4,13 @@
 //   1. Na ficha de uma peça de uma amiga aparece o botão Trocar.
 //   2. Você marca de 1 a `maxOpcoes` peças suas da mesma raridade e envia.
 //   3. Ela recebe no sino, escolhe uma das suas (ou recusa).
-//   4. Aceitou: uma peça vai, a outra vem, e as duas pagam as fichas.
+//   4. Aceitou: uma peça vai, a outra vem, e só aí as duas pagam as fichas
+//      (o custo é pela raridade, não pelo número de peças oferecidas).
 //
 // Quem decide é o servidor (nuvem/lambda/trocas.py): ele confere a amizade, a
 // raridade e quem é dona de cada cópia numerada, e troca as duas de dono numa
 // transação só. O save só aplica o resultado: tira a peça que foi (e os looks
-// e colagens que a usavam), põe a que veio e cobra ou devolve as fichas.
+// e colagens que a usavam), põe a que veio e cobra as fichas.
 // Ofertas e respostas chegam relendo /api/trocas (no boot, de tempos em
 // tempos e ao voltar para a aba): não há push.
 
@@ -20,6 +21,8 @@ import { el, toast } from './util.js';
 import { avisarTroca, aoTocarEmTroca } from './avisos.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
+import { ordenar, seletorDeOrdem } from './ordenacao.js';
+import { agrupamento, grupoDe } from './agrupamento.js';
 
 const INTERVALO = 2 * 60e3;
 const LETRA = { c: 'common', u: 'uncommon', r: 'rare', e: 'epic', l: 'legendary' };
@@ -140,8 +143,35 @@ function grade(copias, max, aoMudar) {
   return el('div', { class: 'troca-grade' }, ...botoes);
 }
 
+// A grade da proposta, com Filtrar (por categoria) e Organizar em cima, iguais
+// aos do guarda-roupa. A marcação fica com a peça ao filtrar ou reordenar.
+function gradeComFerramentas(copias, max, aoMudar) {
+  const caixa = grade(copias, max, aoMudar);
+  const botoes = [...caixa.children];
+  let filtro = '';
+  const pintar = () => {
+    const vez = ordenar(copias.map((c, i) => ({ ...c, _i: i, ordem: c.ordem ?? i })));
+    caixa.replaceChildren(...vez.filter(c => !filtro || grupoDe(c) === filtro).map(c => botoes[c._i]));
+  };
+  const ag = agrupamento();
+  const tem = new Set(copias.map(grupoDe));
+  const filtrar = el('select', {
+    class: 'ordem-sel', title: 'Filtrar as peças', 'aria-label': 'Filtrar as peças',
+    onchange: (e) => { filtro = e.target.value; pintar(); },
+  }, el('option', { value: '' }, 'Todas'),
+    ...ag.ordem.filter(id => tem.has(id)).map(id => el('option', { value: id }, ag.grupos[id]?.nome || id)));
+  pintar();
+  return [
+    el('div', { class: 'troca-ferramentas' },
+      el('div', { class: 'troca-campo' }, el('span', {}, 'Filtrar'), filtrar),
+      el('div', { class: 'troca-campo' }, el('span', {}, 'Organizar'), seletorDeOrdem(pintar))),
+    caixa,
+  ];
+}
+
 const linhaDeCusto = (rar) =>
-  el('p', { class: 'troca-custo' }, `Custa ${custoDa(rar)} ficha${custoDa(rar) === 1 ? '' : 's'} para cada um · você tem ${db.fichas()}`);
+  el('p', { class: 'troca-custo' },
+    `Custa ${custoDa(rar)} ficha${custoDa(rar) === 1 ? '' : 's'} para cada um, só quando a troca acontecer · você tem ${db.fichas()}`);
 
 // ------------------------------ Propor (Ana) -------------------------------
 export function abrirProposta(peca, p) {
@@ -154,7 +184,7 @@ export function abrirProposta(peca, p) {
     figura({ id: peca.id, raridade: rar }, { rotulo: `de ${handle(p.handle)}`, classe: 'troca-alvo' }),
     el('p', { class: 'pergunta-texto' },
       `Marque até ${TROCAS.maxOpcoes} peças suas da mesma raridade. ${handle(p.handle)} escolhe uma delas.`),
-    grade(minhas, TROCAS.maxOpcoes, (lista) => { escolhidas = lista; enviar.disabled = !lista.length; }),
+    ...gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => { escolhidas = lista; enviar.disabled = !lista.length; }),
     linhaDeCusto(rar),
     el('div', { class: 'pergunta-botoes' },
       el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'),
@@ -170,9 +200,6 @@ export function abrirProposta(peca, p) {
           id: c.id, raridade: c.raridade, numero: c.numero,
           origem: c.origem || 'vitrine', desde: c.obtidoEm })),
       });
-      db.state.fichas = db.fichas() - custo;
-      registro().cobradas[troca.id] = custo;
-      db.salvar();
       ultimas = [troca, ...ultimas.filter(t => t.id !== troca.id)];
       fechar();
       toast(`Oferta enviada para ${handle(p.handle)}.`, 'ok');
@@ -193,7 +220,7 @@ export async function abrirOferta(trocaId) {
   const texto = {
     aberta: `Esperando ${outra} escolher.`,
     feita: 'Troca feita.',
-    recusada: `${outra} recusou. As fichas voltaram.`,
+    recusada: `${outra} recusou.`,
     cancelada: 'Oferta cancelada.',
     vencida: 'A oferta venceu sem resposta.',
     invalida: `A troca não deu certo${t.motivo ? ': ' + t.motivo : ''}.`,
@@ -214,7 +241,7 @@ export async function abrirOferta(trocaId) {
           guardar((await chamar(`/api/trocas/${t.id}/cancelar`, {})).troca);
           await aplicarPendentes();
           fechar();
-          toast('Oferta cancelada. As fichas voltaram.');
+          toast('Oferta cancelada.');
         } catch (e) { toast(e.message, 'erro'); }
       },
     }, 'Cancelar oferta'));
@@ -296,10 +323,9 @@ function aplicarFeita(t) {
   if (db.naWishlist(recebo.id)) db.alternarWishlist(recebo.id);
   esquecerHistorico(dou);
   esquecerHistorico(recebo);
-  if (t.souEu === 'para') {
-    // Quem aceita paga agora; quem pediu já pagou ao enviar.
-    db.state.fichas = Math.max(0, db.fichas() - custoDa(recebo.raridade));
-  }
+  // As duas pagam só agora, com a troca feita. Oferta antiga (de quando quem
+  // pedia pagava ao enviar) já está paga.
+  if (!registro().cobradas[t.id]) db.state.fichas = Math.max(0, db.fichas() - custoDa(recebo.raridade));
   delete registro().cobradas[t.id];
   db.progredirMissao('trocar');
   return { dou, recebo, perdidos };
