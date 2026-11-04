@@ -384,7 +384,6 @@ def _mais_votado(item, campo):
 
 def _decidido(campo, contagens, total):
     """A resposta mais votada já vale? `contagens` é quantos votos tem cada valor."""
-    maior = max(contagens, default=0)
     # Duas respostas e a peça segue como está; a mais votada (ou a primeira) leva.
     return total >= ESCOLHA_MIN
 

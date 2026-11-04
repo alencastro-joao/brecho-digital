@@ -796,6 +796,7 @@ async function atualizarComJogos(pecas) {
     if (!item || !nosJogos.has(item.id) || guardando.has(item.id)) continue;
     const ficha = { ...(item.ficha || {}) };
     if (r.cat?.pronto && CATEGORIAS[r.cat.valor]) ficha.cat = r.cat.valor;
+    if (!ficha.cat) ficha.cat = migrarCategoria(item.sugestao?.cat || '');
     if (r.cor?.pronto) ficha.cor = CORES.find(c => semAcento(c.nome) === r.cor.valor)?.nome || capitalizar(r.cor.valor);
     if (r.marca?.pronto) ficha.marca = r.marca.valor ? capitalizar(r.marca.valor) : '';
     const corpo = {};
