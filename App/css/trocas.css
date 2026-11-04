@@ -211,3 +211,13 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 }
 .troca-preco .ficha-moeda { width: 16px; height: 16px; }
 .btn-ghost.perigo { color: #c8243c; }
+
+/* Peça que a outra pessoa tem na wishlist: ♥ no canto e borda rosada. */
+.troca-opcao.desejada .troca-fig { border-color: #e8457a; background: color-mix(in srgb, #e8457a 8%, var(--branco)); }
+.troca-opcao.desejada[aria-pressed="true"] .troca-fig { border-color: var(--tinta); }
+.troca-desejo {
+  position: absolute; top: 5px; left: 5px; width: 24px; height: 24px; display: grid; place-items: center;
+  border-radius: 50%; background: #e8457a; color: #fff; box-shadow: 0 0 0 2px var(--branco);
+  pointer-events: none;
+}
+.troca-desejo svg { width: 14px; height: 14px; }
