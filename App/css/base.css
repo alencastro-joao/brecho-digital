@@ -449,14 +449,10 @@ button:not(:disabled):active, [role="button"]:active { scale: .95; }
   transition: opacity .35s ease, visibility .35s;
 }
 .splash.saindo { opacity: 0; visibility: hidden; pointer-events: none; }
-.splash-icone { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, .1);
+.splash-icone { width: 96px; height: 96px; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .12));
   animation: splash-respira 1.6s ease-in-out infinite; }
-.splash-nome { font-weight: 700; font-size: 1.1rem; letter-spacing: .02em; }
-.splash-pontos { display: flex; gap: 6px; }
-.splash-pontos i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta-suave);
-  animation: splash-ponto 1s ease-in-out infinite; }
-.splash-pontos i:nth-child(2) { animation-delay: .15s; }
-.splash-pontos i:nth-child(3) { animation-delay: .3s; }
+/* --splash-cor: a cor da paleta guardada neste aparelho (index.html, paleta.js). */
+.splash-cor { stop-color: var(--splash-cor, #0095b6); }
+.splash-claro { stop-color: color-mix(in srgb, var(--splash-cor, #0095b6) 70%, #fff); }
 @keyframes splash-respira { 50% { transform: scale(1.05); } }
-@keyframes splash-ponto { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
-@media (prefers-reduced-motion: reduce) { .splash-icone, .splash-pontos i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .splash-icone { animation: none; } }

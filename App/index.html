@@ -43,10 +43,24 @@
 <!-- Abertura: cobre a tela enquanto o app confere a conta e baixa o catálogo,
      em vez de mostrar a página se montando aos pedaços. Some pelo js/app.js. -->
 <div class="splash" id="splash" aria-hidden="true">
-  <img class="splash-icone" src="assets/app/icone-192.png" alt="" width="96" height="96">
-  <div class="splash-nome">Brechó Digital</div>
-  <div class="splash-pontos"><i></i><i></i><i></i></div>
+  <!-- O mesmo cabide do ícone do app, na cor da paleta de quem usa este
+       aparelho (js/paleta.js guarda a cor; o script abaixo pinta antes de tudo). -->
+  <svg class="splash-icone" viewBox="0 0 256 256" width="96" height="96">
+    <defs><linearGradient id="splash-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" class="splash-claro"/><stop offset="1" class="splash-cor"/></linearGradient></defs>
+    <rect width="256" height="256" rx="58" fill="url(#splash-g)"/>
+    <g transform="translate(40 46) scale(.6875)" fill="#fff">
+      <path d="M232,192H24a8,8,0,0,1-4.8-14.4L128,96l108.79,81.6A8,8,0,0,1,232,192Z" opacity=".35"/>
+      <path d="M241.57,171.2,141.33,96l23.46-17.6A8,8,0,0,0,168,72a40,40,0,1,0-80,0,8,8,0,0,0,16,0,24,24,0,0,1,47.69-3.78L123.34,89.49l-.28.22L14.43,171.2A16,16,0,0,0,24,200H232a16,16,0,0,0,9.6-28.8ZM232,184H24l104-78,104,78Z"/>
+    </g>
+  </svg>
 </div>
+<script>
+  try {
+    const cor = localStorage.getItem('bd:paleta-cor');
+    if (/^#[0-9a-f]{6}$/i.test(cor || '')) document.documentElement.style.setProperty('--splash-cor', cor);
+  } catch {}
+</script>
 
 <!-- Aviso de file:// (o app precisa de http para ler o catálogo e exportar imagem) -->
 <div id="file-warning" hidden>
