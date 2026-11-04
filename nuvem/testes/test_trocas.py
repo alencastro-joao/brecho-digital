@@ -110,6 +110,15 @@ class Troca(Base):
         self.assertTrue(ana['aplicada'])
         self.assertFalse(trocas.listar(self.bia)['trocas'][0]['aplicada'])
 
+    def test_perfil_sem_raridades_usa_a_da_ficha(self):
+        _s3.put_object(Bucket='site-teste', Key='assets/acervo.json', Body=json.dumps(
+            {'items': [{'id': p, 'raridade': 'rare'} for p in PECAS]}).encode())
+        estoque._acervo.update(ids=None, em=0.0)
+        self.dar(self.bia, 'jaqueta')
+        pessoas.atualizar_perfil(self.bia['id'], {'guardaRoupa': ['jaqueta']})   # app antigo
+        bone = self.dar(self.ana, 'bone')
+        self.assertEqual(self.propor(self.ana, self.bia, 'jaqueta', [bone])['estado'], 'aberta')
+
     def test_so_entre_amigas(self):
         cris = self.conta('cris')
         pessoas.seguir(cris['id'], self.bia['id'], True)      # só um lado segue

@@ -78,7 +78,8 @@ def _guarda_roupa(item):
     ids = perfil.get('guardaRoupa') or []
     letras = perfil.get('raridades') or ''
     por_letra = {r[0]: r for r in RARIDADES}   # c u r e l
-    return {pid: por_letra.get(letras[i:i + 1]) for i, pid in enumerate(ids)}
+    return {pid: por_letra.get(letras[i:i + 1]) or estoque.raridade_fixa(pid)
+            for i, pid in enumerate(ids)}
 
 
 def _copia(c, raridade):
