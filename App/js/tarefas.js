@@ -710,7 +710,7 @@ export function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {})
     },
       el('div', { class: 'bau-item-img' },
         el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
-          el('img', { src: peca.src, alt: nomeDaPeca(peca) }))),
+          el('img', { src: peca.src, alt: nomeDaPeca(peca), decoding: 'async' }))),
       el('small', {}, r?.nome ?? ''));
   }) : [el('p', { class: 'bau-vazio' }, 'Vazio desta vez.')]));
   modal.classList.remove('abrindo');
