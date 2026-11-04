@@ -123,7 +123,10 @@ function novaMissao(chegou, ocupadas) {
 const fichasDoJogo = (jogo, meta) => Math.max(1, Math.round(meta / MURAL.jogos[jogo].cada * MURAL.jogos[jogo].fichas));
 
 function novoJogo(jogos = Object.keys(NOMES_JOGO)) {
-  const jogo = umDe(jogos);
+  // Sorteio com peso: preencher e ajustar saem bem mais que o avaliar.
+  const total = jogos.reduce((t, j) => t + (MURAL.jogos[j].peso ?? 1), 0);
+  let ponto = Math.random() * total;
+  const jogo = jogos.find(j => (ponto -= (MURAL.jogos[j].peso ?? 1)) < 0) || jogos[jogos.length - 1];
   const meta = umDe(MURAL.jogos[jogo].metas);
   return { jogo, meta, feito: 0, fichas: fichasDoJogo(jogo, meta) };
 }

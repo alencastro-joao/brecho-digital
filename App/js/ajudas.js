@@ -34,6 +34,7 @@ export const JOGO = Object.fromEntries(JOGOS.map(j => [j.id, j]));
 
 let estado = null;        // resposta de GET /api/ajudas (a cota de cada jogo)
 let itens = [];           // as fotos da esteira que o admin mandou para os jogos
+let votar = new Set();    // ids que ainda precisam de votos de raridade (Avaliar)
 let faltam = {};          // id → entradas que ainda não fecharam (ajudas.py, pendencias)
 let jogo = null;          // o jogo da missão
 let peca = null;          // peça na tela
@@ -79,6 +80,7 @@ export async function aoEntrarNasAjudas() {
     estado = r.jogos;
     itens = r.itens || [];
     faltam = r.faltam || {};
+    votar = new Set(r.votar || []);
   } catch {
     estado = null;
     $('#mg-palco').replaceChildren(el('p', { class: 'mg-vazio' },
@@ -110,8 +112,16 @@ function renderCota() {
 
 // O que cada jogo responde. Peça sem nada em `faltam` ainda não recebeu ajuda.
 const ENTRADAS_DO_JOGO = { avaliar: ['raridade'], ajustar: ['ajuste'], preencher: ['cat', 'cor', 'marca'] };
-const falta = (it, entrada) => (faltam[it.id] ?? [entrada]).includes(entrada);
-const faltaNoJogo = (it, j = jogo) => ENTRADAS_DO_JOGO[j].some(e => falta(it, e));
+const TUDO = ['ajuste', 'cat', 'cor', 'marca'];
+const falta = (it, entrada) => (faltam[it.id] ?? TUDO).includes(entrada);
+// Ordem (foco do João): Preencher → Ajustar → Avaliar. A peça só passa para o
+// próximo quando o anterior fechou, e o que fechou não volta.
+const faltaNoJogo = (it, j = jogo) => {
+  const preenchendo = ENTRADAS_DO_JOGO.preencher.some(e => falta(it, e));
+  if (j === 'preencher') return preenchendo;
+  if (j === 'ajustar') return !preenchendo && falta(it, 'ajuste');
+  return !preenchendo && !falta(it, 'ajuste') && votar.has(it.id);
+};
 
 // Peças que ainda dá para ajudar em cada jogo (as que a pessoa não fez e que
 // não fecharam o que o jogo pergunta).
