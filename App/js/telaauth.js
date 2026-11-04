@@ -123,6 +123,29 @@ export function pedirConta({ aviso = '' } = {}) {
       resolver({ conta, nova });
     };
 
+    auth.contasGuardadas().then((lista) => {
+      if (!lista.length) return;
+      const alvo = $('#auth-guardadas-lista');
+      alvo.replaceChildren(...lista.map((c) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn-ghost';
+        b.textContent = `${c.nome || c.handle} (${c.handle})`;
+        b.addEventListener('click', async () => {
+          b.disabled = true;
+          try {
+            const conta = await auth.trocarConta(c.id);
+            if (conta) pronto(conta);
+          } catch (e) {
+            mostrarErro('#entrar-erro', e.message);
+            b.disabled = false;
+          }
+        });
+        return b;
+      }));
+      $('#auth-guardadas').hidden = false;
+    });
+
     document.querySelectorAll('.auth-aba').forEach(botao =>
       botao.addEventListener('click', () => trocarAba(botao.dataset.aba)));
 

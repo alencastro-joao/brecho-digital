@@ -183,3 +183,8 @@
 .limpeza-lista li.fica b { color: #2e7d32; }
 .limpeza-lista li:not(.fica) b { color: #c62828; }
 .limpeza-manter { float: right; font-size: 12px; cursor: pointer; margin-left: 8px; }
+
+/* Trocar conta: lista das contas já logadas neste aparelho. */
+.auth-guardadas { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.troca-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.troca-lista[hidden], .auth-guardadas[hidden] { display: none; }
