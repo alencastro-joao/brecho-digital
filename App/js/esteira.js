@@ -389,7 +389,14 @@ const marcadas = () => itens.filter(i => selecionadas.has(i.id));
 let verJogos = false;
 // "Prontas dos jogos": 2 medidas e 2 respostas (ajudas.py, pendencias) — vão como estão.
 let verProntas = false;
-const naVista = (item) => (verProntas ? prontasJogos.has(item.id) : nosJogos.has(item.id) === verJogos);
+// Também entra a peça que já foi medida e preenchida na própria esteira (antes dos jogos).
+const jaFeita = (item) => {
+  if (item.estado !== 'pronta' || !item.medida) return false;
+  const f = fichaDe(item);
+  return !!(f.cat && f.cor && f.nome && f.marca);
+};
+const éPronta = (item) => prontasJogos.has(item.id) || jaFeita(item);
+const naVista = (item) => (verProntas ? éPronta(item) : nosJogos.has(item.id) === verJogos);
 
 const fichaDe = (item) => {
   const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', tema: '', ...(item.ficha || {}) };
@@ -449,17 +456,18 @@ function desenhar() {
   grade.classList.toggle('selecionando', selecionadas.size > 0);
   const vazio = $('#es-vazio');
   vazio.hidden = visiveis.length > 0 || (!verJogos && chegando > 0);   // com peça chegando, a contagem já diz
-  vazio.textContent = verProntas ? 'Nenhuma peça ficou pronta nos jogos ainda.' : verJogos ? 'Nenhuma peça nos mini games.'
+  vazio.textContent = verProntas ? 'Nenhuma peça pronta ainda.' : verJogos ? 'Nenhuma peça nos mini games.'
     : itens.length ? 'As peças prontas estão todas nos mini games.' : 'Nada na esteira. As fotos que você mandar aparecem aqui.';
   const nJogos = itens.filter(i => nosJogos.has(i.id)).length;
-  $('#es-vista').hidden = !nJogos && !verJogos;
   const ver = $('#es-ver-jogos');
   ver.setAttribute('aria-pressed', String(verJogos));
   const verP = $('#es-ver-prontas');
-  const nProntas = itens.filter(i => prontasJogos.has(i.id)).length;
+  const nProntas = itens.filter(éPronta).length;
   verP.hidden = !nProntas && !verProntas;
+  ver.hidden = !nJogos && !verJogos;
+  $('#es-vista').hidden = ver.hidden && verP.hidden;
   verP.setAttribute('aria-pressed', String(verProntas));
-  verP.textContent = verProntas ? '← Nos jogos' : `✅ Prontas dos jogos ${nProntas}`;
+  verP.textContent = verProntas ? '← Voltar à esteira' : `✅ Prontas ${nProntas}`;
   ver.textContent = verJogos ? '← Voltar à esteira' : `🎲 Nos jogos ${nJogos}`;
   atualizarLote();
 
@@ -1290,7 +1298,7 @@ function ligarLote() {
   });
   $('#es-ver-prontas').addEventListener('click', () => {
     verProntas = !verProntas;
-    verJogos = verProntas;
+    verJogos = false;
     selecionadas.clear();
     desenhar();
     window.scrollTo(0, 0);
