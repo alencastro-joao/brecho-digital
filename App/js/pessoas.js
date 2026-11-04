@@ -244,6 +244,7 @@ const fotoDoPerfil = () => ({
     looks: meusLooks().slice(0, OBRAS_NO_PERFIL).map(o => ({
       id: o.id,
       nome: o.nome || '',
+      criadoEm: o.criadoEm || '',
       desenho: o.camadas || [],
       pecas: [...new Set((o.camadas || []).map(c => c.itemId).filter(Boolean))],
       favorito: Boolean(o.favorito),
@@ -251,6 +252,7 @@ const fotoDoPerfil = () => ({
     colagens: minhasColagens().slice(0, OBRAS_NO_PERFIL).map(o => ({
       id: o.id,
       nome: o.nome || '',
+      criadoEm: o.criadoEm || '',
       thumb: o.thumb || '',
       pecas: [...new Set((o.itens || []).map(c => c.itemId).filter(Boolean))],
       favorito: Boolean(o.favorito),
