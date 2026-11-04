@@ -1089,6 +1089,8 @@ export const MARCOS_SEMANA = { fichasPorMissao: 4, carimbo: { bau: 'epico' } };
 // existem. Regras do João, 30/10/2026.
 export const MURAL = {
   vagas: 6, cadaHoras: 2, duraHoras: 12,
+  // Post-its liberados por nível (sem contar o de jogo): [nível, missões no mural].
+  liberacao: [[1, 2], [2, 3], [3, 4], [5, 5]],
   niveis: {
     facil:   { nome: 'Fácil',   fichas: 3,  chance: 50, bau: 'incomum' },
     medio:   { nome: 'Médio',   fichas: 5,  chance: 35, bau: 'raro' },

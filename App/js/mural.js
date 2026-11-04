@@ -16,7 +16,12 @@ import * as db from './db.js';
 import { postitDoEvento, postitGarantido, contarNoPostit, premiarPostit, textoDoPostit, modeloDoEvento } from './eventos.js';
 
 const HORA = 3600e3;
-export const VAGAS = MURAL.vagas - 1;     // uma vaga do mural é sempre a da missão de jogo
+export const VAGAS_MAX = MURAL.vagas - 1;     // uma vaga do mural é sempre a da missão de jogo
+// Quantos post-its de missão o nível atual já libera (MURAL.liberacao).
+export const vagasDoNivel = (n = db.nivel()) =>
+  Math.min(VAGAS_MAX, MURAL.liberacao.reduce((v, [nv, q]) => n >= nv ? q : v, 1));
+// Nível que libera o próximo post-it (null se já liberou todos).
+export const proximoNivelDeVaga = (n = db.nivel()) => (MURAL.liberacao.find(([nv]) => nv > n) || [null])[0];
 const MODELO = new Map(MURAL.missoes.map(m => [m.id, m]));
 export const modeloDe = (m) => MODELO.get(m.id);
 
@@ -182,7 +187,7 @@ export function atualizar(agora = Date.now()) {
   // Quem ficou dias fora não vê a fila inteira: só chega o que ainda não venceu.
   mu.proxima = Math.max(mu.proxima, agora - MURAL.duraHoras * HORA);
   while (mu.proxima <= agora) {
-    if (mu.missoes.length < VAGAS) {
+    if (mu.missoes.length < vagasDoNivel()) {
       const m = novaMissao(mu.proxima, new Set(mu.missoes.map(chaveDe)));
       if (m && m.vence > agora) mu.missoes.push(m);
     }
@@ -190,7 +195,7 @@ export function atualizar(agora = Date.now()) {
     mudou = true;
   }
   // O post-it garantido do evento: entra na primeira vaga livre.
-  if (mu.missoes.length < VAGAS) {
+  if (mu.missoes.length < vagasDoNivel()) {
     const ev = postitGarantido(new Set(mu.missoes.map(chaveDe)), mu.missoes.some(m => m.evento));
     if (ev) {
       mu.missoes.push({ uid: agora.toString(36) + Math.random().toString(36).slice(2, 5), ...ev,

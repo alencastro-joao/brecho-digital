@@ -339,7 +339,7 @@ function avisarNovas() {
     if (t.souEu !== 'para' || t.estado !== 'aberta' || r.avisadas.includes(t.id)) continue;
     const peca = pecaDoCatalogo(t.quero.id);
     avisarTroca({ troca: t.id, quem: t.de.id,
-      texto: `${t.de.handle} quer trocar ${peca ? nomeDaPeca(peca) : 'uma peça sua'}.` });
+      texto: `${t.de.handle} quer trocar ${peca ? nomeDaPeca(peca) : 'uma peça sua'}.`, acao: 'Ver opções' });
     r.avisadas.push(t.id);
   }
   r.avisadas = r.avisadas.slice(-60);

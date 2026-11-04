@@ -447,7 +447,11 @@ function abasDaVitrine(p) {
   });
   return [
     { id: 'posts', icone: 'grade', rotulo: 'Posts', grade: 'pf-grade-obras',
-      itens: favoritasPrimeiro([...obras('look', todas.looks), ...obras('colagem', todas.colagens)]).map(cartao),
+      // Uma lista só, do post mais novo ao mais velho (sort estável: quem não
+      // tem data, de versão antiga do app, fica no fim na ordem que veio).
+      itens: favoritasPrimeiro([...obras('look', todas.looks), ...obras('colagem', todas.colagens)]
+        .sort((a, b) => (Date.parse(b.obra.criadoEm) || 0) - (Date.parse(a.obra.criadoEm) || 0)))
+        .map(cartao),
       vazio: 'Nenhum post ainda' },
     abaDeRoupasDe(p, doCatalogo(favoritos.pecas)),
   ];

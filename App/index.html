@@ -119,6 +119,12 @@
       <button type="submit" class="btn-dark auth-enviar" id="criar-enviar">Criar minha conta</button>
     </form>
 
+    <!-- Contas já logadas neste aparelho: um toque entra, sem senha. -->
+    <div class="auth-guardadas" id="auth-guardadas" hidden>
+      <span class="auth-ou">contas neste aparelho</span>
+      <div class="troca-lista" id="auth-guardadas-lista"></div>
+    </div>
+
     <!-- Só aparece quando o servidor diz que o Google está configurado. -->
     <div class="auth-google" id="auth-google" hidden>
       <span class="auth-ou">ou</span>
@@ -1148,8 +1154,10 @@
           <p class="missoes-sub" id="conta-resumo"></p>
           <div class="tool-row">
             <button class="btn-ghost" id="btn-trocar-senha">Trocar a senha</button>
+            <button class="btn-ghost" id="btn-trocar-conta">Trocar conta</button>
             <button class="btn-ghost" id="btn-sair">Sair da conta</button>
           </div>
+          <div class="troca-lista" id="troca-lista" hidden></div>
           <form class="conta-senha" id="form-senha" hidden>
             <label>Senha atual
               <input type="password" id="senha-atual" autocomplete="current-password">
@@ -1215,11 +1223,15 @@
   <section class="avisos-painel" id="avisos-painel" hidden aria-label="Avisos">
     <header class="avisos-topo">
       <h2>Avisos</h2>
-      <button class="link-btn" id="avisos-limpar" hidden>Limpar</button>
+      <span class="avisos-botoes">
+        <button class="link-btn" id="avisos-lidas" hidden>Marcar como lidas</button>
+        <button class="link-btn" id="avisos-limpar" hidden>Limpar tudo</button>
+      </span>
     </header>
     <ul class="avisos-lista" id="avisos-lista"></ul>
     <p class="avisos-vazio" id="avisos-vazio">Nada por aqui ainda. Curtidas, comentários,
-      missões e a vitrine nova aparecem aqui.</p>
+      missões, trocas e a vitrine nova aparecem aqui.</p>
+    <p class="avisos-rodape">Avisos com mais de 14 dias somem sozinhos.</p>
   </section>
 
 

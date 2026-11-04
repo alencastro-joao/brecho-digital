@@ -314,6 +314,10 @@ def _obras(bruto, eu_id, maximo=OBRAS_FAV_MAX, com_favorito=False):
         }
         if com_favorito:
             limpa['favorito'] = bool(obra.get('favorito'))
+            # Quando foi feito: o perfil dos outros mistura looks e colagens por data.
+            criado = str(obra.get('criadoEm') or '')[:32]
+            if re.match(r'^\d{4}-\d\d-\d\dT[\d:.]+Z?$', criado):
+                limpa['criadoEm'] = criado
             # O id do look ou da colagem: é ele que acha o post no feed.
             if isinstance(obra.get('id'), str) and VALOR_OK.match(obra['id']):
                 limpa['id'] = obra['id']

@@ -213,7 +213,81 @@ def biscoito_de_sessao(token, expira):
 
 def entregar_sessao(usuario, pedido, codigo=200):
     token, expira = contas.abrir_sessao(usuario['id'], pedido.agente)
-    return responder(codigo, {'usuario': usuario}, biscoito_de_sessao(token, expira))
+    return responder(codigo, {'usuario': usuario},
+                     biscoito_de_sessao(token, expira) + guardar_sessao_antiga(pedido, token))
+
+
+# --- Trocar de conta --------------------------------------------------------
+# As sessões das outras contas deste aparelho moram num segundo cookie HttpOnly
+# (bd_contas), tokens separados por ponto (o token é urlsafe: não tem ponto).
+# O JavaScript continua sem ler token nenhum: ele só pede a lista e escolhe.
+COOKIE_CONTAS = 'bd_contas'
+MAX_CONTAS = 8
+
+
+def tokens_guardados(pedido):
+    bruto = pedido.biscoito(COOKIE_CONTAS) or ''
+    vistos = []
+    for t in bruto.split('.'):
+        if t and t not in vistos:
+            vistos.append(t)
+    return vistos[-MAX_CONTAS:]
+
+
+def biscoito_de_contas(tokens):
+    return ['%s=%s; Path=/api/auth; HttpOnly; SameSite=Lax; Secure; Max-Age=%d'
+            % (COOKIE_CONTAS, '.'.join(tokens), contas.SESSAO_DIAS * 86400 if tokens else 0)]
+
+
+def guardar_sessao_antiga(pedido, novo):
+    """Entrar noutra conta não derruba a que estava aberta: o token dela vai
+    para a lista, e é dali que o 'trocar conta' tira."""
+    velho = pedido.token()
+    tokens = [t for t in tokens_guardados(pedido) if t != novo]
+    if velho and velho != novo and velho not in tokens:
+        tokens.append(velho)
+    return biscoito_de_contas(tokens[-MAX_CONTAS:])
+
+
+def contas_deste_aparelho(pedido):
+    """[(token, usuario)] das sessões guardadas que ainda valem, sem repetir
+    pessoa e sem a que está aberta agora."""
+    atual = contas.usuario_da_sessao(pedido.token())
+    vistos = {atual['id']} if atual else set()
+    achadas = []
+    for t in tokens_guardados(pedido):
+        u = contas.usuario_da_sessao(t)
+        if u and u['id'] not in vistos:
+            vistos.add(u['id'])
+            achadas.append((t, u))
+    return atual, achadas
+
+
+def rotas_de_troca(pedido):
+    rota = pedido.rota
+    if rota == '/api/auth/contas' and pedido.metodo == 'GET':
+        atual, achadas = contas_deste_aparelho(pedido)
+        lista = [{'id': u['id'], 'nome': u.get('nome'), 'handle': u.get('handle')}
+                 for _, u in achadas]
+        return responder(200, {'atual': atual['id'] if atual else None, 'contas': lista},
+                         biscoito_de_contas([t for t, _ in achadas]))
+    if rota == '/api/auth/trocar' and pedido.metodo == 'POST':
+        alvo = pedido.corpo(LIMITE_LOGIN).get('id')
+        atual, achadas = contas_deste_aparelho(pedido)
+        escolhida = next(((t, u) for t, u in achadas if u['id'] == alvo), None) if alvo else None
+        if alvo and not escolhida:
+            return responder(404, {'erro': 'essa conta não está mais neste aparelho; entre de novo'})
+        resto = [t for t, _ in achadas if not escolhida or t != escolhida[0]]
+        if pedido.token() and atual:
+            resto.append(pedido.token())
+        if not escolhida:    # 'adicionar conta': guarda a atual e vai para o login
+            return responder(200, {'usuario': None},
+                             biscoito_de_sessao('', None) + biscoito_de_contas(resto))
+        token, usuario = escolhida
+        biscoito = ['%s=%s; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=%d'
+                    % (contas.COOKIE, token, contas.SESSAO_DIAS * 86400)]
+        return responder(200, {'usuario': usuario}, biscoito + biscoito_de_contas(resto))
+    return None
 
 
 def biscoito_do_google(state):
@@ -250,7 +324,8 @@ def rotas_do_google(pedido):
         return mandar_para(app + 'falhou', apagar)
     token, expira = contas.abrir_sessao(usuario['id'], pedido.agente)
     return mandar_para(app + ('nova' if nova else 'ok'),
-                       apagar + biscoito_de_sessao(token, expira))
+                       apagar + biscoito_de_sessao(token, expira)
+                       + guardar_sessao_antiga(pedido, token))
 
 
 # --- Rotas ----------------------------------------------------------------
@@ -262,6 +337,10 @@ def rotas_de_conta(pedido):
         return responder(200, {'pronto': logingoogle._config() is not None})
     if rota in ('/api/auth/google/entrar', '/api/auth/google/volta'):
         return rotas_do_google(pedido)
+
+    troca = rotas_de_troca(pedido)
+    if troca:
+        return troca
 
     if rota == '/api/auth/eu':
         if metodo == 'GET':

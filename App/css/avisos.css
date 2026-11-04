@@ -72,28 +72,47 @@
 }
 .avisos-topo h2 { font-size: 14px; font-weight: 800; }
 
+.avisos-botoes { display: flex; gap: 10px; }
+.avisos-botoes .link-btn { font-size: 12px; }
+.avisos-grupo { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); padding: 8px 10px 3px; }
+.avisos-rodape { padding: 8px 16px 11px; font-size: 11px; color: var(--tinta-suave); border-top: 1px solid var(--linha); }
+.aviso-item { position: relative; --cor: var(--wii); }
+.aviso-item.curtida, .aviso-item.wishlist { --cor: #d6336c; }
+.aviso-item.comentario, .aviso-item.seguidor { --cor: #7048c7; }
+.aviso-item.missao { --cor: #d98200; }
+.aviso-item.nivel { --cor: #c79a00; }
+.aviso-item.loja { --cor: #2f9e44; }
+.aviso-item.troca { --cor: #0b8aa6; }
+.aviso-item.presente { --cor: #ff7a1a; }
+.aviso.novo { position: relative; background: color-mix(in srgb, var(--cor) 9%, var(--branco)); }
+.aviso.novo:hover { background: color-mix(in srgb, var(--cor) 16%, var(--branco)); }
+.aviso.novo::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--cor); }
+.aviso-bolinha { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cor); margin-right: 18px; }
+.aviso-x { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--tinta-suave); font-size: 13px; padding: 6px; opacity: 0; cursor: pointer; }
+.aviso-item:hover .aviso-x, .aviso-x:focus-visible { opacity: 1; }
+@media (hover: none) { .aviso-x { opacity: .6; } }
+.aviso-acao { display: inline-block; margin-top: 4px; font-style: normal; font-size: 11.5px; font-weight: 800; padding: 3px 11px; border-radius: 99px; background: var(--cor); color: #fff; }
 .avisos-lista { list-style: none; overflow-y: auto; padding: 0 6px 6px; }
 .aviso {
   width: 100%; display: flex; align-items: center; gap: 9px;
-  padding: 6px 8px; border: 0; border-radius: 10px;
+  padding: 9px 10px 9px 12px; border: 0; border-radius: 12px;
   background: none; text-align: left; color: var(--tinta);
 }
 .aviso:hover { background: var(--perola-painel); }
-.aviso.novo { background: color-mix(in srgb, var(--wii) 9%, var(--branco)); }
-.aviso.novo:hover { background: color-mix(in srgb, var(--wii) 16%, var(--branco)); }
 .aviso > .cabecinha { flex: none; }
 /* Texto e hora numa linha só, cortados em duas: a lista cabe mais avisos. */
 .aviso-texto {
+  flex: 1;
   font-size: 12.5px; line-height: 1.35; min-width: 0; overflow-wrap: anywhere;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
 .aviso-texto small { margin-left: 5px; font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
-.aviso.novo .aviso-texto small { color: #b5651d; font-weight: 700; }
+.aviso.novo .aviso-texto small { color: var(--cor); font-weight: 700; }
 
 .aviso-icone {
-  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  flex: none; width: 38px; height: 38px; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 12px; font-weight: 800; color: rgba(0, 0, 0, .6);
+  font-size: 17px; font-weight: 800; color: rgba(0, 0, 0, .6);
   background: var(--perola-painel);
 }
 .aviso-icone.curtida { background: var(--board); color: #b0285a; }
@@ -102,6 +121,8 @@
 .aviso-icone.nivel { background: var(--premio-claro); color: var(--premio-texto); }
 .aviso-icone.loja { background: var(--loja); color: #2f6b34; }
 .aviso-icone.wishlist { background: var(--board); color: #b0285a; }
+.aviso-icone.troca { background: #c8ecf3; color: #0b6f86; }
+.aviso-icone svg { width: 20px; height: 20px; }
 .aviso-icone.presente { background: #1d1a1f; color: #ff7a1a; }
 
 .avisos-vazio {

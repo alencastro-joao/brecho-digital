@@ -5,7 +5,7 @@
 // com a última foto que o save guardou dela, e o que mudou vira aviso:
 //   * feed       curtidas e comentários de outras pessoas nos seus posts;
 //   * seguidores quem passou a seguir você;
-//   * missões    missão fechada, dia inteiro fechado, nível novo (db.onXP);
+//   * nível      nível novo (db.onXP);
 //   * loja       a vitrine que virou o dia, ou que o admin repôs;
 //   * wishlist   peça da sua wishlist pendurada na sua loja hoje.
 //
@@ -26,6 +26,7 @@ import { ico } from './icones.js';
 import { balancarSino } from './movimento.js';
 
 const MAXIMO = 40;              // a lista guarda os mais novos; o resto cai
+const VALIDADE = 14 * 864e5;     // aviso mais velho que isso some sozinho
 const INTERVALO = 3 * 60e3;     // de quanto em quanto o feed e os seguidores são relidos
 
 const avisos = () => db.state.avisos;
@@ -39,6 +40,16 @@ function gravar() {
   queueMicrotask(() => { gravacao = false; db.salvar(); });
 }
 
+function expirar() {
+  const corte = new Date(Date.now() - VALIDADE).toISOString();
+  const a = avisos();
+  // Também some o que já estava guardado de missões cumpridas.
+  if (a.lista.some(x => x.em < corte || x.tipo === 'missao')) {
+    a.lista = a.lista.filter(x => x.em >= corte && x.tipo !== 'missao');
+    gravar();
+  }
+}
+
 const naoLidos = () => {
   const visto = avisos().vistoEm || '';
   return avisos().lista.filter(a => a.em > visto);
@@ -47,7 +58,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, troca = null }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -58,7 +69,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, troca = n
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd, ...(troca ? { troca } : {}),
+    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}),
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -127,13 +138,7 @@ function conferirSeguidores(ids) {
 }
 
 function aoGanharXP(evento) {
-  if (evento.motivo.startsWith('missão: ')) {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `${evento.motivo.slice(8)} · +${evento.xp} XP` });
-  } else if (evento.motivo.startsWith('missão da semana: ')) {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Semana: ${evento.motivo.slice(18)} · +${evento.xp} XP` });
-  }
+  // Missão cumprida não avisa mais: o João pediu para tirar do sino.
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
              texto: `Nível ${evento.nivel}: prêmio na trilha.` });
@@ -160,12 +165,12 @@ export function avisarPresente(texto) {
 
 // Troca de peças (js/trocas.js): a oferta que chegou, a resposta à sua. Tocar
 // no aviso abre a oferta; quem abre é o trocas.js, que se registra aqui (ele
-// importa este arquivo, e não o contrário).
+// importa este arquivo, e não o contrário). `acao` é a dica ao lado do texto.
 let abrirTroca = null;
 export const aoTocarEmTroca = (fn) => { abrirTroca = fn; };
 
-export function avisarTroca({ texto, quem = null, troca }) {
-  avisar({ tipo: 'troca', ir: ['perfil'], texto, quem, troca });
+export function avisarTroca({ texto, quem = null, troca, acao = null }) {
+  avisar({ tipo: 'troca', ir: ['perfil'], texto, quem, troca, acao });
 }
 
 // O botão de repor do admin: a loja trocou sem o dia virar.
@@ -213,9 +218,9 @@ let botao, painel, contador, listaEl;
 function linha(a, visto) {
   const novo = a.em > visto;
   const marca = a.quem
-    ? retratoDe(a.quem, 26)
+    ? retratoDe(a.quem, 38)
     : el('span', { class: `aviso-icone ${a.tipo}` }, ICONE[a.tipo]?.length > 1 ? ico(ICONE[a.tipo]) : ICONE[a.tipo] || '•');
-  return el('li', {},
+  return el('li', { class: `aviso-item ${a.tipo}` },
     el('button', {
       class: 'aviso' + (novo ? ' novo' : ''),
       onclick: () => {
@@ -227,8 +232,17 @@ function linha(a, visto) {
       marca,
       el('span', { class: 'aviso-texto' },
         a.texto,
-        el('small', {}, tempoRelativo(a.em))),
-    ));
+        el('small', {}, tempoRelativo(a.em)),
+        a.acao ? el('em', { class: 'aviso-acao' }, a.acao) : null),
+      novo ? el('span', { class: 'aviso-bolinha' }) : null,
+    ),
+    el('button', {
+      class: 'aviso-x', title: 'Apagar aviso', 'aria-label': 'Apagar aviso',
+      onclick: () => {
+        avisos().lista = avisos().lista.filter(x => x.id !== a.id);
+        gravar(); pintarLista(); pintar();
+      },
+    }, '✕'));
 }
 
 function pintar({ chegou = false } = {}) {
@@ -247,12 +261,19 @@ let vistoAoAbrir = '';
 
 function pintarLista() {
   const lista = avisos().lista;
-  listaEl.replaceChildren(...lista.map(a => linha(a, vistoAoAbrir)));
+  const hoje = hojeISO();
+  const deHoje = lista.filter(a => a.em.slice(0, 10) === hoje || a.em > vistoAoAbrir);
+  const antes = lista.filter(a => !deHoje.includes(a));
+  const grupo = (nome, itens) => itens.length
+    ? [el('li', { class: 'avisos-grupo' }, nome), ...itens.map(a => linha(a, vistoAoAbrir))] : [];
+  listaEl.replaceChildren(...grupo('Hoje', deHoje), ...grupo('Antes', antes));
   $('#avisos-vazio').hidden = lista.length > 0;
   $('#avisos-limpar').hidden = !lista.length;
+  $('#avisos-lidas').hidden = !lista.some(a => a.em > vistoAoAbrir);
 }
 
 function abrir() {
+  expirar();
   vistoAoAbrir = avisos().vistoEm || '';
   painel.hidden = false;
   botao.setAttribute('aria-expanded', 'true');
@@ -280,6 +301,12 @@ export function montarAvisos() {
     e.stopPropagation();
     painel.hidden ? abrir() : fechar();
   });
+  $('#avisos-lidas').addEventListener('click', () => {
+    vistoAoAbrir = avisos().vistoEm = new Date().toISOString();
+    gravar();
+    pintarLista();
+    pintar();
+  });
   $('#avisos-limpar').addEventListener('click', () => {
     avisos().lista = [];
     gravar();
@@ -299,6 +326,7 @@ export function montarAvisos() {
   db.onChange(() => pintar());
 
   // Os seguidores o boot acabou de ler (sincronizarSocial); o feed, não.
+  expirar();
   conferirDia();
   conferirWishlist();
   conferirFeed();
