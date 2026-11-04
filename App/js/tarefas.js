@@ -306,7 +306,7 @@ function renderMural() {
 const TROCAS = [
   { id: 'resgate', nome: 'Resgate extra', texto: 'Mais uma peça na loja. Fica guardado até usar.',
     icone: () => ico('sacola'), preco: () => FICHAS.porResgate,
-    acao: () => { const ok = db.trocarFichasPorResgate(); if (ok) toast('+1 resgate.', 'rare'); return ok; } },
+    acao: () => { const ok = db.trocarFichasPorResgate(); if (ok) toast('+1 resgate.', 'rare'); if (ok) db.progredirMissao('comprar-resgate'); return ok; } },
   { id: 'repor', nome: 'Repor a loja', texto: 'Arara nova quando quiser: use no ↻ da vitrine.',
     icone: () => ico('atualizar'), preco: () => FICHAS.porRepor,
     acao: () => { const ok = db.comprarRepor(); if (ok) toast('+1 repor. Use no ↻ da vitrine.', 'rare'); return ok; },

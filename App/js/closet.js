@@ -230,7 +230,7 @@ function desenharPagina() {
     $('#closet-paginas').hidden = true;
     grid.append(el('p', { class: 'closet-vazio' },
       categoriaAtual === 'todas'
-        ? 'Guarda-roupa vazio. Garimpe na vitrine — o dono repõe todo dia.'
+        ? 'Guarda-roupa vazio. Garimpe na vitrine — a loja repõe todo dia.'
         : 'Nada nesta categoria ainda.'));
     return;
   }
