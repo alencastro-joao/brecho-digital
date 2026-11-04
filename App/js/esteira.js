@@ -775,8 +775,39 @@ async function lerJogos() {
     const dados = await r.json();
     nosJogos = new Set(dados.nosJogos || []);
     prontasJogos = new Set((dados.pecas || []).filter(p => nosJogos.has(p.peca) && !(p.faltam || []).length).map(p => p.peca));
+    await atualizarComJogos(dados.pecas || []);
     desenhar();
   } catch { /* sem o selo, segue */ }
+}
+
+// Na vista "Nos jogos" a ficha e a medida acompanham o que saiu dos jogos:
+// tipo, cor e marca (resposta fechada) e a medida (mediana, 2 ou mais). A
+// raridade fica como o João deixou. Só grava quando algo mudou.
+const semAcento = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const capitalizar = (t) => t.replace(/(^|\s)\S/g, l => l.toUpperCase());
+async function atualizarComJogos(pecas) {
+  for (const r of pecas) {
+    const item = itens.find(i => i.id === r.peca);
+    if (!item || !nosJogos.has(item.id) || guardando.has(item.id)) continue;
+    const ficha = { ...(item.ficha || {}) };
+    if (r.cat?.pronto && CATEGORIAS[r.cat.valor]) ficha.cat = r.cat.valor;
+    if (r.cor?.pronto) ficha.cor = CORES.find(c => semAcento(c.nome) === r.cor.valor)?.nome || capitalizar(r.cor.valor);
+    if (r.marca?.pronto) ficha.marca = r.marca.valor ? capitalizar(r.marca.valor) : '';
+    const corpo = {};
+    const velha = item.ficha || {};
+    if (['cat', 'cor', 'marca'].some(k => (ficha[k] || '') !== (velha[k] || ''))) corpo.ficha = ficha;
+    const aj = r.ajuste;
+    if (aj && aj.medidas >= 2 && CATEGORIAS[ficha.cat]) {
+      const m = item.medida || {};
+      if (m.x !== aj.x || m.y !== aj.y || m.w !== aj.w) corpo.medida = { x: aj.x, y: aj.y, w: aj.w };
+    }
+    if (!Object.keys(corpo).length) continue;
+    try {
+      await api(`/${item.id}`, { metodo: 'PUT', corpo });
+      Object.assign(item, corpo.ficha ? { ficha } : {}, corpo.medida ? { medida: corpo.medida } : {});
+    } catch { /* tenta de novo na próxima leitura */ }
+  }
+  desenhar();
 }
 
 async function mandarParaJogos(lista) {
