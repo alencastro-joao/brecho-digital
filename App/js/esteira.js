@@ -798,10 +798,11 @@ async function atualizarComJogos(pecas) {
     if (r.cat?.pronto && CATEGORIAS[r.cat.valor]) ficha.cat = r.cat.valor;
     if (!ficha.cat) ficha.cat = migrarCategoria(item.sugestao?.cat || '');
     if (r.cor?.pronto) ficha.cor = CORES.find(c => semAcento(c.nome) === r.cor.valor)?.nome || capitalizar(r.cor.valor);
-    // A marca nunca vem dos jogos: peça sem marca fica vazia (pedido do João).
+    // A marca vem sempre dos jogos; sem resposta fechada, fica vazia (pedido do João).
+    ficha.marca = r.marca?.pronto && r.marca.valor ? capitalizar(r.marca.valor) : '';
     const corpo = {};
     const velha = item.ficha || {};
-    if (['cat', 'cor'].some(k => (ficha[k] || '') !== (velha[k] || ''))) corpo.ficha = ficha;
+    if (['cat', 'cor', 'marca'].some(k => (ficha[k] || '') !== (velha[k] || ''))) corpo.ficha = ficha;
     const aj = r.ajuste;
     if (aj && aj.medidas >= 2 && CATEGORIAS[ficha.cat]) {
       const m = item.medida || {};
