@@ -5,7 +5,7 @@
 // com a última foto que o save guardou dela, e o que mudou vira aviso:
 //   * feed       curtidas e comentários de outras pessoas nos seus posts;
 //   * seguidores quem passou a seguir você;
-//   * missões    missão fechada, dia inteiro fechado, nível novo (db.onXP);
+//   * nível      nível novo (db.onXP);
 //   * loja       a vitrine que virou o dia, ou que o admin repôs;
 //   * wishlist   peça da sua wishlist pendurada na sua loja hoje.
 //
@@ -43,7 +43,11 @@ function gravar() {
 function expirar() {
   const corte = new Date(Date.now() - VALIDADE).toISOString();
   const a = avisos();
-  if (a.lista.some(x => x.em < corte)) { a.lista = a.lista.filter(x => x.em >= corte); gravar(); }
+  // Também some o que já estava guardado de missões cumpridas.
+  if (a.lista.some(x => x.em < corte || x.tipo === 'missao')) {
+    a.lista = a.lista.filter(x => x.em >= corte && x.tipo !== 'missao');
+    gravar();
+  }
 }
 
 const naoLidos = () => {
@@ -134,13 +138,7 @@ function conferirSeguidores(ids) {
 }
 
 function aoGanharXP(evento) {
-  if (evento.motivo.startsWith('missão: ')) {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `${evento.motivo.slice(8)} · +${evento.xp} XP` });
-  } else if (evento.motivo.startsWith('missão da semana: ')) {
-    avisar({ tipo: 'missao', ir: ['tarefas'],
-             texto: `Semana: ${evento.motivo.slice(18)} · +${evento.xp} XP` });
-  }
+  // Missão cumprida não avisa mais: o João pediu para tirar do sino.
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
              texto: `Nível ${evento.nivel}: prêmio na trilha.` });
