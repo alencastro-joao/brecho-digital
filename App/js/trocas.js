@@ -4,13 +4,14 @@
 //   1. Na ficha de uma peça de uma amiga aparece o botão Trocar.
 //   2. Você marca de 1 a `maxOpcoes` peças suas da mesma raridade e envia.
 //   3. Ela recebe no sino, escolhe uma das suas (ou recusa).
-//   4. Aceitou: uma peça vai, a outra vem, e só aí as duas pagam as fichas
-//      (o custo é pela raridade, não pelo número de peças oferecidas).
+//   4. Quem envia já separa as fichas (pela raridade, não pelo número de
+//      opções); recusou, cancelou ou venceu, elas voltam. Quem aceita paga ao
+//      aceitar. Uma peça vai, a outra vem.
 //
 // Quem decide é o servidor (nuvem/lambda/trocas.py): ele confere a amizade, a
 // raridade e quem é dona de cada cópia numerada, e troca as duas de dono numa
 // transação só. O save só aplica o resultado: tira a peça que foi (e os looks
-// e colagens que a usavam), põe a que veio e cobra as fichas.
+// e colagens que a usavam), põe a que veio e cobra ou devolve as fichas.
 // Ofertas e respostas chegam relendo /api/trocas (no boot, de tempos em
 // tempos e ao voltar para a aba): não há push.
 
@@ -112,12 +113,53 @@ function janela(...conteudo) {
   return { caixa, fundo, fechar };
 }
 
-// As telas da troca (propor, ver e responder) ocupam a tela toda; só o "i" é janelinha.
-function telaCheia(...conteudo) {
-  const j = janela(...conteudo);
-  j.fundo.classList.add('troca-tela');
-  return j;
+// As telas da troca (propor, ver e responder) ocupam a tela toda, no
+// acabamento do jogo: barra pérola em cima (voltar, título, "i"), o corpo em
+// painéis e os botões presos embaixo. Só o "i" abre janelinha.
+function telaTroca(titulo, corpo, rodape) {
+  const voltar = el('button', { type: 'button', class: 'troca-voltar', title: 'Voltar', 'aria-label': 'Voltar' }, ico('seta-esq'));
+  const caixa = el('div', { class: 'troca-tela-caixa', role: 'dialog', 'aria-modal': 'true', 'aria-label': titulo },
+    el('header', { class: 'troca-topo' }, voltar, el('h2', {}, titulo), botaoInfo()),
+    el('div', { class: 'troca-corpo' }, ...corpo),
+    el('footer', { class: 'troca-rodape' }, ...rodape));
+  const fundo = el('div', { class: 'modal troca-janela troca-tela' }, caixa);
+  const tinha = document.body.classList.contains('com-modal');
+  const fechar = () => {
+    fundo.remove();
+    document.removeEventListener('keydown', tecla, true);
+    if (!tinha && !document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
+  };
+  const tecla = (e) => {
+    if (e.key === 'Escape' && fundo === [...document.querySelectorAll('.troca-janela')].pop()) { e.stopPropagation(); fechar(); }
+  };
+  voltar.addEventListener('click', () => fechar());
+  document.addEventListener('keydown', tecla, true);
+  document.body.append(fundo);
+  document.body.classList.add('com-modal');
+  tocar('janela');
+  return { caixa, fechar };
 }
+
+// Um painel com rótulo, como os do resto do jogo.
+const secao = (rotulo, ...conteudo) =>
+  el('section', { class: 'troca-secao' }, rotulo ? el('h3', { class: 'troca-secao-rotulo' }, rotulo) : null, ...conteudo);
+
+// O topo da troca: a peça que vai, as setas e a que vem (ou o lugar dela).
+function placar(dou, recebo, { rotuloDou = 'Você dá', rotuloRecebo = 'Você recebe' } = {}) {
+  const lado = (rotulo, conteudo) => el('div', { class: 'troca-lado' }, el('span', { class: 'troca-lado-rotulo' }, rotulo), conteudo);
+  const vazio = (texto) => el('div', { class: 'troca-fig troca-vazio' }, el('span', {}, '?'), el('small', {}, texto));
+  const slotDou = lado(rotuloDou, dou || vazio('escolha'));
+  const slotRecebo = lado(rotuloRecebo, recebo || vazio('escolha'));
+  const no = el('div', { class: 'troca-placar' }, slotDou,
+    el('span', { class: 'troca-setas', 'aria-hidden': 'true' }, ico('atualizar')), slotRecebo);
+  no.trocarDou = (fig, texto = 'escolha') => slotDou.lastChild.replaceWith(fig || vazio(texto));
+  no.trocarRecebo = (fig, texto = 'escolha') => slotRecebo.lastChild.replaceWith(fig || vazio(texto));
+  return no;
+}
+
+// O preço no botão: "Aceitar · (moeda) 1".
+const comPreco = (texto, rar) => [texto,
+  el('span', { class: 'troca-preco' }, el('span', { class: 'ficha-moeda' }), String(custoDa(rar)))];
 
 // `so`: só a foto (nas grades de escolha, sem nome nem número; João, 04/11/2026).
 function figura(copia, { rotulo = '', classe = '', so = false } = {}) {
@@ -142,11 +184,12 @@ function grade(copias, max, aoMudar) {
   const botoes = copias.map((c, i) => {
     const b = el('button', { type: 'button', class: 'troca-opcao', 'aria-pressed': 'false' }, figura(c, { so: true }));
     b.addEventListener('click', () => {
-      if (marcadas.has(i)) marcadas.delete(i);
+      if (marcadas.has(i)) { marcadas.delete(i); tocar('desfazer'); }
       else {
         if (max === 1) marcadas.clear();
-        if (marcadas.size >= max) return toast(`No máximo ${max} peças.`);
+        if (marcadas.size >= max) { tocar('naocurti'); return toast(`No máximo ${max} peças.`); }
         marcadas.add(i);
+        tocar('escolha');
       }
       botoes.forEach((x, j) => x.setAttribute('aria-pressed', String(marcadas.has(j))));
       aoMudar([...marcadas]);
@@ -170,27 +213,24 @@ function gradeComFerramentas(copias, max, aoMudar) {
   const tem = new Set(copias.map(grupoDe));
   const filtrar = el('select', {
     class: 'ordem-sel', title: 'Filtrar as peças', 'aria-label': 'Filtrar as peças',
-    onchange: (e) => { filtro = e.target.value; pintar(); },
+    onchange: (e) => { filtro = e.target.value; tocar('toque'); pintar(); },
   }, el('option', { value: '' }, 'Todas'),
     ...ag.ordem.filter(id => tem.has(id)).map(id => el('option', { value: id }, ag.grupos[id]?.nome || id)));
   pintar();
   return [
     el('div', { class: 'troca-ferramentas' },
       el('div', { class: 'troca-campo' }, el('span', {}, 'Filtrar'), filtrar),
-      el('div', { class: 'troca-campo' }, el('span', {}, 'Organizar'), seletorDeOrdem(pintar))),
+      el('div', { class: 'troca-campo' }, el('span', {}, 'Organizar'), seletorDeOrdem(() => { tocar('toque'); pintar(); }))),
     caixa,
   ];
 }
-
-const linhaDeCusto = (rar) =>
-  el('p', { class: 'troca-custo' }, `${custoDa(rar)} ficha${custoDa(rar) === 1 ? '' : 's'} · você tem ${db.fichas()}`);
 
 // O "i" no canto da janela: a explicação fica em cards, não na tela (João, 04/11/2026).
 const CARDS = () => [
   ['usuario', 'Só entre amigos', 'Dá para trocar com quem você segue e também segue você.'],
   ['brilho', 'Mesma raridade', 'Uma peça por uma, sempre da mesma raridade.'],
   ['mao', 'Até 4 opções', `Você marca até ${TROCAS.maxOpcoes} peças suas. A outra pessoa escolhe uma ou recusa.`],
-  ['ficha', 'Fichas', 'As duas pagam só quando a troca acontece: ' +
+  ['ficha', 'Fichas', 'Quem envia já separa as fichas e, se a troca não sair, elas voltam. Quem aceita paga ao aceitar: ' +
     RARIDADES_CUSTO().join(', ') + '.'],
   ['atualizar', `${TROCAS.porDia} por dia`, `No máximo ${TROCAS.porDia} trocas por dia. A peça que você dá sai dos seus looks e colagens.`],
 ];
@@ -219,19 +259,18 @@ export function abrirProposta(peca, p) {
   const rar = raridadeNaPagina(p, peca.id);
   const minhas = minhasParaOferecer(rar, p);
   let escolhidas = [];
-  const enviar = el('button', { type: 'button', class: 'btn-dark', disabled: true }, 'Enviar');
-  const { caixa, fechar } = telaCheia(
-    el('h2', { class: 'pergunta-titulo' }, 'Propor troca'),
-    figura({ id: peca.id, raridade: rar }, { rotulo: `de ${handle(p.handle)}`, classe: 'troca-alvo' }),
-    ...gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => {
-      escolhidas = lista; enviar.disabled = !lista.length;
-      enviar.textContent = lista.length ? `Enviar (${lista.length})` : 'Enviar';
-    }),
-    linhaDeCusto(rar),
-    el('div', { class: 'pergunta-botoes' },
-      el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'),
-      enviar));
-  caixa.append(botaoInfo());
+  const enviar = el('button', { type: 'button', class: 'btn-dark troca-aceitar', disabled: true }, ...comPreco('Enviar', rar));
+  const topo = placar(null, figura({ id: peca.id, raridade: rar }, { rotulo: `de ${handle(p.handle)}` }),
+    { rotuloDou: 'Você oferece', rotuloRecebo: 'Você quer' });
+  topo.trocarDou(null, `até ${TROCAS.maxOpcoes}`);
+  const [ferramentas, gradeMinha] = gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => {
+    escolhidas = lista; enviar.disabled = !lista.length;
+    enviar.replaceChildren(...comPreco(lista.length ? `Enviar (${lista.length})` : 'Enviar', rar));
+    topo.trocarDou(lista.length ? pilha(lista.map(i => minhas[i])) : null, `até ${TROCAS.maxOpcoes}`);
+  });
+  const { fechar } = telaTroca('Propor troca',
+    [topo, secao(`Suas peças · ${RARIDADE[rar]?.nome || ''}`, ferramentas, gradeMinha)],
+    [el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'), enviar]);
   enviar.addEventListener('click', async () => {
     const custo = custoDa(rar);
     if (db.fichas() < custo) return toast(`Faltam fichas: a troca custa ${custo}.`);
@@ -243,14 +282,27 @@ export function abrirProposta(peca, p) {
           id: c.id, raridade: c.raridade, numero: c.numero,
           origem: c.origem || 'vitrine', desde: c.obtidoEm })),
       });
+      // As fichas ficam separadas; voltam se a troca não sair (aplicarPendentes).
+      db.state.fichas = db.fichas() - custo;
+      registro().cobradas[troca.id] = custo;
+      db.salvar();
       ultimas = [troca, ...ultimas.filter(t => t.id !== troca.id)];
       fechar();
-      toast(`Oferta enviada para ${handle(p.handle)}.`, 'ok');
+      tocar('gastar');
+      toast(`Oferta enviada para ${handle(p.handle)}. ${custo} ficha${custo === 1 ? '' : 's'} separada${custo === 1 ? '' : 's'}.`, 'ok');
     } catch (e) {
       enviar.disabled = false;
+      tocar('naocurti');
       toast(e.message, 'erro');
     }
   });
+}
+
+// As opções marcadas, empilhadas no lado "Você oferece".
+function pilha(copias) {
+  return el('div', { class: 'troca-fig troca-pilha' },
+    el('div', { class: 'troca-pilha-fotos' }, ...copias.slice(0, 4).map(c => figura(c, { so: true }))),
+    el('small', {}, `${copias.length} opç${copias.length === 1 ? 'ão' : 'ões'}`));
 }
 
 // --------------------------- A oferta (as duas) ----------------------------
@@ -259,57 +311,68 @@ export async function abrirOferta(trocaId) {
   if (!t || t.estado === 'aberta') { await sincronizarTrocas(); t = ultimas.find(x => x.id === trocaId) || t; }
   if (!t) return toast('Essa troca não está mais aqui.');
   if (t.souEu === 'para' && t.estado === 'aberta') return janelaDeResposta(t);
-  const outra = t.souEu === 'de' ? t.para.handle : t.de.handle;
-  const texto = {
-    aberta: `Esperando ${outra} escolher.`,
-    feita: 'Troca feita.',
-    recusada: `${outra} recusou.`,
-    cancelada: 'Oferta cancelada.',
-    vencida: 'A oferta venceu sem resposta.',
-    invalida: `A troca não deu certo${t.motivo ? ': ' + t.motivo : ''}.`,
+  const souDe = t.souEu === 'de';
+  const outra = souDe ? t.para.handle : t.de.handle;
+  const estado = {
+    aberta: `Esperando ${outra} escolher`,
+    feita: 'Troca feita',
+    recusada: `${outra} recusou`,
+    cancelada: 'Oferta cancelada',
+    vencida: 'Venceu sem resposta',
+    invalida: `Não deu certo${t.motivo ? ': ' + t.motivo : ''}`,
   }[t.estado] || '';
-  const acoes = el('div', { class: 'pergunta-botoes' });
-  const { fechar } = telaCheia(
-    el('h2', { class: 'pergunta-titulo' }, t.souEu === 'de' ? `Sua oferta para ${outra}` : `Oferta de ${outra}`),
-    figura(t.quero, { classe: 'troca-alvo', rotulo: t.souEu === 'de' ? 'a peça que você pediu' : 'a sua peça' }),
-    el('p', { class: 'pergunta-texto' }, texto),
-    el('div', { class: 'troca-grade' }, ...t.opcoes.map((c, i) =>
-      figura(c, { so: true, classe: t.escolhida === i ? 'escolhida' : '' }))),
-    acoes);
-  if (t.souEu === 'de' && t.estado === 'aberta') {
-    acoes.append(el('button', {
-      type: 'button', class: 'btn-dark perigo',
+  const escolhida = t.opcoes[t.escolhida];
+  const quero = figura(t.quero, { rotulo: souDe ? `de ${handle(t.para.handle)}` : '' });
+  const outraFig = escolhida ? figura(escolhida) : null;
+  const topo = souDe
+    ? placar(outraFig, quero, { rotuloDou: 'Você oferece', rotuloRecebo: 'Você quer' })
+    : placar(quero, outraFig);
+  if (souDe && !escolhida) topo.trocarDou(pilha(t.opcoes));
+  const rodape = [];
+  if (souDe && t.estado === 'aberta') {
+    rodape.push(el('button', {
+      type: 'button', class: 'btn-ghost perigo',
       onclick: async () => {
         try {
           guardar((await chamar(`/api/trocas/${t.id}/cancelar`, {})).troca);
           await aplicarPendentes();
           fechar();
-          toast('Oferta cancelada.');
+          tocar('desfazer');
+          toast('Oferta cancelada. As fichas voltaram.');
         } catch (e) { toast(e.message, 'erro'); }
       },
     }, 'Cancelar oferta'));
   }
-  acoes.append(el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Fechar'));
+  rodape.push(el('button', { type: 'button', class: 'btn-dark', onclick: () => fechar() }, 'Fechar'));
+  const { fechar } = telaTroca(souDe ? `Sua oferta para ${handle(outra)}` : `Oferta de ${handle(outra)}`,
+    [topo,
+      el('p', { class: 'troca-estado ' + t.estado }, estado),
+      secao('Opções oferecidas', el('div', { class: 'troca-grade' }, ...t.opcoes.map((c, i) =>
+        figura(c, { so: true, classe: t.escolhida === i ? 'escolhida' : '' }))))],
+    rodape);
 }
 
 function janelaDeResposta(t) {
   const rar = t.quero.raridade;
   const minha = db.pecaDoInventario(t.quero.id);
   let escolhida = null;
-  const aceitar = el('button', { type: 'button', class: 'btn-dark', disabled: true }, 'Aceitar');
+  const aceitar = el('button', { type: 'button', class: 'btn-dark troca-aceitar', disabled: true }, ...comPreco('Aceitar', rar));
   const recusar = el('button', { type: 'button', class: 'btn-ghost' }, 'Recusar');
-  const { caixa, fechar } = telaCheia(
-    el('h2', { class: 'pergunta-titulo' }, `${t.de.handle} quer trocar`),
-    figura({ ...t.quero, numero: minha?.numero }, { classe: 'troca-alvo', rotulo: 'a sua peça' }),
-    el('p', { class: 'pergunta-texto' }, 'Escolha uma ou recuse.'),
-    grade(t.opcoes, 1, (lista) => { escolhida = lista[0] ?? null; aceitar.disabled = escolhida === null; }),
-    linhaDeCusto(rar),
-    el('div', { class: 'pergunta-botoes' }, recusar, aceitar));
-  caixa.append(botaoInfo());
+  const topo = placar(figura({ ...t.quero, numero: minha?.numero }), null);
+  const { fechar } = telaTroca(`Oferta de ${handle(t.de.handle)}`,
+    [topo,
+      secao(`Escolha o que você recebe`,
+        grade(t.opcoes, 1, (lista) => {
+          escolhida = lista[0] ?? null;
+          aceitar.disabled = escolhida === null;
+          topo.trocarRecebo(escolhida === null ? null : figura(t.opcoes[escolhida]));
+        }))],
+    [recusar, aceitar]);
   recusar.addEventListener('click', async () => {
     try {
       guardar((await chamar(`/api/trocas/${t.id}/recusar`, {})).troca);
       fechar();
+      tocar('desfazer');
       toast('Oferta recusada.');
     } catch (e) { toast(e.message, 'erro'); }
   });
@@ -324,10 +387,11 @@ function janelaDeResposta(t) {
         escolhida, minha: { numero: minha.numero, origem: minha.origem || 'vitrine', desde: minha.obtidoEm } });
       guardar(troca);
       fechar();
-      if (troca.estado === 'feita') await aplicarPendentes();
-      else toast(`A troca não deu certo${troca.motivo ? ': ' + troca.motivo : ''}.`, 'erro');
+      if (troca.estado === 'feita') { tocar('gastar'); await aplicarPendentes(); }
+      else tocar('naocurti'), toast(`A troca não deu certo${troca.motivo ? ': ' + troca.motivo : ''}.`, 'erro');
     } catch (e) {
       aceitar.disabled = false;
+      tocar('naocurti');
       toast(e.message, 'erro');
     }
   });
@@ -367,8 +431,7 @@ function aplicarFeita(t) {
   if (db.naWishlist(recebo.id)) db.alternarWishlist(recebo.id);
   esquecerHistorico(dou);
   esquecerHistorico(recebo);
-  // As duas pagam só agora, com a troca feita. Oferta antiga (de quando quem
-  // pedia pagava ao enviar) já está paga.
+  // Quem enviou já separou as fichas ao enviar; quem aceitou paga agora.
   if (!registro().cobradas[t.id]) db.state.fichas = Math.max(0, db.fichas() - custoDa(recebo.raridade));
   delete registro().cobradas[t.id];
   db.progredirMissao('trocar');
@@ -387,7 +450,7 @@ async function aplicarPendentes() {
       if (t.souEu === 'de') avisarTroca({ troca: t.id, quem: t.para.id, texto: `${t.para.handle} aceitou sua troca.` });
     } else if (t.souEu === 'de') {
       const volta = registro().cobradas[t.id] || 0;
-      if (volta) db.state.fichas = db.fichas() + volta;
+      if (volta) { db.state.fichas = db.fichas() + volta; tocar('xp'); }
       delete registro().cobradas[t.id];
       if (t.estado !== 'cancelada') {
         const como = { recusada: 'recusou', vencida: 'não respondeu', invalida: 'não conseguiu fazer' }[t.estado];
@@ -406,13 +469,16 @@ async function aplicarPendentes() {
 // Oferta nova para mim: vira aviso uma vez só.
 function avisarNovas() {
   const r = registro();
+  let nova = false;
   for (const t of ultimas) {
     if (t.souEu !== 'para' || t.estado !== 'aberta' || r.avisadas.includes(t.id)) continue;
     const peca = pecaDoCatalogo(t.quero.id);
     avisarTroca({ troca: t.id, quem: t.de.id,
       texto: `${t.de.handle} quer trocar ${peca ? nomeDaPeca(peca) : 'uma peça sua'}.`, acao: 'Ver opções' });
     r.avisadas.push(t.id);
+    nova = true;
   }
+  if (nova) tocar('aviso');
   r.avisadas = r.avisadas.slice(-60);
 }
 
@@ -450,6 +516,7 @@ function animarTroca({ dou, recebo, perdidos }) {
     fundo.addEventListener('click', (e) => { if (e.target === fundo) fechar(); });
     document.body.append(fundo);
     tocar('bau');
+    setTimeout(() => tocar('pegou', recebo.raridade), 1300);
     requestAnimationFrame(() => fundo.classList.add('rodando'));
   });
 }
