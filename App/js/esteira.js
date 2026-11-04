@@ -393,7 +393,7 @@ let verProntas = false;
 const jaFeita = (item) => {
   if (item.estado !== 'pronta' || !item.medida) return false;
   const f = fichaDe(item);
-  return !!(f.cat && f.cor && f.nome && f.marca);
+  return !!(f.cat && f.cor && f.nome);
 };
 const éPronta = (item) => prontasJogos.has(item.id) || jaFeita(item);
 const naVista = (item) => (verProntas ? éPronta(item) : nosJogos.has(item.id) === verJogos);
@@ -798,10 +798,10 @@ async function atualizarComJogos(pecas) {
     if (r.cat?.pronto && CATEGORIAS[r.cat.valor]) ficha.cat = r.cat.valor;
     if (!ficha.cat) ficha.cat = migrarCategoria(item.sugestao?.cat || '');
     if (r.cor?.pronto) ficha.cor = CORES.find(c => semAcento(c.nome) === r.cor.valor)?.nome || capitalizar(r.cor.valor);
-    if (r.marca?.pronto) ficha.marca = r.marca.valor ? capitalizar(r.marca.valor) : '';
+    // A marca nunca vem dos jogos: peça sem marca fica vazia (pedido do João).
     const corpo = {};
     const velha = item.ficha || {};
-    if (['cat', 'cor', 'marca'].some(k => (ficha[k] || '') !== (velha[k] || ''))) corpo.ficha = ficha;
+    if (['cat', 'cor'].some(k => (ficha[k] || '') !== (velha[k] || ''))) corpo.ficha = ficha;
     const aj = r.ajuste;
     if (aj && aj.medidas >= 2 && CATEGORIAS[ficha.cat]) {
       const m = item.medida || {};
