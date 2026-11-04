@@ -1714,7 +1714,7 @@ export const INTRO = [
     dica: 'Vamos criar o seu personagem! Quando terminar, toque em Salvar.',
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
-    dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia.' },
+    dica: 'A loja muda todo dia: toda manhã chegam peças novas.' },
   // Primeiro as 3 peças do dia (`meta`), depois repor, comprar um congelamento
   // com fichas e só então congelar: a ordem em que a loja é usada de verdade.
   { evento: 'resgates', meta: 3, ir: 'vitrine', lugar: 'cima', nome: 'Pegue 3 peças',
@@ -1731,17 +1731,21 @@ export const INTRO = [
       'Os resgates de hoje continuam contados.',
     premio: { xp: 20, fichas: 2 } },
   { evento: 'comprar-congelar', ir: 'tarefas', lugar: 'baixo', fichasMin: 2, nome: 'Compre um congelamento',
-    dica: 'Fichas compram itens da loja. Toque nas suas fichas (ao lado do nível) e troque 2 delas por um congelamento. Se faltar ficha, damos o que falta.',
+    dica: 'Fichas compram itens da loja. Toque nas suas fichas (ao lado do nível) e troque 2 delas por um congelamento.',
     premio: { xp: 20 } },
   { evento: 'congelar', ir: 'vitrine', lugar: 'cima', nome: 'Congele uma peça',
     dica: 'Gostou de uma peça mas não quer pegar agora? Toque nela no mural e em Congelar: ela fica guardada na loja até o fim de amanhã, mesmo que o mural mude. ' +
       'Peça que já é sua não dá para congelar.',
+    premio: { xp: 20, fichas: 6 } },
+  // Sem resgates, mas com a peça congelada esperando: comprar um resgate extra.
+  { evento: 'comprar-resgate', ir: 'tarefas', lugar: 'baixo', fichasMin: 6, nome: 'Compre um resgate extra',
+    dica: 'Acabaram os resgates de hoje? Toque nas suas fichas e troque 6 delas por um resgate extra. Depois, é só pegar a peça congelada.',
     premio: { xp: 20 } },
   { ir: 'closet', demo: 'peca', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
       'Toque numa peça para ver a ficha com marca, cor e estilo.' },
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
-    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças o dono separa um item do avatar no balcão.' },
+    dica: 'Peças parecidas formam coleções, e coleções rendem itens para o seu avatar.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
     dica: 'Toque no item separado para levá-lo ao inventário. Itens do avatar não gastam resgate do dia.',
     premio: { xp: 20 } },

@@ -785,6 +785,7 @@ async function pegar(id, noDOM) {
       pegando.delete(id);
       if (!comprar || !db.trocarFichasPorResgate()) return;
       toast('+1 resgate.', 'rare');
+      db.progredirMissao('comprar-resgate');
       atualizarBadge();
       return pegar(id, noDOM);
     }

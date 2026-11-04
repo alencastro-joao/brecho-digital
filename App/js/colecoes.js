@@ -37,7 +37,7 @@ const GRUPOS = [
 ];
 
 // Como os itens saem, igual nas três abas.
-const COMO_SAI = 'Na 3ª peça da coleção o dono separa o primeiro item do avatar no balcão; os outros saem de 3 em 3 peças (6, 9, 12...), sem nunca pedir a coleção inteira. Levar um item não gasta resgate.';
+const COMO_SAI = 'Na 3ª peça da coleção o primeiro item do avatar fica disponível no balcão; os outros saem de 3 em 3 peças (6, 9, 12...), sem nunca pedir a coleção inteira. Levar um item não gasta resgate.';
 
 const EXPLICACAO = {
   marcas: 'Garimpe peças de uma marca para ganhar os itens dela no avatar. ' + COMO_SAI + ' Vestir os itens de uma marca ativa o efeito dela; os efeitos na arara valem pelo que você vestia ao abrir a loja no dia.',
