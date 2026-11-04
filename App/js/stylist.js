@@ -786,14 +786,32 @@ const noAtual = (cs) => cs.map(c => ({ ...c, ...doPadraoParaAtual(regiaoDe(c), c
 const noPadrao = (cs) => cs.map(c => ({ ...c, ...doAtualParaPadrao(regiaoDe(c), c) }));
 
 async function publicarLook() {
-  const look = await salvarLook({ silencioso: true });
+  let look = await salvarLook({ silencioso: true });
   if (!look) return;
 
-  // Já está no feed: a versão nova substitui a imagem do post (curtidas e
-  // comentários ficam).
+  // Este stylist já tem post no feed: pergunta se é para trocar o post antigo
+  // ou se este é outro look (aí vira um post novo, com cópia do look).
   if (look.publicado && jaPublicado('lookId', look.id)) {
-    if (!await confirmar('As curtidas e os comentários continuam.',
-      { titulo: 'Atualizar o post no feed com esta versão?', sim: 'Atualizar' })) return;
+    const atualizar = await confirmar(
+      `"${look.nome}" já está no feed. Atualizar o post antigo (curtidas e comentários ficam) ou postar este como um look novo?`,
+      { titulo: 'Atualizar ou postar novo?', sim: 'Atualizar o post', nao: 'Postar como novo' });
+    if (!atualizar) {
+      const copia = {
+        ...look,
+        id: idNovo('l'),
+        nome: nomeLivre(look.nome, db.state.looks),
+        criadoEm: new Date().toISOString(),
+        publicado: false,
+      };
+      db.state.looks.push(copia);
+      db.state.stats.looks += 1;
+      lookAtualId = copia.id;
+      $('#outfit-nome').value = copia.nome;
+      look = copia;
+      renderSalvos();
+    }
+  }
+  if (look.publicado && jaPublicado('lookId', look.id)) {
     try {
       await publicarNoFeed({ ...await pacoteDoLook(look), atualizar: true });
       return toast('Post atualizado no feed.');
