@@ -563,3 +563,7 @@
 .bp-palco { position: relative; }
 .bp-x { position: absolute; top: 12px; right: 12px; }
 .bp-info { font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
+
+/* Pedido do Diário/Semana ainda por fazer: toca e vai para a tela dele. */
+.tf-item.abre { cursor: pointer; }
+.tf-item.abre:active { transform: scale(.985); }
