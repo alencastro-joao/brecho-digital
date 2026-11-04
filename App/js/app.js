@@ -18,8 +18,9 @@ import { montarNPC, falarDe } from './npc.js';
 import { iniciarRouter, onEnter } from './router.js';
 import { montarVitrine, aoEntrarNaVitrine, atualizarBadge, precarregarVitrine } from './vitrine.js';
 import { montarCloset, aoEntrarNoCloset } from './closet.js';
-import { montarStylist, aoEntrarNoStylist } from './stylist.js';
-import { montarBoard, aoEntrarNoBoard } from './board.js';
+import { montarStylist, aoEntrarNoStylist, rascunhoDoStylist, retomarStylist } from './stylist.js';
+import { montarBoard, aoEntrarNoBoard, rascunhoDaColagem, retomarColagem } from './board.js';
+import * as retomada from './retomar.js';
 import { aoEntrarNoSocial } from './social.js';
 import { montarUsuario, aoEntrarNoUsuario } from './usuario.js';
 import { montarTarefas, aoEntrarNasTarefas } from './tarefas.js';
@@ -192,6 +193,13 @@ async function iniciar() {
   onEnter('usuario', aoEntrarNoUsuario);
   onEnter('personagem', aoEntrarNoPersonagem);
   onEnter('vestiario', aoEntrarNoVestiario);
+
+  // O que estava em andamento quando o celular matou a aba (o palco, a mesa, a
+  // tela) volta antes do roteador, que já abre na tela certa. Na conta nova e
+  // no tutorial a tela não volta: o tutorial decide por onde começar.
+  retomada.registrar('stylist', rascunhoDoStylist, retomarStylist);
+  retomada.registrar('colagem', rascunhoDaColagem, retomarColagem);
+  retomada.retomar({ tela: !nova && !pediuTutorialNaUrl() && !db.introAtiva() });
 
   iniciarRouter();
   montarPaineis();   // depois do router: as colunas já têm largura real

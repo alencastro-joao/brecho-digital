@@ -313,6 +313,11 @@ export function encerrarEstado() {
   Object.assign(state, estadoInicial());
 }
 
+// Onde retomar.js guarda o que está em andamento (palco, mesa, tela) desta
+// conta. Sem conta, ou depois de zerar a partida, não há onde.
+let semRetomada = false;
+export const chaveDaRetomada = () => (chave && !semRetomada ? chave + ':retomar' : null);
+
 export function salvar() {
   if (!chave) return;               // ninguém logado: não há onde gravar
   state.atualizadoEm = new Date().toISOString();
@@ -377,9 +382,36 @@ function lerNota() {
   try { return JSON.parse(localStorage.getItem(chaveDaNuvem(chave))); } catch { return null; }
 }
 
+function lerNotaDe(conta) {
+  try { return JSON.parse(localStorage.getItem(chaveDaNuvem(conta))); } catch { return null; }
+}
+
 function anotar(conta, v, p) {
   if (conta === chave) { versao = v; pendente = p; }
-  try { localStorage.setItem(chaveDaNuvem(conta), JSON.stringify({ versao: v, pendente: p })); } catch {}
+  const enviados = lerNotaDe(conta)?.enviados || [];
+  try { localStorage.setItem(chaveDaNuvem(conta), JSON.stringify({ versao: v, pendente: p, enviados })); } catch {}
+}
+
+// Cada save que sai leva a sua data (`atualizadoEm`), e a nota guarda as
+// últimas que saíram. É o que separa "outro aparelho gravou" de "a gravação
+// desta aba chegou, mas a resposta não": no celular, trocar de aplicativo
+// congela a página no meio do PUT, e a resposta com a versão nova se perde.
+// Sem isso, voltar ao app via a própria escrita como conflito, recarregava a
+// tela e, no próximo login, trocava o save daqui pelo de lá — perdendo o que
+// tinha mudado depois.
+const ENVIADOS_GUARDADOS = 5;
+
+function marcarEnviado(conta, em) {
+  if (!em) return;
+  const nota = lerNotaDe(conta) || { versao: conta === chave ? versao : undefined, pendente: true };
+  nota.enviados = [...(nota.enviados || []).filter(x => x !== em), em].slice(-ENVIADOS_GUARDADOS);
+  try { localStorage.setItem(chaveDaNuvem(conta), JSON.stringify(nota)); } catch {}
+}
+
+/** O save da nuvem é um que esta conta, neste navegador, mandou. */
+function ehMinha(nuvem) {
+  const em = nuvem?.estado?.atualizadoEm;
+  return !!em && !!chave && (lerNotaDe(chave)?.enviados || []).includes(em);
 }
 
 /** Avisado quando a nuvem ganhou de uma mudança desta aba. `perdeu` diz se
@@ -401,6 +433,7 @@ async function enviar({ despedida = false } = {}) {
   clearTimeout(timerEnvio);
   const conta = chave;
   const corpo = JSON.stringify({ estado: state, versao });
+  marcarEnviado(conta, state.atualizadoEm);
   enviando = fetch('/api/estado', {
     method: 'PUT', credentials: 'include',
     // Fechar a aba não pode custar os últimos segundos de jogo: `keepalive`
@@ -465,6 +498,13 @@ async function lerDaNuvem() {
   return r.json();
 }
 
+// Sobe de novo, mas fora da promessa do envio que está terminando: chamar
+// enviar() lá de dentro esperaria por ela mesma.
+function agendarDeNovo() {
+  clearTimeout(timerEnvio);
+  timerEnvio = setTimeout(enviar, 0);
+}
+
 // A nuvem andou sem esta aba. Nada mais sobe com a base velha: o save de lá
 // entra no lugar do daqui, e quem escuta `onConflito` (o app) recarrega a tela.
 // Sem fusão, de propósito — fundir dois guarda-roupas divergentes dá um
@@ -488,7 +528,17 @@ async function perderParaANuvem(perdeu) {
     versao = null;
     sincronizado = true;
     sujo = true;
-    return enviar();
+    agendarDeNovo();
+    return;
+  }
+  if (ehMinha(nuvem)) {
+    // Não era outro aparelho: era a nossa própria gravação, cuja resposta se
+    // perdeu. Adota só a versão e segue; se mexeu depois dela, sobe de novo.
+    const igual = state.atualizadoEm === nuvem.estado.atualizadoEm;
+    sincronizado = true;
+    anotar(conta, nuvem.versao, !igual);
+    if (!igual) { sujo = true; agendarDeNovo(); }
+    return;
   }
   adotar(nuvem);
   conflitos.forEach(fn => fn({ perdeu }));
@@ -557,7 +607,13 @@ export async function sincronizarDaNuvem() {
   }
 
   let daqui;   // 'igual' | 'atrás' | 'adiante' | 'conflito'
-  if (nota && nota.versao !== undefined && nuvem.versao) {
+  if (nota && nota.versao !== undefined && nuvem.versao && nota.versao !== nuvem.versao && ehMinha(nuvem)) {
+    // A nuvem "andou" com um save que saiu daqui (a resposta é que não voltou):
+    // a base passa a ser ele. Igual ao do disco, nada a fazer; diferente, o
+    // daqui mudou depois e está adiante.
+    versao = nuvem.versao;
+    daqui = carregadoEm === nuvem.estado.atualizadoEm ? 'igual' : 'adiante';
+  } else if (nota && nota.versao !== undefined && nuvem.versao) {
     const nuvemAndou = nota.versao !== nuvem.versao;
     daqui = nuvemAndou ? (pendente ? 'conflito' : 'atrás')
                        : (pendente ? 'adiante' : 'igual');
@@ -597,6 +653,9 @@ export function resetar({ manterAcervo = true } = {}) {
     ? Object.fromEntries(ACERVO_DO_ADMIN.map(k => [k, state[k]]))
     : null;
   if (chave) localStorage.removeItem(chave);
+  // O look e a colagem em andamento eram da partida apagada: não voltam.
+  if (chave) localStorage.removeItem(chave + ':retomar');
+  semRetomada = true;
   const conta = {
     id: state.usuario.id, nome: state.usuario.nome, handle: state.usuario.handle,
     email: state.usuario.email, papel: state.usuario.papel,
