@@ -6,6 +6,7 @@
 // de quem entrar depois.
 
 import { tratarAssinaturaAntiga } from './assinaturas.js';
+import './semhover.js';  // antes de tudo: o celular não fica com botão aceso
 import './icones.js';   // troca os <i data-i>/<i data-e> do HTML antes de tudo
 import { ADMIN, BAUS, aplicarPapel, liberarPraca } from './config.js';
 import * as auth from './auth.js';

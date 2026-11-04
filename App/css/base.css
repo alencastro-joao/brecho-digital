@@ -425,6 +425,11 @@ input, textarea, select, [contenteditable], [contenteditable] * { -webkit-user-s
    telas que têm o gesto próprio (Stylist, Colagem). O iPhone ignora o
    user-scalable do viewport; o gesturestart do index.html cuida dele. */
 html { touch-action: pan-x pan-y; }
+/* Toque de app: sem o retângulo azulado do navegador, e o botão afunda um
+   pouquinho enquanto o dedo está nele. É a propriedade scale (não transform),
+   então soma com o que cada botão já move no transform. */
+html { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled):active, [role="button"]:active { scale: .95; }
 
 /* Pontinho vermelho de novidade: marca o caminho até o que espera um toque
    (o item para escolher numa coleção, por exemplo). */
