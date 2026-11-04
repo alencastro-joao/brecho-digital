@@ -40,7 +40,6 @@ function adiar() {
 // segundos (o Chrome manda o beforeinstallprompt um pouco depois de carregar e
 // a vitrine abre primeiro) e não entra por cima de outra janela aberta.
 export function lembrarDeInstalar() {
-  return; // João (4/11/2026): sem aviso de baixar o app no navegador
   if (instalado() || !(ehIos() || ehAndroid()) || Date.now() < adiadoAte()) return;
   setTimeout(() => {
     if (instalado() || document.querySelector('.modal:not([hidden])')) return;
@@ -49,7 +48,6 @@ export function lembrarDeInstalar() {
 }
 
 export async function sugerirInstalar() {
-  return; // sem aviso de baixar o app no navegador; app já instalado nunca mostrou
   if (instalado()) return;
   adiar();
   if (ehIos()) {
