@@ -1714,11 +1714,11 @@ export const INTRO = [
     dica: 'Vamos criar o seu personagem! Quando terminar, toque em Salvar.',
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
-    dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia. Você pode pegar 3 peças por dia.' },
+    dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia.' },
   // Primeiro as 3 peças do dia (`meta`), depois repor, comprar um congelamento
   // com fichas e só então congelar: a ordem em que a loja é usada de verdade.
   { evento: 'resgates', meta: 3, ir: 'vitrine', lugar: 'cima', nome: 'Pegue 3 peças',
-    dica: 'Toque numa peça do mural e resgate. Você pode pegar 3 por dia; as mais raras ficam por baixo, então arraste as de cima para garimpar.',
+    dica: 'Toque numa peça do mural e resgate. Você pode pegar 3 por dia. As mais raras ficam por baixo: arraste as de cima para garimpar.',
     premio: { bau: 'incomum' } },
   // Logo depois do primeiro baú: a tela onde ele (e todo baú) fica guardado.
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
@@ -1741,7 +1741,7 @@ export const INTRO = [
     dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
       'Toque numa peça para ver a ficha com marca, cor e estilo.' },
   { ir: 'colecoes', lugar: 'cima', nome: 'Coleções',
-    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças o dono separa um item do avatar no balcão; os próximos pedem mais peças, e o último só sai com a coleção completa.' },
+    dica: 'Peças da mesma marca, cor ou estilo formam uma coleção. Com 3 peças o dono separa um item do avatar no balcão.' },
   { evento: 'colecao', ir: 'colecoes', lugar: 'cima', nome: 'Resgate o seu item',
     dica: 'Toque no item separado para levá-lo ao inventário. Itens do avatar não gastam resgate do dia.',
     premio: { xp: 20 } },
@@ -1750,8 +1750,7 @@ export const INTRO = [
     dicaCelular: 'Este é o Inventário, com as roupinhas do avatar. Toque no item que você resgatou para vestir.',
     premio: { xp: 20, fichas: 1 } },
   { ir: 'vestiario', lugar: 'cima', nome: 'Combos',
-    dica: 'Itens vestidos com a mesma marca, cor ou estilo fazem combo: 2 ativam um efeito, 3 ou mais reforçam. ' +
-      'Cor dá mais XP, marca ajuda no garimpo e alguns temas dão bônus. Veja os ativos em Efeitos.' },
+    dica: 'Itens vestidos com a mesma marca, cor ou estilo fazem combo e ativam efeitos, como mais XP. Veja os ativos em Efeitos.' },
   { evento: 'looks', ir: 'stylist', lugar: 'cima', nome: 'Monte e salve um look',
     dica: 'No Stylist, o avatar veste as peças do seu closet. Toque nelas (ou sorteie um look) e salve.',
     premio: { xp: 40 } },
