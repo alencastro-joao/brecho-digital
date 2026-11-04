@@ -179,10 +179,15 @@ function figura(copia, { rotulo = '', classe = '', so = false } = {}) {
 }
 
 // Uma grade de peças para escolher: `max` 1 é escolha única.
-function grade(copias, max, aoMudar) {
+// `desejadas`: ids que a outra pessoa tem na wishlist; ganham o ♥ no canto.
+function grade(copias, max, aoMudar, { desejadas = new Set() } = {}) {
   const marcadas = new Set();
   const botoes = copias.map((c, i) => {
-    const b = el('button', { type: 'button', class: 'troca-opcao', 'aria-pressed': 'false' }, figura(c, { so: true }));
+    const quer = desejadas.has(c.id);
+    const b = el('button', {
+      type: 'button', class: 'troca-opcao' + (quer ? ' desejada' : ''), 'aria-pressed': 'false',
+      title: quer ? 'Na wishlist' : null,
+    }, figura(c, { so: true }), quer ? el('span', { class: 'troca-desejo', 'aria-label': 'Na wishlist' }, ico('coracao-cheio')) : null);
     b.addEventListener('click', () => {
       if (marcadas.has(i)) { marcadas.delete(i); tocar('desfazer'); }
       else {
@@ -201,12 +206,15 @@ function grade(copias, max, aoMudar) {
 
 // A grade da proposta, com Filtrar (por categoria) e Organizar em cima, iguais
 // aos do guarda-roupa. A marcação fica com a peça ao filtrar ou reordenar.
-function gradeComFerramentas(copias, max, aoMudar) {
-  const caixa = grade(copias, max, aoMudar);
+// As da wishlist da outra pessoa vêm sempre primeiro (João, 04/11/2026).
+function gradeComFerramentas(copias, max, aoMudar, { desejadas = new Set() } = {}) {
+  const caixa = grade(copias, max, aoMudar, { desejadas });
   const botoes = [...caixa.children];
   let filtro = '';
   const pintar = () => {
     const vez = ordenar(copias.map((c, i) => ({ ...c, _i: i, ordem: c.ordem ?? i })));
+    const primeiro = (c) => (desejadas.has(c.id) ? 0 : 1);
+    vez.sort((a, b) => primeiro(a) - primeiro(b));     // estável: mantém a ordem escolhida dentro de cada parte
     caixa.replaceChildren(...vez.filter(c => !filtro || grupoDe(c) === filtro).map(c => botoes[c._i]));
   };
   const ag = agrupamento();
@@ -267,7 +275,7 @@ export function abrirProposta(peca, p) {
     escolhidas = lista; enviar.disabled = !lista.length;
     enviar.replaceChildren(...comPreco(lista.length ? `Enviar (${lista.length})` : 'Enviar', rar));
     topo.trocarDou(lista.length ? pilha(lista.map(i => minhas[i])) : null, `até ${TROCAS.maxOpcoes}`);
-  });
+  }, { desejadas: new Set(p.wishlist || []) });
   const { fechar } = telaTroca('Propor troca',
     [topo, secao(`Suas peças · ${RARIDADE[rar]?.nome || ''}`, ferramentas, gradeMinha)],
     [el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'), enviar]);
@@ -366,7 +374,7 @@ function janelaDeResposta(t) {
           escolhida = lista[0] ?? null;
           aceitar.disabled = escolhida === null;
           topo.trocarRecebo(escolhida === null ? null : figura(t.opcoes[escolhida]));
-        }))],
+        }, { desejadas: new Set(db.state.wishlist || []) }))],
     [recusar, aceitar]);
   recusar.addEventListener('click', async () => {
     try {
