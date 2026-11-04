@@ -428,6 +428,15 @@ function montarGaveta() {
 // O que o perfil da pessoa mostra a ela: as roupas com estrela e todos os
 // looks e colagens, nas mesmas abas e com os mesmos quadrinhos do seu perfil
 // (perfil.js). Versão antiga do app só mandou os favoritos: ficam eles.
+// A data da obra: a que o perfil traz ou, em perfil antigo (sem data), a do post
+// dela no feed. Sem nenhuma das duas, 0 (vai para o fim).
+function dataDaObra(p, { obra, tipo }) {
+  const propria = Date.parse(obra.criadoEm);
+  if (propria) return propria;
+  const post = obra.id && postsDe(p.id).find(x => (tipo === 'look' ? x.lookId : x.boardId) === obra.id);
+  return (post && Date.parse(post.criadoEm)) || 0;
+}
+
 function abasDaVitrine(p) {
   const favoritos = p.favoritos || {};
   const todas = p.obras || { looks: favoritos.looks, colagens: favoritos.colagens };
@@ -450,7 +459,7 @@ function abasDaVitrine(p) {
       // Uma lista só, do post mais novo ao mais velho (sort estável: quem não
       // tem data, de versão antiga do app, fica no fim na ordem que veio).
       itens: favoritasPrimeiro([...obras('look', todas.looks), ...obras('colagem', todas.colagens)]
-        .sort((a, b) => (Date.parse(b.obra.criadoEm) || 0) - (Date.parse(a.obra.criadoEm) || 0)))
+        .sort((a, b) => dataDaObra(p, b) - dataDaObra(p, a)))
         .map(cartao),
       vazio: 'Nenhum post ainda' },
     abaDeRoupasDe(p, doCatalogo(favoritos.pecas)),
