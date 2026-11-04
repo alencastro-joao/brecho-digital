@@ -84,6 +84,10 @@ export function aplicarPaleta(id) {
   else document.documentElement.dataset.paleta = id;
   try { trocarIcone(id); } catch {}
   try { localStorage.setItem(CHAVE, id); } catch {}
+  // A cor também, para a abertura (index.html #splash) já nascer nela.
+  const cor = PALETAS.find(p => p.id === id).cor;
+  document.documentElement.style.setProperty('--splash-cor', cor);
+  try { localStorage.setItem('bd:paleta-cor', cor); } catch {}
   return id;
 }
 
