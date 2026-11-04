@@ -203,11 +203,18 @@ async function iniciar() {
   numerarAntigas(db.state.inventario).then(n => { if (n) db.salvar(); });
 
   // Data comemorativa: o baú do evento vai para a tela de Baús, assim que o
-  // acervo tiver as peças exclusivas dele.
-  for (const e of db.ganharBausDeEvento(undefined, temPecasDoEvento)) avisarPresente(`Presente de ${e.nome}: um ${BAUS[e.bau].nome} para você.`);
+  // acervo tiver as peças exclusivas dele. Nunca no meio do tutorial: espera
+  // ele acabar (ou ser pulado) e então chega.
+  const entregarBausDeEvento = () => {
+    if (db.introAtiva()) return;
+    for (const e of db.ganharBausDeEvento(undefined, temPecasDoEvento)) avisarPresente(`Presente de ${e.nome}: um ${BAUS[e.bau].nome} para você.`);
+  };
+  const vaiTerTutorial = nova || pediuTutorialNaUrl();
+  if (!vaiTerTutorial) entregarBausDeEvento();
+  db.onIntro(entregarBausDeEvento);
 
   // As missões de introdução: sozinhas na conta nova, ou com ?tutorial no endereço.
-  if (nova || pediuTutorialNaUrl()) comecarIntro();
+  if (vaiTerTutorial) comecarIntro();
   // Fora do tutorial (que já sugere no fim), o celular no navegador é lembrado
   // de instalar o app.
   else if (!db.introAtiva()) lembrarDeInstalar();
