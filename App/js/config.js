@@ -1773,7 +1773,7 @@ export const INTRO = [
   { ir: 'tarefas', aba: 'mural', lugar: 'baixo', nome: 'Ajudinha',
     dica: 'O post-it de Ajudinha abre um mini game para ajudar a loja. Cumpra a meta e resgate no mural.' },
   { evento: 'carimbo', ir: 'tarefas', aba: 'hoje', lugar: 'cima', nome: 'Carimbe o seu dia',
-    dica: 'Na aba Diário ficam as missões do dia. Com as 5 feitas, carimbe o dia e ganhe um baú.',
+    dica: 'Faça as 5 missões do Diário e toque em Resgatar em cada uma. Depois toque no presente ao lado dos dias da semana para carimbar o seu dia.',
     premio: { bau: 'epico', fichas: 1, xp: 50 } },
 ];
 
