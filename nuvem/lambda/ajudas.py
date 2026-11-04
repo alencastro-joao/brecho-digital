@@ -30,6 +30,12 @@ copiada para o site (`assets/jogos/<id>.webp`) e a lista pública fica em
 Nada mexe na ficha sozinho: o admin vê o resumo (GET /api/admin/ajudas) e
 leva para a ficha da esteira o que quiser.
 
+**Ordem dos jogos (04/11/2026, foco do João).** A peça virgem vai primeiro para o
+Preencher; com 2 respostas iguais (sem inconsistência) em tipo, cor e marca ela
+segue para o Ajustar; com 2 medidas, para o Avaliar (que só dá raridade
+sugerida e sai com `VOTOS_MIN` votos). O que fechou não volta (`pendencias`,
+`precisa_voto`). Preencher e Ajustar bastam para postar a peça.
+
 **Peça pronta** é a que já tem duas medidas e duas respostas em tipo, cor e
 marca (a raridade o João ajusta na esteira) (`pendencias`). Entrada que fechou sai do jogo: a
 peça para de aparecer no Avaliar ou no Ajustar, e o Preencher só pergunta o
@@ -77,9 +83,9 @@ AJUSTES_MIN = 2
 # Tipo e cor: com ESCOLHA_MIN respostas todas iguais, fecha. Se dividiu, espera
 # chegar a ESCOLHA_DESEMPATE e a mais votada leva (empate segue esperando).
 ESCOLHA_MIN = 2
-ESCOLHA_DESEMPATE = 2
+ESCOLHA_DESEMPATE = 5
 # Marca: basta esta quantidade de respostas iguais.
-MARCA_IGUAIS = 1
+MARCA_IGUAIS = 2
 # Rodada do Avaliar: subir este número zera todos os votos (os antigos ficam
 # no banco, mas ninguém lê) e deixa todo mundo votar de novo em todas as peças.
 RODADA_AVALIAR = 2
@@ -329,7 +335,8 @@ def estado(usuario):
     # O que falta em cada peça: o jogo pula a peça (ou a pergunta) que já fechou.
     lidas = _ler_pecas({i['id'] for i in itens})
     return {'jogos': saida, 'itens': itens,
-            'faltam': {i['id']: pendencias(lidas.get(i['id'])) for i in itens}}
+            'faltam': {i['id']: pendencias(lidas.get(i['id'])) for i in itens},
+            'votar': [i['id'] for i in itens if precisa_voto(lidas.get(i['id']))]}
 
 
 def ajudar(usuario, jogo, corpo):
@@ -384,8 +391,11 @@ def _mais_votado(item, campo):
 
 def _decidido(campo, contagens, total):
     """A resposta mais votada já vale? `contagens` é quantos votos tem cada valor."""
-    # Duas respostas e a peça segue como está; a mais votada (ou a primeira) leva.
-    return total >= ESCOLHA_MIN
+    # Foco (04/11/2026): duas respostas iguais fecham. Se divergiram (inconsistência),
+    # a peça continua no Preencher até 5 respostas e a mais votada levar (sem empate).
+    if total >= ESCOLHA_MIN and len(contagens) == 1:
+        return True
+    return total >= ESCOLHA_DESEMPATE and contagens.count(max(contagens, default=0)) == 1
 
 
 def resumo_da_peca(item):
@@ -410,6 +420,14 @@ def resumo_da_peca(item):
 # A raridade não entra: o João ajusta na esteira (04/11/2026). Peça com 2 medidas
 # e 2 respostas em tipo, cor e marca já está pronta, do jeito que está.
 ENTRADAS = ('ajuste', 'cat', 'cor', 'marca')
+
+
+def precisa_voto(item):
+    """A raridade ainda não tem votos de sobra? O Avaliar é o último passo e o menos
+    pedido: só a peça que já foi preenchida e medida chega nele."""
+    item = item or {}
+    votos = sum(int(item.get(_campo_voto(v), {}).get('N', 0)) for v in ('sim', 'nao', 'meh'))
+    return votos < VOTOS_MIN
 
 
 def pendencias(item):

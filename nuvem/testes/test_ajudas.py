@@ -93,8 +93,8 @@ class Ajudas(unittest.TestCase):
         self.assertEqual(p['votos']['raridade'], 'legendary')
         self.assertEqual(p['ajuste'], {'x': 305, 'y': 510, 'w': 210, 'rot': 0, 'medidas': 2})
         self.assertEqual(p['cor'], {'valor': 'preto', 'votos': 2, 'total': 2, 'pronto': True})
-        # Duas medidas e duas respostas: a peça já está pronta (raridade não conta).
-        self.assertEqual(p['faltam'], ['cat'])
+        # Cor fechou (2 iguais); tipo tem 1 resposta; marca divergiu (nike x sem marca).
+        self.assertEqual(p['faltam'], ['cat', 'marca'])
         self.assertEqual(p['marca']['valor'], 'nike')
         self.assertEqual(p['cat']['valor'], 'pants')
         dia = next(iter(ajudas.resumo()['cotas']['avaliar'].values()))
@@ -122,15 +122,23 @@ class Ajudas(unittest.TestCase):
         ajudas.colocar('eabc12345', {'estado': 'pronta', 'previa': 'esteira/eabc12345.webp'})
         self.assertEqual(ajudas.ler_lista()[0]['cat'], '')
 
-    def test_duas_respostas_fecham_mesmo_divididas(self):
+    def test_divergiu_continua_no_preencher_ate_a_maioria(self):
         pid = 'epeca0004'
-        ajudas.ajudar({'id': 'a0'}, 'preencher', {'peca': pid, 'cor': 'Azul'})
-        self.assertFalse(ajudas.resumo()['pecas'][0]['cor']['pronto'])
-        ajudas.ajudar({'id': 'a1'}, 'preencher', {'peca': pid, 'cor': 'Verde'})
-        self.assertTrue(ajudas.resumo()['pecas'][0]['cor']['pronto'])
-        # Fechou: voto novo nem entra.
-        ajudas.ajudar({'id': 'a9'}, 'preencher', {'peca': pid, 'cor': 'Verde'})
+        pronto = lambda: ajudas.resumo()['pecas'][0]['cor']['pronto']  # noqa: E731
+        for i, c in enumerate(('Azul', 'Verde')):
+            ajudas.ajudar({'id': 'a%d' % i}, 'preencher', {'peca': pid, 'cor': c})
+        self.assertFalse(pronto())          # inconsistência: segue sendo perguntada
+        for i, c in enumerate(('Azul', 'Verde', 'Azul')):
+            ajudas.ajudar({'id': 'b%d' % i}, 'preencher', {'peca': pid, 'cor': c})
+        self.assertTrue(pronto())           # 5 respostas e a maioria leva
+        self.assertEqual(ajudas.resumo()['pecas'][0]['cor']['valor'], 'azul')
+
+    def test_duas_iguais_fecham_e_voto_novo_nao_entra(self):
+        pid = 'epeca0009'
+        for i in range(3):
+            ajudas.ajudar({'id': 'c%d' % i}, 'preencher', {'peca': pid, 'cor': 'Azul'})
         self.assertEqual(ajudas.resumo()['pecas'][0]['cor']['total'], 2)
+        self.assertTrue(ajudas.precisa_voto(None))
 
     def test_duas_medidas_duas_respostas_peca_pronta(self):
         pid = 'epeca0006'
@@ -138,7 +146,7 @@ class Ajudas(unittest.TestCase):
             ajudas.ajudar({'id': 'v%d' % i}, 'ajustar', {'peca': pid, 'ancora': {'x': 300, 'y': 500, 'w': 200}})
         ajudas.ajudar({'id': 'v0'}, 'preencher', {'peca': pid, 'cat': 'pants', 'cor': 'Preto', 'marca': 'Nike'})
         self.assertEqual(ajudas.resumo()['pecas'][0]['faltam'], ['cat', 'cor', 'marca'])
-        ajudas.ajudar({'id': 'v1'}, 'preencher', {'peca': pid, 'cat': 'pants', 'cor': 'Preto', 'marca': 'Adidas'})
+        ajudas.ajudar({'id': 'v1'}, 'preencher', {'peca': pid, 'cat': 'pants', 'cor': 'Preto', 'marca': 'Nike'})
         self.assertEqual(ajudas.resumo()['pecas'][0]['faltam'], [])
         self.assertEqual(ajudas.pendencias(None), list(ajudas.ENTRADAS))
         lidas = ajudas._ler_pecas({pid, 'epeca0007'})
