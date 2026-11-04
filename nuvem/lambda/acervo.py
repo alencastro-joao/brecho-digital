@@ -203,6 +203,8 @@ CORPOS_DA_MEDIDA = ('artista',)
 def medida(ancora):
     """A âncora {x, y, w} como se grava, com o corpo em que foi medida."""
     out = {k: round(float(ancora.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+    if ancora.get('rot'):
+        out['rot'] = round(float(ancora['rot']), 1)
     if ancora.get('corpo') in CORPOS_DA_MEDIDA:
         out['corpo'] = ancora['corpo']
     return out

@@ -759,7 +759,7 @@ export function abrirEditar(alvo, callback, { revisao: fila = null } = {}) {
   // Peça antiga abre já com o ajuste para o corpo novo (config.js): salvar
   // grava esse ponto de partida, com o que você mexer por cima.
   medida = alvo.ancora
-    ? (({ x, y, w }) => ({ x, y, w }))(ancoraDaPeca({ ...alvo, cat: ficha.cat }))
+    ? (({ x, y, w, rot }) => ({ x, y, w, ...(rot ? { rot } : {}) }))(ancoraDaPeca({ ...alvo, cat: ficha.cat }))
     : medidaPadrao(alvo.cat);
 
   montarCategorias();
