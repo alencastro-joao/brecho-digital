@@ -411,10 +411,20 @@ function renderAbas() {
 }
 
 // ------------------------------- Pedidos ----------------------------------
+// A tela onde cada missão do Diário e da Semana se faz (tocar no pedido leva até lá).
+const TELA_DO_EVENTO = {
+  resgates: 'vitrine', raras: 'vitrine', looks: 'stylist', publicar: 'stylist',
+  'postar-colagem': 'board', curtir: 'social',
+};
+
 function pedido(m, atual, { resgatada, fichas, resgatar }) {
   const feito = Math.min(atual, m.meta);
   const ok = feito >= m.meta;
-  return el('div', { class: 'tf-item' + (ok && resgatada ? ' ok' : '') },
+  const tela = !ok ? TELA_DO_EVENTO[m.evento] : null;
+  return el('div', {
+    class: 'tf-item' + (ok && resgatada ? ' ok' : '') + (tela ? ' abre' : ''),
+    onclick: tela ? () => irPara(tela) : null,
+  },
     el('span', { class: 'tf-ico' }, ico(ok && resgatada ? 'ok' : (ICONE[m.evento] || 'estrela'))),
     el('div', { class: 'tf-info' },
       el('strong', {}, m.nome),
