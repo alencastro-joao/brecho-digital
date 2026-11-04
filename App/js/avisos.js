@@ -58,7 +58,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -69,7 +69,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = nu
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd, acao,
+    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}),
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -163,10 +163,14 @@ export function avisarPresente(texto) {
   avisar({ tipo: 'presente', ir: ['baus'], texto });
 }
 
-// Troca de peças (a tela das trocas chama): `acao` é a dica do que fazer ao
-// abrir, ex.: 'Ver opções'.
-export function avisarTroca({ texto, ir, quem = null, acao = null }) {
-  avisar({ tipo: 'troca', ir, quem, texto, acao });
+// Troca de peças (js/trocas.js): a oferta que chegou, a resposta à sua. Tocar
+// no aviso abre a oferta; quem abre é o trocas.js, que se registra aqui (ele
+// importa este arquivo, e não o contrário). `acao` é a dica ao lado do texto.
+let abrirTroca = null;
+export const aoTocarEmTroca = (fn) => { abrirTroca = fn; };
+
+export function avisarTroca({ texto, quem = null, troca, acao = null }) {
+  avisar({ tipo: 'troca', ir: ['perfil'], texto, quem, troca, acao });
 }
 
 // O botão de repor do admin: a loja trocou sem o dia virar.
@@ -219,7 +223,11 @@ function linha(a, visto) {
   return el('li', { class: `aviso-item ${a.tipo}` },
     el('button', {
       class: 'aviso' + (novo ? ' novo' : ''),
-      onclick: () => { fechar(); irPara(...a.ir); },
+      onclick: () => {
+        fechar();
+        if (a.troca && abrirTroca) abrirTroca(a.troca);
+        else irPara(...a.ir);
+      },
     },
       marca,
       el('span', { class: 'aviso-texto' },

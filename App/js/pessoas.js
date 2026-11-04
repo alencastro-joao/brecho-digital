@@ -77,6 +77,7 @@ function paraPerfil(c) {
     favoritos: c.favoritos,
     obras: c.obras,
     guardaRoupa: c.guardaRoupa,
+    raridades: c.raridades,
     wishlist: c.wishlist,
     amigos: c.amigos?.map(a => guardar(a).id),
     listaSeguindo: c.listaSeguindo?.map(a => guardar(a).id),
@@ -89,7 +90,7 @@ function guardar(cartao) {
   // Um cartão curto (busca, feed, seguir) não apaga o que a página já trouxe.
   const antes = reais.get(perfil.id);
   if (antes) {
-    for (const k of ['favoritos', 'obras', 'guardaRoupa', 'wishlist', 'amigos', 'listaSeguindo', 'listaSeguidores']) perfil[k] ??= antes[k];
+    for (const k of ['favoritos', 'obras', 'guardaRoupa', 'raridades', 'wishlist', 'amigos', 'listaSeguindo', 'listaSeguidores']) perfil[k] ??= antes[k];
   }
   reais.set(perfil.id, perfil);
   return perfil;
@@ -259,6 +260,9 @@ const fotoDoPerfil = () => ({
     })),
   },
   guardaRoupa: minhasRoupas().map(p => p.id),
+  // Uma letra por peça, na mesma ordem (c u r e l): a amiga vê quais das
+  // suas peças servem para trocar (só da mesma raridade).
+  raridades: minhasRoupas().map(p => (db.pecaDoInventario(p.id)?.raridade || 'common')[0]).join(''),
   wishlist: [...(db.state.wishlist || [])],
 });
 

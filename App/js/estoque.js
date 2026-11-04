@@ -147,6 +147,11 @@ export async function historico(peca) {
   }
 }
 
+// A cópia mudou de dono (troca): a ficha relê o histórico na próxima vez.
+export function esquecerHistorico(peca) {
+  if (peca?.numero) historicos.delete(`${chave(peca.id, peca.raridade)}|${peca.numero}`);
+}
+
 // Desfazer o resgate: a cópia volta para a loja e você sai do histórico dela.
 // Devolve false só quando o servidor recusa (passou do tempo, outra pessoa já
 // é dona); sem número ou sem servidor, não há o que acertar e vale desfazer.

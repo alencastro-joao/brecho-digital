@@ -1162,6 +1162,18 @@ export const FICHAS = {
   porCongelar: 2,      // congelar uma peça: ela fica na loja até o fim do dia seguinte
 };
 
+// Troca de peças entre amigas (js/trocas.js; quem decide é nuvem/lambda/trocas.py).
+// Regras do João (04/11/2026): só entre amigos, 1 peça por 1 da mesma raridade,
+// quem pede oferece até `maxOpcoes` e a outra escolhe 1, cada pessoa recebe no
+// máximo `porDia` peças por dia, e as duas pagam `custo` fichas pela raridade.
+// O nível mínimo (6, uns 5 dias jogando) segura conta criada só para passar peça.
+export const TROCAS = {
+  nivel: 6,
+  porDia: 2,
+  maxOpcoes: 4,
+  custo: { common: 1, uncommon: 2, rare: 4, epic: 8, legendary: 16 },
+};
+
 // ------------------------------- Níveis -----------------------------------
 // O XP só sobe; o nível é derivado do total acumulado (nivelPorXP). Assim,
 // mexer na curva aqui recalcula o nível de todo mundo sem migração de save.
