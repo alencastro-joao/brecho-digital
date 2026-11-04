@@ -1704,6 +1704,8 @@ export const FERRAMENTAS = [
 // `demo: 'peca'` abre uma peça da pessoa na tela do passo, para mostrar.
 // `brinde` ('congelamento' | 'repor') dá um item de recarga de graça quando o
 // passo abre, uma vez só, para a missão poder ser feita com ele.
+// `fichasMin` completa as fichas até esse mínimo quando o passo abre (para a
+// compra do passo não travar se a pessoa gastou fichas antes).
 // `lugar` é onde o cartão fica no celular enquanto a missão é feita: em cima
 // (sobre o cabeçalho) quando o que se toca na tela está embaixo — a mochila,
 // a paleta, a ficha da peça — e embaixo quando está em cima.
@@ -1713,13 +1715,6 @@ export const INTRO = [
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
     dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia. Você pode pegar 3 peças por dia.' },
-  { evento: 'resgates', ir: 'vitrine', lugar: 'cima', nome: 'Pegue uma roupa',
-    dica: 'Toque numa peça do mural e resgate. Cada resgate gasta um dos 3 do dia. As mais raras ficam por baixo: arraste as de cima para garimpar.',
-    premio: { bau: 'incomum' } },
-  // Logo depois do primeiro baú: a tela onde ele (e todo baú) fica guardado.
-  { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
-    dica: 'Você ganhou um baú! Todo baú fica guardado aqui, em Baús (o botão redondo no topo de Tarefas). Toque nele para abrir.',
-    premio: { xp: 20 } },
   // Primeiro as 3 peças do dia (`meta`), depois repor, comprar um congelamento
   // com fichas e só então congelar: a ordem em que a loja é usada de verdade.
   { evento: 'resgates', meta: 3, ir: 'vitrine', lugar: 'cima', nome: 'Pegue 3 peças',
@@ -1729,22 +1724,14 @@ export const INTRO = [
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
     dica: 'Você ganhou um baú! Todo baú fica guardado aqui, em Baús (o botão redondo no topo de Tarefas). Toque nele para abrir.',
     premio: { xp: 20 } },
-  // Os dois itens de recarga da loja, com um de cada de brinde (`brinde`, dado
-  // quando o passo abre): depois de pegar a primeira peça, congelar, para ver a peça ficar no repor.
-  { evento: 'congelar', ir: 'vitrine', lugar: 'cima', brinde: 'congelamento', nome: 'Congele uma peça',
-    dica: 'Você ganhou um congelamento! Toque numa peça do mural que ainda não é sua e em Congelar: ela fica guardada na loja até o fim de amanhã, mesmo que o mural mude. ' +
-      'Depois, é só voltar e pegá-la. Mais congelamentos você troca por fichas em Tarefas.',
-    premio: { xp: 20 } },
+  // Com as 3 peças pegas, a loja pode mudar: repor (ficha de brinde), comprar
+  // um congelamento com as fichas do repor e só então congelar.
   { evento: 'repor', ir: 'vitrine', lugar: 'baixo', brinde: 'repor', nome: 'Reponha a loja',
-    dica: 'E uma ficha de repor! Toque no ↻ ao lado dos resgates para trocar o mural por um novo. ' +
-      'A peça congelada fica, e os resgates de hoje continuam contados.',
-    premio: { xp: 20 } },
-  { evento: 'repor', ir: 'vitrine', lugar: 'baixo', brinde: 'repor', nome: 'Reponha a loja',
-    dica: 'Seus 3 resgates acabaram, mas a loja pode mudar! Toque no ↻ ao lado dos resgates para trocar o mural por um novo (esta ficha de repor é um presente). ' +
+    dica: 'Seus 3 resgates de hoje acabaram, mas a loja pode mudar! Toque no ↻ ao lado dos resgates e troque o mural por um novo (a ficha de repor é um presente). ' +
       'Os resgates de hoje continuam contados.',
     premio: { xp: 20, fichas: 2 } },
-  { evento: 'comprar-congelar', ir: 'tarefas', lugar: 'baixo', nome: 'Compre um congelamento',
-    dica: 'Fichas compram itens da loja. Toque nas suas fichas (ao lado do nível) e troque 2 delas por um congelamento.',
+  { evento: 'comprar-congelar', ir: 'tarefas', lugar: 'baixo', fichasMin: 2, nome: 'Compre um congelamento',
+    dica: 'Fichas compram itens da loja. Toque nas suas fichas (ao lado do nível) e troque 2 delas por um congelamento. Se faltar ficha, damos o que falta.',
     premio: { xp: 20 } },
   { evento: 'congelar', ir: 'vitrine', lugar: 'cima', nome: 'Congele uma peça',
     dica: 'Gostou de uma peça mas não quer pegar agora? Toque nela no mural e em Congelar: ela fica guardada na loja até o fim de amanhã, mesmo que o mural mude. ' +

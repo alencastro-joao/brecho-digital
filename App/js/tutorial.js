@@ -83,6 +83,7 @@ function passoNovo() {
   modo = 'aberta';
   // Passo de item de recarga: o item vem de brinde, e a vitrine mostra o ↻.
   if (m.brinde && db.darBrindeDaIntro(m.brinde)) atualizarBadge();
+  if (m.fichasMin && db.fichas() < m.fichasMin) db.ganharFicha(m.fichasMin - db.fichas());
   irParaMissao(m);
 }
 
