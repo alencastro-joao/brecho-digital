@@ -109,7 +109,14 @@ function janela(...conteudo) {
   document.body.append(fundo);
   document.body.classList.add('com-modal');
   tocar('janela');
-  return { caixa, fechar };
+  return { caixa, fundo, fechar };
+}
+
+// As telas da troca (propor, ver e responder) ocupam a tela toda; só o "i" é janelinha.
+function telaCheia(...conteudo) {
+  const j = janela(...conteudo);
+  j.fundo.classList.add('troca-tela');
+  return j;
 }
 
 // `so`: só a foto (nas grades de escolha, sem nome nem número; João, 04/11/2026).
@@ -180,12 +187,12 @@ const linhaDeCusto = (rar) =>
 
 // O "i" no canto da janela: a explicação fica em cards, não na tela (João, 04/11/2026).
 const CARDS = () => [
-  ['⇄', 'Só entre amigos', 'Dá para trocar com quem você segue e também segue você.'],
-  ['💎', 'Mesma raridade', 'Uma peça por uma, sempre da mesma raridade.'],
-  ['👆', 'Até 4 opções', `Você marca até ${TROCAS.maxOpcoes} peças suas. A outra pessoa escolhe uma ou recusa.`],
-  ['🪙', 'Fichas', 'As duas pagam só quando a troca acontece: ' +
+  ['usuario', 'Só entre amigos', 'Dá para trocar com quem você segue e também segue você.'],
+  ['brilho', 'Mesma raridade', 'Uma peça por uma, sempre da mesma raridade.'],
+  ['mao', 'Até 4 opções', `Você marca até ${TROCAS.maxOpcoes} peças suas. A outra pessoa escolhe uma ou recusa.`],
+  ['ficha', 'Fichas', 'As duas pagam só quando a troca acontece: ' +
     RARIDADES_CUSTO().join(', ') + '.'],
-  ['📅', `${TROCAS.porDia} por dia`, `No máximo ${TROCAS.porDia} trocas por dia. A peça que você dá sai dos seus looks e colagens.`],
+  ['atualizar', `${TROCAS.porDia} por dia`, `No máximo ${TROCAS.porDia} trocas por dia. A peça que você dá sai dos seus looks e colagens.`],
 ];
 const RARIDADES_CUSTO = () => Object.entries(TROCAS.custo)
   .map(([id, n]) => `${(RARIDADE[id]?.nome || id).toLowerCase()} ${n}`);
@@ -197,7 +204,8 @@ function botaoInfo() {
     const { caixa: info, fechar } = janela(
       el('h2', { class: 'pergunta-titulo' }, 'Como funciona a troca'),
       el('div', { class: 'troca-cards' }, ...CARDS().map(([emoji, titulo, texto]) =>
-        el('div', { class: 'troca-card' }, el('span', { class: 'troca-card-emoji' }, emoji),
+        el('div', { class: 'troca-card' }, el('span', { class: 'troca-card-ico' },
+            emoji === 'ficha' ? el('span', { class: 'ficha-moeda' }) : ico(emoji)),
           el('strong', {}, titulo), el('p', {}, texto)))),
       ok);
     info.classList.add('troca-info');
@@ -212,7 +220,7 @@ export function abrirProposta(peca, p) {
   const minhas = minhasParaOferecer(rar, p);
   let escolhidas = [];
   const enviar = el('button', { type: 'button', class: 'btn-dark', disabled: true }, 'Enviar');
-  const { caixa, fechar } = janela(
+  const { caixa, fechar } = telaCheia(
     el('h2', { class: 'pergunta-titulo' }, 'Propor troca'),
     figura({ id: peca.id, raridade: rar }, { rotulo: `de ${handle(p.handle)}`, classe: 'troca-alvo' }),
     ...gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => {
@@ -261,7 +269,7 @@ export async function abrirOferta(trocaId) {
     invalida: `A troca não deu certo${t.motivo ? ': ' + t.motivo : ''}.`,
   }[t.estado] || '';
   const acoes = el('div', { class: 'pergunta-botoes' });
-  const { fechar } = janela(
+  const { fechar } = telaCheia(
     el('h2', { class: 'pergunta-titulo' }, t.souEu === 'de' ? `Sua oferta para ${outra}` : `Oferta de ${outra}`),
     figura(t.quero, { classe: 'troca-alvo', rotulo: t.souEu === 'de' ? 'a peça que você pediu' : 'a sua peça' }),
     el('p', { class: 'pergunta-texto' }, texto),
@@ -290,7 +298,7 @@ function janelaDeResposta(t) {
   let escolhida = null;
   const aceitar = el('button', { type: 'button', class: 'btn-dark', disabled: true }, 'Aceitar');
   const recusar = el('button', { type: 'button', class: 'btn-ghost' }, 'Recusar');
-  const { caixa, fechar } = janela(
+  const { caixa, fechar } = telaCheia(
     el('h2', { class: 'pergunta-titulo' }, `${t.de.handle} quer trocar`),
     figura({ ...t.quero, numero: minha?.numero }, { classe: 'troca-alvo', rotulo: 'a sua peça' }),
     el('p', { class: 'pergunta-texto' }, 'Escolha uma ou recuse.'),
