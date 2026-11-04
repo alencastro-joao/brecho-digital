@@ -47,12 +47,21 @@ html body .troca-caixa { width: min(520px, 100%); max-height: min(92vh, 820px); 
 .troca-ferramentas .troca-campo:first-child { flex: 1 1 100px; }
 .troca-ferramentas .troca-campo + .troca-campo { flex: 1.6 1 160px; }
 .troca-ferramentas .ordem-sentido { height: 34px; }
-.troca-opcao { padding: 0; border: 0; background: none; border-radius: 14px; cursor: pointer; text-align: inherit; }
-.troca-opcao .troca-fig { height: 100%; transition: transform .12s, border-color .12s; }
+.troca-opcao { position: relative; padding: 0; border: 0; background: none; border-radius: 14px; cursor: pointer; text-align: inherit; }
+.troca-opcao .troca-fig { height: 100%; transition: transform .12s, border-color .12s, background .12s; }
 .troca-opcao:hover .troca-fig { transform: translateY(-2px); }
+/* Marcada: borda grossa escura, fundo tingido e um ✓ no canto. */
 .troca-opcao[aria-pressed="true"] .troca-fig {
-  border-color: var(--rar); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rar) 35%, transparent);
+  border: 3px solid var(--tinta); background: color-mix(in srgb, var(--tinta) 10%, var(--branco));
+  box-shadow: 0 0 0 2px var(--branco), 0 4px 10px rgba(0, 0, 0, .18);
 }
+.troca-opcao[aria-pressed="true"]::after {
+  content: '✓'; position: absolute; top: -6px; right: -6px; width: 24px; height: 24px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--tinta); color: #fff; font-size: 14px; font-weight: 900;
+  box-shadow: 0 0 0 2px var(--branco);
+}
+.troca-grade { overflow-x: visible; padding: 8px 8px 4px; }
 .troca-custo { margin: 10px 0 0; font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
 
 /* A animação: a sua peça vai, a outra vem e pula com a aura. */
