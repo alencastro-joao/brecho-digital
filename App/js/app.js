@@ -50,6 +50,14 @@ import { usarCorpoDesenhado } from './avatar.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
 
+// A abertura do index.html (#splash): fica na frente até a vitrine estar
+// montada; some com um fade e volta só se a tela de entrada passou na frente.
+function splash(mostrar) {
+  const tela = document.getElementById('splash');
+  if (!tela) return;
+  tela.classList.toggle('saindo', !mostrar);
+}
+
 // Quem está logado, segundo o servidor — ou a tela de entrada até estar.
 // O cookie de sessão dura 30 dias: na maioria das aberturas isto não mostra
 // tela nenhuma, só devolve a conta e o app abre direto na vitrine.
@@ -65,7 +73,11 @@ async function entrar() {
   }
   if (conta && google?.nova) nova = true;
   if (!conta && google?.erro) aviso = aviso || google.erro;
-  if (!conta) ({ conta, nova } = await pedirConta({ aviso }));
+  if (!conta) {
+    splash(false);          // a tela de entrada aparece por cima de nada
+    ({ conta, nova } = await pedirConta({ aviso }));
+    splash(true);           // e a abertura volta enquanto o resto carrega
+  }
 
   aplicarPapel(conta.papel);      // o modo administrador vem da conta, não da URL
   // A Praça ainda está em teste: o botão do meio da barra só aparece a quem pode (config.js).
@@ -203,6 +215,7 @@ async function iniciar() {
 
   iniciarRouter();
   montarPaineis();   // depois do router: as colunas já têm largura real
+  splash(false);
 
   // Depois do router: entrar na vitrine faz o dono da loja falar, e a fala do
   // presente é a que tem de ficar na tela na primeira abertura.
@@ -247,6 +260,7 @@ async function iniciar() {
 
 iniciar().catch(err => {
   console.error(err);
+  splash(false);
   document.body.insertAdjacentHTML('beforeend',
     `<pre style="position:fixed;inset:auto 16px 16px 16px;background:#fff;border:1px solid #f3c;
       padding:14px;border-radius:12px;font:12px/1.5 monospace;z-index:9999;white-space:pre-wrap">

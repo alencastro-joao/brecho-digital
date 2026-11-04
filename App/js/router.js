@@ -81,12 +81,15 @@ function aplicar(view) {
   const anterior = document.body.dataset.view;
   document.querySelectorAll('.view').forEach(s => { s.hidden = s.dataset.view !== view; });
   const aceso = BOTAO_DA_VIEW[view] || view;
+  const botaoAntes = document.querySelector('.sidebar-btn.ativa');
   document.querySelectorAll('.sidebar-btn').forEach(b =>
     b.classList.toggle('ativa', b.dataset.goto === aceso));
   document.body.dataset.view = view;
   if (anterior && anterior !== view) {
+    const botao = document.querySelector('.sidebar-btn.ativa');
     deslizarTela(document.querySelector(`.view[data-view="${view}"]`),
-      VIEWS.indexOf(view) > VIEWS.indexOf(anterior) ? 1 : -1);
+      VIEWS.indexOf(view) > VIEWS.indexOf(anterior) ? 1 : -1,
+      botao !== botaoAntes ? botao : null);
   }
   ganchos.get(view)?.(anterior);
 }

@@ -6,7 +6,7 @@
 
 import { FERRAMENTAS, nivelDaFerramenta } from './config.js';
 import * as db from './db.js';
-import { el, $, toast } from './util.js';
+import { el, $, toast, vibrar } from './util.js';
 import { ico, emo } from './icones.js';
 import { festejar, flutuarTexto } from './animacoes.js';
 import { andarBarra, contarNumero } from './movimento.js';
@@ -23,6 +23,7 @@ export function montarNivel() {
     if (evento.xp > 0) flutuarTexto(selo, `+${evento.xp} XP`);
     if (evento.subiu) festejar(selo, 'confete');
     if (evento.subiu) {
+      vibrar([30, 50, 30, 50, 90]);
       const p = db.progresso();
       toast(`Subiu para o nível ${p.nivel}!`, 'legendary');
       anunciarDesbloqueios(evento.de, evento.nivel);

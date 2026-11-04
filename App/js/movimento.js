@@ -174,9 +174,19 @@ export function pulsoCurtida(botao, de, ate) {
 
 // Troca de tela: a tela nova entra deslizando para o lado de onde veio.
 // dir = 1 vem da direita, -1 da esquerda.
-export function deslizarTela(el, dir) {
+// A tela nova entra deslizando do lado para onde se andou na barra e surge do
+// papel (fade), como troca de tela de app; o ícone da barra que acendeu dá um
+// pulinho de mola, no mesmo jeito das outras animações do jogo.
+export function deslizarTela(el, dir, botao = null) {
   if (!animando() || !el) return;
-  gsap.fromTo(el, { x: dir * 40 }, { x: 0, duration: 0.38, ease: 'power2.out', clearProps: 'transform' });
+  gsap.killTweensOf(el);
+  gsap.fromTo(el, { x: dir * 28, autoAlpha: 0 },
+    { x: 0, autoAlpha: 1, duration: 0.34, ease: 'power3.out', clearProps: 'transform,opacity,visibility' });
+  const icone = botao?.querySelector('i, .ico');
+  if (icone) {
+    gsap.fromTo(icone, { scale: 0.7, y: 3 },
+      { scale: 1, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.45)', clearProps: 'transform' });
+  }
 }
 
 // Personagem: a bolha de fala cresce com elástico a partir do canto.
