@@ -19,6 +19,7 @@ import * as db from './db.js';
 import * as estoque from './estoque.js';
 import {
   el, $, toast, hojeISO, msAteMeiaNoite, msAteSegunda, formatarContagem, formatarDias,
+  vibrar,
 } from './util.js';
 import { ico } from './icones.js';
 import { irPara, viewAtual } from './router.js';
@@ -691,6 +692,7 @@ function pegarTodos() {
 export function mostrarBau(nome, pecas, { xp = 0, bau = null, extra = '' } = {}) {
   const lista = pecas.map(p => ({ ...p, peca: pecaDoCatalogo(p.id) })).filter(p => p.peca);
   const modal = $('#modal-bau');
+  vibrar([20, 60, 20, 60, 45]);   // o baú chacoalha antes de abrir
   const caixa = $('#bau-caixa');
   caixa.className = 'bau-caixa' + (bau ? ' bau-' + bau : '');
   caixa.replaceChildren(ico(iconeDoBau(bau)));

@@ -27,6 +27,20 @@ ETERNO='public, max-age=31536000, immutable'
 
 echo "== app em $APP"
 
+# --- Versão publicada (lida pelo App/sw.js) -------------------------------
+# O sw.js guarda CSS e JS no celular e joga tudo fora quando o versao.txt muda.
+# Enquanto esta publicação sobe, ele diz "publicando-...": o sw não guarda nada
+# e tudo vem da rede. Só no fim, com tudo no ar, ganha o resumo do conteúdo.
+# Se a publicação falhar no meio, fica o "publicando" e o app segue sem guardar.
+FONTE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../App" && pwd)"
+VERSAO="$(cd "$FONTE" && find index.html esteira.html manifest.webmanifest sw.js css js -type f -print0 \
+  | sort -z | xargs -0 sha1sum | sha1sum | cut -c1-16)"
+versao() {
+  printf '%s' "$1" | aws s3 cp - "s3://$SITE/versao.txt" \
+    --cache-control "$REVALIDA" --content-type 'text/plain; charset=utf-8'
+}
+versao "publicando-$(date +%s)"
+
 # --- O que o navegador tem de reler a cada visita -------------------------
 aws s3 cp "$APP/index.html" "s3://$SITE/index.html" \
   --cache-control "$REVALIDA" --content-type 'text/html; charset=utf-8'
@@ -52,6 +66,10 @@ aws s3 cp "$APP/sw.js" "s3://$SITE/sw.js" \
 
 aws s3 sync "$APP/assets/app" "s3://$SITE/assets/app" --delete \
   --cache-control 'public, max-age=86400' --content-type 'image/png' --exclude '*' --include '*.png'
+
+# Tudo o que o sw.js guarda já está no ar: agora a versão nova vale.
+versao "$VERSAO"
+echo "== versão $VERSAO"
 
 # O acervo.json NÃO sobe daqui: quem escreve nele é a Lambda, quando a esteira
 # publica uma peça. Subir o do disco apagaria as peças publicadas desde o último

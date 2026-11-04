@@ -5,6 +5,12 @@ import { tocar } from './sons.js';
 export const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 export const randBetween = (min, max) => min + Math.random() * (max - min);
 
+// Vibração curta do celular nas ações que merecem (Android; o iPhone ignora).
+// O padrão é o do navigator.vibrate: ms vibrando, ms parado, ms vibrando...
+export function vibrar(padrao) {
+  try { navigator.vibrate?.(padrao); } catch { /* sem vibração: tudo bem */ }
+}
+
 export const $  = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 

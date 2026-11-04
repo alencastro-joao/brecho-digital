@@ -31,6 +31,7 @@ import { avisarLojaReposta, conferirWishlist } from './avisos.js';
 import {
   el, $, clamp, mulberry32, shuffle, hojeISO,
   msAteMeiaNoite, msAteReposicao, formatarContagem, toast,
+  vibrar,
 } from './util.js';
 import { emo, ico } from './icones.js';
 import { botaoDesejo } from './usuario.js';
@@ -832,6 +833,8 @@ async function pegar(id, noDOM) {
   db.progredirMissao('resgates');
   if (['rare', 'epic', 'legendary'].includes(raridade)) db.progredirMissao('raras');
   contarNoMural('garimpar', { peca, raridade: nova?.raridade ?? raridade });
+  // Peça rara treme mais: o garimpo bom se sente na mão.
+  vibrar(['epic', 'legendary'].includes(raridade) ? [18, 50, 18, 50, 40] : raridade === 'rare' ? [15, 40, 25] : 15);
   db.salvar();
 
   voarParaOCloset(noDOM);

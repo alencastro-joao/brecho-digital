@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Brechó Digital</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f7fafb">
@@ -39,6 +39,14 @@
 <link rel="stylesheet" href="css/trocas.css">
 </head>
 <body>
+
+<!-- Abertura: cobre a tela enquanto o app confere a conta e baixa o catálogo,
+     em vez de mostrar a página se montando aos pedaços. Some pelo js/app.js. -->
+<div class="splash" id="splash" aria-hidden="true">
+  <img class="splash-icone" src="assets/app/icone-192.png" alt="" width="96" height="96">
+  <div class="splash-nome">Brechó Digital</div>
+  <div class="splash-pontos"><i></i><i></i><i></i></div>
+</div>
 
 <!-- Aviso de file:// (o app precisa de http para ler o catálogo e exportar imagem) -->
 <div id="file-warning" hidden>
@@ -1385,8 +1393,12 @@
   // a vitrine antes disso seria mostrar o guarda-roupa de ninguem.
   if (location.protocol === 'file:') {
     document.getElementById('file-warning').hidden = false;
+    document.getElementById('splash').remove();
   }
-  // Deixa o app instalável ("Instalar" do Chrome). O sw.js não guarda cache.
+  // Sem zoom de pinça no iPhone (ele ignora o user-scalable=no do viewport).
+  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  // Deixa o app instalável e abre mais rápido: o sw.js guarda CSS e JS da versão
+  // publicada e joga tudo fora quando sai uma versão nova (versao.txt).
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
