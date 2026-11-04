@@ -112,15 +112,20 @@ function janela(...conteudo) {
   return { caixa, fechar };
 }
 
-function figura(copia, { rotulo = '', classe = '' } = {}) {
+// `so`: só a foto (nas grades de escolha, sem nome nem número; João, 04/11/2026).
+function figura(copia, { rotulo = '', classe = '', so = false } = {}) {
   const peca = pecaDoCatalogo(copia.id);
   const img = el('img', { alt: peca ? nomeDaPeca(peca) : '', loading: 'lazy' });
   if (peca) trocarImagem(img, peca, 220);
   const r = RARIDADE[copia.raridade];
+  if (so) {
+    img.title = img.alt;
+    return el('div', { class: 'troca-fig so ' + classe, style: { '--rar': r?.aura && r.aura !== 'arco-iris' ? r.aura : r?.cor || '#ccc' } }, img);
+  }
   return el('div', { class: 'troca-fig ' + classe, style: { '--rar': r?.aura && r.aura !== 'arco-iris' ? r.aura : r?.cor || '#ccc' } },
     img,
     el('span', { class: 'troca-fig-nome' }, peca ? nomeDaPeca(peca) : 'Peça'),
-    el('small', {}, [r?.nome, copia.numero ? `nº ${copia.numero}` : ''].filter(Boolean).join(' · ')),
+    el('small', {}, r?.nome || ''),
     rotulo ? el('em', {}, rotulo) : null);
 }
 
@@ -128,7 +133,7 @@ function figura(copia, { rotulo = '', classe = '' } = {}) {
 function grade(copias, max, aoMudar) {
   const marcadas = new Set();
   const botoes = copias.map((c, i) => {
-    const b = el('button', { type: 'button', class: 'troca-opcao', 'aria-pressed': 'false' }, figura(c));
+    const b = el('button', { type: 'button', class: 'troca-opcao', 'aria-pressed': 'false' }, figura(c, { so: true }));
     b.addEventListener('click', () => {
       if (marcadas.has(i)) marcadas.delete(i);
       else {
@@ -258,7 +263,7 @@ export async function abrirOferta(trocaId) {
     figura(t.quero, { classe: 'troca-alvo', rotulo: t.souEu === 'de' ? 'a peça que você pediu' : 'a sua peça' }),
     el('p', { class: 'pergunta-texto' }, texto),
     el('div', { class: 'troca-grade' }, ...t.opcoes.map((c, i) =>
-      figura(c, { classe: t.escolhida === i ? 'escolhida' : '' }))),
+      figura(c, { so: true, classe: t.escolhida === i ? 'escolhida' : '' }))),
     acoes);
   if (t.souEu === 'de' && t.estado === 'aberta') {
     acoes.append(el('button', {
