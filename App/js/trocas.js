@@ -48,7 +48,9 @@ async function chamar(rota, corpo) {
 // da lista (pessoas.js). Sem as letras (versão antiga do app dela), sem troca.
 export function raridadeNaPagina(p, id) {
   const i = (p?.guardaRoupa || []).indexOf(id);
-  return i < 0 ? null : LETRA[(p.raridades || '')[i]] || null;
+  // Sem a letra (o perfil dela ainda não foi reenviado depois da troca
+  // existir), vale a raridade fixa da ficha da peça, igual para todo mundo.
+  return i < 0 ? null : LETRA[(p.raridades || '')[i]] || db.raridadesFixas.get(id) || null;
 }
 
 
@@ -71,21 +73,20 @@ function bloqueio(peca, p) {
   return null;
 }
 
-// O botão da ficha. Apagado, ele diz o motivo; peça que você já tem não leva.
+// O botão da ficha. Só aparece quando dá para trocar: sem botão apagado nem
+// texto de motivo (pedido do João, 04/11/2026).
 export function botaoTrocar(peca, p, { antes = null } = {}) {
   if (!p?.real || db.temPeca(peca.id) || !(p.guardaRoupa || []).includes(peca.id)) return null;
-  const motivo = bloqueio(peca, p);
+  if (bloqueio(peca, p)) return null;
   return el('button', {
     type: 'button', class: 'btn-dark troca-btn',
-    disabled: motivo ? true : null,
-    title: motivo || 'Oferecer uma troca',
+    title: 'Oferecer uma troca',
     onclick: (e) => {
       e.stopPropagation();
-      if (motivo) return toast(motivo);
       antes?.();
       abrirProposta(peca, p);
     },
-  }, '⇄ ', motivo ? el('small', {}, motivo) : 'Trocar');
+  }, '⇄ Trocar');
 }
 
 // --------------------------------- Janelas ---------------------------------

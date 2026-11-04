@@ -141,9 +141,18 @@ _acervo = {'ids': None, 'em': 0.0}
 def _ler_ids():
     r = _s3.get_object(Bucket=BUCKET_SITE, Key='assets/acervo.json')
     dados = json.loads(r['Body'].read().decode('utf-8'))
-    ids = {str(i.get('id')) for i in dados.get('items') or [] if isinstance(i, dict)}
+    itens = [i for i in dados.get('items') or [] if isinstance(i, dict)]
+    ids = {str(i.get('id')) for i in itens}
     ids.update(str(i) for i in dados.get('removidas') or [])
+    # A raridade gravada na ficha da peça (a mesma para todo mundo): a troca
+    # usa quando o perfil da pessoa ainda não diz a raridade da cópia dela.
+    _acervo['fixas'] = {str(i.get('id')): i['raridade'] for i in itens if i.get('raridade') in LIMITES}
     return ids
+
+
+def raridade_fixa(pid):
+    _existe(pid)               # lê (ou relê) o acervo se for a hora
+    return (_acervo.get('fixas') or {}).get(pid)
 
 
 def _existe(pid):

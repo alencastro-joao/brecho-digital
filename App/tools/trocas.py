@@ -78,7 +78,20 @@ def _guarda_roupa(conta):
     ids = conta['perfil'].get('guardaRoupa') or []
     letras = conta['perfil'].get('raridades') or ''
     por_letra = {r[0]: r for r in RARIDADES}
-    return {pid: por_letra.get(letras[i:i + 1]) for i, pid in enumerate(ids)}
+    return {pid: por_letra.get(letras[i:i + 1]) or _fixas().get(pid) for i, pid in enumerate(ids)}
+
+
+def _fixas():
+    """A raridade gravada na ficha de cada peça do acervo local."""
+    caminho = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                           'assets', 'acervo.json')
+    try:
+        with open(caminho, encoding='utf-8') as fh:
+            itens = json.load(fh).get('items') or []
+    except (OSError, ValueError):
+        return {}
+    return {str(i.get('id')): i['raridade'] for i in itens
+            if isinstance(i, dict) and i.get('raridade') in estoque.LIMITES}
 
 
 def _copia(c, raridade):
