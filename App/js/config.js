@@ -1720,6 +1720,15 @@ export const INTRO = [
   { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
     dica: 'Você ganhou um baú! Todo baú fica guardado aqui, em Baús (o botão redondo no topo de Tarefas). Toque nele para abrir.',
     premio: { xp: 20 } },
+  // Primeiro as 3 peças do dia (`meta`), depois repor, comprar um congelamento
+  // com fichas e só então congelar: a ordem em que a loja é usada de verdade.
+  { evento: 'resgates', meta: 3, ir: 'vitrine', lugar: 'cima', nome: 'Pegue 3 peças',
+    dica: 'Toque numa peça do mural e resgate. Você pode pegar 3 por dia; as mais raras ficam por baixo, então arraste as de cima para garimpar.',
+    premio: { bau: 'incomum' } },
+  // Logo depois do primeiro baú: a tela onde ele (e todo baú) fica guardado.
+  { evento: 'abrir-bau', ir: 'baus', lugar: 'baixo', nome: 'Abra o seu baú',
+    dica: 'Você ganhou um baú! Todo baú fica guardado aqui, em Baús (o botão redondo no topo de Tarefas). Toque nele para abrir.',
+    premio: { xp: 20 } },
   // Os dois itens de recarga da loja, com um de cada de brinde (`brinde`, dado
   // quando o passo abre): depois de pegar a primeira peça, congelar, para ver a peça ficar no repor.
   { evento: 'congelar', ir: 'vitrine', lugar: 'cima', brinde: 'congelamento', nome: 'Congele uma peça',
@@ -1729,6 +1738,17 @@ export const INTRO = [
   { evento: 'repor', ir: 'vitrine', lugar: 'baixo', brinde: 'repor', nome: 'Reponha a loja',
     dica: 'E uma ficha de repor! Toque no ↻ ao lado dos resgates para trocar o mural por um novo. ' +
       'A peça congelada fica, e os resgates de hoje continuam contados.',
+    premio: { xp: 20 } },
+  { evento: 'repor', ir: 'vitrine', lugar: 'baixo', brinde: 'repor', nome: 'Reponha a loja',
+    dica: 'Seus 3 resgates acabaram, mas a loja pode mudar! Toque no ↻ ao lado dos resgates para trocar o mural por um novo (esta ficha de repor é um presente). ' +
+      'Os resgates de hoje continuam contados.',
+    premio: { xp: 20, fichas: 2 } },
+  { evento: 'comprar-congelar', ir: 'tarefas', lugar: 'baixo', nome: 'Compre um congelamento',
+    dica: 'Fichas compram itens da loja. Toque nas suas fichas (ao lado do nível) e troque 2 delas por um congelamento.',
+    premio: { xp: 20 } },
+  { evento: 'congelar', ir: 'vitrine', lugar: 'cima', nome: 'Congele uma peça',
+    dica: 'Gostou de uma peça mas não quer pegar agora? Toque nela no mural e em Congelar: ela fica guardada na loja até o fim de amanhã, mesmo que o mural mude. ' +
+      'Peça que já é sua não dá para congelar.',
     premio: { xp: 20 } },
   { ir: 'closet', demo: 'peca', lugar: 'cima', nome: 'O seu closet',
     dica: 'Tudo o que você pega fica aqui. A cor da borda mostra a raridade, de comum a lendária. ' +
