@@ -98,6 +98,25 @@ export async function sair() {
   }
 }
 
+// Outras contas já logadas neste aparelho: [{id, nome, handle}]. Os tokens ficam
+// num cookie HttpOnly no servidor; aqui só se pede a lista e se escolhe um id.
+export async function contasGuardadas() {
+  try {
+    const { contas } = await pedir('/api/auth/contas');
+    return contas || [];
+  } catch { return []; }   // servidor local ou sem rede: sem lista
+}
+
+// Entra numa conta guardada, sem senha. Sem id: guarda a atual e vai para o login
+// ("adicionar outra conta").
+export async function trocarConta(id = null) {
+  const { usuario } = await pedir('/api/auth/trocar',
+    { metodo: 'POST', corpo: { id } });
+  atual = usuario || null;
+  avisar();
+  return atual;
+}
+
 // Nome e @ são da conta (moram no banco, valem em qualquer navegador). Bio,
 // avatar e o resto do perfil continuam no estado do jogo — ver db.js.
 export async function atualizarConta({ nome, handle }) {

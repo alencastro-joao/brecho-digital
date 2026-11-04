@@ -118,6 +118,12 @@
       <button type="submit" class="btn-dark auth-enviar" id="criar-enviar">Criar minha conta</button>
     </form>
 
+    <!-- Contas já logadas neste aparelho: um toque entra, sem senha. -->
+    <div class="auth-guardadas" id="auth-guardadas" hidden>
+      <span class="auth-ou">contas neste aparelho</span>
+      <div class="troca-lista" id="auth-guardadas-lista"></div>
+    </div>
+
     <!-- Só aparece quando o servidor diz que o Google está configurado. -->
     <div class="auth-google" id="auth-google" hidden>
       <span class="auth-ou">ou</span>
@@ -1147,8 +1153,10 @@
           <p class="missoes-sub" id="conta-resumo"></p>
           <div class="tool-row">
             <button class="btn-ghost" id="btn-trocar-senha">Trocar a senha</button>
+            <button class="btn-ghost" id="btn-trocar-conta">Trocar conta</button>
             <button class="btn-ghost" id="btn-sair">Sair da conta</button>
           </div>
+          <div class="troca-lista" id="troca-lista" hidden></div>
           <form class="conta-senha" id="form-senha" hidden>
             <label>Senha atual
               <input type="password" id="senha-atual" autocomplete="current-password">

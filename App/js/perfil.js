@@ -466,6 +466,42 @@ function montarConta() {
   // do segundo plano com o envio congelado) e o botão parecia não fazer nada.
   // Se o prazo vence, o save continua pendente no aparelho e sobe no próximo
   // login desta conta.
+  // Trocar conta: lista as outras contas deste aparelho (um toque entra, sem
+  // senha) e "Adicionar outra conta" leva ao login guardando esta. Recarrega
+  // pelo mesmo motivo do Sair.
+  const listaTroca = $('#troca-lista');
+  async function mudarDeConta(id) {
+    await Promise.race([
+      db.descarregar().catch(() => {}),
+      new Promise(r => setTimeout(r, PRAZO_PARA_SALVAR_AO_SAIR)),
+    ]);
+    try {
+      await auth.trocarConta(id);
+    } catch (erro) {
+      toast(`Não consegui trocar: ${erro.message}`, 'aviso');
+      return;
+    }
+    db.encerrarEstado();
+    location.reload();
+  }
+  $('#btn-trocar-conta').addEventListener('click', async () => {
+    if (!listaTroca.hidden) { listaTroca.hidden = true; return; }
+    const outras = await auth.contasGuardadas();
+    const itens = outras.map((c) => {
+      const b = document.createElement('button');
+      b.className = 'btn-ghost';
+      b.textContent = `${c.nome || c.handle} (${c.handle})`;
+      b.addEventListener('click', () => mudarDeConta(c.id));
+      return b;
+    });
+    const nova = document.createElement('button');
+    nova.className = 'btn-ghost';
+    nova.textContent = '+ Adicionar outra conta';
+    nova.addEventListener('click', () => mudarDeConta(null));
+    listaTroca.replaceChildren(...itens, nova);
+    listaTroca.hidden = false;
+  });
+
   const botao = $('#btn-sair');
   botao.addEventListener('click', async () => {
     if (botao.disabled) return;
