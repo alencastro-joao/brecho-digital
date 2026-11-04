@@ -428,6 +428,11 @@ function desenhar() {
   const foco = document.activeElement?.closest?.('.es-cartao')?.dataset.id;
   const campoFoco = document.activeElement?.dataset?.campo;
   const visiveis = itens.filter(i => aparece(i) && naVista(i));
+  // Nos jogos: das mais completas para as menos (medida, tipo, cor, nome, marca).
+  if (verJogos || verProntas) {
+    const nota = (i) => { const f = fichaDe(i); return (i.medida ? 1 : 0) + [f.cat, f.cor, f.nome, f.marca].filter(Boolean).length; };
+    visiveis.sort((x, y) => nota(y) - nota(x));
+  }
   const chegando = itens.filter(i => !aparece(i)).length;
   const aviso = $('#es-chegando');
   aviso.hidden = !chegando;
