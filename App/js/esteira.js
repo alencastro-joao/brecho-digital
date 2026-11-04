@@ -387,7 +387,9 @@ const marcadas = () => itens.filter(i => selecionadas.has(i.id));
 // A peça que foi para os mini games sai da grade e fica guardada à parte,
 // atrás do botão "Nos jogos". `verJogos` diz qual das duas está na tela.
 let verJogos = false;
-const naVista = (item) => nosJogos.has(item.id) === verJogos;
+// "Prontas dos jogos": 2 medidas e 2 respostas (ajudas.py, pendencias) — vão como estão.
+let verProntas = false;
+const naVista = (item) => (verProntas ? prontasJogos.has(item.id) : nosJogos.has(item.id) === verJogos);
 
 const fichaDe = (item) => {
   const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', tema: '', ...(item.ficha || {}) };
@@ -447,12 +449,17 @@ function desenhar() {
   grade.classList.toggle('selecionando', selecionadas.size > 0);
   const vazio = $('#es-vazio');
   vazio.hidden = visiveis.length > 0 || (!verJogos && chegando > 0);   // com peça chegando, a contagem já diz
-  vazio.textContent = verJogos ? 'Nenhuma peça nos mini games.'
+  vazio.textContent = verProntas ? 'Nenhuma peça ficou pronta nos jogos ainda.' : verJogos ? 'Nenhuma peça nos mini games.'
     : itens.length ? 'As peças prontas estão todas nos mini games.' : 'Nada na esteira. As fotos que você mandar aparecem aqui.';
   const nJogos = itens.filter(i => nosJogos.has(i.id)).length;
   $('#es-vista').hidden = !nJogos && !verJogos;
   const ver = $('#es-ver-jogos');
   ver.setAttribute('aria-pressed', String(verJogos));
+  const verP = $('#es-ver-prontas');
+  const nProntas = itens.filter(i => prontasJogos.has(i.id)).length;
+  verP.hidden = !nProntas && !verProntas;
+  verP.setAttribute('aria-pressed', String(verProntas));
+  verP.textContent = verProntas ? '← Nos jogos' : `✅ Prontas dos jogos ${nProntas}`;
   ver.textContent = verJogos ? '← Voltar à esteira' : `🎲 Nos jogos ${nJogos}`;
   atualizarLote();
 
@@ -751,12 +758,15 @@ function aplicarLote() {
 // (ajudas.py) e os jogadores opinam sobre raridade, cor e marca. Ela continua
 // aqui; publicar ou descartar depois tira ela dos jogos.
 let nosJogos = new Set();
+let prontasJogos = new Set();     // nos jogos e sem nada em `faltam`
 
 async function lerJogos() {
   try {
     const r = await fetch('api/admin/ajudas', { credentials: 'include' });
     if (!r.ok) return;
-    nosJogos = new Set((await r.json()).nosJogos || []);
+    const dados = await r.json();
+    nosJogos = new Set(dados.nosJogos || []);
+    prontasJogos = new Set((dados.pecas || []).filter(p => nosJogos.has(p.peca) && !(p.faltam || []).length).map(p => p.peca));
     desenhar();
   } catch { /* sem o selo, segue */ }
 }
@@ -1273,6 +1283,14 @@ function ligarLote() {
   $('#es-lote-jogos').addEventListener('click', () => mandarParaJogos(marcadas()));
   $('#es-ver-jogos').addEventListener('click', () => {
     verJogos = !verJogos;
+    verProntas = false;
+    selecionadas.clear();
+    desenhar();
+    window.scrollTo(0, 0);
+  });
+  $('#es-ver-prontas').addEventListener('click', () => {
+    verProntas = !verProntas;
+    verJogos = verProntas;
     selecionadas.clear();
     desenhar();
     window.scrollTo(0, 0);
