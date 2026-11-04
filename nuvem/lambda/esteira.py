@@ -615,6 +615,8 @@ def guardar(item_id, corpo):
     if isinstance(corpo.get('medida'), dict):
         m = corpo['medida']
         dados['medida'] = {k: round(float(m.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+        if m.get('rot'):
+            dados['medida']['rot'] = round(float(m['rot']), 1)
     elif corpo.get('medida') is False:
         # Trocou a categoria: a medida da antiga não serve para a nova. É False
         # e não None de propósito: None é só "ainda não medi", e não pode

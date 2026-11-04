@@ -292,7 +292,7 @@ export function vestirPeca(itemId) {
     cat: peca.cat,
     x: a.x, y: a.y,
     escala: 1,
-    rot: 0,
+    rot: a.rot || 0,
     flip: false,
     z: anterior ? anterior.z : a.z,
   };
@@ -543,7 +543,7 @@ function ligarFerramentas() {
     if (act === 'girar') c.rot = Math.round(anguloNormal(c.rot + 15));
     if (act === 'reset') {
       const a = ancoraDaPeca(pecaDoCatalogo(c.itemId));
-      Object.assign(c, { x: a.x, y: a.y, escala: 1, rot: 0, flip: false, z: a.z });
+      Object.assign(c, { x: a.x, y: a.y, escala: 1, rot: a.rot || 0, flip: false, z: a.z });
     }
     posicionar(c);
     atualizarFerramentas();

@@ -969,6 +969,7 @@ const regiaoDe = (item) => CATEGORIAS[fichaDe(item).cat]?.regiao;
 const paraGravar = () => {
   const a = ancoraNoMolde(regiaoDe(medindo), medida);
   return { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(a.w),
+           ...(Math.round(medida.rot || 0) ? { rot: Math.round(medida.rot) } : {}),
            ...(CORPO_EM_TESTE ? { corpo: CORPO_EM_TESTE } : {}) };
 };
 
@@ -977,6 +978,7 @@ function abrirMolde(item) {
   if (!f.cat) return toast('Escolha a categoria antes de medir.', 'aviso');
   medindo = item;
   medida = item.medida ? ancoraNoCorpo(regiaoDe(item), { ...item.medida }) : medidaPadrao(f.cat);
+  medida.rot = item.medida?.rot || 0;
   $('#es-avatar').innerHTML = svgAvatar();
   $('#es-peca-img').src = item.previa;
   $('#es-molde-modal').hidden = false;
@@ -1097,6 +1099,9 @@ function posicionar() {
   no.style.top = `${medida.y / CONFIG.STAGE_H * 100}%`;
   no.style.width = `${medida.w / CONFIG.STAGE_W * 100}%`;
   no.style.height = `${(medida.w / prop) / CONFIG.STAGE_H * 100}%`;
+  no.style.transform = `translate(-50%, -50%) rotate(${medida.rot || 0}deg)`;
+  $('#es-rot').value = Math.round(medida.rot || 0);
+  $('#es-rot-valor').textContent = `${Math.round(medida.rot || 0)}°`;
 
   const cat = fichaDe(medindo).cat;
   const real = paraGravar();
@@ -1157,7 +1162,9 @@ function ligarMolde() {
     medida.w = clamp(Number(e.target.value), 20, 600);
     posicionar();
   });
-  $$('.es-tam-btn').forEach(b => b.addEventListener('click', () => {
+  $('#es-rot').addEventListener('input', (e) => { medida.rot = Number(e.target.value); posicionar(); });
+  $('#es-rot-zero').addEventListener('click', () => { medida.rot = 0; posicionar(); });
+  $$('.es-tam-btn[data-tam]').forEach(b => b.addEventListener('click', () => {
     medida.w = clamp(medida.w * (b.dataset.tam === '1' ? 1.06 : 0.94), 20, 600);
     posicionar();
   }));
