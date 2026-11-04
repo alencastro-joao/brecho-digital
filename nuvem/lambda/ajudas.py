@@ -30,8 +30,8 @@ copiada para o site (`assets/jogos/<id>.webp`) e a lista pública fica em
 Nada mexe na ficha sozinho: o admin vê o resumo (GET /api/admin/ajudas) e
 leva para a ficha da esteira o que quiser.
 
-**Peça pronta** é a que já tem resposta firme nas cinco entradas: raridade,
-ajuste, tipo, cor e marca (`pendencias`). Entrada que fechou sai do jogo: a
+**Peça pronta** é a que já tem duas medidas e duas respostas em tipo, cor e
+marca (a raridade o João ajusta na esteira) (`pendencias`). Entrada que fechou sai do jogo: a
 peça para de aparecer no Avaliar ou no Ajustar, e o Preencher só pergunta o
 que falta (voto em entrada fechada nem é gravado).
 
@@ -73,13 +73,13 @@ JOGOS = {
 # Votos que a peça precisa antes de ganhar raridade sugerida.
 VOTOS_MIN = 10
 # Medidas do Ajustar para a mediana valer.
-AJUSTES_MIN = 3
+AJUSTES_MIN = 2
 # Tipo e cor: com ESCOLHA_MIN respostas todas iguais, fecha. Se dividiu, espera
 # chegar a ESCOLHA_DESEMPATE e a mais votada leva (empate segue esperando).
-ESCOLHA_MIN = 3
-ESCOLHA_DESEMPATE = 5
+ESCOLHA_MIN = 2
+ESCOLHA_DESEMPATE = 2
 # Marca: basta esta quantidade de respostas iguais.
-MARCA_IGUAIS = 2
+MARCA_IGUAIS = 1
 # Rodada do Avaliar: subir este número zera todos os votos (os antigos ficam
 # no banco, mas ninguém lê) e deixa todo mundo votar de novo em todas as peças.
 RODADA_AVALIAR = 2
@@ -385,11 +385,8 @@ def _mais_votado(item, campo):
 def _decidido(campo, contagens, total):
     """A resposta mais votada já vale? `contagens` é quantos votos tem cada valor."""
     maior = max(contagens, default=0)
-    if campo == 'marca':
-        return maior >= MARCA_IGUAIS
-    if total >= ESCOLHA_MIN and len(contagens) == 1:
-        return True
-    return total >= ESCOLHA_DESEMPATE and contagens.count(maior) == 1
+    # Duas respostas e a peça segue como está; a mais votada (ou a primeira) leva.
+    return total >= ESCOLHA_MIN
 
 
 def resumo_da_peca(item):
@@ -411,15 +408,15 @@ def resumo_da_peca(item):
     }
 
 
-ENTRADAS = ('raridade', 'ajuste', 'cat', 'cor', 'marca')
+# A raridade não entra: o João ajusta na esteira (04/11/2026). Peça com 2 medidas
+# e 2 respostas em tipo, cor e marca já está pronta, do jeito que está.
+ENTRADAS = ('ajuste', 'cat', 'cor', 'marca')
 
 
 def pendencias(item):
     """As entradas que ainda não fecharam. Vazio quer dizer peça pronta."""
     item = item or {}
-    votos = sum(int(item.get(_campo_voto(v), {}).get('N', 0)) for v in ('sim', 'nao', 'meh'))
     feito = {
-        'raridade': votos >= VOTOS_MIN,
         'ajuste': len(item.get('ajustes', {}).get('L', [])) >= AJUSTES_MIN,
     }
     for campo in ('cat', 'cor', 'marca'):
