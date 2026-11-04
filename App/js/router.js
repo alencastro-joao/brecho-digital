@@ -92,6 +92,27 @@ function aplicar(view) {
       botao !== botaoAntes ? botao : null);
   }
   ganchos.get(view)?.(anterior);
+  pintarBarraDoSistema();
+}
+
+// A faixa do relógio do celular (meta theme-color) pega a cor do topo da tela
+// aberta, para o jogo emendar com ela como num app. Lida do que está pintado
+// lá em cima, então vale para qualquer tela e para a paleta que a pessoa
+// escolheu. Espera a tela nova terminar de entrar (movimento.js).
+let pintura = 0;
+function pintarBarraDoSistema() {
+  clearTimeout(pintura);
+  pintura = setTimeout(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    let el = document.elementFromPoint(innerWidth / 2, 2);
+    let cor = null;
+    for (; el && !cor; el = el.parentElement) {
+      const c = getComputedStyle(el).backgroundColor;
+      const a = c.match(/[\d.]+/g);
+      if (a && (a.length < 4 || Number(a[3]) > 0.9)) cor = c;
+    }
+    if (meta && cor) meta.content = cor;
+  }, 420);
 }
 
 // O botão Criar não é uma tela: abre um menu pequeno colado nele, com o
