@@ -1711,7 +1711,7 @@ export const FERRAMENTAS = [
 // a paleta, a ficha da peça — e embaixo quando está em cima.
 export const INTRO = [
   { evento: 'personagem', ir: 'personagem', lugar: 'cima', nome: 'Crie o seu personagem',
-    dica: 'Vamos criar o seu personagem! Escolha corpo, pele e cabelo. Na última aba, escolha a sua cor favorita. Depois toque em Salvar.',
+    dica: 'Vamos criar o seu personagem! Quando terminar, toque em Salvar.',
     premio: { xp: 20 } },
   { ir: 'vitrine', lugar: 'cima', nome: 'Esta é a loja',
     dica: 'Toda manhã o dono repõe o mural, então a loja muda todo dia. Você pode pegar 3 peças por dia.' },
