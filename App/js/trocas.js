@@ -21,6 +21,7 @@ import { el, toast } from './util.js';
 import { avisarTroca, aoTocarEmTroca } from './avisos.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
+import { ico } from './icones.js';
 import { ordenar, seletorDeOrdem } from './ordenacao.js';
 import { agrupamento, grupoDe } from './agrupamento.js';
 
@@ -170,8 +171,35 @@ function gradeComFerramentas(copias, max, aoMudar) {
 }
 
 const linhaDeCusto = (rar) =>
-  el('p', { class: 'troca-custo' },
-    `Custa ${custoDa(rar)} ficha${custoDa(rar) === 1 ? '' : 's'} para cada um, só quando a troca acontecer · você tem ${db.fichas()}`);
+  el('p', { class: 'troca-custo' }, `${custoDa(rar)} ficha${custoDa(rar) === 1 ? '' : 's'} · você tem ${db.fichas()}`);
+
+// O "i" no canto da janela: a explicação fica em cards, não na tela (João, 04/11/2026).
+const CARDS = () => [
+  ['⇄', 'Só entre amigos', 'Dá para trocar com quem você segue e também segue você.'],
+  ['💎', 'Mesma raridade', 'Uma peça por uma, sempre da mesma raridade.'],
+  ['👆', 'Até 4 opções', `Você marca até ${TROCAS.maxOpcoes} peças suas. A outra pessoa escolhe uma ou recusa.`],
+  ['🪙', 'Fichas', 'As duas pagam só quando a troca acontece: ' +
+    RARIDADES_CUSTO().join(', ') + '.'],
+  ['📅', `${TROCAS.porDia} por dia`, `No máximo ${TROCAS.porDia} trocas por dia. A peça que você dá sai dos seus looks e colagens.`],
+];
+const RARIDADES_CUSTO = () => Object.entries(TROCAS.custo)
+  .map(([id, n]) => `${(RARIDADE[id]?.nome || id).toLowerCase()} ${n}`);
+
+function botaoInfo() {
+  const b = el('button', { type: 'button', class: 'troca-info-btn', title: 'Como funciona', 'aria-label': 'Como funciona' }, ico('info'));
+  b.addEventListener('click', () => {
+    const ok = el('button', { type: 'button', class: 'btn-dark' }, 'Entendi');
+    const { caixa: info, fechar } = janela(
+      el('h2', { class: 'pergunta-titulo' }, 'Como funciona a troca'),
+      el('div', { class: 'troca-cards' }, ...CARDS().map(([emoji, titulo, texto]) =>
+        el('div', { class: 'troca-card' }, el('span', { class: 'troca-card-emoji' }, emoji),
+          el('strong', {}, titulo), el('p', {}, texto)))),
+      ok);
+    info.classList.add('troca-info');
+    ok.addEventListener('click', () => fechar());
+  });
+  return b;
+}
 
 // ------------------------------ Propor (Ana) -------------------------------
 export function abrirProposta(peca, p) {
@@ -179,16 +207,15 @@ export function abrirProposta(peca, p) {
   const minhas = minhasParaOferecer(rar, p);
   let escolhidas = [];
   const enviar = el('button', { type: 'button', class: 'btn-dark', disabled: true }, 'Enviar');
-  const { fechar } = janela(
+  const { caixa, fechar } = janela(
     el('h2', { class: 'pergunta-titulo' }, 'Propor troca'),
     figura({ id: peca.id, raridade: rar }, { rotulo: `de ${handle(p.handle)}`, classe: 'troca-alvo' }),
-    el('p', { class: 'pergunta-texto' },
-      `Marque até ${TROCAS.maxOpcoes} peças suas da mesma raridade. ${handle(p.handle)} escolhe uma delas.`),
     ...gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => { escolhidas = lista; enviar.disabled = !lista.length; }),
     linhaDeCusto(rar),
     el('div', { class: 'pergunta-botoes' },
       el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'),
       enviar));
+  caixa.append(botaoInfo());
   enviar.addEventListener('click', async () => {
     const custo = custoDa(rar);
     if (db.fichas() < custo) return toast(`Faltam fichas: a troca custa ${custo}.`);
@@ -255,13 +282,14 @@ function janelaDeResposta(t) {
   let escolhida = null;
   const aceitar = el('button', { type: 'button', class: 'btn-dark', disabled: true }, 'Aceitar');
   const recusar = el('button', { type: 'button', class: 'btn-ghost' }, 'Recusar');
-  const { fechar } = janela(
+  const { caixa, fechar } = janela(
     el('h2', { class: 'pergunta-titulo' }, `${t.de.handle} quer trocar`),
     figura({ ...t.quero, numero: minha?.numero }, { classe: 'troca-alvo', rotulo: 'a sua peça' }),
-    el('p', { class: 'pergunta-texto' }, 'Escolha a peça que você quer em troca, ou recuse.'),
+    el('p', { class: 'pergunta-texto' }, 'Escolha uma ou recuse.'),
     grade(t.opcoes, 1, (lista) => { escolhida = lista[0] ?? null; aceitar.disabled = escolhida === null; }),
     linhaDeCusto(rar),
     el('div', { class: 'pergunta-botoes' }, recusar, aceitar));
+  caixa.append(botaoInfo());
   recusar.addEventListener('click', async () => {
     try {
       guardar((await chamar(`/api/trocas/${t.id}/recusar`, {})).troca);

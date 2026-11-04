@@ -97,3 +97,24 @@ html body .troca-caixa { width: min(520px, 100%); max-height: min(92vh, 820px); 
   .troca-anim.rodando h2, .troca-anim.rodando .troca-anim-texto,
   .troca-anim.rodando > .btn-dark { animation: none; opacity: 1; }
 }
+
+/* O "i" no canto da janela e os cards de como funciona. */
+.troca-caixa { position: relative; }
+.troca-info-btn {
+  position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; padding: 0;
+  display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: none; color: var(--tinta-suave); cursor: pointer;
+}
+.troca-info-btn svg { width: 26px; height: 26px; }
+.troca-info-btn:hover { color: var(--tinta); }
+.troca-info .troca-cards { margin: 4px 0 14px; }
+.troca-janela + .troca-janela { z-index: 1101; }
+.troca-cards { display: grid; gap: 8px; }
+.troca-card {
+  display: grid; grid-template-columns: 36px 1fr; column-gap: 10px; align-items: center;
+  padding: 10px 12px; border-radius: 14px; background: var(--branco); border: 2px solid var(--linha);
+  text-align: left;
+}
+.troca-card-emoji { grid-row: span 2; font-size: 24px; text-align: center; }
+.troca-card strong { font-size: 14px; }
+.troca-card p { margin: 0; font-size: 13px; line-height: 1.35; color: var(--tinta-suave); }
