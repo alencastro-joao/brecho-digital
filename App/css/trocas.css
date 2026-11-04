@@ -221,3 +221,4 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
   pointer-events: none;
 }
 .troca-desejo svg { width: 14px; height: 14px; }
+.troca-tela .troca-grade { max-height: none; overflow: visible; }   /* uma rolagem só: a do corpo */
