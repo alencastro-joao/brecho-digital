@@ -1392,6 +1392,7 @@ async function iniciar() {
   lerAuto();
   lerJogos();
   await atualizar();
+  lerJogos();   // de novo: na primeira vez a lista ainda não tinha chegado e nada foi aplicado
   montarPinterest();
   // Voltou para a aba (ex.: depois de fotografar no celular ou de salvar pin
   // novo): confere a esteira e relê as pastas do Pinterest.
