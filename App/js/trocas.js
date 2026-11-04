@@ -215,7 +215,10 @@ export function abrirProposta(peca, p) {
   const { caixa, fechar } = janela(
     el('h2', { class: 'pergunta-titulo' }, 'Propor troca'),
     figura({ id: peca.id, raridade: rar }, { rotulo: `de ${handle(p.handle)}`, classe: 'troca-alvo' }),
-    ...gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => { escolhidas = lista; enviar.disabled = !lista.length; }),
+    ...gradeComFerramentas(minhas, TROCAS.maxOpcoes, (lista) => {
+      escolhidas = lista; enviar.disabled = !lista.length;
+      enviar.textContent = lista.length ? `Enviar (${lista.length})` : 'Enviar';
+    }),
     linhaDeCusto(rar),
     el('div', { class: 'pergunta-botoes' },
       el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'),
