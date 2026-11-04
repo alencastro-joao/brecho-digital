@@ -1518,6 +1518,28 @@ export function abrirBoard(id) {
   if (montado) { encaixar(); render(); }
 }
 
+// --- Retomar (retomar.js) --------------------------------------------------
+// A colagem aberta na mesa sobrevive ao celular matar a aba. Leva o id da
+// colagem salva (se for uma), para salvar depois atualizar a mesma.
+export function rascunhoDaColagem() {
+  if (!board?.itens?.length) return null;
+  return { board: { ...board, itens: board.itens.map(({ uid, ...i }) => i) }, fotoSalva };
+}
+
+export function retomarColagem(r) {
+  if (!r?.board?.itens?.length) return;
+  board = JSON.parse(JSON.stringify(r.board));
+  board.itens = board.itens
+    .filter(i => i && (!i.itemId || pecaDoCatalogo(i.itemId)))
+    .map(i => ({ ...i, uid: 'b' + (uidSeq++) }));
+  board.guias = board.guias || { h: [], v: [] };
+  if (board.id && !db.state.boards.some(b => b.id === board.id)) board.id = null;
+  selecao.clear();
+  hist.zerar();
+  fotoSalva = typeof r.fotoSalva === 'string' ? r.fotoSalva : '';
+  if (montado) { encaixar(); render(); }
+}
+
 export function aoEntrarNoBoard() {
   // A mesa vazia nasceu antes do login (ou na conta anterior): refaz com a
   // assinatura de quem está entrando agora.

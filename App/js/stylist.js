@@ -899,6 +899,33 @@ function montarMeusStylists() {
   });
 }
 
+// --- Retomar (retomar.js) --------------------------------------------------
+// O palco em andamento sobrevive ao celular matar a aba: a foto guarda as
+// camadas e qual look estava aberto, e salvar depois atualiza esse mesmo look.
+export function rascunhoDoStylist() {
+  if (!camadas.length) return null;
+  return {
+    camadas: camadas.map(({ uid, ...c }) => c),
+    lookAtualId,
+    sorteado: palcoSorteado,
+    nome: $('#outfit-nome')?.value || '',
+  };
+}
+
+export function retomarStylist(r) {
+  const voltam = (r?.camadas || []).filter(c => c && pecaDoCatalogo(c.itemId));
+  if (!voltam.length) return;
+  camadas = voltam.map(c => ({ ...c, uid: 'c' + (uidSeq++) }));
+  lookAtualId = db.state.looks.some(l => l.id === r.lookAtualId) ? r.lookAtualId : null;
+  selecionado = null;
+  palcoSorteado = !!r.sorteado;
+  const campo = $('#outfit-nome');
+  if (campo) campo.value = r.nome || '';
+  hist.zerar();
+  renderCamadas();
+  atualizarVestidas();
+}
+
 export function aoEntrarNoStylist() {
   montarPaleta();
   renderSalvos();
