@@ -411,10 +411,22 @@ function renderAbas() {
 }
 
 // ------------------------------- Pedidos ----------------------------------
+// A tela onde cada pedido se cumpre, pelo evento que ele conta. 'entrar' não
+// tem: já se cumpre ao abrir o app.
+const TELA_DO_EVENTO = {
+  resgates: 'vitrine', raras: 'vitrine', looks: 'stylist', publicar: 'stylist',
+  'postar-colagem': 'board', curtir: 'social',
+};
 function pedido(m, atual, { resgatada, fichas, resgatar }) {
   const feito = Math.min(atual, m.meta);
   const ok = feito >= m.meta;
-  return el('div', { class: 'tf-item' + (ok && resgatada ? ' ok' : '') },
+  const destino = !ok && TELA_DO_EVENTO[m.evento];
+  return el('div', {
+    class: 'tf-item' + (ok && resgatada ? ' ok' : '') + (destino ? ' clicavel' : ''),
+    ...(destino ? { role: 'link', tabindex: '0', title: 'Ir fazer esta missão',
+      onclick: () => irPara(destino),
+      onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); irPara(destino); } } } : {}),
+  },
     el('span', { class: 'tf-ico' }, ico(ok && resgatada ? 'ok' : (ICONE[m.evento] || 'estrela'))),
     el('div', { class: 'tf-info' },
       el('strong', {}, m.nome),
