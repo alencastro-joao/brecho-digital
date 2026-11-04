@@ -25,6 +25,7 @@ from contas import ErroDeConta, agora, banco, iso
 
 ID_OK = re.compile(r'^u-[0-9a-f]{16}$')
 VALOR_OK = re.compile(r'^[\w#.\-]{1,32}$')
+RARIDADES_OK = re.compile(r'^[curel]{0,600}$')
 BIO_MAX = 140
 TERMO_MAX = 40
 RESULTADOS = 20
@@ -161,7 +162,7 @@ def perfil_de(eu_id, alvo_id, completo=True):
         if not completo:
             return cartao
         publico = _perfil(linha)
-        for chave in ('favoritos', 'obras', 'guardaRoupa', 'wishlist'):
+        for chave in ('favoritos', 'obras', 'guardaRoupa', 'raridades', 'wishlist'):
             if publico.get(chave) is not None:
                 cartao[chave] = publico[chave]
         amigos = con.execute(
@@ -293,6 +294,12 @@ def limpar_perfil(corpo, eu_id=None):
         }
     if 'guardaRoupa' in corpo:
         perfil['guardaRoupa'] = _ids(corpo.get('guardaRoupa'), GUARDA_ROUPA_MAX)
+        # A raridade de cada peça, uma letra por peça na mesma ordem (c u r e l):
+        # é ela que diz à amiga quais peças suas servem para trocar (trocas.py).
+        # Se algum id caiu na limpeza, as letras desalinham: melhor nenhuma.
+        letras = str(corpo.get('raridades') or '')
+        if RARIDADES_OK.match(letras) and len(letras) == len(perfil['guardaRoupa']):
+            perfil['raridades'] = letras
     if 'wishlist' in corpo:
         perfil['wishlist'] = _ids(corpo.get('wishlist'), WISHLIST_MAX)
     return perfil

@@ -39,6 +39,7 @@ import { montarPersonagem, aoEntrarNoPersonagem } from './personagem.js';
 import { montarVestiario, aoEntrarNoVestiario } from './vestiario.js';
 import { montarNivel } from './nivel.js';
 import { montarAvisos, avisarPresente } from './avisos.js';
+import { montarTrocas } from './trocas.js';
 import { temPecasDoEvento } from './eventos.js';
 import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './tutorial.js';
 import { lembrarDeInstalar } from './instalar.js';
@@ -154,6 +155,7 @@ async function iniciar() {
 
   montarNivel();   // antes das telas: o selo da sidebar já nasce com o nível certo
   montarAvisos();  // depois do social: os seguidores lidos no boot já valem de foto
+  montarTrocas();  // depois do sino: oferta nova e resposta viram aviso
   montarNPC();
   montarVitrine();
   montarCloset();

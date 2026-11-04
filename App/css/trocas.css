@@ -1,0 +1,82 @@
+/* Troca de peças entre amigas (js/trocas.js). */
+
+/* Na ficha da peça: Trocar ao lado do ♡ da wishlist. */
+.pp-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.troca-btn {
+  width: auto; height: 40px; margin: 0; padding: 0 16px 2px; border-radius: 12px;
+  font-size: 14px; font-weight: 800; white-space: nowrap;
+}
+.troca-btn[disabled] { opacity: .55; cursor: not-allowed; }
+.troca-btn small { font-size: 12px; font-weight: 700; }
+
+/* As janelas: propor, responder, ver. */
+html body .troca-caixa { width: min(460px, 100%); max-height: min(92vh, 760px); overflow-y: auto; }
+.troca-fig {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 6px; border-radius: 14px; background: var(--branco);
+  border: 2px solid var(--linha); min-width: 0;
+}
+.troca-fig img { width: 100%; max-width: 110px; aspect-ratio: 1; object-fit: contain; }
+.troca-fig-nome { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+.troca-fig small { font-size: 11px; color: var(--tinta-suave); }
+.troca-fig em { font-size: 11px; font-style: normal; font-weight: 700; color: var(--rar); }
+.troca-fig.troca-alvo { margin: 4px auto 10px; width: 150px; border-color: var(--rar); }
+.troca-fig.troca-alvo img { max-width: 130px; }
+.troca-fig.escolhida { border-color: var(--rar); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rar) 35%, transparent); }
+
+.troca-grade {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px;
+  margin: 12px 0 4px; max-height: 42vh; overflow-y: auto; padding: 2px;
+}
+.troca-opcao { padding: 0; border: 0; background: none; border-radius: 14px; cursor: pointer; text-align: inherit; }
+.troca-opcao .troca-fig { height: 100%; transition: transform .12s, border-color .12s; }
+.troca-opcao:hover .troca-fig { transform: translateY(-2px); }
+.troca-opcao[aria-pressed="true"] .troca-fig {
+  border-color: var(--rar); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rar) 35%, transparent);
+}
+.troca-custo { margin: 10px 0 0; font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
+
+/* A animação: a sua peça vai, a outra vem e pula com a aura. */
+.troca-anim {
+  position: fixed; inset: 0; z-index: 1200; display: grid; place-content: center; justify-items: center;
+  gap: 14px; padding: 16px; background: rgba(26, 22, 18, .6); backdrop-filter: blur(3px);
+  color: #fff; text-align: center;
+}
+.troca-anim h2 { margin: 0; font-size: 24px; font-weight: 900; opacity: 0; }
+.troca-palco { position: relative; width: min(340px, 90vw); height: 200px; }
+.troca-palco .troca-fig { position: absolute; top: 10px; width: 140px; color: var(--tinta); }
+.troca-palco .troca-vai { left: 0; }
+.troca-palco .troca-vem { right: 0; }
+.troca-anim-texto { margin: 0; font-size: 15px; font-weight: 700; opacity: 0; display: grid; gap: 4px; }
+.troca-anim-texto small { font-size: 12px; font-weight: 600; opacity: .85; }
+.troca-anim > .btn-dark { width: auto; padding: 10px 28px; opacity: 0; }
+
+.troca-anim.rodando .troca-vai { animation: troca-vai 1.3s cubic-bezier(.5, 0, .3, 1) forwards; }
+.troca-anim.rodando .troca-vem { animation: troca-vem 1.3s cubic-bezier(.5, 0, .3, 1) forwards, troca-pulo .5s 1.3s ease-out; }
+.troca-anim.rodando h2,
+.troca-anim.rodando .troca-anim-texto,
+.troca-anim.rodando > .btn-dark { animation: troca-aparece .35s 1.35s forwards; }
+
+@keyframes troca-vai {
+  0%   { transform: translate(0, 0) rotate(0); opacity: 1; }
+  45%  { transform: translate(calc(min(340px, 90vw) / 2 - 70px), -30px) rotate(-8deg); opacity: 1; }
+  100% { transform: translate(-60vw, 10px) rotate(-20deg); opacity: 0; }
+}
+@keyframes troca-vem {
+  0%   { transform: translate(0, 0) rotate(0); }
+  45%  { transform: translate(calc(70px - min(340px, 90vw) / 2), 30px) rotate(8deg); }
+  100% { transform: translate(calc(70px - min(340px, 90vw) / 2), 0) rotate(0) scale(1.12);
+         box-shadow: 0 0 0 4px var(--rar), 0 0 40px 10px var(--rar); border-color: var(--rar); }
+}
+@keyframes troca-pulo {
+  0%, 100% { translate: 0 0; }
+  40%      { translate: 0 -18px; }
+}
+@keyframes troca-aparece { to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .troca-anim.rodando .troca-vai { animation: none; opacity: 0; }
+  .troca-anim.rodando .troca-vem { animation: none; left: 50%; right: auto; transform: translateX(-50%); }
+  .troca-anim.rodando h2, .troca-anim.rodando .troca-anim-texto,
+  .troca-anim.rodando > .btn-dark { animation: none; opacity: 1; }
+}

@@ -97,6 +97,9 @@ function estadoInicial() {
     progresso: { xp: 0, nivelVisto: 1 },   // xp só sobe; o nível é derivado dele
     fichas: 0,                 // ganhas nos marcos das missões, trocadas por resgate
     fichasDeRepor: 0,          // missões, trilha ou compradas em Tarefas: trocam a arara do dia
+    // Trocas de peça (js/trocas.js): as fichas pagas em cada oferta enviada
+    // (voltam se ela não sair) e as ofertas recebidas que já viraram aviso.
+    trocas: { cobradas: {}, avisadas: [] },
     congeladas: [],            // peças presas na loja com fichas: { id, ate } (ate = último dia, ISO)
     congelamentos: 0,          // compras de congelar feitas em Tarefas, ainda não usadas na loja
     baus: [],                  // baús ganhos esperando abrir (tela de Baús)

@@ -48,6 +48,7 @@ import contas          # noqa: E402  (precisa da linha de cima)
 import pessoas         # noqa: E402
 import feed            # noqa: E402
 import estoque         # noqa: E402
+import trocas          # noqa: E402
 # A conta do painel do admin é a mesma da Lambda (sem boto3 nela).
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))), 'nuvem', 'lambda'))
@@ -343,6 +344,35 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.responder(400, {'erro': str(e)})
         return True
 
+    # Troca de peças entre amigas (ver trocas.py): mesmas rotas da Lambda.
+    def rota_de_trocas(self, metodo):
+        m = re.match(r'^/api/trocas(?:/([^/]+)/(aceitar|recusar|cancelar|aplicada))?$',
+                     self.path.rstrip('/'))
+        if not m:
+            return False
+        usuario = self.exigir_sessao()
+        if not usuario:
+            return True
+        troca_id, acao = m.group(1), m.group(2)
+        try:
+            if not troca_id and metodo == 'GET':
+                self.responder(200, trocas.listar(usuario))
+            elif metodo != 'POST':
+                self.responder(404, {'erro': 'rota desconhecida'})
+            elif acao in ('recusar', 'cancelar', 'aplicada'):
+                self.responder(200, getattr(trocas, acao)(usuario, troca_id))
+            else:
+                corpo = self.ler_corpo(LIMITE_LOGIN)
+                if corpo is None:
+                    return True
+                self.responder(200, trocas.aceitar(usuario, troca_id, corpo) if troca_id
+                               else trocas.propor(usuario, corpo))
+        except contas.ErroDeConta as e:
+            self.responder(e.codigo, {'erro': str(e)})
+        except ValueError as e:
+            self.responder(400, {'erro': str(e)})
+        return True
+
     # --- Despacho ----------------------------------------------------------
     # No modo nuvem toda /api/* vai para produção. No local, o que é só da
     # nuvem (acervo e esteira) responde 503 dizendo como chegar lá.
@@ -393,6 +423,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return None
         if self.rota_de_estoque('GET'):
             return None
+        if self.rota_de_trocas('GET'):
+            return None
         if self.path.rstrip('/') == '/api/auth/eu':
             return self.responder(200, {'usuario': self.usuario_da_sessao()})
         if self.rota_de_pessoas('GET'):
@@ -420,6 +452,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if self.rota_de_pessoas('POST'):
             return None
         if self.rota_de_estoque('POST'):
+            return None
+        if self.rota_de_trocas('POST'):
             return None
         if self.rota_de_feed('POST'):
             return None

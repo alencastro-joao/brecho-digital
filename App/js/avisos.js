@@ -47,7 +47,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1 }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, troca = null }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -58,7 +58,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1 }) {
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd,
+    tipo, em: agora, ir, quem, junta, qtd, ...(troca ? { troca } : {}),
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -158,6 +158,16 @@ export function avisarPresente(texto) {
   avisar({ tipo: 'presente', ir: ['baus'], texto });
 }
 
+// Troca de peças (js/trocas.js): a oferta que chegou, a resposta à sua. Tocar
+// no aviso abre a oferta; quem abre é o trocas.js, que se registra aqui (ele
+// importa este arquivo, e não o contrário).
+let abrirTroca = null;
+export const aoTocarEmTroca = (fn) => { abrirTroca = fn; };
+
+export function avisarTroca({ texto, quem = null, troca }) {
+  avisar({ tipo: 'troca', ir: ['perfil'], texto, quem, troca });
+}
+
 // O botão de repor do admin: a loja trocou sem o dia virar.
 export function avisarLojaReposta() {
   avisar({ tipo: 'loja', ir: ['vitrine'], texto: 'Loja reposta.' });
@@ -195,7 +205,7 @@ function reler() {
 // -------------------------------- Tela -------------------------------------
 const ICONE = {
   curtida: 'coracao-cheio', comentario: '“', seguidor: '+', missao: 'ok', nivel: 'estrela-cheia', loja: 'atualizar',
-  wishlist: 'coracao', presente: 'abobora',
+  wishlist: 'coracao', presente: 'abobora', troca: '⇄',
 };
 
 let botao, painel, contador, listaEl;
@@ -208,7 +218,11 @@ function linha(a, visto) {
   return el('li', {},
     el('button', {
       class: 'aviso' + (novo ? ' novo' : ''),
-      onclick: () => { fechar(); irPara(...a.ir); },
+      onclick: () => {
+        fechar();
+        if (a.troca && abrirTroca) abrirTroca(a.troca);
+        else irPara(...a.ir);
+      },
     },
       marca,
       el('span', { class: 'aviso-texto' },

@@ -31,6 +31,7 @@ import { abaDeColecoes } from './perfil.js';
 import { deslizavel, trocarComSlide } from './deslizar.js';
 import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
+import { botaoTrocar, raridadeNaPagina } from './trocas.js';
 import { irPara, lembrado, lembrar, paramAtual, viewAtual, voltar } from './router.js';
 import {
   cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed, irAoPost,
@@ -621,7 +622,9 @@ function pintarFicha(i) {
   $('#pp-ant').disabled = fichaPos <= 0;
   $('#pp-prox').disabled = fichaPos >= fichaPecas.length - 1;
 
-  const r = raridadeDaPeca(peca.id);
+  // Aberta na página de alguém: a dona e a raridade da cópia dela (a troca).
+  const dona = !fichaMinha && viewAtual() === 'usuario' ? perfilPublico(idAtual) : null;
+  const r = RARIDADE[raridadeNaPagina(dona, peca.id)] || raridadeDaPeca(peca.id);
   const cor = r && (r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor);
   const nome = peca.nome?.trim() || nomeDaPeca(peca);
   const linhas = [['Tipo', CATEGORIAS[peca.cat]?.nome ?? rotuloCategoria(peca.cat)]];
@@ -638,7 +641,9 @@ function pintarFicha(i) {
       el('div', { class: 'col-chips pp-colecoes' }, ...colecoesDaPeca(peca.id).map(chipDaColecao)),
       tem
         ? (fichaMinha ? null : el('span', { class: 'pp-tenho' }, ico('ok'), ' Está no seu guarda-roupa'))
-        : botaoDesejo(peca, null, { rotulo: true })));
+        : el('div', { class: 'pp-acoes' },
+          botaoTrocar(peca, dona, { antes: fecharFicha }),
+          botaoDesejo(peca, null, { rotulo: true }))));
 }
 
 function montarFichaDePeca() {

@@ -35,6 +35,9 @@ esta função só responde `/api/*`.
     POST /api/estoque/devolver admin: a cópia volta para a loja
     POST /api/estoque/historico por quem cada cópia já passou
     POST /api/estoque/desfazer  devolve a cópia que você acabou de levar
+    GET  /api/trocas           as trocas de peça em que estou (ver trocas.py)
+    POST /api/trocas           propõe uma troca a uma amiga
+    POST /api/trocas/<id>/(aceitar|recusar|cancelar|aplicada)
     GET  /api/admin/painel     admin: os números do dia (ver painel.py)
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
@@ -69,6 +72,7 @@ import feed
 import logingoogle
 import pessoas
 import redes
+import trocas
 
 SEGREDO = os.environ.get('BD_SEGREDO_ORIGEM') or ''
 CABECALHO_SEGREDO = 'x-origem-brecho'
@@ -87,6 +91,7 @@ ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil'
                     '/api/perfil/miniatura')
 ROTA_REDE = re.compile(r'^/api/redes/(instagram|pinterest)/(entrar|volta|sair)$')
 ROTA_AJUDA = re.compile(r'^/api/ajudas(?:/(avaliar|ajustar|preencher))?$')
+ROTA_TROCA = re.compile(r'^/api/trocas(?:/([^/]+)/(aceitar|recusar|cancelar|aplicada))?$')
 ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 
 
@@ -514,6 +519,27 @@ def rotas_de_estoque(pedido):
     return None
 
 
+def rotas_de_trocas(pedido):
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    m = ROTA_TROCA.match(pedido.rota)
+    troca_id, acao = m.group(1), m.group(2)
+    if not troca_id and pedido.metodo == 'GET':
+        return responder(200, trocas.listar(usuario))
+    if not troca_id and pedido.metodo == 'POST':
+        return responder(200, trocas.propor(usuario, pedido.corpo(LIMITE_LOGIN)))
+    if troca_id and pedido.metodo == 'POST':
+        if acao == 'aceitar':
+            return responder(200, trocas.aceitar(usuario, troca_id, pedido.corpo(LIMITE_LOGIN)))
+        if acao == 'recusar':
+            return responder(200, trocas.recusar(usuario, troca_id))
+        if acao == 'cancelar':
+            return responder(200, trocas.cancelar(usuario, troca_id))
+        return responder(200, trocas.aplicada(usuario, troca_id))
+    return None
+
+
 def rotas_de_ajudas(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -617,6 +643,8 @@ def despachar(pedido):
         return rotas_de_pessoas(pedido)
     if rota.startswith('/api/estoque'):
         return rotas_de_estoque(pedido)
+    if ROTA_TROCA.match(rota):
+        return rotas_de_trocas(pedido)
     if ROTA_AJUDA.match(rota) or rota == '/api/admin/ajudas':
         return rotas_de_ajudas(pedido)
     if ROTA_FEED.match(rota):

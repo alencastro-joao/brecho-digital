@@ -18,7 +18,7 @@ ARQUIVO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 COPIAS = os.path.join(os.path.dirname(ARQUIVO), 'copias.json')
 LIMITES = {'common': 1000, 'uncommon': 500, 'rare': 300, 'epic': 100, 'legendary': 25}
 COMO = {'vitrine', 'presente', 'missao', 'semana', 'bau-especial', 'nivel',
-        'collab', 'propria', 'teste'}
+        'collab', 'propria', 'teste', 'troca'}
 _trava = threading.Lock()
 
 
