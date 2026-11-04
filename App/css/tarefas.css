@@ -295,6 +295,7 @@
 .bau-vazio { margin: 0; color: var(--tinta-suave); font-size: 13px; }
 .bau-palco .btn-premio { border: 2px solid var(--premio); border-radius: 14px; background-image: var(--brilho-topo); animation: none; }
 
+.bau-modal.abrindo :is(.bau-caixa, .bau-item, .bau-extra, .bau-vazio) { will-change: transform, opacity; }
 .bau-modal.abrindo .bau-caixa { animation: bau-treme .75s ease-in-out both; }
 .bau-modal.abrindo :is(.bau-item, .bau-extra, .bau-vazio) { animation: bau-pula .5s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: var(--atraso, .8s); }
 .bau-modal.abrindo :is(.bau-extra, .bau-vazio) { --atraso: 1s; }

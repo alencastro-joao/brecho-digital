@@ -1122,8 +1122,8 @@ export const MURAL = {
     // peso: chance relativa de a missão de jogo ser esse jogo. O Avaliar é o último
     // passo e não é preciso para postar a roupa (João, 04/11/2026): aparece pouco.
     avaliar:   { metas: [5, 10, 15], cada: 5, fichas: 2, peso: 1 },
-    ajustar:   { metas: [3, 6, 9],   cada: 3, fichas: 2, peso: 4 },
-    preencher: { metas: [3, 5, 8],   cada: 1, fichas: 1, peso: 4 },
+    ajustar:   { metas: [3, 6, 9],   cada: 3, fichas: 2, peso: 8 },
+    preencher: { metas: [3, 5, 8],   cada: 1, fichas: 1, peso: 7.2 },
   },
 };
 
