@@ -53,6 +53,10 @@ export function comecarIntro() {
 function progredirIntro(evento) {
   const i = state.intro;
   if (!introAtiva() || i.feitos.includes(evento)) return;
+  // Passo com `meta` (pegar 3 peças) só vale depois de contar tudo.
+  const meta = INTRO.find(m => m.evento === evento)?.meta ?? 1;
+  i.contagem = { ...(i.contagem ?? {}), [evento]: (i.contagem?.[evento] ?? 0) + 1 };
+  if (i.contagem[evento] < meta) { salvar(); return; }
   i.feitos.push(evento);
   avisarIntro();
 }

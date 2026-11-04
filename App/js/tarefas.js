@@ -313,7 +313,7 @@ const TROCAS = [
     guardados: () => db.fichasDeRepor() },
   { id: 'congelar', nome: 'Congelar', texto: 'Segura uma peça na loja até amanhã. Use na ficha dela.',
     icone: () => ico('floco'), preco: () => FICHAS.porCongelar,
-    acao: () => { const ok = db.comprarCongelamento(); if (ok) toast('+1 congelamento.', 'rare'); return ok; },
+    acao: () => { const ok = db.comprarCongelamento(); if (ok) { toast('+1 congelamento.', 'rare'); db.progredirMissao('comprar-congelar'); } return ok; },
     guardados: () => db.congelamentos() },
 ];
 
