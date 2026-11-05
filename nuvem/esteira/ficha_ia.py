@@ -53,13 +53,10 @@ FERRAMENTA = {
             'properties': {
                 'cat': {'type': 'string', 'enum': list(CATEGORIAS)},
                 'cor': {'type': 'string', 'enum': CORES},
-                'marca': {'type': 'string', 'description':
-                          'Marca, só se houver logo ou escrita legível na peça. '
-                          'Senão, string vazia.'},
                 'confianca': {'type': 'number', 'description':
                               'De 0 a 1: quão seguro está da categoria.'},
             },
-            'required': ['cat', 'cor', 'marca', 'confianca'],
+            'required': ['cat', 'cor', 'confianca'],
         }},
     }
 }
@@ -74,7 +71,9 @@ def _bedrock():
     return _cliente
 
 
-def _instrucao(marcas):
+# A marca não é palpite do bot (05/11/2026, João): quem diz é o Preencher dos
+# jogos ou o João, à mão na esteira.
+def _instrucao():
     linhas = ['Você cataloga peças de um brechó digital. A imagem é uma peça '
               'já recortada, sobre fundo transparente.',
               '', 'Categorias:']
@@ -82,15 +81,12 @@ def _instrucao(marcas):
     linhas += ['', 'Cor: a cor dominante, entre as da lista. "Estampado" só '
                'quando nenhuma cor domina (xadrez, floral, listras de duas '
                'cores).']
-    if marcas:
-        linhas += ['', 'Marcas que já existem no acervo (se for uma delas, '
-                   'escreva igual): ' + ', '.join(marcas)]
     linhas += ['', 'Responda chamando a ferramenta registrar_ficha.']
     return '\n'.join(linhas)
 
 
-def sugerir(webp, marcas=()):
-    """{cat, cor, marca, confianca, modelo} — ou {} se a IA falhar.
+def sugerir(webp):
+    """{cat, cor, confianca, modelo} — ou {} se a IA falhar.
 
     Falha da IA não derruba a peça: ela entra sem palpite e o admin preenche.
     """
@@ -99,7 +95,7 @@ def sugerir(webp, marcas=()):
             modelId=MODELO,
             messages=[{'role': 'user', 'content': [
                 {'image': {'format': 'webp', 'source': {'bytes': webp}}},
-                {'text': _instrucao(list(marcas))},
+                {'text': _instrucao()},
             ]}],
             toolConfig={'tools': [FERRAMENTA],
                         'toolChoice': {'tool': {'name': 'registrar_ficha'}}},
@@ -118,7 +114,6 @@ def sugerir(webp, marcas=()):
     saida = {
         'cat': dados.get('cat') if dados.get('cat') in CATEGORIAS else '',
         'cor': dados.get('cor') if dados.get('cor') in CORES else '',
-        'marca': str(dados.get('marca') or '').strip()[:40],
         'confianca': round(float(dados.get('confianca') or 0), 2),
         'modelo': MODELO,
     }
