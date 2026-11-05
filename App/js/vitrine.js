@@ -583,6 +583,9 @@ function ligarPeca(no, peca, raridade) {
     if (e.target.closest('.btn-pegar')) return;   // o botão cuida do próprio clique
     e.preventDefault();
     trazerParaFrente(no);
+    // No toque não existe hover: segurar a peça é o que acende a aura e a
+    // etiqueta com a raridade (o preventDefault acima impede o hover emulado).
+    no.classList.add('segurando');
 
     const area = mural.getBoundingClientRect();
     const inicio = { x: e.clientX, y: e.clientY };
@@ -610,7 +613,7 @@ function ligarPeca(no, peca, raridade) {
     };
 
     const soltar = () => {
-      no.classList.remove('arrastando');
+      no.classList.remove('arrastando', 'segurando');
       no.removeEventListener('pointermove', mover);
       no.removeEventListener('pointerup', soltar);
       no.removeEventListener('pointercancel', soltar);
