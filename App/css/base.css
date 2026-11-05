@@ -440,19 +440,9 @@ button:not(:disabled):active, [role="button"]:active { scale: .95; }
   background: #e0533a; border: 2px solid #fff; pointer-events: none;
 }
 
-/* Abertura (index.html #splash). A cor é a do manifest, para emendar sem
-   piscar com a tela que o celular mostra ao abrir o app instalado. */
-.splash {
-  position: fixed; inset: 0; z-index: 10000;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-  background: #f7fafb; color: var(--tinta);
-  transition: opacity .35s ease, visibility .35s;
-}
-.splash.saindo { opacity: 0; visibility: hidden; pointer-events: none; }
-.splash-icone { width: 96px; height: 96px; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .12));
-  animation: splash-respira 1.6s ease-in-out infinite; }
-/* --splash-cor: a cor da paleta guardada neste aparelho (index.html, paleta.js). */
-.splash-cor { stop-color: var(--splash-cor, #0095b6); }
-.splash-claro { stop-color: color-mix(in srgb, var(--splash-cor, #0095b6) 70%, #fff); }
-@keyframes splash-respira { 50% { transform: scale(1.05); } }
-@media (prefers-reduced-motion: reduce) { .splash-icone { animation: none; } }
+/* A abertura (#splash) tem o CSS dentro do index.html: precisa valer mesmo
+   se este arquivo chegar velho ou cortado.
+   Marca de fim de arquivo: o js/app.js confere que ela chegou. Sem ela, o
+   base.css guardado no celular está velho ou cortado, e o app limpa o
+   guardado do sw.js e recarrega uma vez. Deixe esta regra por ÚLTIMO. */
+:root { --base-css-inteiro: 1; }
