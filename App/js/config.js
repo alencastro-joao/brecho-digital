@@ -1122,7 +1122,7 @@ export const MURAL = {
   // `extra`: fichas somadas a toda missão de jogo (João, 05/11/2026: +2),
   // então fica 4/6/8, 4/6/8 e 5/7/10.
   jogos: {
-    esperaHoras: 2,
+    esperaHoras: 1,   // era 2; João pediu de 1 em 1 hora (05/11/2026)
     extra: 2,
     // peso: chance relativa de a missão de jogo ser esse jogo. O Avaliar é o último
     // passo e não é preciso para postar a roupa (João, 04/11/2026): aparece pouco.
