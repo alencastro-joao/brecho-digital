@@ -508,7 +508,6 @@ function cartao(item) {
   const cor = campo('cor', el('input', { value: f.cor, placeholder: 'Cor', list: 'es-cores', 'aria-label': 'Cor' }));
   const hex = hexDaCor(f.cor);
 
-  const marcaIa = ia.marca && ia.marca === f.marca;
   const conf = typeof ia.confianca === 'number' ? Math.round(ia.confianca * 100) : null;
 
   const no = el('article', {
@@ -558,8 +557,7 @@ function cartao(item) {
 
     pronta && ia.cat
       ? el('p', { class: 'es-ia', title: ia.modelo || '' },
-          `✦ palpite da IA${conf != null ? ` · ${conf}% de certeza na categoria` : ''}`
-          + (marcaIa ? ' · marca lida na peça' : ''))
+          `✦ palpite da IA${conf != null ? ` · ${conf}% de certeza na categoria` : ''}`)
       : null,
 
     // Publicar e descartar são da barra de cima, sobre as selecionadas.

@@ -27,7 +27,7 @@ Para cada foto:
      Antes de seguir, confere se a prévia é de uma peça que já está no jogo
      ou na esteira (repetidas.py). Se for, a foto para aqui como `repetida`
      — sem gastar o palpite da IA — e a API tira ela da esteira.
-  5. Pede ao Claude (Bedrock) o palpite da ficha: categoria, cor, marca.
+  5. Pede ao Claude (Bedrock) o palpite da ficha: categoria e cor (a marca não).
      O nome não: toda peça chega sem nome. Com o "Auto preencher" desligado
      na esteira, pula este passo e a ficha chega em branco.
   6. Grava tudo em `esteira/<id>.json` com `estado: pronta`.
@@ -234,7 +234,7 @@ def processar(chave):
 
         # Com o preenchimento desligado na esteira, nem pergunta à IA.
         preencher = auto_preencher()
-        sugestao = ficha_ia.sugerir(webp, marcas_conhecidas()) if preencher else {}
+        sugestao = ficha_ia.sugerir(webp) if preencher else {}
         # A cor medida nos pixels: chão para quando a IA falha ou não diz.
         cor_medida = cor_da_imagem(previa) if preencher else ''
     except FotoRuim as e:
@@ -265,7 +265,7 @@ def processar(chave):
     # A ficha que o admin edita nasce do palpite. O que ele já tiver mexido
     # (pelo celular, enquanto a foto ainda processava) não é atropelado.
     # Desligado, a proposta sai em branco e a ficha fica só com o que ele digitou.
-    proposta = {k: sugestao.get(k, '') for k in ('cat', 'cor', 'marca')}
+    proposta = {k: sugestao.get(k, '') for k in ('cat', 'cor')}   # a marca não
     proposta['cor'] = proposta['cor'] or cor_medida
     ficha['ficha'] = {**proposta, **{k: v for k, v in (ficha.get('ficha') or {}).items() if v}}
     gravar_ficha(ficha)
@@ -273,29 +273,6 @@ def processar(chave):
           % (item_id, recorte.size[0], recorte.size[1],
              'removido' if sem_fundo else 'já vinha', segundos_recorte,
              ficha['segundos'], json.dumps(sugestao, ensure_ascii=False)))
-
-
-_marcas = {'quando': 0, 'lista': []}
-
-
-def marcas_conhecidas():
-    """As marcas que já estão no acervo, para a IA escrever do mesmo jeito
-    ("Nike", não "NIKE" numa peça e "nike" na outra)."""
-    if time.time() - _marcas['quando'] < 300 or not SITE:
-        return _marcas['lista']
-    try:
-        r = _s3.get_object(Bucket=SITE, Key='assets/acervo.json')
-        itens = json.loads(r['Body'].read()).get('items', [])
-        contagem = {}
-        for i in itens:
-            m = (i.get('marca') or '').strip()
-            if m:
-                contagem[m] = contagem.get(m, 0) + 1
-        _marcas['lista'] = sorted(contagem, key=lambda m: -contagem[m])[:60]
-    except Exception as e:                       # noqa: BLE001 - só melhora o palpite
-        print('(sem lista de marcas: %s)' % e)
-    _marcas['quando'] = time.time()
-    return _marcas['lista']
 
 
 # --- Entrada da Lambda ------------------------------------------------------
