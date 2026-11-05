@@ -105,7 +105,10 @@ MAX_AJUSTES = 60      # medidas guardadas por peça (a mediana não precisa de m
 def ler_lista():
     try:
         r = _s3.get_object(Bucket=SITE, Key=LISTA)
-        return json.loads(r['Body'].read()).get('items') or []
+        # A categoria que o bot pôs nas peças antigas sai (05/11/2026, João): a
+        # próxima gravação da lista já vai sem ela.
+        return [{k: v for k, v in i.items() if k != 'cat'}
+                for i in json.loads(r['Body'].read()).get('items') or []]
     except ClientError as e:
         # Sem s3:ListBucket, arquivo que não existe chega como AccessDenied.
         if e.response['Error']['Code'] in ('NoSuchKey', '404', 'AccessDenied'):

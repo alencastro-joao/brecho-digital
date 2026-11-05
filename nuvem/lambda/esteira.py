@@ -612,6 +612,10 @@ def guardar(item_id, corpo):
             'raridade': f.get('raridade') if f.get('raridade') in acervo.RARIDADES else 'common',
             'tema': acervo.tema(f.get('tema')),
         }
+        # Tipo, cor e marca que o João mexeu à mão: os jogos não sobrescrevem.
+        manual = [c for c in ('cat', 'cor', 'marca') if c in (f.get('manual') or [])]
+        if manual:
+            dados['ficha']['manual'] = manual
     if isinstance(corpo.get('medida'), dict):
         m = corpo['medida']
         dados['medida'] = {k: round(float(m.get(k, 0)), 1) for k in ('x', 'y', 'w')}
