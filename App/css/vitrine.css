@@ -100,7 +100,8 @@
   position: absolute; inset: 0; pointer-events: none;
   opacity: 0; transition: opacity .26s ease;
 }
-.item-roupa:hover .aura-cx { opacity: 1; }
+.item-roupa:hover .aura-cx,
+.item-roupa.segurando .aura-cx { opacity: 1; }
 .item-roupa .aura { inset: 0; }
 
 /* Parado no hover: mira mais fácil para clicar em "Pegar". */
@@ -137,7 +138,8 @@
   background: rgba(255, 255, 255, .9); border-radius: 20px; padding: 3px 9px;
   opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap;
 }
-.item-roupa:hover .item-tag { opacity: 1; }
+.item-roupa:hover .item-tag,
+.item-roupa.segurando .item-tag { opacity: 1; }
 
 .btn-pegar {
   margin-top: 10px; border: none;
