@@ -570,11 +570,46 @@ def _pin_perdido(f):
         return e.response['Error']['Code'] in ('404', 'NoSuchKey', 'NotFound')
 
 
+# Até 05/11/2026 toda ficha da esteira era gravada com raridade "Comum" por
+# padrão; agora nasce vazia (pedido do João). Esta limpeza roda uma vez só:
+# troca o "Comum" que não foi marcado à mão por vazio e grava. Depois dela,
+# um "Comum" na esteira é sempre escolha dele, e nada mais o apaga.
+COMUM_LIMPO = 'esteira/config/raridade-vazia.json'
+_comum_limpo = False
+
+
+def _limpar_comum_padrao():
+    global _comum_limpo
+    if _comum_limpo:
+        return
+    try:
+        _s3.head_object(Bucket=DADOS, Key=COMUM_LIMPO)
+        _comum_limpo = True
+        return
+    except ClientError as e:
+        if e.response['Error']['Code'] not in ('NoSuchKey', '404', 'NotFound'):
+            raise
+    limpas = 0
+    for f in _fichas():
+        ficha = f.get('ficha')
+        if (isinstance(ficha, dict) and ficha.get('raridade') == 'common'
+                and 'raridade' not in (ficha.get('manual') or [])):
+            ficha['raridade'] = ''
+            _gravar(f)
+            limpas += 1
+    _s3.put_object(Bucket=DADOS, Key=COMUM_LIMPO,
+                   Body=json.dumps({'limpas': limpas, 'em': _agora()}).encode('utf-8'),
+                   ContentType='application/json')
+    _comum_limpo = True
+    print('esteira: %d fichas com Comum de padrão ficaram sem raridade' % limpas)
+
+
 def listar():
     """GET /api/esteira — mais novas primeiro. A foto que o trabalhador achou
     repetida (já é peça do jogo, ou já está na esteira) sai daqui mesmo: a
     tela só fica sabendo, para avisar. A marca do pin fica, então ela também
     não volta pelo Pinterest."""
+    _limpar_comum_padrao()
     itens, repetidas = [], []
     for f in _fichas():
         if f.get('estado') == 'repetida':
