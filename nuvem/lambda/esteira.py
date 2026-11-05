@@ -108,23 +108,11 @@ def _idade(iso):
     return (datetime.now(timezone.utc) - datetime.fromisoformat(iso)).total_seconds()
 
 
-def _sem_comum_padrao(ficha):
-    """Até 05/11/2026 a ficha nascia "Comum" por padrão; agora nasce vazia
-    (pedido do João). O "Comum" que não foi escolhido à mão (sem 'raridade'
-    em `manual`) era só esse padrão, e sai: a tela mostra vazio e a próxima
-    gravação já guarda vazio."""
-    if (isinstance(ficha, dict) and ficha.get('raridade') == 'common'
-            and 'raridade' not in (ficha.get('manual') or [])):
-        return {**ficha, 'raridade': ''}
-    return ficha
-
-
 def _para_tela(dados):
     """O que a tela recebe: sem caminhos internos, com a prévia assinada."""
     saida = {k: dados.get(k) for k in (
         'id', 'estado', 'arquivo', 'erro', 'criadoEm', 'processadoEm', 'apareceuEm', 'w', 'h',
         'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'corte', 'origem')}
-    saida['ficha'] = _sem_comum_padrao(saida['ficha'])
     if dados.get('estado') == 'enviando' and _idade(dados.get('criadoEm')) > ENVIO_ABANDONADO:
         saida['estado'] = 'erro'
         saida['erro'] = 'a foto não chegou ao servidor (envio interrompido)'
@@ -625,7 +613,6 @@ def guardar(item_id, corpo):
             'tema': acervo.tema(f.get('tema')),
         }
         # Tipo, cor e marca que o João mexeu à mão: os jogos não sobrescrevem.
-        # A raridade escolhida à mão também fica marcada (ver _sem_comum_padrao).
         manual = [c for c in ('cat', 'cor', 'marca', 'raridade') if c in (f.get('manual') or [])]
         if manual:
             dados['ficha']['manual'] = manual
