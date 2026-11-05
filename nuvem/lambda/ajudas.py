@@ -26,7 +26,8 @@ Itens do DynamoDB:
 **As peças vêm da esteira.** O admin escolhe (Admin › Mini games) quais
 fotos da esteira entram nos jogos: a prévia, que mora no bucket privado, é
 copiada para o site (`assets/jogos/<id>.webp`) e a lista pública fica em
-`assets/jogos.json`. Ao publicar a peça (ou descartar), ela sai dos jogos.
+`assets/jogos.json`, sem categoria (05/11/2026, João): a peça chega em branco
+e o tipo é o que o Preencher fechar. Ao publicar a peça (ou descartar), ela sai dos jogos.
 Nada mexe na ficha sozinho: o admin vê o resumo (GET /api/admin/ajudas) e
 leva para a ficha da esteira o que quiser.
 
@@ -129,33 +130,30 @@ def colocar(item_id, dados):
     """Põe uma foto da esteira nos jogos. `dados` é a ficha da esteira."""
     if dados.get('estado') != 'pronta' or not dados.get('previa'):
         raise ValueError('essa foto ainda não está pronta')
-    ficha, palpite = dados.get('ficha') or {}, dados.get('sugestao') or {}
-    # Sem categoria também vai: o Avaliar e o Preencher não precisam dela (o
-    # Preencher pergunta o tipo); só o Ajustar espera a categoria aparecer.
-    cat = ficha.get('cat') or palpite.get('cat') or ''
+    ficha = dados.get('ficha') or {}
     chave = 'assets/jogos/%s.webp' % item_id
     _s3.copy_object(Bucket=SITE, Key=chave, CopySource={'Bucket': DADOS, 'Key': dados['previa']},
                     ContentType='image/webp', MetadataDirective='REPLACE',
                     CacheControl='public, max-age=31536000, immutable')
     itens = [i for i in ler_lista() if i['id'] != item_id]
     itens.append({'id': item_id, 'src': chave, 'w': dados.get('w'), 'h': dados.get('h'),
-                  'cat': cat, 'nome': ficha.get('nome') or '',
+                  'nome': ficha.get('nome') or '',
                   'criadoEm': dados.get('criadoEm') or ''})
     _gravar_lista(itens)
     return {'items': itens}
 
 
 def atualizar(item_id, dados):
-    """A ficha mudou na esteira: a categoria e o nome dos jogos acompanham."""
+    """A ficha mudou na esteira: o nome dos jogos acompanha (a categoria não:
+    quem diz o tipo é o Preencher)."""
     if item_id not in _ids_nos_jogos():
         return
-    ficha, palpite = dados.get('ficha') or {}, dados.get('sugestao') or {}
-    cat, nome = ficha.get('cat') or palpite.get('cat') or '', ficha.get('nome') or ''
+    nome = (dados.get('ficha') or {}).get('nome') or ''
     itens = ler_lista()
     mudou = False
     for i in itens:
-        if i['id'] == item_id and (i.get('cat') != cat or i.get('nome') != nome):
-            i.update(cat=cat, nome=nome)
+        if i['id'] == item_id and i.get('nome') != nome:
+            i['nome'] = nome
             mudou = True
     if mudou:
         _gravar_lista(itens)
@@ -334,9 +332,18 @@ def estado(usuario):
     itens = ler_lista()
     # O que falta em cada peça: o jogo pula a peça (ou a pergunta) que já fechou.
     lidas = _ler_pecas({i['id'] for i in itens})
+    # A categoria é só a que o Preencher fechou (05/11/2026, João): a da ficha
+    # ou do palpite da IA não vai para os jogos. Sem ela, o Ajustar espera.
+    itens = [{k: v for k, v in i.items() if k != 'cat'} | {'cat': _cat_dos_jogos(lidas.get(i['id']))}
+             for i in itens]
     return {'jogos': saida, 'itens': itens,
             'faltam': {i['id']: pendencias(lidas.get(i['id'])) for i in itens},
             'votar': [i['id'] for i in itens if precisa_voto(lidas.get(i['id']))]}
+
+
+def _cat_dos_jogos(item):
+    voto = _mais_votado(item or {}, 'cat') or {}
+    return voto['valor'] if voto.get('pronto') else ''
 
 
 def ajudar(usuario, jogo, corpo):

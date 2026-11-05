@@ -111,16 +111,23 @@ class Ajudas(unittest.TestCase):
             ajudas.colocar('eabc12345', {'estado': 'processando'})
         ajudas.colocar('eabc12345', {'estado': 'pronta', 'previa': 'esteira/eabc12345.webp',
                                      'w': 10, 'h': 20, 'sugestao': {'cat': 'shirts'}})
-        self.assertEqual(ajudas.ler_lista()[0]['cat'], 'shirts')
+        # A categoria da ficha / do palpite da IA não vai para os jogos.
+        self.assertNotIn('cat', ajudas.ler_lista()[0])
         self.assertIn('eabc12345', ajudas._ids_nos_jogos())
         self.assertTrue(ajudas.ajudar(ANA, 'avaliar', {'peca': 'eabc12345', 'gostei': True})['ok'])
         ajudas.atualizar('eabc12345', {'ficha': {'cat': 'pants', 'nome': 'calça'}})
-        self.assertEqual(ajudas.ler_lista()[0]['cat'], 'pants')
+        self.assertNotIn('cat', ajudas.ler_lista()[0])
+        self.assertEqual(ajudas.ler_lista()[0]['nome'], 'calça')
+        # O jogo só vê a categoria que o Preencher fechou.
+        ajudas.ajudar(ANA, 'preencher', {'peca': 'eabc12345', 'cat': 'pants'})
+        self.assertEqual(ajudas.estado(BIA)['itens'][0]['cat'], '')
+        ajudas.ajudar(BIA, 'preencher', {'peca': 'eabc12345', 'cat': 'pants'})
+        self.assertEqual(ajudas.estado(BIA)['itens'][0]['cat'], 'pants')
         ajudas.tirar('eabc12345')
         self.assertEqual(ajudas.ler_lista(), [])
         # Sem categoria também entra: os jogadores dizem o tipo.
         ajudas.colocar('eabc12345', {'estado': 'pronta', 'previa': 'esteira/eabc12345.webp'})
-        self.assertEqual(ajudas.ler_lista()[0]['cat'], '')
+        self.assertNotIn('cat', ajudas.ler_lista()[0])
 
     def test_divergiu_continua_no_preencher_ate_a_maioria(self):
         pid = 'epeca0004'
