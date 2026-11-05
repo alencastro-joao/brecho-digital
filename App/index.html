@@ -37,6 +37,25 @@
 <link rel="stylesheet" href="css/janelas.css">
 <link rel="stylesheet" href="css/praca.css">
 <link rel="stylesheet" href="css/trocas.css">
+<!-- CSS da abertura aqui mesmo, e não no base.css: ela cobre a tela antes de
+     tudo, e não pode depender de um CSS que chegue velho ou cortado (aí o
+     cabide aparecia preto, no canto, empurrando a vitrine para baixo). -->
+<style>
+  .splash {
+    position: fixed; inset: 0; z-index: 10000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: #f7fafb;
+    transition: opacity .35s ease, visibility .35s;
+  }
+  .splash.saindo { opacity: 0; visibility: hidden; pointer-events: none; }
+  .splash-icone { width: 96px; height: 96px; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .12));
+    animation: splash-respira 1.6s ease-in-out infinite; }
+  /* --splash-cor: a cor da paleta guardada neste aparelho (script do #splash, paleta.js). */
+  .splash-cor { stop-color: var(--splash-cor, #0095b6); }
+  .splash-claro { stop-color: color-mix(in srgb, var(--splash-cor, #0095b6) 70%, #fff); }
+  @keyframes splash-respira { 50% { transform: scale(1.05); } }
+  @media (prefers-reduced-motion: reduce) { .splash-icone { animation: none; } }
+</style>
 </head>
 <body>
 
