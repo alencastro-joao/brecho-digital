@@ -128,6 +128,10 @@ class Ajudas(unittest.TestCase):
         # Sem categoria também entra: os jogadores dizem o tipo.
         ajudas.colocar('eabc12345', {'estado': 'pronta', 'previa': 'esteira/eabc12345.webp'})
         self.assertNotIn('cat', ajudas.ler_lista()[0])
+        # Lista antiga, com a categoria do bot: ela some ao ler.
+        _s3.put_object(Bucket='site-teste', Key=ajudas.LISTA,
+                       Body=b'{"items": [{"id": "eabc12345", "cat": "shirts", "nome": ""}]}')
+        self.assertEqual(ajudas.ler_lista(), [{'id': 'eabc12345', 'nome': ''}])
 
     def test_divergiu_continua_no_preencher_ate_a_maioria(self):
         pid = 'epeca0004'

@@ -587,8 +587,17 @@ function cartao(item) {
 }
 
 // ============================== Ficha =====================================
+// Tipo, cor e marca que o João mexeu à mão: a vista "Nos jogos" não troca
+// pelo que os jogadores disseram. Campo esvaziado volta a seguir os jogos.
+const DOS_JOGOS = ['cat', 'cor', 'marca'];
+const aMao = (f, campos) => {
+  const manual = new Set(f.manual || []);
+  for (const c of campos) if (DOS_JOGOS.includes(c)) (f[c] ? manual.add(c) : manual.delete(c));
+  return { ...f, manual: [...manual] };
+};
+
 function mudarFicha(item, campo, valor) {
-  item.ficha = { ...fichaDe(item), [campo]: valor };
+  item.ficha = aMao({ ...fichaDe(item), [campo]: valor }, [campo]);
   // O campo na tela já mostra o valor novo: o cartão não precisa ser refeito.
   const d = desenhados.get(item.id);
   if (d?.item === item) d.chave = chaveDe(item);
@@ -759,7 +768,8 @@ function aplicarLote() {
     const f = fichaDe(item);
     // Medida é de categoria: trocar a categoria invalida o que foi medido.
     if (cat && cat !== f.cat) item.medida = false;   // false: apaga também a guardada
-    item.ficha = { ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }), ...(tema && { tema }) };
+    item.ficha = aMao({ ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }), ...(tema && { tema }) },
+      [cat && 'cat', marca && 'marca'].filter(Boolean));
     guardarDepois(item);
   }
   desenhar();
@@ -788,6 +798,9 @@ async function lerJogos() {
 // Na vista "Nos jogos" a ficha e a medida acompanham o que saiu dos jogos:
 // tipo, cor e marca (resposta fechada) e a medida (mediana, 2 ou mais). A
 // raridade fica como o João deixou. Só grava quando algo mudou.
+// Tipo, cor e marca são só dos jogos (05/11/2026, João): o palpite do bot sai
+// e, sem resposta fechada, o campo fica em branco. O que o João mexeu à mão
+// (`ficha.manual`) fica como ele deixou.
 const semAcento = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const capitalizar = (t) => t.replace(/(^|\s)\S/g, l => l.toUpperCase());
 async function atualizarComJogos(pecas) {
@@ -795,11 +808,13 @@ async function atualizarComJogos(pecas) {
     const item = itens.find(i => i.id === r.peca);
     if (!item || !nosJogos.has(item.id) || guardando.has(item.id)) continue;
     const ficha = { ...(item.ficha || {}) };
-    if (r.cat?.pronto && CATEGORIAS[r.cat.valor]) ficha.cat = r.cat.valor;
-    if (!ficha.cat) ficha.cat = migrarCategoria(item.sugestao?.cat || '');
-    if (r.cor?.pronto) ficha.cor = CORES.find(c => semAcento(c.nome) === r.cor.valor)?.nome || capitalizar(r.cor.valor);
-    // A marca vem sempre dos jogos; sem resposta fechada, fica vazia (pedido do João).
-    ficha.marca = r.marca?.pronto && r.marca.valor ? capitalizar(r.marca.valor) : '';
+    const manual = new Set(ficha.manual || []);
+    const dosJogos = {
+      cat: r.cat?.pronto && CATEGORIAS[r.cat.valor] ? r.cat.valor : '',
+      cor: r.cor?.pronto ? CORES.find(c => semAcento(c.nome) === r.cor.valor)?.nome || capitalizar(r.cor.valor) : '',
+      marca: r.marca?.pronto && r.marca.valor ? capitalizar(r.marca.valor) : '',
+    };
+    for (const k of DOS_JOGOS) if (!manual.has(k)) ficha[k] = dosJogos[k];
     const corpo = {};
     const velha = item.ficha || {};
     if (['cat', 'cor', 'marca'].some(k => (ficha[k] || '') !== (velha[k] || ''))) corpo.ficha = ficha;
@@ -1019,7 +1034,7 @@ function trocarCategoriaNoMolde(cat) {
   if (!cat || cat === fichaDe(medindo).cat) return;
   const atual = itens.find(i => i.id === medindo.id);
   for (const i of new Set([medindo, atual].filter(Boolean))) {
-    i.ficha = { ...fichaDe(i), cat };
+    i.ficha = aMao({ ...fichaDe(i), cat }, ['cat']);
     i.medida = false;                   // false: apaga também a guardada (ver guardar na API)
   }
   guardarDepois(medindo);
