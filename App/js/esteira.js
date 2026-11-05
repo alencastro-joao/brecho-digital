@@ -590,8 +590,7 @@ function cartao(item) {
 // Tipo, cor e marca que o João mexeu à mão: a vista "Nos jogos" não troca
 // pelo que os jogadores disseram. Campo esvaziado volta a seguir os jogos.
 const DOS_JOGOS = ['cat', 'cor', 'marca'];
-// A raridade também é marcada: a escolhida à mão não é confundida com o
-// "Comum" que antes vinha de padrão (esteira.py, _para_tela).
+// A raridade escolhida à mão também fica marcada como manual.
 const A_MAO = [...DOS_JOGOS, 'raridade'];
 const aMao = (f, campos) => {
   const manual = new Set(f.manual || []);
