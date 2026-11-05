@@ -1119,8 +1119,11 @@ export const MURAL = {
   // (no Preencher, cada campo respondido conta 1). Em 05/11/2026 o João pediu
   // bem mais peças por missão: as metas triplicaram e o `cada` subiu junto,
   // para o prêmio ficar o mesmo de antes (2/4/6, 2/4/6 e 3/5/8 fichas).
+  // `extra`: fichas somadas a toda missão de jogo (João, 05/11/2026: +2),
+  // então fica 4/6/8, 4/6/8 e 5/7/10.
   jogos: {
     esperaHoras: 2,
+    extra: 2,
     // peso: chance relativa de a missão de jogo ser esse jogo. O Avaliar é o último
     // passo e não é preciso para postar a roupa (João, 04/11/2026): aparece pouco.
     avaliar:   { metas: [15, 30, 45], cada: 15, fichas: 2, peso: 1 },

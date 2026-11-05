@@ -125,7 +125,8 @@ function novaMissao(chegou, ocupadas) {
   return null;
 }
 
-const fichasDoJogo = (jogo, meta) => Math.max(1, Math.round(meta / MURAL.jogos[jogo].cada * MURAL.jogos[jogo].fichas));
+const fichasDoJogo = (jogo, meta) =>
+  Math.max(1, Math.round(meta / MURAL.jogos[jogo].cada * MURAL.jogos[jogo].fichas)) + (MURAL.jogos.extra || 0);
 
 function novoJogo(jogos = Object.keys(NOMES_JOGO)) {
   // Sorteio com peso: preencher e ajustar saem bem mais que o avaliar.
