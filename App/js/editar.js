@@ -150,7 +150,7 @@ function corDaImagem(ctx, w, h) {
   const segunda = ranque[1];
   if (urna === coloridos && segunda && contagem / votos < 0.5 && segunda[1] / votos > 0.25
       && distanciaEntreCores(nome, segunda[0]) > 25) {
-    return 'Estampado';
+    return 'Colorido';
   }
   return nome;
 }

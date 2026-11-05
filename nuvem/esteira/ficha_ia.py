@@ -42,7 +42,7 @@ CATEGORIAS = {
     'belts': 'cinto, cinta, faixa de cintura',
 }
 CORES = ['Preto', 'Branco', 'Cinza', 'Bege', 'Marrom', 'Vermelho', 'Rosa',
-         'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo', 'Estampado']
+         'Laranja', 'Amarelo', 'Verde', 'Azul', 'Roxo', 'Colorido']
 
 FERRAMENTA = {
     'toolSpec': {
@@ -78,7 +78,7 @@ def _instrucao():
               'já recortada, sobre fundo transparente.',
               '', 'Categorias:']
     linhas += ['- %s: %s' % (c, d) for c, d in CATEGORIAS.items()]
-    linhas += ['', 'Cor: a cor dominante, entre as da lista. "Estampado" só '
+    linhas += ['', 'Cor: a cor dominante, entre as da lista. "Colorido" só '
                'quando nenhuma cor domina (xadrez, floral, listras de duas '
                'cores).']
     linhas += ['', 'Responda chamando a ferramenta registrar_ficha.']

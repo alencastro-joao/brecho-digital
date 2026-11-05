@@ -134,11 +134,13 @@ export const CORES = [
   { nome: 'Verde',     hex: '#4f8f5c' },
   { nome: 'Azul',      hex: '#3c6fb4' },
   { nome: 'Roxo',      hex: '#7d5bb0' },
-  { nome: 'Estampado', hex: 'estampa' },
+  { nome: 'Colorido',  hex: 'estampa' },
 ];
 
 const semAcento = (t) => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const CORES_POR_NOME = new Map(CORES.map(c => [semAcento(c.nome), c]));
+// Peças antigas salvas como "Estampado" continuam com a bolinha de estampa.
+CORES_POR_NOME.set('estampado', CORES_POR_NOME.get('colorido'));
 
 // Cor conhecida → hex (ou 'estampa'); cor inventada → null, e a bolinha fica
 // neutra. Serve para o chip da ficha e para qualquer tela que mostre a cor.
