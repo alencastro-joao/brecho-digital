@@ -62,3 +62,32 @@ class AjustesDaEsteira(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
+
+
+class ComumDePadrao(unittest.TestCase):
+    """O "Comum" que era padrão sai uma vez só; o escolhido depois fica."""
+
+    def setUp(self):
+        _s3.create_bucket(Bucket=esteira.DADOS)
+        esteira._comum_limpo = False
+
+    def tearDown(self):
+        for obj in _s3.list_objects_v2(Bucket=esteira.DADOS).get('Contents', []):
+            _s3.delete_object(Bucket=esteira.DADOS, Key=obj['Key'])
+
+    def ficha(self, item_id):
+        return esteira._ler(item_id)['ficha']
+
+    def test_limpa_uma_vez_e_depois_respeita_o_comum(self):
+        esteira._gravar({'id': 'a', 'estado': 'pronta', 'ficha': {'cat': 'calcas', 'raridade': 'common'}})
+        esteira._gravar({'id': 'b', 'estado': 'pronta', 'ficha': {'raridade': 'common', 'manual': ['raridade']}})
+        esteira._gravar({'id': 'c', 'estado': 'pronta', 'ficha': {'raridade': 'rare'}})
+        esteira.listar()
+        self.assertEqual(self.ficha('a')['raridade'], '')
+        self.assertEqual(self.ficha('b')['raridade'], 'common')
+        self.assertEqual(self.ficha('c')['raridade'], 'rare')
+        # O João escolhe Comum depois da limpeza (mesmo sem a marca): fica.
+        esteira._gravar({'id': 'a', 'estado': 'pronta', 'ficha': {'raridade': 'common'}})
+        esteira._comum_limpo = False      # outra Lambda, sem a memória desta
+        esteira.listar()
+        self.assertEqual(self.ficha('a')['raridade'], 'common')
