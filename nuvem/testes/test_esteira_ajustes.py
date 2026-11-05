@@ -61,3 +61,19 @@ class AjustesDaEsteira(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RaridadeSemPadrao(unittest.TestCase):
+    """A raridade não nasce mais "Comum" (05/11/2026): só a escolhida à mão fica."""
+
+    def test_comum_de_padrao_vira_vazio(self):
+        f = esteira._sem_comum_padrao({'cat': 'camisetas', 'raridade': 'common'})
+        self.assertEqual(f['raridade'], '')
+
+    def test_comum_escolhida_a_mao_fica(self):
+        f = esteira._sem_comum_padrao({'raridade': 'common', 'manual': ['raridade']})
+        self.assertEqual(f['raridade'], 'common')
+
+    def test_outras_raridades_ficam(self):
+        self.assertEqual(esteira._sem_comum_padrao({'raridade': 'rare'})['raridade'], 'rare')
+        self.assertIsNone(esteira._sem_comum_padrao(None))

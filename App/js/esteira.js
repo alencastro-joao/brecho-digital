@@ -399,7 +399,8 @@ const éPronta = (item) => prontasJogos.has(item.id) || jaFeita(item);
 const naVista = (item) => (verProntas ? éPronta(item) : nosJogos.has(item.id) === verJogos);
 
 const fichaDe = (item) => {
-  const f = { cat: '', cor: '', nome: '', marca: '', raridade: 'common', tema: '', ...(item.ficha || {}) };
+  // Raridade começa vazia (05/11/2026, João): quem escolhe é ele, peça por peça.
+  const f = { cat: '', cor: '', nome: '', marca: '', raridade: '', tema: '', ...(item.ficha || {}) };
   // Peça que entrou na esteira antes das categorias atuais ('tops', 'acc').
   f.cat = migrarCategoria(f.cat);
   return f;
@@ -502,6 +503,7 @@ function cartao(item) {
   cat.value = f.cat;
 
   const rar = campo('raridade', el('select', { 'aria-label': 'Raridade' },
+    el('option', { value: '' }, 'Raridade…'),
     ...RARIDADES.map(r => el('option', { value: r.id }, r.nome))));
   rar.value = f.raridade;
 
@@ -588,9 +590,12 @@ function cartao(item) {
 // Tipo, cor e marca que o João mexeu à mão: a vista "Nos jogos" não troca
 // pelo que os jogadores disseram. Campo esvaziado volta a seguir os jogos.
 const DOS_JOGOS = ['cat', 'cor', 'marca'];
+// A raridade também é marcada: a escolhida à mão não é confundida com o
+// "Comum" que antes vinha de padrão (esteira.py, _para_tela).
+const A_MAO = [...DOS_JOGOS, 'raridade'];
 const aMao = (f, campos) => {
   const manual = new Set(f.manual || []);
-  for (const c of campos) if (DOS_JOGOS.includes(c)) (f[c] ? manual.add(c) : manual.delete(c));
+  for (const c of campos) if (A_MAO.includes(c)) (f[c] ? manual.add(c) : manual.delete(c));
   return { ...f, manual: [...manual] };
 };
 
@@ -637,10 +642,15 @@ let fila = null;                       // { itens, publicar }
 
 async function publicar(lista) {
   // Peça sem categoria fica para trás, mas não segura o lote inteiro.
+  // O mesmo vale para a raridade, que não tem mais padrão.
   const semCat = lista.filter(i => i.estado === 'pronta' && !fichaDe(i).cat);
-  const prontas = lista.filter(i => i.estado === 'pronta' && fichaDe(i).cat);
+  const semRar = lista.filter(i => i.estado === 'pronta' && fichaDe(i).cat && !fichaDe(i).raridade);
+  const prontas = lista.filter(i => i.estado === 'pronta' && fichaDe(i).cat && fichaDe(i).raridade);
   if (semCat.length && !fila) {
     toast(`${semCat.length === 1 ? 'Uma peça ficou' : `${semCat.length} peças ficaram`} de fora: falta a categoria.`, 'aviso');
+  }
+  if (semRar.length && !fila) {
+    toast(`${semRar.length === 1 ? 'Uma peça ficou' : `${semRar.length} peças ficaram`} de fora: falta a raridade.`, 'aviso');
   }
   const semMedida = prontas.filter(i => !i.medida);
   if (semMedida.length) {
@@ -767,7 +777,7 @@ function aplicarLote() {
     // Medida é de categoria: trocar a categoria invalida o que foi medido.
     if (cat && cat !== f.cat) item.medida = false;   // false: apaga também a guardada
     item.ficha = aMao({ ...f, ...(cat && { cat }), ...(raridade && { raridade }), ...(marca && { marca }), ...(tema && { tema }) },
-      [cat && 'cat', marca && 'marca'].filter(Boolean));
+      [cat && 'cat', raridade && 'raridade', marca && 'marca'].filter(Boolean));
     guardarDepois(item);
   }
   desenhar();
