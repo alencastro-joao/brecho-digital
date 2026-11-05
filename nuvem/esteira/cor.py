@@ -5,7 +5,7 @@ A cor da peça medida nos pixels, sem IA.
 É a mesma conta de `corDaImagem` (App/js/editar.js) e `corDoPixel`
 (App/js/config.js): cada pixel opaco vota na cor da paleta mais próxima, os
 coloridos ganham mesmo em minoria, e duas cores fortes e distantes viram
-"Estampado". Mudou lá, muda aqui.
+"Colorido". Mudou lá, muda aqui.
 
 Serve de chão para o palpite da ficha: se o Bedrock recusar ou não disser a
 cor, a peça ainda chega na tela de revisão com a cor preenchida.
@@ -88,5 +88,5 @@ def cor_da_imagem(img):
     if (colorida.sum() >= len(px) * 0.25 and len(ranque) > 1
             and contagem / total < 0.5 and ranque[1][1] / total > 0.25
             and float(_distancia(LAB[nome], LAB[ranque[1][0]])) > 25):
-        return 'Estampado'
+        return 'Colorido'
     return nome
