@@ -590,10 +590,12 @@ export function montarListaDePecas() {
 let fichaPecas = [];
 let fichaPos = 0;
 let fichaMinha = false;
+let fichaDono = null;        // de quem são as peças, quando a ficha abre fora da página dela (feed)
 
-export function abrirFichaDePeca(pecas, i, { minha = false } = {}) {
+export function abrirFichaDePeca(pecas, i, { minha = false, dono = null } = {}) {
   fichaPecas = pecas;
   fichaMinha = minha;
+  fichaDono = dono;
   pintarFicha(i);
   $('#modal-pp').hidden = false;
   document.body.classList.add('com-modal');
