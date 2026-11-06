@@ -137,16 +137,26 @@ function conferirSeguidores(ids) {
   }
 }
 
+// Uma vez por conta: quem já estava acima do nível quando a troca chegou
+// recebe o aviso na primeira abertura (conferirTrocaLiberada, no boot).
+function avisarTrocaLiberada() {
+  const a = avisos();
+  if (a.trocaLiberada) return;
+  a.trocaLiberada = true;
+  avisar({ tipo: 'troca', ir: ['perfil'], tutorial: true, acao: 'Ver como funciona',
+           texto: 'Você liberou a troca de peças com amigas!' });
+}
+function conferirTrocaLiberada() {
+  if (db.nivel() >= TROCAS.nivel) avisarTrocaLiberada();
+}
+
 function aoGanharXP(evento) {
   // Missão cumprida não avisa mais: o João pediu para tirar do sino.
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
              texto: `Nível ${evento.nivel}: prêmio na trilha.` });
     // Chegou no nível que libera a troca: o aviso leva ao "Como funciona".
-    if (evento.de < TROCAS.nivel && evento.nivel >= TROCAS.nivel) {
-      avisar({ tipo: 'troca', ir: ['perfil'], tutorial: true, acao: 'Ver como funciona',
-               texto: 'Você liberou a troca de peças com amigas!' });
-    }
+    if (evento.de < TROCAS.nivel && evento.nivel >= TROCAS.nivel) avisarTrocaLiberada();
   }
 }
 
@@ -337,6 +347,7 @@ export function montarAvisos() {
   // Os seguidores o boot acabou de ler (sincronizarSocial); o feed, não.
   expirar();
   conferirDia();
+  conferirTrocaLiberada();
   conferirWishlist();
   conferirFeed();
   carregarFeed();
