@@ -60,22 +60,23 @@
 
 .avisos-painel {
   position: fixed; top: 76px; right: calc(90px + 18px + 54px);
-  width: 320px; max-height: min(440px, calc(100vh - 100px));
+  width: 344px; max-height: min(480px, calc(100vh - 100px));
   display: flex; flex-direction: column;
   background: var(--branco); border: 1px solid var(--linha);
-  border-radius: var(--raio); box-shadow: 0 18px 50px rgba(0, 0, 0, .14);
+  border-radius: 20px; box-shadow: 0 22px 60px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .05);
   z-index: 700; overflow: hidden;
 }
 .avisos-topo {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 11px 14px 6px;
+  padding: 16px 18px 8px;
 }
-.avisos-topo h2 { font-size: 14px; font-weight: 800; }
+.avisos-topo h2 { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
 
 .avisos-botoes { display: flex; gap: 10px; }
-.avisos-botoes .link-btn { font-size: 12px; }
-.avisos-grupo { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); padding: 8px 10px 3px; }
-.avisos-rodape { padding: 8px 16px 11px; font-size: 11px; color: var(--tinta-suave); border-top: 1px solid var(--linha); }
+.avisos-botoes .link-btn { font-size: 11.5px; font-weight: 700; color: var(--tinta-suave); text-decoration: none; padding: 4px 9px; border-radius: 99px; background: var(--perola-painel); }
+.avisos-botoes .link-btn:hover { color: var(--tinta); }
+.avisos-grupo { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); padding: 12px 12px 4px; }
+.avisos-rodape { padding: 8px 18px 12px; font-size: 10.5px; color: var(--tinta-suave); opacity: .75; text-align: center; }
 .aviso-item { position: relative; --cor: var(--wii); }
 .aviso-item.curtida, .aviso-item.wishlist { --cor: #d6336c; }
 .aviso-item.comentario, .aviso-item.seguidor { --cor: #7048c7; }
@@ -84,18 +85,17 @@
 .aviso-item.loja { --cor: #2f9e44; }
 .aviso-item.troca { --cor: #0b8aa6; }
 .aviso-item.presente { --cor: #ff7a1a; }
-.aviso.novo { position: relative; background: color-mix(in srgb, var(--cor) 9%, var(--branco)); }
+.aviso.novo { position: relative; background: color-mix(in srgb, var(--cor) 7%, var(--branco)); }
 .aviso.novo:hover { background: color-mix(in srgb, var(--cor) 16%, var(--branco)); }
-.aviso.novo::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--cor); }
-.aviso-bolinha { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cor); margin-right: 18px; }
+.aviso-bolinha { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cor); margin-right: 16px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor) 18%, transparent); }
 .aviso-x { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--tinta-suave); font-size: 13px; padding: 6px; opacity: 0; cursor: pointer; }
 .aviso-item:hover .aviso-x, .aviso-x:focus-visible { opacity: 1; }
 @media (hover: none) { .aviso-x { opacity: .6; } }
-.aviso-acao { display: inline-block; margin-top: 4px; font-style: normal; font-size: 11.5px; font-weight: 800; padding: 3px 11px; border-radius: 99px; background: var(--cor); color: #fff; }
-.avisos-lista { list-style: none; overflow-y: auto; padding: 0 6px 6px; }
+.aviso-acao { display: inline-block; margin-top: 6px; font-style: normal; font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 99px; background: color-mix(in srgb, var(--cor) 12%, var(--branco)); color: var(--cor); }
+.avisos-lista { list-style: none; overflow-y: auto; padding: 0 8px 8px; display: flex; flex-direction: column; gap: 2px; }
 .aviso {
-  width: 100%; display: flex; align-items: center; gap: 9px;
-  padding: 9px 10px 9px 12px; border: 0; border-radius: 12px;
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 0; border-radius: 14px;
   background: none; text-align: left; color: var(--tinta);
 }
 .aviso:hover { background: var(--perola-painel); }
@@ -103,10 +103,10 @@
 /* Texto e hora numa linha só, cortados em duas: a lista cabe mais avisos. */
 .aviso-texto {
   flex: 1;
-  font-size: 12.5px; line-height: 1.35; min-width: 0; overflow-wrap: anywhere;
+  font-size: 13px; line-height: 1.4; min-width: 0; overflow-wrap: anywhere;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
-.aviso-texto small { margin-left: 5px; font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
+.aviso-texto small { display: block; margin: 2px 0 0; font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
 .aviso.novo .aviso-texto small { color: var(--cor); font-weight: 700; }
 
 .aviso-icone {
