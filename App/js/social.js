@@ -32,7 +32,7 @@ import { renderVitrines } from './vitrines.js';
 // mesmos cards daqui. Os dois lados só se chamam em tempo de execução.
 import { abrirGavetaDe, abrirFichaDePeca, gradeDePecas } from './usuario.js';
 import { renderPessoas, atualizarPessoas } from './busca.js';
-import { ehFicticio, seguirNoServidor, perfilDe, roupasDoPerfil } from './pessoas.js';
+import { ehFicticio, seguirNoServidor, perfilDe, carregarPerfil, roupasDoPerfil } from './pessoas.js';
 import {
   publicacoes, feedLidoEm, carregarFeed, aoMudarPublicacoes, apagarPublicacao, gerarNoServidor,
   temMaisNoFeed, carregarMaisFeed,
@@ -1276,7 +1276,12 @@ function renderLook() {
     }, ico('mais')));
 
   const tenho = pecas.filter(p => db.temPeca(p.id)).length;
-  const grade = gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i) });
+  const grade = gradeDePecas(pecas, { abrir: (i) => {
+    // Peça de uma amiga no post: carrega o perfil dela para o botão Trocar.
+    const abrir = () => abrirFichaDePeca(pecas, i, { dono: post.autor });
+    if (perfilDe(post.autor)?.guardaRoupa) abrir();
+    else carregarPerfil(post.autor).catch(() => {}).then(abrir);
+  } });
   grade.forEach((b, i) => b.classList.toggle('tenho', db.temPeca(pecas[i].id)));
   const parecidos = maisComoEste(post);
 
