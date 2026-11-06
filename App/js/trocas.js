@@ -19,7 +19,7 @@ import * as db from './db.js';
 import { TROCAS, RARIDADE } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, trocarImagem } from './catalog.js';
 import { el, toast } from './util.js';
-import { avisarTroca, aoTocarEmTroca } from './avisos.js';
+import { avisarTroca, aoTocarEmTroca, aoTocarEmTutorialTroca } from './avisos.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
 import { ico } from './icones.js';
@@ -247,7 +247,12 @@ const RARIDADES_CUSTO = () => Object.entries(TROCAS.custo)
 
 function botaoInfo() {
   const b = el('button', { type: 'button', class: 'troca-info-btn', title: 'Como funciona', 'aria-label': 'Como funciona' }, ico('info'));
-  b.addEventListener('click', () => {
+  b.addEventListener('click', abrirComoFunciona);
+  return b;
+}
+
+function abrirComoFunciona() {
+  {
     const ok = el('button', { type: 'button', class: 'btn-dark' }, 'Entendi');
     const { caixa: info, fechar } = janela(
       el('h2', { class: 'pergunta-titulo' }, 'Como funciona a troca'),
@@ -258,8 +263,7 @@ function botaoInfo() {
       ok);
     info.classList.add('troca-info');
     ok.addEventListener('click', () => fechar());
-  });
-  return b;
+  }
 }
 
 // ------------------------------ Propor (Ana) -------------------------------
@@ -532,6 +536,7 @@ function animarTroca({ dou, recebo, perdidos }) {
 // --------------------------------- Boot ------------------------------------
 export function montarTrocas() {
   aoTocarEmTroca(abrirOferta);
+  aoTocarEmTutorialTroca(abrirComoFunciona);
   sincronizarTrocas();
   setInterval(sincronizarTrocas, INTERVALO);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizarTrocas(); });

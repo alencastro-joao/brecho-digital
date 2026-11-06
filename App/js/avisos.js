@@ -19,7 +19,7 @@ import { publicacoes, aoMudarPublicacoes, carregarFeed, feedLidoEm } from './pub
 import { aoLerSeguidores, sincronizarSocial, perfilDe } from './pessoas.js';
 import { retratoDe } from './social.js';
 import { irPara } from './router.js';
-import { CONFIG } from './config.js';
+import { CONFIG, TROCAS } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
 import { el, $, hojeISO, tempoRelativo } from './util.js';
 import { ico } from './icones.js';
@@ -58,7 +58,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null, tutorial = false }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -69,7 +69,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = nu
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}),
+    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}), ...(tutorial ? { tutorial } : {}),
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -142,6 +142,11 @@ function aoGanharXP(evento) {
   if (evento.subiu) {
     avisar({ tipo: 'nivel', ir: ['tarefas'],
              texto: `Nível ${evento.nivel}: prêmio na trilha.` });
+    // Chegou no nível que libera a troca: o aviso leva ao "Como funciona".
+    if (evento.de < TROCAS.nivel && evento.nivel >= TROCAS.nivel) {
+      avisar({ tipo: 'troca', ir: ['perfil'], tutorial: true, acao: 'Ver como funciona',
+               texto: 'Você liberou a troca de peças com amigas!' });
+    }
   }
 }
 
@@ -168,6 +173,9 @@ export function avisarPresente(texto) {
 // importa este arquivo, e não o contrário). `acao` é a dica ao lado do texto.
 let abrirTroca = null;
 export const aoTocarEmTroca = (fn) => { abrirTroca = fn; };
+
+let abrirTutorialTroca = null;
+export const aoTocarEmTutorialTroca = (fn) => { abrirTutorialTroca = fn; };
 
 export function avisarTroca({ texto, quem = null, troca, acao = null }) {
   avisar({ tipo: 'troca', ir: ['perfil'], texto, quem, troca, acao });
@@ -225,7 +233,8 @@ function linha(a, visto) {
       class: 'aviso' + (novo ? ' novo' : ''),
       onclick: () => {
         fechar();
-        if (a.troca && abrirTroca) abrirTroca(a.troca);
+        if (a.tutorial && abrirTutorialTroca) abrirTutorialTroca();
+        else if (a.troca && abrirTroca) abrirTroca(a.troca);
         else irPara(...a.ir);
       },
     },
