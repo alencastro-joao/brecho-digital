@@ -75,10 +75,24 @@ export function premiarPostit(m) {
   const ev = eventoDe(m);
   if (!ev) return { bau: null };
   db.state.eventosFeitos = { ...(db.state.eventosFeitos ?? {}), [ev.id]: (db.state.eventosFeitos?.[ev.id] ?? 0) + 1 };
-  db.guardarBau(ev.bau, 'evento', ev.nome);   // grava e voa até Tarefas
+  db.guardarBau(ev.bau, 'evento', ev.nome, ev.id);   // grava e voa até Tarefas
   return { bau: BAUS[ev.bau].nome };
 }
 
 export const textoDoPostit = (m) => modeloDoEvento(m)?.nome ?? '';
 export const nomeDoEvento = (m) => eventoDe(m)?.nome ?? '';
 export const bauDoEvento = (m) => eventoDe(m)?.bau ?? null;
+
+// De que evento a peça veio (João, 11/11/2026: marcar as roupas de evento no
+// guarda-roupa). O baú do evento grava `evento` na peça; as de antes disso só
+// têm origem 'evento', e saem pela data: o último evento aberto até aquele dia
+// (o baú pode ter sido aberto depois de o evento fechar).
+export function eventoDaPeca(p) {
+  if (!p) return null;
+  if (p.evento) return EVENTOS.find(e => e.id === p.evento) ?? null;
+  if (p.origem !== 'evento' || !p.obtidoEm) return null;
+  const dia = hojeISO(new Date(p.obtidoEm));
+  return EVENTOS.filter(e => e.desde <= dia).sort((a, b) => a.desde.localeCompare(b.desde)).at(-1) ?? null;
+}
+// "Halloween 2026": o nome com o ano, para a ficha da peça.
+export const nomeComAno = (ev) => `${ev.nome} ${ev.desde.slice(0, 4)}`;

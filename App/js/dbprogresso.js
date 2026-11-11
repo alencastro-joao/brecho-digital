@@ -209,9 +209,9 @@ export function carimbarSemana() {
 // Pegar um baú paga o XP do degrau do nível (lido antes de o próprio XP subir
 // o nível) e guarda o baú fechado. Abrir chega com as peças já sorteadas pela
 // tela, que conhece o catálogo: uma lista de { item, raridade }.
-function guardarSorteadas(sorteadas, origem) {
+function guardarSorteadas(sorteadas, origem, evento = null) {
   return sorteadas
-    .map(({ item, raridade }) => item && adicionarPeca(item, { origem, raridade }))
+    .map(({ item, raridade }) => item && adicionarPeca(item, { origem, raridade, evento }))
     .filter(Boolean)
     .map(p => ({ id: p.id, raridade: p.raridade }));
 }
@@ -256,7 +256,7 @@ export function abrirBauEspecial() {
 
 // --- Baús guardados --------------------------------------------------------
 // Todo baú ganho (dias, semanal, trilha de níveis, missões do tutorial) vem
-// para cá fechado: { id, tipo (de BAUS), origem (a das peças), de, em }. As
+// para cá fechado: { id, tipo (de BAUS), origem (a das peças), de, em, evento? }. As
 // peças só são sorteadas na hora de abrir, pela tela, que conhece o catálogo.
 export const bausGuardados = () => state.baus ?? [];
 // Quem quiser mostrar o baú chegando (a animação dele voando até Tarefas)
@@ -264,9 +264,11 @@ export const bausGuardados = () => state.baus ?? [];
 const ouvintesBau = new Set();
 export const onBauGuardado = (fn) => { ouvintesBau.add(fn); return () => ouvintesBau.delete(fn); };
 
-export function guardarBau(tipo, origem, de) {
+// `evento`: o id do evento que deu o baú; as peças dele levam esse id (a
+// marca de evento no guarda-roupa, eventos.eventoDaPeca).
+export function guardarBau(tipo, origem, de, evento = null) {
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  state.baus = [...bausGuardados(), { id, tipo, origem, de, em: new Date().toISOString() }];
+  state.baus = [...bausGuardados(), { id, tipo, origem, de, em: new Date().toISOString(), ...(evento ? { evento } : {}) }];
   salvar();
   ouvintesBau.forEach(fn => fn(tipo));
 }
@@ -275,7 +277,7 @@ export function abrirBauGuardado(id, sorteadas = []) {
   const bau = bausGuardados().find(b => b.id === id);
   if (!bau) return null;
   state.baus = bausGuardados().filter(b => b !== bau);
-  const pecas = guardarSorteadas(sorteadas, bau.origem);
+  const pecas = guardarSorteadas(sorteadas, bau.origem, bau.evento);
   progredirMissao('abrir-bau');
   salvar();
   return { ...bau, pecas };
@@ -290,7 +292,7 @@ export function ganharBausDeEvento(hoje = hojeISO(), pronto = () => true) {
   const novos = EVENTOS.filter(e => hoje >= e.desde && hoje <= e.ate && !pegos.includes(e.id) && pronto(e));
   if (!novos.length) return [];
   state.eventos = [...pegos, ...novos.map(e => e.id)];
-  for (const e of novos) guardarBau(e.bau, 'evento', e.nome);
+  for (const e of novos) guardarBau(e.bau, 'evento', e.nome, e.id);
   salvar();
   return novos;
 }
