@@ -242,7 +242,8 @@ export function raridadeDoDia(id, iso = hojeISO()) {
 // Raridades gravadas na própria peça (acervo permanente), por id.
 export const raridadesFixas = new Map();
 
-export function adicionarPeca(item, { origem = 'vitrine', raridade = null } = {}) {
+// `evento`: o id do evento (EVENTOS) quando a peça sai do baú dele.
+export function adicionarPeca(item, { origem = 'vitrine', raridade = null, evento = null } = {}) {
   if (temPeca(item.id)) return null;
   const peca = {
     id: item.id,
@@ -251,6 +252,7 @@ export function adicionarPeca(item, { origem = 'vitrine', raridade = null } = {}
     obtidoEm: new Date().toISOString(),
     origem,
     ordem: state.inventario.length,
+    ...(evento ? { evento } : {}),
   };
   state.inventario.push(peca);
   return peca;

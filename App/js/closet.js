@@ -4,7 +4,8 @@
 // raridade vem gravada na peça (não é re-sorteada a cada render) e a ordem dos
 // slots é persistida quando você arrasta.
 
-import { ADMIN, CATEGORIAS, RARIDADE, escalaGrade } from './config.js';
+import { ADMIN, CATEGORIAS, RARIDADE, escalaGrade, iconeDoBau } from './config.js';
+import { eventoDaPeca, nomeComAno } from './eventos.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, trocarImagem } from './catalog.js';
 import {
   agrupamento, categoriaDe, grupoDe, gruposDoInventario, seletorDeAgrupamento,
@@ -184,13 +185,30 @@ function montarRail() {
     );
     rail.insertBefore(botao, divisor());
   }
+
+  // Filtro das peças de evento (João, 11/11/2026): só aparece quando há
+  // alguma, com o ícone do baú do evento mais recente entre elas.
+  const doEvento = db.state.inventario.map(eventoDaPeca).filter(Boolean);
+  if (doEvento.length) {
+    const ultimo = doEvento.reduce((a, b) => (b.desde > a.desde ? b : a));
+    rail.insertBefore(el('button', {
+      class: 'cat-btn eventos' + (categoriaAtual === EVENTOS_CAT ? ' active' : ''),
+      dataset: { cat: EVENTOS_CAT }, title: 'Peças de eventos',
+      onclick: () => carregarCategoria(EVENTOS_CAT),
+    },
+      el('span', { class: 'cat-icone' }, ico(iconeDoBau(ultimo.bau))),
+      el('span', { class: 'cat-qtd' }, String(doEvento.length))
+    ), divisor());
+  }
 }
+
+const EVENTOS_CAT = 'eventos';   // o filtro do trilho, fora dos grupos
 
 let pecasDaVista = [];           // as peças da categoria aberta, já ordenadas
 
 export function carregarCategoria(cat, { manterPagina = false, apenas = null } = {}) {
   const grupos = agrupamento().grupos;
-  if (!grupos[cat]) cat = 'todas';
+  if (!grupos[cat] && cat !== EVENTOS_CAT) cat = 'todas';
   if (cat !== categoriaAtual || !manterPagina) { pagina = 0; gradeEntra = true; }
   categoriaAtual = cat;
   document.querySelectorAll('.cat-btn').forEach(b =>
@@ -199,15 +217,17 @@ export function carregarCategoria(cat, { manterPagina = false, apenas = null } =
   limparPreview();
 
   const tudo = cat === 'todas';
+  const doGrupo = cat === EVENTOS_CAT ? (p) => !!eventoDaPeca(p) : (p) => grupoDe(p) === cat;
   // Peça órfã (no inventário mas fora do catálogo) não ocupa quadrado.
   pecasDaVista = db.state.inventario
-    .filter(p => (tudo || grupoDe(p) === cat) && pecaDoCatalogo(p.id)
+    .filter(p => (tudo || doGrupo(p)) && pecaDoCatalogo(p.id)
       && (!apenas || apenas.includes(p.id)));
   ordenar(pecasDaVista);
 
   const n = pecasDaVista.length;
   const qtd = `${n} ${n === 1 ? 'peça' : 'peças'}`;
-  $('#closet-sub').textContent = tudo ? qtd : `${grupos[cat].nome} · ${qtd}`;
+  const nomeDaVista = cat === EVENTOS_CAT ? 'Eventos' : grupos[cat]?.nome;
+  $('#closet-sub').textContent = tudo ? qtd : `${nomeDaVista} · ${qtd}`;
 
   desenharPagina();
 }
@@ -309,6 +329,9 @@ function criarSlot(peca) {
 
   if (peca.origem === 'collab') slot.append(el('span', { class: 'selo-collab' }, ico('estrela-cheia')));
   if (peca.favorito) slot.classList.add('favorita');
+  // Peça de evento: o ícone do baú dele no canto de baixo (João, 11/11/2026).
+  const ev = eventoDaPeca(peca);
+  if (ev) slot.append(el('span', { class: 'selo-evento', title: 'Veio do ' + nomeComAno(ev) }, ico(iconeDoBau(ev.bau))));
 
   slot.addEventListener('dragstart', (e) => {
     if (!manual()) { e.preventDefault(); return; }
@@ -402,7 +425,9 @@ function selecionar(peca) {
 
   rotularFavorito();
 
-  const origem = { collab: 'cápsula do mês', propria: 'peça sua', teste: 'teste' }[peca.origem] || 'garimpo';
+  const ev = eventoDaPeca(peca);
+  const origem = ev ? 'evento ' + nomeComAno(ev)
+    : { collab: 'cápsula do mês', propria: 'peça sua', teste: 'teste' }[peca.origem] || 'garimpo';
   const tipo = CATEGORIAS[categoriaDe(peca)];
   const partes = [['Tipo', tipo?.nome ?? 'Peça']];
   if (cat.cor?.trim()) partes.push(['Cor', cat.cor.trim()]);
