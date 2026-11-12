@@ -9,7 +9,7 @@
 // state.eventosGarantidos: eventos em que a conta já ganhou o post-it garantido.
 // As roupinhas do evento vêm da coleção do tema (ESTILOS), não daqui.
 
-import { EVENTOS, BAUS } from './config.js';
+import { EVENTOS, BAUS, idDoEstilo } from './config.js';
 import * as db from './db.js';
 import { hojeISO } from './util.js';
 
@@ -27,11 +27,19 @@ export const eventoAberto = (hoje = hojeISO()) =>
 const eventoDe = (m) => EVENTOS.find(e => e.id === m.evento) ?? null;
 export const modeloDoEvento = (m) => eventoDe(m)?.missoes.find(x => x.id === m.id) ?? null;
 
+// Quem já completou a coleção do tema do evento não recebe mais post-its dele
+// (João, 12/11/2026). Evento sem tema (ou sem coleção com peças) nunca para.
+export function colecaoDoEventoCompleta(ev) {
+  const tema = BAUS[ev?.bau]?.tema;
+  const c = tema ? db.progressoDasColecoes()[idDoEstilo(tema)] : null;
+  return !!c && c.total > 0 && c.tem >= c.total;
+}
+
 // Na chegada de um post-it: 1 chance em `postitCada` de ser do evento aberto,
 // com uma missão que ainda não está no mural. null = post-it normal.
 export function postitDoEvento(emUso = new Set(), forcar = false) {
   const ev = eventoAberto();
-  if (!ev || (!forcar && Math.random() * (ev.postitCada || 3) >= 1)) return null;
+  if (!ev || colecaoDoEventoCompleta(ev) || (!forcar && Math.random() * (ev.postitCada || 3) >= 1)) return null;
   const livres = ev.missoes.filter(md => !emUso.has(`${ev.id}:${md.id}`));
   if (!livres.length) return null;
   const md = livres[Math.floor(Math.random() * livres.length)];
