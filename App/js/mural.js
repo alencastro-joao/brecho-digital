@@ -138,26 +138,17 @@ function novoJogo(jogos = Object.keys(NOMES_JOGO)) {
   return { jogo, meta, feito: 0, fichas: fichasDoJogo(jogo, meta) };
 }
 
-// Os jogos só têm as peças que o admin mandou da esteira: se o que dá para
-// fazer agora (`livres`: jogo → quantas ajudas ainda cabem) não chega à meta,
-// a meta desce até o que dá, e as fichas acompanham. Jogo sem nada para
-// fazer troca por outro que tenha. Devolve se mudou.
+// Os jogos só têm as peças que o admin mandou da esteira. A meta mostrada no
+// mural nunca desce ao abrir a tarefa (fica a maior, a do post-it). Só se o
+// jogo não tem nada para fazer e ainda não começou é que troca por outro que
+// tenha, já com a meta do novo sorteio. Devolve se mudou.
 export function caberNoQueTem(livres) {
   const j = mural().jogo;
-  if (!j || j.feito >= j.meta) return false;
-  const cabe = livres[j.jogo] ?? 0;
-  if (cabe >= j.meta - j.feito) return false;
-  if (cabe > 0 || j.feito > 0) {
-    j.meta = j.feito + cabe;
-    j.fichas = fichasDoJogo(j.jogo, j.meta);
-  } else {
-    const outros = Object.keys(NOMES_JOGO).filter(k => (livres[k] ?? 0) > 0);
-    if (!outros.length) return false;
-    const novo = novoJogo(outros);
-    novo.meta = Math.min(novo.meta, livres[novo.jogo]);
-    novo.fichas = fichasDoJogo(novo.jogo, novo.meta);
-    mural().jogo = novo;
-  }
+  if (!j || j.feito > 0 || j.feito >= j.meta) return false;
+  if ((livres[j.jogo] ?? 0) > 0) return false;
+  const outros = Object.keys(NOMES_JOGO).filter(k => (livres[k] ?? 0) > 0);
+  if (!outros.length) return false;
+  mural().jogo = novoJogo(outros);
   db.salvar();
   return true;
 }
