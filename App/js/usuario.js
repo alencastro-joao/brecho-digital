@@ -17,6 +17,8 @@
 // ninguém cadastrar nada. Quando existir backend, é essa função que some.
 
 import { PERFIS_MOCK, CATEGORIAS, RARIDADE, RARIDADES, escalaGrade, CORES_FAVORITAS } from './config.js';
+import { ordenar, seletorDeOrdem } from './ordenacao.js';
+import { agrupamento, grupoDe } from './agrupamento.js';
 import { catalogo, itensDaLoja, item as pecaDoCatalogo, nomeDaPeca, rotuloCategoria, proporcao, trocarImagem } from './catalog.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
 import * as db from './db.js';
@@ -544,7 +546,7 @@ export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar 
   }, '⇄');
   const trocas = minha ? (trocaLiberada() ? simbolo('Minhas trocas', abrirMinhasTrocas, trocasEmAndamento()) : null)
     : paraTrocar.length ? simbolo(`Peças para trocar (${paraTrocar.length})`, () =>
-      abrirListaDePecas(`Para trocar com ${dono}`, paraTrocar, { vazio: 'Nada para trocar agora' }), paraTrocar.length) : null;
+      abrirListaDePecas(`Para trocar com ${dono}`, paraTrocar, { vazio: 'Nada para trocar agora', trocaCom: perfil.id }), paraTrocar.length) : null;
   return [
     botao('cabide', 'Guarda-roupa', roupas, minha ? 'Seu guarda-roupa' : `Guarda-roupa de ${dono}`,
       'Nenhuma peça ainda'),
@@ -559,9 +561,53 @@ export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar 
 // botões acompanharem.
 let aoFecharLista = null;
 
-export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null, minha = false } = {}) {
+// `trocaCom` (id de um amigo): a lista é das peças dele que dá para trocar, com
+// filtro, organizar e busca, e as da sua wishlist vêm primeiro (João, 18/11/2026).
+function listaDeTroca(titulo, pecas, { vazio, trocaCom }) {
+  const dona = perfilPublico(trocaCom);
+  const desejadas = new Set(db.state.wishlist || []);
+  let filtro = '', texto = '';
+  const grade = el('div');
+  const base = pecas.map((pc, i) => ({ ...pc, raridade: raridadeNaPagina(dona, pc.id), obtidoEm: 0, _i: i }));
+  const pintar = () => {
+    const q = texto.trim().toLowerCase();
+    const vez = ordenar([...base]).sort((a, b) => (desejadas.has(a.id) ? 0 : 1) - (desejadas.has(b.id) ? 0 : 1))
+      .filter(pc => (!filtro || grupoDe(pc) === filtro)
+        && (!q || [nomeDaPeca(pc), pc.marca, pc.cor, pc.nome].some(t => String(t || '').toLowerCase().includes(q))));
+    const lista = vez.map(pc => pecas[pc._i]);
+    grade.replaceChildren(lista.length
+      ? el('div', { class: 'pf-grade pf-grade-pecas' },
+        ...gradeDePecas(lista, { dona, abrir: (i) => abrirFichaDePeca(lista, i, { dono: trocaCom }) }))
+      : el('p', { class: 'lp-vazio' }, vazio || 'Nada por aqui'));
+  };
+  const ag = agrupamento();
+  const tem = new Set(base.map(grupoDe));
+  const filtrar = el('select', {
+    class: 'ordem-sel', title: 'Filtrar as peças', 'aria-label': 'Filtrar as peças',
+    onchange: (e) => { filtro = e.target.value; pintar(); },
+  }, el('option', { value: '' }, 'Todas'),
+    ...ag.ordem.filter(id => tem.has(id)).map(id => el('option', { value: id }, ag.grupos[id]?.nome || id)));
+  const busca = el('input', {
+    type: 'search', class: 'lp-busca', placeholder: 'buscar peça (nome, marca, cor)', maxlength: 40, 'aria-label': 'Buscar peça',
+    oninput: (e) => { texto = e.target.value; pintar(); },
+  });
+  pintar();
+  return el('div', { class: 'lp-troca' },
+    el('div', { class: 'troca-ferramentas' },
+      el('div', { class: 'troca-campo' }, el('span', {}, 'Filtrar'), filtrar),
+      el('div', { class: 'troca-campo' }, el('span', {}, 'Organizar'), seletorDeOrdem(pintar))),
+    busca, grade);
+}
+
+export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null, minha = false, trocaCom = null } = {}) {
   aoFecharLista = aoFechar;
   $('#lp-titulo').textContent = titulo;
+  if (trocaCom) {
+    $('#lp-corpo').replaceChildren(listaDeTroca(titulo, pecas, { vazio, trocaCom }));
+    $('#modal-lista').hidden = false;
+    document.body.classList.add('com-modal');
+    return;
+  }
   $('#lp-corpo').replaceChildren(pecas.length
     ? el('div', { class: 'pf-grade pf-grade-pecas' },
       ...gradeDePecas(pecas, { dona: minha ? null : perfilPublico(idAtual), abrir: (i) => abrirFichaDePeca(pecas, i, { minha }) }))
@@ -649,7 +695,8 @@ function pintarFicha(i) {
   $('#pp-prox').disabled = fichaPos >= fichaPecas.length - 1;
 
   // Aberta na página de alguém: a dona e a raridade da cópia dela (a troca).
-  const dona = !fichaMinha && viewAtual() === 'usuario' ? perfilPublico(idAtual) : null;
+  const dona = fichaMinha ? null : fichaDono ? perfilPublico(fichaDono)
+    : viewAtual() === 'usuario' ? perfilPublico(idAtual) : null;
   const r = RARIDADE[raridadeNaPagina(dona, peca.id)] || raridadeDaPeca(peca.id);
   const cor = r && (r.aura && r.aura !== 'arco-iris' ? r.aura : r.cor);
   const nome = peca.nome?.trim() || nomeDaPeca(peca);
