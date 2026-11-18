@@ -129,11 +129,43 @@ function abrirRecorte(src, atual, aoAplicar) {
   desenhar();
 }
 
+// -------------------------------- Rascunho ---------------------------------
+// Sair pela seta (ou pelo voltar do aparelho) no meio do envio não perde nada:
+// a foto que já subiu, o corte e a ficha ficam guardados neste aparelho e
+// voltam na próxima vez que a tela abrir — também depois de o celular
+// recarregar a página ao voltar da câmera. Só o Cancelar e o Enviar apagam.
+// A foto que subiu é rascunho na nuvem por um dia (esteira.py); depois disso
+// o rascunho daqui também não vale mais.
+const RASCUNHO = 'brecho.enviarRoupa';
+const RASCUNHO_VALE = 20 * 3600e3;
+function lerRascunho() {
+  try {
+    const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null');
+    return r && Date.now() - r.em < RASCUNHO_VALE ? r : null;
+  } catch { return null; }
+}
+function guardarRascunho(r) {
+  try { localStorage.setItem(RASCUNHO, JSON.stringify({ ...r, em: r.em || Date.now() })); } catch { /* sem guardar */ }
+}
+function apagarRascunho() {
+  try { localStorage.removeItem(RASCUNHO); } catch { /* nada */ }
+}
+
 // --------------------------------- A tela ----------------------------------
 export function abrirEnviarRoupa() {
-  const ficha = { nome: '', cat: '', cor: '', marca: '', raridade: '', tema: '' };
-  let envio = null;          // { id, estado, previa, w, h } da foto que subiu
-  let corte = null;
+  const guardado = lerRascunho();
+  const ficha = { nome: '', cat: '', cor: '', marca: '', raridade: '', tema: '', ...(guardado?.ficha || {}) };
+  // { id, estado, previa, w, h } da foto que subiu. A guardada volta "processando"
+  // e a primeira pergunta à nuvem traz a prévia de novo (a URL assinada vence).
+  let envio = guardado?.envio?.id ? { id: guardado.envio.id, estado: 'processando' } : null;
+  let corte = guardado?.corte || null;
+  let fotoEm = guardado?.envio?.id ? guardado.em : 0;
+  const guardar = () => {
+    if (!vivo) return;
+    const temAlgo = envio?.id || Object.values(ficha).some(Boolean);
+    if (!temAlgo) return apagarRascunho();
+    guardarRascunho({ ficha, corte, envio: envio?.id ? { id: envio.id } : null, em: fotoEm || Date.now() });
+  };
   let vez = 0;               // cada foto nova invalida a espera da anterior
   let enviando = false;
   let vivo = true;
@@ -162,7 +194,7 @@ export function abrirEnviarRoupa() {
       enquadrar(img, c);
       previa.replaceChildren(janela,
         el('button', { type: 'button', class: 'ev-lapis', title: 'Recortar a foto', 'aria-label': 'Recortar a foto',
-          onclick: () => abrirRecorte(envio.previa, corte || INTEIRA, (novo) => { corte = novo; pintarPrevia(); }) },
+          onclick: () => abrirRecorte(envio.previa, corte || INTEIRA, (novo) => { corte = novo; pintarPrevia(); guardar(); }) },
         ico('editar')));
       return;
     }
@@ -195,6 +227,8 @@ export function abrirEnviarRoupa() {
       await subirFoto(reserva, f);
       if (minha !== vez) return;
       envio.id = reserva.id;
+      fotoEm = Date.now();
+      guardar();
       esperarFundo(minha);
     } catch (e) {
       if (minha !== vez) return;
@@ -217,7 +251,13 @@ export function abrirEnviarRoupa() {
           if (e.estado === 'pronta') tocar('ok');
           return pintarPrevia();
         }
-      } catch { /* tenta de novo */ }
+      } catch (e) {
+        // A foto guardada que a nuvem já apagou (rascunho de mais de um dia): começa sem ela.
+        if (/avaliada|não é sua|inválido/.test(e.message)) {
+          envio = null; corte = null; guardar();
+          return pintarPrevia();
+        }
+      }
       if (Date.now() - inicio > ESPERA_MAX) {
         envio = { ...envio, estado: 'erro' };
         return pintarPrevia();
@@ -238,7 +278,7 @@ export function abrirEnviarRoupa() {
   // ------------------------------- A ficha -------------------------------
   const campoNome = el('input', { class: 'mg-marca', type: 'text', maxlength: '60',
     placeholder: 'Ex.: Jaqueta jeans oversized', autocomplete: 'off',
-    oninput: () => { ficha.nome = campoNome.value.trim(); } });
+    value: ficha.nome, oninput: () => { ficha.nome = campoNome.value.trim(); guardar(); } });
 
   const tipos = el('div', { class: 'mg-tipos' });
   const renderTipos = () => tipos.replaceChildren(...ORDEM_CATEGORIAS.map(c => el('button', {
@@ -262,10 +302,10 @@ export function abrirEnviarRoupa() {
 
   const campoMarca = el('input', { class: 'mg-marca', type: 'text', maxlength: '40',
     placeholder: 'Escreva a marca', autocomplete: 'off',
-    oninput: () => { ficha.marca = campoMarca.value.trim(); } });
+    value: ficha.marca, oninput: () => { ficha.marca = campoMarca.value.trim(); guardar(); } });
   const atalhos = el('div', { class: 'mg-marcas' }, ...db.marcasOrdenadas().slice(0, 8).map(m =>
     el('button', { type: 'button', class: 'mg-marca-chip', onclick: () => {
-      campoMarca.value = m.nome; ficha.marca = m.nome;
+      campoMarca.value = m.nome; ficha.marca = m.nome; guardar();
     } }, m.nome)));
 
   // Raridade: um bloco pérola por raridade, com a cor dela, como nas fichas.
@@ -287,7 +327,7 @@ export function abrirEnviarRoupa() {
   const renderColecoes = () => {
     colecoes.replaceChildren(...Object.entries(ESTILOS).map(([id, t]) => el('button', {
       type: 'button', class: 'mg-tipo ev-colecao' + (id === ficha.tema ? ' ativa' : ''),
-      onclick: () => { ficha.tema = ficha.tema === id ? '' : id; tocar('escolha'); renderColecoes(); },
+      onclick: () => { ficha.tema = ficha.tema === id ? '' : id; tocar('escolha'); renderColecoes(); guardar(); },
     }, el('img', { src: t.icone, alt: '' }), el('span', {}, t.nome))));
     nomeColecao.textContent = ESTILOS[ficha.tema]?.nome || 'se fizer parte';
   };
@@ -327,6 +367,7 @@ export function abrirEnviarRoupa() {
     : !ficha.cor ? 'Escolha a cor principal.'
     : !ficha.raridade ? 'Escolha a raridade.' : '';
   function conferir() {
+    guardar();
     botaoEnviar.disabled = enviando;
     botaoEnviar.classList.toggle('incompleto', !!falta());
   }
@@ -347,7 +388,8 @@ export function abrirEnviarRoupa() {
         bloco('Coleção', nomeColecao, colecoes))),
     secao('Suas roupas enviadas', lista),
   ], [
-    el('button', { type: 'button', class: 'btn-ghost', onclick: () => sair() }, 'Cancelar'),
+    // Cancelar desiste de verdade; a seta de voltar guarda o rascunho.
+    el('button', { type: 'button', class: 'btn-ghost', onclick: () => { apagarRascunho(); sair(); } }, 'Cancelar'),
     botaoEnviar,
   ], null, () => { vivo = false; if (envio?.local) URL.revokeObjectURL(envio.local); }, { info: false });
 
@@ -361,6 +403,7 @@ export function abrirEnviarRoupa() {
     botaoEnviar.replaceChildren(ico('relogio'), 'Enviando…');
     try {
       await chamar(`/api/envios/${envio.id}`, { ficha, corte: corte || false }, 'PUT');
+      apagarRascunho();
       tocar('ok');
       ajustar();
     } catch (e) {
@@ -407,5 +450,7 @@ export function abrirEnviarRoupa() {
     posicionar();
   }
 
+  // Rascunho guardado com foto: pergunta à nuvem como ela está.
+  if (envio?.id) esperarFundo(++vez);
   lerLista();
 }
