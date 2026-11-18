@@ -44,9 +44,18 @@ class EnviosDosJogadores(unittest.TestCase):
         _s3.delete_bucket(Bucket=esteira.DADOS)
 
     def test_envio_entra_na_esteira_com_a_ficha(self):
-        feito = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})
+        feito = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO})
         self.assertIn('url', feito['envio'])
+        self.assertTrue(esteira._ler(feito['envio']['id'])['rascunho'])
+        self.assertEqual(esteira.envios_do_jogador(JOAO)['envios'], [])
+        self.assertEqual(esteira.listar()['itens'], [])
+        esteira.ajustar_do_jogador(JOAO, feito['envio']['id'],
+                                   {'ficha': {**FICHA, 'tema': 'skate'}, 'corte': {'x': .1, 'y': .1, 'w': .5, 'h': .5}})
         dados = esteira._ler(feito['envio']['id'])
+        self.assertNotIn('rascunho', dados)
+        self.assertEqual(dados['ficha']['tema'], 'skate')
+        self.assertIn('corte', dados)
+        self.assertEqual(len(esteira.listar()['itens']), 1)
         self.assertEqual(dados['origem'], 'jogador')
         self.assertEqual(dados['enviadoPor']['handle'], '@joao')
         self.assertEqual(dados['ficha']['raridade'], 'rare')
@@ -55,13 +64,17 @@ class EnviosDosJogadores(unittest.TestCase):
         self.assertEqual(lista['envios'][0]['estado'], 'analise')
 
     def test_ficha_incompleta_recusa(self):
-        for falta in ('nome', 'cat', 'cor', 'raridade'):
+        item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO})['envio']['id']
+        for falta in ('cat', 'cor', 'raridade'):
             with self.assertRaises(ValueError):
-                esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': {**FICHA, falta: ''}})
+                esteira.ajustar_do_jogador(JOAO, item_id, {'ficha': {**FICHA, falta: ''}})
+        # Nome é opcional.
+        esteira.ajustar_do_jogador(JOAO, item_id, {'ficha': {**FICHA, 'nome': ''}})
 
     def test_sem_limite_e_ajuste_so_do_dono(self):
         for _ in range(8):
-            item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})['envio']['id']
+            item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO})['envio']['id']
+            esteira.ajustar_do_jogador(JOAO, item_id, {'ficha': FICHA})
         self.assertEqual(len(esteira.envios_do_jogador(JOAO)['envios']), 8)
         self.assertEqual(esteira.envio_do_jogador(JOAO, item_id)['envio']['estado'], 'enviando')
         esteira.ajustar_do_jogador(JOAO, item_id, {'medida': {'x': 300, 'y': 400, 'w': 250, 'rot': 5}})
@@ -70,7 +83,8 @@ class EnviosDosJogadores(unittest.TestCase):
             esteira.ajustar_do_jogador({'id': 'outra'}, item_id, {'medida': {'x': 1, 'y': 1, 'w': 1}})
 
     def test_descartar_avisa_o_jogador(self):
-        item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})['envio']['id']
+        item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO})['envio']['id']
+        esteira.ajustar_do_jogador(JOAO, item_id, {'ficha': FICHA})
         esteira.descartar(item_id)
         self.assertEqual(esteira.envios_do_jogador(JOAO)['envios'][0]['estado'], 'recusada')
 
