@@ -423,17 +423,6 @@ function vigiarFim(fim) {
   vigiaDoFim.observe(fim);
 }
 
-// "Você viu tudo": fecha o mural em vez de ele terminar seco.
-function fimDoFeed(posts) {
-  if (modo === 'desfile' || posts.length < 4) return null;
-  return el('div', { class: 'feed-acabou' },
-    el('span', {}, 'Você viu tudo por aqui'),
-    el('button', {
-      class: 'feed-topo',
-      onclick: () => (caixaQueRola($('#feed')) || window).scrollTo?.({ top: 0, behavior: 'smooth' }),
-    }, 'Voltar ao topo'));
-}
-
 function mostrarMais() {
   const m = muralAtual;
   if (!m?.no.isConnected) return;
@@ -447,8 +436,6 @@ function mostrarMais() {
   if (m.feitos >= m.posts.length && !temMaisNoFeed()) {
     m.fim.remove();
     vigiarFim(null);
-    const acabou = fimDoFeed(m.posts);
-    if (acabou) $('#feed').append(acabou);
   } else {
     // O vigia só avisa quando muda: se o fim continua perto, observa de novo
     // para ele avisar outra vez.
@@ -484,17 +471,9 @@ function renderFeed() {
   if (modo === 'desfile') medirDesfile();
 
   if (!posts.length) {
-    feed.replaceChildren(el('div', { class: 'feed-vazio' },
-      el('div', { class: 'feed-vazio-ico' }, ico('cabide')),
-      el('p', {}, ...mensagemVazia()),
-      el('button', { class: 'feed-vazio-btn', onclick: () => irPara('stylist') }, 'Publicar um look')));
+    feed.replaceChildren(el('div', { class: 'feed-vazio' }, ...mensagemVazia()));
     return;
   }
-
-  // Três jeitos de mostrar o card, para comparar: #/social/cartao-a, -b ou -c.
-  const cartao = /^cartao-([abc])$/.exec(paramAtual() || '')?.[1] || 'b';
-  const vista = $('.view-social');
-  for (const x of 'abc') vista?.classList.toggle('cartao-' + x, x === cartao);
 
   const prototipo = /^vitrine-([abc])$/.exec(paramAtual() || '')?.[1];
   if (prototipo) {
@@ -514,7 +493,7 @@ function renderFeed() {
   const fim = feitos < posts.length || temMaisNoFeed()
     ? el('div', { class: 'mural-fim', 'aria-hidden': 'true' }) : null;
   muralAtual = { ...mural, posts, feitos, fim };
-  feed.replaceChildren(mural.no, ...(fim ? [fim] : [fimDoFeed(posts)].filter(Boolean)));
+  feed.replaceChildren(mural.no, ...(fim ? [fim] : []));
   vigiarFim(fim);
   cascataDoFeed(feed);
 
@@ -676,6 +655,7 @@ const tempoCurto = (iso) => tempoRelativo(iso).replace(/^há /, '').replace(/ (m
 function topoDoPost(post) {
   const meu = sou(post.autor);
   const autor = autorDe(post.autor);
+  const segue = db.state.usuario.seguindo.includes(post.autor);
   const n = post.comentarios.length;
   return el('header', { class: 'post-pe post-topo' },
     // O nível é um selinho no retrato, não um chip solto ao lado do nome.
@@ -691,6 +671,12 @@ function topoDoPost(post) {
         }, autor.nome)),
       el('small', { title: tempoRelativo(post.criadoEm) }, tempoCurto(post.criadoEm))
     ),
+    // Seguir só aparece para quem você ainda não segue: deixar de seguir
+    // fica no perfil da pessoa e na coluna ao lado.
+    meu || segue ? null : el('button', {
+      class: 'btn-seguir mini',
+      onclick: () => alternarSeguir(post.autor),
+    }, 'seguir'),
     el('button', {
       class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
       title: 'Comentários',
@@ -1139,9 +1125,6 @@ function menuDoPost(post, botao) {
     }));
   }
 
-  if (!meu && !db.state.usuario.seguindo.includes(post.autor)) {
-    itens.push(item('Seguir ' + autorDe(post.autor).nome, '#2f9e5b', () => alternarSeguir(post.autor)));
-  }
   itens.push(item('Baixar imagem', '#1a1a1a', () => baixarPost(post)));
 
   if (meu) {
