@@ -597,7 +597,6 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   const nome = el('h3', { class: 'passarela-nome' });
   const arroba = el('p', { class: 'passarela-arroba' });
   const chips = el('div', { class: 'passarela-chips' });
-  const recentes = el('div', { class: 'troca-recentes' });
   const centrar = (i, suave) => {
     const it = itens[i];
     pista.scrollTo({ left: it.offsetLeft + it.offsetWidth / 2 - pista.clientWidth / 2, behavior: suave ? 'smooth' : 'auto' });
@@ -612,11 +611,6 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     nome.textContent = a.nome;
     arroba.textContent = handle(a.handle);
         chips.replaceChildren(chip('⇄ …'));
-    const com = ultimas.filter(t => t.de?.id === a.id || t.para?.id === a.id).slice(0, 3);
-    recentes.replaceChildren(...(com.length
-      ? [el('span', { class: 'troca-recentes-rotulo' }, `Trocas com ${a.nome.split(' ')[0]}`),
-         ...com.map(t => linhaDeTroca(t, () => abrir(t)))]
-      : []));
     let p = a;
     try { p = await carregarPerfil(a.id); } catch { /* fica com o que tem */ }
     if (atual !== k) return;
@@ -657,7 +651,7 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   pista.addEventListener('scroll', () => { if (!quadro) quadro = requestAnimationFrame(ajustar); }, { passive: true });
 
   const painelAmigos = n
-    ? el('div', { class: 'troca-aba-amigos' }, pista, el('div', { class: 'passarela-info' }, nome, arroba, chips), recentes)
+    ? el('div', { class: 'troca-aba-amigos' }, pista, el('div', { class: 'passarela-info' }, nome, arroba, chips))
     : el('div', { class: 'troca-aba-amigos' }, secao('Seus amigos',
         el('p', { class: 'troca-vazio-texto' }, 'Só dá para trocar com quem você segue e também segue você.')));
 
