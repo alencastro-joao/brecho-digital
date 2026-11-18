@@ -161,6 +161,7 @@ body[data-view="ajudas"] .avisos-btn { display: none; }
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .14));
 }
 .mg-peca img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+.mg-peca.cortada { overflow: hidden; }
 
 /* Preencher: a peça, e um bloco branco para a cor e outro para a marca. */
 .mg-carta-baixa { width: min(100%, 140px, 18vh); cursor: default; }

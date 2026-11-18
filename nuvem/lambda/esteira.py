@@ -627,6 +627,13 @@ def listar():
             repetidas.append({'arquivo': f.get('arquivo') or '', 'de': f.get('repetidaDe') or {}})
             print('esteira %s repetida de %s: descartada' % (f['id'], (f.get('repetidaDe') or {}).get('id')))
             continue
+        if f.get('rascunho'):
+            # Foto do jogador que ainda não tocou em Enviar: não aparece. Um
+            # dia depois, foi esquecida.
+            if _idade(f.get('criadoEm')) > 86400:
+                _apagar('esteira/%s.json' % f['id'], f.get('entrada'), f.get('previa'),
+                        f.get('previaG'), f.get('mestre'))
+            continue
         if _pin_perdido(f):
             # A Lambda que importava morreu entre a ficha e a foto (antes a
             # marca vinha primeiro). Sem a ficha e sem a marca, o pin entra de
@@ -828,7 +835,8 @@ def _sair_dos_jogos(item_id):
 # o fundo —, mas com `origem: jogador` e quem mandou, e a tela da esteira a
 # guarda à parte, na vista "Enviadas" (como "Nos jogos"). O que o jogador
 # escreveu vale como mexido à mão: nem o palpite da IA nem os mini games
-# trocam. Sem limite de envios (João, 18/11/2026). Depois que o trabalhador
+# trocam. A foto sobe assim que é escolhida (rascunho), para o fundo sair
+# enquanto a ficha é preenchida; o nome e a coleção (tema) são opcionais. Sem limite de envios (João, 18/11/2026). Depois que o trabalhador
 # tira o fundo, o jogador ajusta a peça no corpo e a medida vai junto.
 # Publicar ou descartar avisa o jogador pela lista dele.
 JOGADORES = 'esteira/jogadores/'
@@ -880,29 +888,64 @@ def envio_do_jogador(usuario, item_id):
     """GET /api/envios/<id> — como está a foto: o fundo já saiu? A tela
     pergunta de tempos em tempos e, pronta, abre o ajuste no corpo."""
     t = _para_tela(_do_jogador(usuario, item_id))
-    return {'envio': {k: t.get(k) for k in ('id', 'estado', 'erro', 'previa', 'w', 'h', 'medida')}
+    return {'envio': {k: t.get(k) for k in ('id', 'estado', 'erro', 'previa', 'w', 'h', 'medida', 'corte')}
             | {'cat': (t.get('ficha') or {}).get('cat') or ''}}
 
 
 def ajustar_do_jogador(usuario, item_id, corpo):
-    """PUT /api/envios/<id> — {medida: {x, y, w, rot}}, já no molde."""
+    """PUT /api/envios/<id> — duas coisas, juntas ou separadas:
+
+    * `{ficha, corte}`: o jogador tocou em Enviar. A ficha é conferida
+      (tipo, cor e raridade obrigatórios; nome e coleção, não), o rascunho
+      vira envio de verdade e entra na lista dele.
+    * `{medida: {x, y, w, rot}}`, já no molde: o ajuste no corpo.
+    """
     dados = _do_jogador(usuario, item_id)
+    if isinstance(corpo.get('ficha'), dict):
+        f = corpo['ficha']
+        cat = acervo.categoria(f.get('cat'))
+        nome = str(f.get('nome') or '').strip()[:60]
+        cor = str(f.get('cor') or '').strip()[:24]
+        marca = str(f.get('marca') or '').strip()[:40]
+        raridade = f.get('raridade')
+        if cat not in acervo.CATS:
+            raise ValueError('escolha o tipo da peça')
+        if not cor:
+            raise ValueError('escolha a cor da peça')
+        if raridade not in acervo.RARIDADES:
+            raise ValueError('escolha a raridade da peça')
+        dados['ficha'] = {'cat': cat, 'cor': cor, 'nome': nome, 'marca': marca,
+                          'raridade': raridade, 'tema': acervo.tema(f.get('tema')),
+                          'manual': ['cat', 'cor', 'marca', 'raridade']}
+        if isinstance(corpo.get('corte'), dict) and _corte(corpo['corte']):
+            dados['corte'] = _corte(corpo['corte'])
+        else:
+            dados.pop('corte', None)
+        if dados.pop('rascunho', None):
+            lista = _envios_de(usuario['id'])
+            lista.insert(0, {'id': dados['id'], 'em': _agora(), 'nome': nome, 'cat': cat,
+                             'cor': cor, 'marca': marca, 'raridade': raridade,
+                             'estado': 'analise'})
+            _gravar_envios(usuario['id'], lista)
+            # Entra no topo da vista "Enviadas" agora, e não quando a foto ficou pronta.
+            dados['apareceuEm'] = _agora()
     m = corpo.get('medida')
-    if not isinstance(m, dict):
-        raise ValueError('falta a medida')
-    medida = {k: round(float(m.get(k, 0)), 1) for k in ('x', 'y', 'w')}
-    if medida['w'] <= 0:
-        raise ValueError('medida inválida')
-    if m.get('rot'):
-        medida['rot'] = round(max(-180.0, min(180.0, float(m['rot']))), 1)
-    dados['medida'] = medida
+    if isinstance(m, dict):
+        medida = {k: round(float(m.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+        if medida['w'] <= 0:
+            raise ValueError('medida inválida')
+        if m.get('rot'):
+            medida['rot'] = round(max(-180.0, min(180.0, float(m['rot']))), 1)
+        dados['medida'] = medida
     _gravar(dados)
     return {'ok': True}
 
 
 def enviar_do_jogador(usuario, corpo):
-    """POST /api/envios — {arquivo: {nome, tipo, bytes}, ficha: {nome, cat,
-    cor, marca, raridade}}. Devolve onde subir a foto, como `reservar`."""
+    """POST /api/envios — {arquivo: {nome, tipo, bytes}}. A foto sobe assim
+    que é escolhida, para o fundo sair enquanto a pessoa preenche a ficha.
+    Até o Enviar (PUT com a ficha) ela é rascunho: a esteira não mostra, e o
+    rascunho esquecido some sozinho em um dia (ver `listar`)."""
     a = corpo.get('arquivo') or {}
     tipo = str(a.get('tipo') or '').lower()
     if tipo not in TIPOS:
@@ -910,29 +953,11 @@ def enviar_do_jogador(usuario, corpo):
     if int(a.get('bytes') or 0) > MAX_FOTO_JOGADOR:
         raise ValueError('a foto passa de %d MB' % (MAX_FOTO_JOGADOR >> 20))
 
-    f = corpo.get('ficha') or {}
-    cat = acervo.categoria(f.get('cat'))
-    nome = str(f.get('nome') or '').strip()[:60]
-    cor = str(f.get('cor') or '').strip()[:24]
-    marca = str(f.get('marca') or '').strip()[:40]
-    raridade = f.get('raridade')
-    if len(nome) < 2:
-        raise ValueError('dê um nome para a peça')
-    if cat not in acervo.CATS:
-        raise ValueError('escolha o tipo da peça')
-    if not cor:
-        raise ValueError('escolha a cor da peça')
-    if raridade not in acervo.RARIDADES:
-        raise ValueError('escolha a raridade da peça')
-
-    lista = _envios_de(usuario['id'])
     item_id = _novo_id()
     chave = 'entrada/%s.%s' % (item_id, TIPOS[tipo])
-    ficha = {'cat': cat, 'cor': cor, 'nome': nome, 'marca': marca, 'raridade': raridade,
-             'tema': '', 'manual': ['cat', 'cor', 'marca', 'raridade']}
     _gravar({'id': item_id, 'estado': 'enviando', 'criadoEm': _agora(),
              'arquivo': str(a.get('nome') or '')[:120], 'origem': 'jogador',
-             'entrada': chave, 'ficha': ficha,
+             'entrada': chave, 'rascunho': True,
              'enviadoPor': {'conta': usuario['id'], 'handle': usuario.get('handle') or '',
                             'nome': usuario.get('nome') or ''}})
     envio = _s3.generate_presigned_post(
@@ -941,9 +966,6 @@ def enviar_do_jogador(usuario, corpo):
         Conditions=[{'Content-Type': tipo},
                     ['content-length-range', 1, MAX_FOTO_JOGADOR]],
         ExpiresIn=900)
-    lista.insert(0, {'id': item_id, 'em': _agora(), 'nome': nome, 'cat': cat,
-                     'cor': cor, 'marca': marca, 'raridade': raridade, 'estado': 'analise'})
-    _gravar_envios(usuario['id'], lista)
     return {'envio': {'id': item_id, 'url': envio['url'], 'campos': envio['fields']}}
 
 

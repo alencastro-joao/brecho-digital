@@ -2,22 +2,22 @@
 //
 // Abre pela engrenagem do perfil ("Enviar roupa"), numa tela cheia no
 // acabamento das trocas: seta de voltar no topo, a ficha em painéis e o botão
-// Enviar preso embaixo. A pessoa escolhe a foto e preenche tudo — nome, tipo,
-// cor, marca e raridade —, com os mesmos blocos do mini game Preencher
-// (ajudas.js).
+// Enviar preso embaixo. A pessoa escolhe a foto e preenche tipo, cor, marca,
+// raridade e, se quiser, o nome e a coleção, com os mesmos blocos do mini game
+// Preencher (ajudas.js).
 //
-// A foto não passa pela API: POST /api/envios devolve um POST assinado e ela
-// sobe direto para o S3, como na esteira. Lá ela entra na esteira do João, à
-// parte, na vista "Enviadas" (nuvem/lambda/esteira.py, "Roupas dos
-// jogadores"). Embaixo, a lista do que a pessoa já mandou e como está.
-//
-// Enviada a foto, a tela espera a nuvem tirar o fundo (o trabalhador só tira
-// se a foto ainda tiver fundo) e abre o ajuste no corpo, o mesmo do mini game
-// Ajustar: a medida que a pessoa deixar vai junto para a esteira.
+// A foto sobe assim que é escolhida (POST /api/envios devolve um POST
+// assinado e ela vai direto para o S3, como na esteira): a nuvem tira o fundo
+// enquanto a pessoa preenche, e a foto já recortada aparece no quadro, com o
+// lápis do lado para cortar o que sobrou. Até o Enviar ela é rascunho e a
+// esteira não mostra. O Enviar manda a ficha e o corte (PUT) e abre o ajuste
+// no corpo, o mesmo do mini game Ajustar; a medida vai junto. Na esteira do
+// João ela fica à parte, na vista "Enviadas" (nuvem/lambda/esteira.py,
+// "Roupas dos jogadores"). Embaixo, a lista do que a pessoa já mandou.
 
-import { CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, ancoraPadrao } from './config.js';
+import { CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, ESTILOS, ancoraPadrao } from './config.js';
 import * as db from './db.js';
-import { el, toast, tempoRelativo } from './util.js';
+import { el, toast, tempoRelativo, clamp } from './util.js';
 import { ico, emo } from './icones.js';
 import { tocar } from './sons.js';
 import { telaTroca, secao } from './trocas.js';
@@ -25,8 +25,10 @@ import { montarAjuste } from './ajudas.js';
 
 const MAX_FOTO = 15 * 1024 * 1024;      // o mesmo de esteira.py (MAX_FOTO_JOGADOR)
 const TIPOS = ['image/jpeg', 'image/png', 'image/webp'];
-const ESPERA_MS = 3000;                 // de quanto em quanto pergunta se o fundo já saiu
-const ESPERA_MAX = 5 * 60 * 1000;       // depois disso, o João ajusta na esteira
+const ESPERA_MS = 2500;                 // de quanto em quanto pergunta se o fundo já saiu
+const ESPERA_MAX = 5 * 60 * 1000;       // depois disso, desiste de esperar
+const MIN_CORTE = 0.05;
+const INTEIRA = { x: 0, y: 0, w: 1, h: 1 };
 
 const ESTADOS = {
   analise: { nome: 'Em análise', classe: 'analise' },
@@ -58,28 +60,173 @@ async function subirFoto(envio, arquivo) {
 const bloco = (titulo, dica, ...conteudo) => el('div', { class: 'mg-bloco' },
   el('div', { class: 'mg-bloco-topo' }, el('strong', {}, titulo), dica), ...conteudo);
 
+// A imagem dentro de uma janela de overflow escondido mostra só o corte
+// (o mesmo `enquadrar` da esteira).
+function enquadrar(img, c) {
+  Object.assign(img.style, { width: `${100 / c.w}%`, height: `${100 / c.h}%`,
+    left: `${-c.x / c.w * 100}%`, top: `${-c.y / c.h * 100}%` });
+}
+
+// ------------------------------- Recortar ----------------------------------
+// A foto já sem fundo, com a caixa do que fica: arrastar move, os cantos
+// mudam o tamanho. Tela cheia por cima do envio, no mesmo acabamento.
+function abrirRecorte(src, atual, aoAplicar) {
+  const c = { ...atual };
+  const img = el('img', { src, alt: '', draggable: 'false' });
+  const furo = el('div', { class: 'ev-corte-furo' });
+  const caixa = el('div', { class: 'ev-corte-caixa' },
+    ...['no', 'ne', 'so', 'se'].map(k => el('span', { class: 'ev-alca ' + k, 'data-canto': k })));
+  const palco = el('div', { class: 'ev-corte-palco' }, img, el('div', { class: 'ev-corte-veu' }, furo), caixa);
+  const desenhar = () => {
+    for (const no of [caixa, furo]) Object.assign(no.style, {
+      left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.w * 100}%`, height: `${c.h * 100}%` });
+  };
+  caixa.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const r = palco.getBoundingClientRect();
+    const canto = e.target.dataset?.canto || '';
+    const base = { ...c };
+    const x0 = e.clientX, y0 = e.clientY;
+    caixa.setPointerCapture(e.pointerId);
+    const mover = (ev) => {
+      const dx = (ev.clientX - x0) / r.width;
+      const dy = (ev.clientY - y0) / r.height;
+      if (!canto) {
+        c.x = clamp(base.x + dx, 0, 1 - base.w);
+        c.y = clamp(base.y + dy, 0, 1 - base.h);
+      } else {
+        let { x, y } = base;
+        let x2 = base.x + base.w, y2 = base.y + base.h;
+        if (canto.includes('o')) x = clamp(base.x + dx, 0, x2 - MIN_CORTE);
+        if (canto.includes('e')) x2 = clamp(x2 + dx, x + MIN_CORTE, 1);
+        if (canto.startsWith('n')) y = clamp(base.y + dy, 0, y2 - MIN_CORTE);
+        if (canto.startsWith('s')) y2 = clamp(y2 + dy, y + MIN_CORTE, 1);
+        Object.assign(c, { x, y, w: x2 - x, h: y2 - y });
+      }
+      desenhar();
+    };
+    const soltar = () => {
+      caixa.removeEventListener('pointermove', mover);
+      caixa.removeEventListener('pointerup', soltar);
+      caixa.removeEventListener('pointercancel', soltar);
+    };
+    caixa.addEventListener('pointermove', mover);
+    caixa.addEventListener('pointerup', soltar);
+    caixa.addEventListener('pointercancel', soltar);
+  });
+  const { fechar } = telaTroca('Recortar a foto', [
+    el('p', { class: 'ev-intro' }, 'Arraste a caixa e os cantos: fica só o que estiver dentro.'),
+    el('div', { class: 'ev-corte' }, palco),
+  ], [
+    el('button', { type: 'button', class: 'btn-ghost', onclick: () => { aoAplicar(null); fechar(); } }, 'Sem corte'),
+    el('button', { type: 'button', class: 'btn-dark troca-aceitar ev-enviar', onclick: () => {
+      const inteira = c.w > 0.995 && c.h > 0.995;
+      aoAplicar(inteira ? null : { x: +c.x.toFixed(4), y: +c.y.toFixed(4), w: +c.w.toFixed(4), h: +c.h.toFixed(4) });
+      tocar('ok');
+      fechar();
+    } }, ico('cortar'), 'Aplicar corte'),
+  ], null, null, { info: false });
+  desenhar();
+}
+
+// --------------------------------- A tela ----------------------------------
 export function abrirEnviarRoupa() {
-  const ficha = { nome: '', cat: '', cor: '', marca: '', raridade: '' };
-  let arquivo = null;
-  let urlPrevia = '';
+  const ficha = { nome: '', cat: '', cor: '', marca: '', raridade: '', tema: '' };
+  let envio = null;          // { id, estado, previa, w, h } da foto que subiu
+  let corte = null;
+  let vez = 0;               // cada foto nova invalida a espera da anterior
   let enviando = false;
+  let vivo = true;
+  let aoMudarFoto = () => {};  // o botão Enviar acende quando a foto fica pronta
 
   // ------------------------------- A foto --------------------------------
-  const previa = el('div', { class: 'ev-previa' },
-    el('span', { class: 'ev-previa-vazia' }, ico('camera'), el('small', {}, 'Nenhuma foto ainda')));
-  const escolher = (input) => {
+  const previa = el('div', { class: 'ev-previa' });
+  const pintarPrevia = () => {
+    desenharPrevia();
+    aoMudarFoto();
+  };
+  const desenharPrevia = () => {
+    if (!envio) {
+      previa.replaceChildren(el('span', { class: 'ev-previa-vazia' }, ico('camera'), el('small', {}, 'Nenhuma foto ainda')));
+      return;
+    }
+    if (envio.estado === 'pronta' && envio.previa) {
+      const img = el('img', { src: envio.previa, alt: 'A sua roupa, já sem fundo', draggable: 'false' });
+      const c = corte || INTEIRA;
+      // A janela tem a proporção do recorte; a foto inteira fica por dentro.
+      const prop = ((envio.w || 1) * c.w) / ((envio.h || 1) * c.h);
+      const janela = el('div', { class: 'ev-recorte', style: { aspectRatio: String(prop) } }, img);
+      // Cabe no quadro pelo lado que encosta primeiro.
+      const quadro = (previa.clientWidth || 300) / (previa.clientHeight || 240);
+      janela.style[prop > quadro ? 'width' : 'height'] = '86%';
+      enquadrar(img, c);
+      previa.replaceChildren(janela,
+        el('button', { type: 'button', class: 'ev-lapis', title: 'Recortar a foto', 'aria-label': 'Recortar a foto',
+          onclick: () => abrirRecorte(envio.previa, corte || INTEIRA, (novo) => { corte = novo; pintarPrevia(); }) },
+        ico('editar')));
+      return;
+    }
+    if (envio.estado === 'erro') {
+      previa.replaceChildren(el('span', { class: 'ev-previa-vazia' }, ico('x'),
+        el('small', {}, 'Não deu para tirar o fundo dessa foto. Tente outra.')));
+      return;
+    }
+    previa.replaceChildren(
+      envio.local ? el('img', { class: 'ev-previa-crua', src: envio.local, alt: '' }) : null,
+      el('span', { class: 'ev-previa-tirando' }, el('span', { class: 'ev-girando', 'aria-hidden': 'true' }),
+        el('small', {}, 'Tirando o fundo…')));
+  };
+  pintarPrevia();
+
+  async function escolher(input) {
     const f = input.files?.[0];
     input.value = '';
     if (!f) return;
     if (!TIPOS.includes(f.type)) return toast('A foto precisa ser JPG, PNG ou WebP.', 'aviso');
     if (f.size > MAX_FOTO) return toast('Essa foto passa de 15 MB. Escolha uma menor.', 'aviso');
-    arquivo = f;
-    if (urlPrevia) URL.revokeObjectURL(urlPrevia);
-    urlPrevia = URL.createObjectURL(f);
-    previa.replaceChildren(el('img', { src: urlPrevia, alt: 'A foto da sua roupa' }));
+    const minha = ++vez;
+    if (envio?.local) URL.revokeObjectURL(envio.local);
+    corte = null;
+    envio = { estado: 'enviando', local: URL.createObjectURL(f) };
     tocar('escolha');
-    conferir();
-  };
+    pintarPrevia();
+    try {
+      const { envio: reserva } = await chamar('/api/envios', { arquivo: { nome: f.name, tipo: f.type, bytes: f.size } });
+      await subirFoto(reserva, f);
+      if (minha !== vez) return;
+      envio.id = reserva.id;
+      esperarFundo(minha);
+    } catch (e) {
+      if (minha !== vez) return;
+      envio = null;
+      pintarPrevia();
+      tocar('naocurti');
+      toast(e.message, 'erro');
+    }
+  }
+
+  function esperarFundo(minha) {
+    const inicio = Date.now();
+    const perguntar = async () => {
+      if (minha !== vez || !vivo) return;
+      try {
+        const { envio: e } = await chamar(`/api/envios/${envio.id}`);
+        if (minha !== vez) return;
+        if (e.estado === 'pronta' || e.estado === 'erro') {
+          envio = { ...envio, ...e };
+          if (e.estado === 'pronta') tocar('ok');
+          return pintarPrevia();
+        }
+      } catch { /* tenta de novo */ }
+      if (Date.now() - inicio > ESPERA_MAX) {
+        envio = { ...envio, estado: 'erro' };
+        return pintarPrevia();
+      }
+      setTimeout(perguntar, ESPERA_MS);
+    };
+    setTimeout(perguntar, ESPERA_MS);
+  }
+
   const camera = el('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true,
     onchange: (e) => escolher(e.target) });
   const galeria = el('input', { type: 'file', accept: TIPOS.join(','), hidden: true,
@@ -91,7 +238,7 @@ export function abrirEnviarRoupa() {
   // ------------------------------- A ficha -------------------------------
   const campoNome = el('input', { class: 'mg-marca', type: 'text', maxlength: '60',
     placeholder: 'Ex.: Jaqueta jeans oversized', autocomplete: 'off',
-    oninput: () => { ficha.nome = campoNome.value.trim(); conferir(); } });
+    oninput: () => { ficha.nome = campoNome.value.trim(); } });
 
   const tipos = el('div', { class: 'mg-tipos' });
   const renderTipos = () => tipos.replaceChildren(...ORDEM_CATEGORIAS.map(c => el('button', {
@@ -134,6 +281,18 @@ export function abrirEnviarRoupa() {
   };
   renderRaridades();
 
+  // Coleção: os Temas do jogo (config.ESTILOS), com o ícone de cada um. Opcional.
+  const nomeColecao = el('small', {}, 'se fizer parte');
+  const colecoes = el('div', { class: 'ev-colecoes' });
+  const renderColecoes = () => {
+    colecoes.replaceChildren(...Object.entries(ESTILOS).map(([id, t]) => el('button', {
+      type: 'button', class: 'mg-tipo ev-colecao' + (id === ficha.tema ? ' ativa' : ''),
+      onclick: () => { ficha.tema = ficha.tema === id ? '' : id; tocar('escolha'); renderColecoes(); },
+    }, el('img', { src: t.icone, alt: '' }), el('span', {}, t.nome))));
+    nomeColecao.textContent = ESTILOS[ficha.tema]?.nome || 'se fizer parte';
+  };
+  renderColecoes();
+
   // ------------------------- O que já foi enviado ------------------------
   const lista = el('div', { class: 'ev-lista' }, el('p', { class: 'ev-vazio' }, 'Carregando…'));
   const renderLista = (dados) => {
@@ -148,7 +307,7 @@ export function abrirEnviarRoupa() {
       return el('div', { class: 'ev-envio' },
         el('span', { class: 'ev-envio-ico' }, emo(CATEGORIAS[e.cat]?.icone || '👕')),
         el('div', { class: 'ev-envio-texto' },
-          el('strong', {}, e.nome || 'Roupa'),
+          el('strong', {}, e.nome || CATEGORIAS[e.cat]?.nome || 'Roupa'),
           el('small', {}, [r?.nome, e.marca, tempoRelativo(e.em)].filter(Boolean).join(' · '))),
         el('span', { class: 'ev-estado ' + est.classe }, est.nome));
     }));
@@ -161,34 +320,38 @@ export function abrirEnviarRoupa() {
   // Fica apagado até a ficha fechar, mas tocável: o toque diz o que falta.
   const botaoEnviar = el('button', { type: 'button', class: 'btn-dark troca-aceitar ev-enviar incompleto' },
     ico('ok'), 'Enviar roupa');
+  const falta = () => !envio ? 'Escolha a foto da roupa.'
+    : envio.estado === 'erro' ? 'Não deu para tirar o fundo dessa foto. Escolha outra.'
+    : envio.estado !== 'pronta' ? 'Espere um pouco: o fundo da foto ainda está saindo.'
+    : !ficha.cat ? 'Escolha o tipo da peça.'
+    : !ficha.cor ? 'Escolha a cor principal.'
+    : !ficha.raridade ? 'Escolha a raridade.' : '';
   function conferir() {
     botaoEnviar.disabled = enviando;
     botaoEnviar.classList.toggle('incompleto', !!falta());
   }
-  const falta = () => !arquivo ? 'Escolha a foto da roupa.'
-    : ficha.nome.length < 2 ? 'Dê um nome para a peça.'
-    : !ficha.cat ? 'Escolha o tipo da peça.'
-    : !ficha.cor ? 'Escolha a cor principal.'
-    : !ficha.raridade ? 'Escolha a raridade.' : '';
 
   const { caixa, fechar } = telaTroca('Enviar roupa', [
     el('p', { class: 'ev-intro' }, 'Mande uma roupa sua para entrar no brechó. ',
       el('b', {}, 'Ela vai para a análise'), ' e, se for aprovada, vira peça do jogo.'),
     secao('Foto', previa,
-      el('p', { class: 'ev-dica' }, 'A roupa sozinha, de frente e com boa luz. O fundo a gente tira.'),
+      el('p', { class: 'ev-dica' }, 'A roupa sozinha, de frente e com boa luz. O fundo sai na hora; o lápis recorta o que sobrar.'),
       botoesFoto),
     secao('Ficha da peça',
       el('div', { class: 'ev-blocos' },
-        bloco('Nome', el('small', {}, 'como ela vai aparecer'), campoNome),
+        bloco('Nome', el('small', {}, 'opcional'), campoNome),
         bloco('Tipo de peça', el('small', {}, 'o que é?'), tipos),
         bloco('Cor principal', nomeCor, cores),
         bloco('Marca', el('small', {}, 'se souber'), campoMarca, atalhos),
-        bloco('Raridade', nomeRar, raridades))),
+        bloco('Raridade', nomeRar, raridades),
+        bloco('Coleção', nomeColecao, colecoes))),
     secao('Suas roupas enviadas', lista),
   ], [
-    el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'),
+    el('button', { type: 'button', class: 'btn-ghost', onclick: () => sair() }, 'Cancelar'),
     botaoEnviar,
-  ], null, () => { if (urlPrevia) URL.revokeObjectURL(urlPrevia); }, { info: false });
+  ], null, () => { vivo = false; if (envio?.local) URL.revokeObjectURL(envio.local); }, { info: false });
+
+  aoMudarFoto = conferir;
 
   botaoEnviar.addEventListener('click', async () => {
     const motivo = falta();
@@ -197,13 +360,9 @@ export function abrirEnviarRoupa() {
     conferir();
     botaoEnviar.replaceChildren(ico('relogio'), 'Enviando…');
     try {
-      const { envio } = await chamar('/api/envios', {
-        arquivo: { nome: arquivo.name, tipo: arquivo.type, bytes: arquivo.size },
-        ficha,
-      });
-      await subirFoto(envio, arquivo);
+      await chamar(`/api/envios/${envio.id}`, { ficha, corte: corte || false }, 'PUT');
       tocar('ok');
-      esperarFundo(envio.id);
+      ajustar();
     } catch (e) {
       enviando = false;
       botaoEnviar.replaceChildren(ico('ok'), 'Enviar roupa');
@@ -214,46 +373,23 @@ export function abrirEnviarRoupa() {
   });
 
   // --------------------------- Depois de enviar --------------------------
-  // O corpo e o rodapé da tela viram a espera e, depois, o ajuste no corpo.
+  // O corpo e o rodapé da tela viram o ajuste no corpo.
   const corpo = caixa.querySelector('.troca-corpo');
   const rodape = caixa.querySelector('.troca-rodape');
   const titulo = caixa.querySelector('.troca-topo h2');
-  let vivo = true;
-  const sair = () => { vivo = false; fechar(); };
-  const botaoSair = (texto) => el('button', { type: 'button', class: 'btn-ghost', onclick: sair }, texto);
+  function sair() { vivo = false; fechar(); }
+  const enviada = () => { sair(); toast('Roupa enviada! Ela está em análise.', 'ok'); };
 
-  function esperarFundo(id) {
-    titulo.textContent = 'Preparando a peça';
-    corpo.replaceChildren(secao('', el('div', { class: 'ev-espera' },
-      el('span', { class: 'ev-girando', 'aria-hidden': 'true' }),
-      el('strong', {}, 'Roupa enviada!'),
-      el('p', {}, 'Agora a gente tira o fundo da foto. Leva uns segundos e, depois, ',
-        el('b', {}, 'você ajusta a peça no corpo'), '.'))));
-    rodape.replaceChildren(botaoSair('Deixar para depois'));
-    const inicio = Date.now();
-    const perguntar = async () => {
-      if (!vivo) return;
-      try {
-        const { envio } = await chamar(`/api/envios/${id}`);
-        if (envio.estado === 'pronta' && envio.previa) return ajustar(envio);
-        if (envio.estado === 'erro') return terminar('Não deu para tirar o fundo dessa foto. A roupa ficou em análise e o ajuste é feito lá.');
-      } catch { /* tenta de novo */ }
-      if (Date.now() - inicio > ESPERA_MAX) return terminar('A foto está demorando. A roupa ficou em análise e o ajuste é feito lá.');
-      setTimeout(perguntar, ESPERA_MS);
-    };
-    setTimeout(perguntar, ESPERA_MS);
-  }
-
-  function ajustar(envio) {
-    if (!vivo) return;
+  function ajustar() {
     titulo.textContent = 'Ajustar no corpo';
     tocar('janela');
-    const p = ancoraPadrao(envio.cat || ficha.cat);
-    const peca = { cat: envio.cat || ficha.cat, src: envio.previa, w: envio.w, h: envio.h, nome: ficha.nome };
+    const p = ancoraPadrao(ficha.cat);
+    const peca = { cat: ficha.cat, src: envio.previa, w: envio.w, h: envio.h, nome: ficha.nome };
     const { nos, posicionar } = montarAjuste(peca, {
       medida: { x: p.x, y: p.y, w: p.w, rot: 0 },
+      corte,
       dica: 'Arraste a peça pela alça e use a barra para o tamanho, até ficar como ela fica no corpo.',
-      botao: 'Pronto, enviar assim',
+      botao: 'Pronto, ficou assim',
       aoPronto: async (medida) => {
         try {
           await chamar(`/api/envios/${envio.id}`, { medida }, 'PUT');
@@ -267,15 +403,8 @@ export function abrirEnviarRoupa() {
       },
     });
     corpo.replaceChildren(el('div', { class: 'ev-ajuste' }, ...nos));
-    rodape.replaceChildren(botaoSair('Pular o ajuste'));
+    rodape.replaceChildren(el('button', { type: 'button', class: 'btn-ghost', onclick: enviada }, 'Pular o ajuste'));
     posicionar();
-  }
-
-  function terminar(texto) {
-    if (!vivo) return;
-    corpo.replaceChildren(secao('', el('div', { class: 'ev-espera' },
-      el('strong', {}, 'Roupa enviada!'), el('p', {}, texto))));
-    rodape.replaceChildren(botaoSair('Fechar'));
   }
 
   lerLista();

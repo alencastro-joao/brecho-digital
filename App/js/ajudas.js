@@ -300,9 +300,16 @@ function jogoAjustar() {
 // posição e o girar. Exportado: o envio de roupa do jogador (enviar.js) usa
 // o mesmo. `peca` precisa de cat, src, w e h; `aoPronto` recebe a medida já
 // no molde ({x, y, w, rot}). Chame `posicionar` depois de pôr os nós na tela.
-export function montarAjuste(peca, { medida, dica, botao = 'Pronto, ficou certo', aoPronto }) {
-  const prop = peca.w && peca.h ? peca.w / peca.h : 1;
-  const no = el('div', { class: 'mg-peca' }, imagem(peca, ''));
+// `corte` (caixa em 0–1 sobre a foto, como na esteira): mostra só o recorte.
+export function montarAjuste(peca, { medida, dica, botao = 'Pronto, ficou certo', aoPronto, corte = null }) {
+  const c = corte && corte.w > 0 && corte.h > 0 ? corte : { x: 0, y: 0, w: 1, h: 1 };
+  const prop = peca.w && peca.h ? (peca.w * c.w) / (peca.h * c.h) : 1;
+  const img = imagem(peca, '');
+  if (corte) {
+    Object.assign(img.style, { position: 'absolute', maxWidth: 'none', objectFit: 'fill',
+      width: `${100 / c.w}%`, height: `${100 / c.h}%`, left: `${-c.x / c.w * 100}%`, top: `${-c.y / c.h * 100}%` });
+  }
+  const no = el('div', { class: 'mg-peca' + (corte ? ' cortada' : '') }, img);
   const palco = el('div', { class: 'mg-corpo' });
   const boneco = el('div', { class: 'mg-boneco' });
   boneco.innerHTML = svgAvatar();

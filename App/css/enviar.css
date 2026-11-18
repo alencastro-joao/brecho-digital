@@ -1,6 +1,6 @@
 /* Enviar roupa (js/enviar.js): a tela cheia das trocas com os blocos do
    mini game Preencher (ajudas.css). As variáveis curtas são as de lá. */
-.troca-tela:has(.ev-blocos, .ev-espera, .ev-ajuste) {
+.troca-tela:has(.ev-blocos, .ev-espera, .ev-ajuste, .ev-corte) {
   --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco);
 }
 
@@ -77,3 +77,47 @@ html body .troca-rodape .ev-enviar.incompleto { opacity: .55; }
 .ev-estado.analise { background: #fbf3d6; color: #8a6a12; }
 .ev-estado.publicada { background: #dff3e4; color: #24723d; }
 .ev-estado.recusada { background: #f3e3e3; color: #9a3434; }
+
+/* A foto já sem fundo, no xadrez de transparência, com o lápis no canto
+   para recortar. A janela tem a proporção do recorte. */
+.ev-previa { position: relative; background: repeating-conic-gradient(#f1efea 0 25%, #fff 0 50%) 0 0 / 18px 18px; }
+.ev-recorte { position: relative; overflow: hidden; }
+.ev-recorte img { position: absolute; max-width: none; object-fit: fill; pointer-events: none; }
+.ev-lapis {
+  position: absolute; top: 10px; right: 10px; width: 42px; height: 42px; display: grid; place-items: center;
+  border: 2px solid var(--wii-borda); border-radius: 50%; background: var(--perola);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -3px 0 var(--perola-degrau); color: var(--tinta); cursor: pointer;
+}
+.ev-lapis .ico, .ev-lapis svg { width: 22px; height: 22px; }
+.ev-lapis:active { transform: translateY(1px); }
+/* Enquanto o fundo sai: a foto crua apagada e o aviso por cima. */
+.ev-previa-crua { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: .35; }
+.ev-previa-tirando { position: relative; display: grid; justify-items: center; gap: 8px; color: var(--tinta); }
+.ev-previa-tirando small { font-size: 13px; font-weight: 800; }
+
+/* Coleção: os Temas, com o ícone de cada um. */
+.ev-colecoes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.ev-colecao img { width: 22px; height: 22px; object-fit: contain; }
+
+/* Recortar: a foto com a caixa do que fica (o mesmo da esteira). */
+.ev-corte { display: grid; justify-items: center; }
+.ev-corte-palco {
+  position: relative; line-height: 0; touch-action: none; user-select: none;
+  background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+  border: 2px solid var(--wii-borda); border-radius: 14px;
+}
+.ev-corte-palco > img {
+  display: block; max-width: min(520px, calc(100vw - 60px)); max-height: calc(100dvh - 260px);
+  -webkit-user-drag: none; pointer-events: none;
+}
+.ev-corte-veu { position: absolute; inset: 0; overflow: hidden; border-radius: 12px; pointer-events: none; }
+.ev-corte-furo { position: absolute; box-shadow: 0 0 0 9999px rgba(26, 26, 26, .5); }
+.ev-corte-caixa { position: absolute; cursor: move; outline: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .4); touch-action: none; }
+.ev-alca {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--wii);
+}
+.ev-alca.no { top: -12px; left: -12px; cursor: nwse-resize; }
+.ev-alca.ne { top: -12px; right: -12px; cursor: nesw-resize; }
+.ev-alca.so { bottom: -12px; left: -12px; cursor: nesw-resize; }
+.ev-alca.se { bottom: -12px; right: -12px; cursor: nwse-resize; }
