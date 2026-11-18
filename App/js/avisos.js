@@ -153,10 +153,11 @@ function atualizarAvisosAntigos() {
   for (const x of avisos().lista) {
     const novo = String(x.texto || '').replace(/\bamigas\b/g, 'amigos').replace(/\bamiga\b/g, 'amigo');
     if (novo !== x.texto) { x.texto = novo; mudou = true; }
-    if (x.proposta && !x.peca) {
+    if (x.proposta && !/wishlist$/.test(x.texto)) {
       x.peca = x.proposta.peca;
-      const m = /^(.*), da sua wishlist, está com (.*?)\. Que tal trocar\?$/.exec(x.texto);
-      if (m) x.texto = `${m[1]} · com ${m[2].split(' ')[0]}`;
+      x.quem = x.proposta.amiga;
+      const m = /(?:está com |· com )([^.]*?)(?:\. Que tal trocar\?)?$/.exec(x.texto);
+      x.texto = `${m ? m[1].split(' ')[0] : 'Um amigo'} tem uma peça da sua wishlist`;
       x.acao = null;
       mudou = true;
     }
@@ -215,9 +216,9 @@ export function avisarDesejoComAmiga({ amiga, peca }) {
   a.desejoAmiga ??= [];
   if (a.desejoAmiga.includes(chave)) return;
   a.desejoAmiga.push(chave);
-  // Só a foto da peça e o essencial: "Camisa branco · com Lia".
-  avisar({ tipo: 'troca', ir: ['perfil'], peca: peca.id, proposta: { amiga, peca: peca.id },
-           texto: `${nomeDaPeca(peca)} · com ${perfilDe(amiga)?.nome?.split(' ')[0] || 'um amigo'}` });
+  // O rosto do amigo, a foto da peça e o essencial, sem o nome da roupa.
+  avisar({ tipo: 'troca', ir: ['perfil'], quem: amiga, peca: peca.id, proposta: { amiga, peca: peca.id },
+           texto: `${perfilDe(amiga)?.nome?.split(' ')[0] || 'Um amigo'} tem uma peça da sua wishlist` });
 }
 
 // Mandou a proposta: o aviso daquela peça sai do sino.
@@ -277,8 +278,9 @@ let botao, painel, contador, listaEl;
 function linha(a, visto) {
   const novo = a.em > visto;
   const peca = a.peca ? pecaDoCatalogo(a.peca) : null;
-  const marca = peca
-    ? el('span', { class: 'aviso-foto' }, (() => { const img = el('img', { alt: nomeDaPeca(peca), loading: 'lazy' }); trocarImagem(img, peca, 80); return img; })())
+  const foto = peca && el('span', { class: 'aviso-foto' }, (() => { const img = el('img', { alt: '', loading: 'lazy' }); trocarImagem(img, peca, 80); return img; })());
+  const marca = foto
+    ? el('span', { class: 'aviso-marcas' }, a.quem ? retratoDe(a.quem, 38) : null, foto)
     : a.quem
     ? retratoDe(a.quem, 38)
     : el('span', { class: `aviso-icone ${a.tipo}` }, ICONE[a.tipo]?.length > 1 ? ico(ICONE[a.tipo]) : ICONE[a.tipo] || '•');

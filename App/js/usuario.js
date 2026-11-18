@@ -541,7 +541,7 @@ export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar 
   const paraTrocar = !minha && perfil && roupas ? roupas.filter(pc => podeTrocar(pc, perfil)) : [];
   const simbolo = (titulo, aoTocar, n) => el('button', {
     type: 'button', class: 'pf-trocas-btn', title: titulo, 'aria-label': titulo, onclick: aoTocar,
-  }, '⇄', n ? el('strong', {}, String(n)) : null);
+  }, '⇄');
   const trocas = minha ? (trocaLiberada() ? simbolo('Minhas trocas', abrirMinhasTrocas, trocasEmAndamento()) : null)
     : paraTrocar.length ? simbolo(`Peças para trocar (${paraTrocar.length})`, () =>
       abrirListaDePecas(`Para trocar com ${dono}`, paraTrocar, { vazio: 'Nada para trocar agora' }), paraTrocar.length) : null;

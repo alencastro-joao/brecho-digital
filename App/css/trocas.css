@@ -236,10 +236,10 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 }
 .troca-btn:hover { filter: brightness(1.08); }
 .pf-troca {
-  position: absolute; z-index: 2; top: 7px; right: 7px;
-  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--wii); color: #fff; font-size: 15px; font-weight: 800; line-height: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+  position: absolute; z-index: 2; bottom: 5px; right: 5px;
+  display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
+  background: color-mix(in srgb, var(--wii) 70%, transparent); color: #fff; font-size: 10px; font-weight: 800; line-height: 1;
+  opacity: .85;
 }
 
 /* Perfil: botão Trocas ao lado de Guarda-roupa e Wishlist. */
@@ -317,3 +317,8 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 .troca-amigo:hover { border-color: var(--wii); transform: translateY(-2px); }
 .troca-amigo strong { font-size: 15px; font-weight: 900; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .troca-amigo small { color: var(--tinta-suave); font-size: 12.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Aviso da wishlist: rosto do amigo e a peça, sempre dentro do quadrado. */
+.aviso-marcas { display: flex; align-items: center; gap: 8px; flex: none; }
+.aviso-foto { position: relative; overflow: hidden; flex: none; }
+.aviso-foto img { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); max-width: none; object-fit: contain; }
