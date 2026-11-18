@@ -22,10 +22,6 @@ const ehIos = () => /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navi
 const ehAndroid = () => /Android/.test(ua);
 const instalado = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
-const passos = (...itens) => el('div', {},
-  el('p', { class: 'pergunta-texto' }, 'Com o Brechó na tela inicial, ele abre em tela cheia, como um app.'),
-  el('ol', { class: 'pergunta-texto instalar-passos' }, itens.map(t => el('li', {}, t))));
-
 const CHAVE = 'bd-instalar-adiado';
 const DIAS_SEM_LEMBRAR = 3;
 
@@ -47,24 +43,24 @@ export function lembrarDeInstalar() {
   }, 6000);
 }
 
+const cartao = (texto) => el('div', { class: 'instalar-cartao' },
+  el('img', { class: 'instalar-logo', src: 'assets/app/icone-192.png', alt: 'Brechó', width: 72, height: 72 }),
+  el('p', { class: 'pergunta-texto' }, texto));
+
 export async function sugerirInstalar() {
   if (instalado()) return;
   adiar();
   if (ehIos()) {
-    await mostrar(passos(
-      'Toque no botão Compartilhar do navegador (o quadrado com a seta para cima).',
-      'Escolha "Adicionar à Tela de Início".',
-      'Toque em "Adicionar".'), { titulo: 'Instale o Brechó no iPhone' });
+    await mostrar(cartao('Toque em Compartilhar (o quadrado com a seta) e escolha "Adicionar à Tela de Início".'),
+      { titulo: 'Baixar o Brechó' });
   } else if (ehAndroid()) {
     if (pedido) {
-      const sim = await confirmar('Instale o Brechó no celular: ele fica na tela inicial e abre em tela cheia, como um app.',
-        { titulo: 'Instale o Brechó', sim: 'Instalar', nao: 'Agora não' });
+      const sim = await confirmar(cartao('Fica na tela inicial e abre em tela cheia, como um app.'),
+        { titulo: 'Brechó', sim: 'Baixar', nao: 'Agora não' });
       if (sim && pedido) { const p = pedido; pedido = null; p.prompt(); }
     } else {
-      await mostrar(passos(
-        'Toque no menu do navegador (os três pontinhos).',
-        'Escolha "Instalar app" ou "Adicionar à tela inicial".',
-        'Confirme em "Instalar".'), { titulo: 'Instale o Brechó no celular' });
+      await mostrar(cartao('No menu do navegador (⋮), escolha "Instalar app" ou "Adicionar à tela inicial".'),
+        { titulo: 'Baixar o Brechó' });
     }
   }
 }

@@ -100,8 +100,6 @@ html body .pergunta-caixa {
   white-space: pre-line; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto;
 }
 /* Passo a passo de instalar o app (instalar.js). */
-.instalar-passos { margin-top: 10px; padding-left: 22px; text-align: left; white-space: normal; }
-.instalar-passos li + li { margin-top: 6px; }
 .pergunta-campo {
   width: 100%; margin-top: 14px; padding: 10px 14px;
   border: 2px solid var(--wii-borda); border-radius: 14px; background: #fff;
@@ -211,3 +209,6 @@ html:root body :is(#btn-salvar, #bd-salvar, #pg-salvar, #mp-salvar, #btn-publica
   #btn-compartilhar, #bd-compartilhar)[id]:hover:not(:disabled) {
   filter: brightness(.97) saturate(1.15);
 }
+
+.instalar-cartao { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.instalar-logo { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
