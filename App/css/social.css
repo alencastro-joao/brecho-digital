@@ -608,3 +608,39 @@
   padding: 6px 16px; border-radius: 20px; font-size: var(--fs-texto);
   background: var(--perola) var(--brilho-topo); border: 2px solid var(--wii-borda); color: var(--tinta);
 }
+
+/* ----- Três jeitos de mostrar o card (#/social/cartao-a, -b, -c) -----
+   Em todos: a imagem se mistura (multiply) com o fundo do card, então o tom
+   mais claro do desenho some; e nada é cortado, a imagem inteira cabe. */
+.cartao-a .post-thumb img, .cartao-b .post-thumb img, .cartao-c .post-thumb img {
+  mix-blend-mode: multiply;
+}
+.cartao-a .post-thumb.colagem, .cartao-b .post-thumb.colagem { background: var(--papel); }
+
+/* A — Moldura pérola: o look como uma foto emoldurada, com respiro em volta. */
+.cartao-a .post-thumb {
+  padding: 12px; background: var(--perola) var(--brilho-topo);
+  border: 2px solid var(--wii-borda); box-shadow: none;
+}
+.cartao-a .post-thumb img { border-radius: calc(var(--raio) - 8px); }
+.cartao-a .post-thumb.colagem { background: #fff; padding: 8px; }
+
+/* B — Solto no papel: sem caixa, o look flutua direto no fundo da tela. */
+.cartao-b .post-thumb { background: transparent; box-shadow: none; overflow: visible; }
+.cartao-b .post:hover .post-thumb { box-shadow: none; transform: translateY(-3px); }
+.cartao-b .post-thumb img { filter: drop-shadow(0 10px 14px rgba(60, 40, 20, .14)); }
+.cartao-b .post-thumb.colagem {
+  background: #fff; padding: 8px; border-radius: 6px; transform: rotate(-.8deg);
+  box-shadow: 0 8px 20px rgba(60, 40, 20, .14);
+}
+.cartao-b .mural-coluna:nth-child(even) .post-thumb.colagem { transform: rotate(.8deg); }
+
+/* C — Tamanhos próprios: look em pé (4:5), colagem quadrada e mais baixa. */
+.cartao-c .post-thumb { aspect-ratio: 4 / 5; display: grid; place-items: center; background: var(--papel); border: 1px solid var(--linha); box-shadow: none; }
+.cartao-c .post-thumb img { width: auto; max-width: 100%; height: auto; max-height: 100%; object-fit: contain; }
+.cartao-c .post-thumb.colagem { aspect-ratio: 1 / 1; background: #fff; border: 2px solid var(--wii-borda); }
+.cartao-c .post-thumb.colagem::after {
+  content: 'colagem'; position: absolute; left: 8px; top: 8px; z-index: 2;
+  font-size: var(--fs-meta); font-weight: 700; padding: 2px 9px; border-radius: 20px;
+  background: var(--perola) var(--brilho-topo); border: 1px solid var(--wii-borda); color: var(--tinta);
+}
