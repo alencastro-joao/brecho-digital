@@ -282,12 +282,25 @@ function jogoAvaliar() {
 // para ninguém só apertar "pronto". A medida vai no molde, como no editor.
 function jogoAjustar() {
   const p = ancoraPadrao(peca.cat);
-  const medida = {
-    x: p.x + (Math.random() - 0.5) * 80,
-    y: p.y + (Math.random() - 0.5) * 120,
-    w: p.w * (0.75 + Math.random() * 0.5),
-    rot: 0,
-  };
+  const { nos, posicionar } = montarAjuste(peca, {
+    medida: {
+      x: p.x + (Math.random() - 0.5) * 80,
+      y: p.y + (Math.random() - 0.5) * 120,
+      w: p.w * (0.75 + Math.random() * 0.5),
+      rot: 0,
+    },
+    dica: `Arraste a peça (${nomeDaPeca(peca)}) pela alça até o lugar certo.`,
+    aoPronto: (ancora) => enviar({ ancora }),
+  });
+  $('#mg-palco').replaceChildren(...nos);
+  posicionar();
+}
+
+// O palco do ajuste: o corpo, a peça com a alça, a barra do tamanho, as de
+// posição e o girar. Exportado: o envio de roupa do jogador (enviar.js) usa
+// o mesmo. `peca` precisa de cat, src, w e h; `aoPronto` recebe a medida já
+// no molde ({x, y, w, rot}). Chame `posicionar` depois de pôr os nós na tela.
+export function montarAjuste(peca, { medida, dica, botao = 'Pronto, ficou certo', aoPronto }) {
   const prop = peca.w && peca.h ? peca.w / peca.h : 1;
   const no = el('div', { class: 'mg-peca' }, imagem(peca, ''));
   const palco = el('div', { class: 'mg-corpo' });
@@ -347,7 +360,7 @@ function jogoAjustar() {
   }, { passive: false });
   faixa.addEventListener('input', () => tamanho(Number(faixa.value)));
 
-  $('#mg-palco').replaceChildren(
+  const nos = [
     el('div', { class: 'mg-ajuste' },
       el('div', { class: 'mg-palco-corpo' }, palco),
       colunaY,
@@ -359,13 +372,14 @@ function jogoAjustar() {
       el('div', { class: 'mg-girar' },
         el('button', { type: 'button', title: 'Girar para a esquerda', onclick: () => girar(-5) }, ico('girar-esq')),
         el('button', { type: 'button', title: 'Girar para a direita', class: 'mg-girar-dir', onclick: () => girar(5) }, ico('girar-esq')))),
-    el('p', { class: 'mg-dica' }, `Arraste a peça (${nomeDaPeca(peca)}) pela alça até o lugar certo.`),
+    el('p', { class: 'mg-dica' }, dica),
     el('div', { class: 'mg-botoes-voto' },
       el('button', { type: 'button', class: 'mg-voto mg-voto-sim', onclick: () => {
         const m = ancoraNoMolde(CATEGORIAS[peca.cat].regiao, medida);
-        enviar({ ancora: { x: m.x, y: m.y, w: m.w, rot: medida.rot } });
-      } }, ico('ok'), 'Pronto, ficou certo')));
-  posicionar();
+        aoPronto({ x: m.x, y: m.y, w: m.w, rot: medida.rot });
+      } }, ico('ok'), botao)),
+  ];
+  return { nos, posicionar };
 }
 
 // ------------------------------ Preencher ---------------------------------

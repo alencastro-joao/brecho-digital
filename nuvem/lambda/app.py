@@ -41,7 +41,7 @@ esta função só responde `/api/*`.
     GET  /api/admin/painel     admin: os números do dia (ver painel.py)
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
-    GET|POST /api/envios       jogador: manda roupa dele para a esteira
+    /api/envios[/<id>]         jogador: manda roupa dele para a esteira e ajusta
     GET  /api/admin/contas     admin: todas as contas e o que cada uma tem
     POST /api/admin/contas/limpar  admin: apaga as outras contas (ver limpeza.py)
 
@@ -87,6 +87,7 @@ LIMITE_PERFIL = 32 * 1024           # bio, rosto, roupa e os ids dos favoritos
 ROTA_PECA = re.compile(r'^/api/pecas/([^/]+)$')
 ROTA_ROUPA = re.compile(r'^/api/roupas-avatar(?:/([^/]+))?$')
 ROTA_USUARIO = re.compile(r'^/api/usuarios/([^/]+)$')
+ROTA_ENVIO = re.compile(r'^/api/envios(?:/([^/]+))?$')
 ROTA_ESTEIRA = re.compile(r'^/api/esteira(?:/([^/]+)(?:/(publicar|refazer))?)?$')
 ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil',
                     '/api/perfil/miniatura')
@@ -582,6 +583,13 @@ def rotas_de_envios(pedido):
     if not usuario:
         return responder(401, {'erro': 'entre na sua conta para mandar roupas'})
     import esteira
+    item_id = ROTA_ENVIO.match(pedido.rota).group(1)
+    if item_id:
+        if pedido.metodo == 'GET':
+            return responder(200, esteira.envio_do_jogador(usuario, item_id))
+        if pedido.metodo == 'PUT':
+            return responder(200, esteira.ajustar_do_jogador(usuario, item_id, pedido.corpo(LIMITE_LOGIN)))
+        return None
     if pedido.metodo == 'GET':
         return responder(200, esteira.envios_do_jogador(usuario))
     if pedido.metodo == 'POST':
@@ -748,7 +756,7 @@ def despachar(pedido):
         return rotas_de_roupas(pedido)
     if ROTA_ESTEIRA.match(rota):
         return rotas_de_esteira(pedido)
-    if rota == '/api/envios':
+    if ROTA_ENVIO.match(rota):
         return rotas_de_envios(pedido)
 
     # O recorte de fundo saiu do pedido-resposta: foto nova entra pela esteira

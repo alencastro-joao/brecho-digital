@@ -53,18 +53,21 @@ class EnviosDosJogadores(unittest.TestCase):
         self.assertIn('raridade', dados['ficha']['manual'])
         lista = esteira.envios_do_jogador(JOAO)
         self.assertEqual(lista['envios'][0]['estado'], 'analise')
-        self.assertEqual(lista['restam'], esteira.MAX_ENVIOS_DIA - 1)
 
     def test_ficha_incompleta_recusa(self):
         for falta in ('nome', 'cat', 'cor', 'raridade'):
             with self.assertRaises(ValueError):
                 esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': {**FICHA, falta: ''}})
 
-    def test_limite_do_dia(self):
-        for _ in range(esteira.MAX_ENVIOS_DIA):
-            esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})
+    def test_sem_limite_e_ajuste_so_do_dono(self):
+        for _ in range(8):
+            item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})['envio']['id']
+        self.assertEqual(len(esteira.envios_do_jogador(JOAO)['envios']), 8)
+        self.assertEqual(esteira.envio_do_jogador(JOAO, item_id)['envio']['estado'], 'enviando')
+        esteira.ajustar_do_jogador(JOAO, item_id, {'medida': {'x': 300, 'y': 400, 'w': 250, 'rot': 5}})
+        self.assertEqual(esteira._ler(item_id)['medida'], {'x': 300, 'y': 400, 'w': 250, 'rot': 5})
         with self.assertRaises(ValueError):
-            esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})
+            esteira.ajustar_do_jogador({'id': 'outra'}, item_id, {'medida': {'x': 1, 'y': 1, 'w': 1}})
 
     def test_descartar_avisa_o_jogador(self):
         item_id = esteira.enviar_do_jogador(JOAO, {'arquivo': FOTO, 'ficha': FICHA})['envio']['id']

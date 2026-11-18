@@ -10,16 +10,23 @@
 // sobe direto para o S3, como na esteira. Lá ela entra na esteira do João, à
 // parte, na vista "Enviadas" (nuvem/lambda/esteira.py, "Roupas dos
 // jogadores"). Embaixo, a lista do que a pessoa já mandou e como está.
+//
+// Enviada a foto, a tela espera a nuvem tirar o fundo (o trabalhador só tira
+// se a foto ainda tiver fundo) e abre o ajuste no corpo, o mesmo do mini game
+// Ajustar: a medida que a pessoa deixar vai junto para a esteira.
 
-import { CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE } from './config.js';
+import { CATEGORIAS, ORDEM_CATEGORIAS, CORES, RARIDADES, RARIDADE, ancoraPadrao } from './config.js';
 import * as db from './db.js';
 import { el, toast, tempoRelativo } from './util.js';
 import { ico, emo } from './icones.js';
 import { tocar } from './sons.js';
 import { telaTroca, secao } from './trocas.js';
+import { montarAjuste } from './ajudas.js';
 
 const MAX_FOTO = 15 * 1024 * 1024;      // o mesmo de esteira.py (MAX_FOTO_JOGADOR)
 const TIPOS = ['image/jpeg', 'image/png', 'image/webp'];
+const ESPERA_MS = 3000;                 // de quanto em quanto pergunta se o fundo já saiu
+const ESPERA_MAX = 5 * 60 * 1000;       // depois disso, o João ajusta na esteira
 
 const ESTADOS = {
   analise: { nome: 'Em análise', classe: 'analise' },
@@ -27,9 +34,9 @@ const ESTADOS = {
   recusada: { nome: 'Não entrou', classe: 'recusada' },
 };
 
-async function chamar(rota, corpo) {
+async function chamar(rota, corpo, metodo = corpo ? 'POST' : 'GET') {
   const r = await fetch(rota, {
-    method: corpo ? 'POST' : 'GET',
+    method: metodo,
     credentials: 'include',
     headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
     body: corpo ? JSON.stringify(corpo) : undefined,
@@ -128,10 +135,8 @@ export function abrirEnviarRoupa() {
   renderRaridades();
 
   // ------------------------- O que já foi enviado ------------------------
-  const restam = el('small', { class: 'ev-restam' }, '');
   const lista = el('div', { class: 'ev-lista' }, el('p', { class: 'ev-vazio' }, 'Carregando…'));
   const renderLista = (dados) => {
-    restam.textContent = dados.restam ? `pode mandar mais ${dados.restam} hoje` : 'o limite de hoje acabou';
     const envios = dados.envios || [];
     if (!envios.length) {
       lista.replaceChildren(el('p', { class: 'ev-vazio' }, 'Você ainda não mandou nenhuma roupa.'));
@@ -166,7 +171,7 @@ export function abrirEnviarRoupa() {
     : !ficha.cor ? 'Escolha a cor principal.'
     : !ficha.raridade ? 'Escolha a raridade.' : '';
 
-  const { fechar } = telaTroca('Enviar roupa', [
+  const { caixa, fechar } = telaTroca('Enviar roupa', [
     el('p', { class: 'ev-intro' }, 'Mande uma roupa sua para entrar no brechó. ',
       el('b', {}, 'Ela vai para a análise'), ' e, se for aprovada, vira peça do jogo.'),
     secao('Foto', previa,
@@ -179,7 +184,7 @@ export function abrirEnviarRoupa() {
         bloco('Cor principal', nomeCor, cores),
         bloco('Marca', el('small', {}, 'se souber'), campoMarca, atalhos),
         bloco('Raridade', nomeRar, raridades))),
-    secao('Suas roupas enviadas', restam, lista),
+    secao('Suas roupas enviadas', lista),
   ], [
     el('button', { type: 'button', class: 'btn-ghost', onclick: () => fechar() }, 'Cancelar'),
     botaoEnviar,
@@ -198,8 +203,7 @@ export function abrirEnviarRoupa() {
       });
       await subirFoto(envio, arquivo);
       tocar('ok');
-      toast('Roupa enviada! Ela está em análise.', 'ok');
-      fechar();
+      esperarFundo(envio.id);
     } catch (e) {
       enviando = false;
       botaoEnviar.replaceChildren(ico('ok'), 'Enviar roupa');
@@ -208,6 +212,71 @@ export function abrirEnviarRoupa() {
       toast(e.message, 'erro');
     }
   });
+
+  // --------------------------- Depois de enviar --------------------------
+  // O corpo e o rodapé da tela viram a espera e, depois, o ajuste no corpo.
+  const corpo = caixa.querySelector('.troca-corpo');
+  const rodape = caixa.querySelector('.troca-rodape');
+  const titulo = caixa.querySelector('.troca-topo h2');
+  let vivo = true;
+  const sair = () => { vivo = false; fechar(); };
+  const botaoSair = (texto) => el('button', { type: 'button', class: 'btn-ghost', onclick: sair }, texto);
+
+  function esperarFundo(id) {
+    titulo.textContent = 'Preparando a peça';
+    corpo.replaceChildren(secao('', el('div', { class: 'ev-espera' },
+      el('span', { class: 'ev-girando', 'aria-hidden': 'true' }),
+      el('strong', {}, 'Roupa enviada!'),
+      el('p', {}, 'Agora a gente tira o fundo da foto. Leva uns segundos e, depois, ',
+        el('b', {}, 'você ajusta a peça no corpo'), '.'))));
+    rodape.replaceChildren(botaoSair('Deixar para depois'));
+    const inicio = Date.now();
+    const perguntar = async () => {
+      if (!vivo) return;
+      try {
+        const { envio } = await chamar(`/api/envios/${id}`);
+        if (envio.estado === 'pronta' && envio.previa) return ajustar(envio);
+        if (envio.estado === 'erro') return terminar('Não deu para tirar o fundo dessa foto. A roupa ficou em análise e o ajuste é feito lá.');
+      } catch { /* tenta de novo */ }
+      if (Date.now() - inicio > ESPERA_MAX) return terminar('A foto está demorando. A roupa ficou em análise e o ajuste é feito lá.');
+      setTimeout(perguntar, ESPERA_MS);
+    };
+    setTimeout(perguntar, ESPERA_MS);
+  }
+
+  function ajustar(envio) {
+    if (!vivo) return;
+    titulo.textContent = 'Ajustar no corpo';
+    tocar('janela');
+    const p = ancoraPadrao(envio.cat || ficha.cat);
+    const peca = { cat: envio.cat || ficha.cat, src: envio.previa, w: envio.w, h: envio.h, nome: ficha.nome };
+    const { nos, posicionar } = montarAjuste(peca, {
+      medida: { x: p.x, y: p.y, w: p.w, rot: 0 },
+      dica: 'Arraste a peça pela alça e use a barra para o tamanho, até ficar como ela fica no corpo.',
+      botao: 'Pronto, enviar assim',
+      aoPronto: async (medida) => {
+        try {
+          await chamar(`/api/envios/${envio.id}`, { medida }, 'PUT');
+          tocar('ok');
+          sair();
+          toast('Roupa enviada e ajustada! Ela está em análise.', 'ok');
+        } catch (e) {
+          tocar('naocurti');
+          toast(e.message, 'erro');
+        }
+      },
+    });
+    corpo.replaceChildren(el('div', { class: 'ev-ajuste' }, ...nos));
+    rodape.replaceChildren(botaoSair('Pular o ajuste'));
+    posicionar();
+  }
+
+  function terminar(texto) {
+    if (!vivo) return;
+    corpo.replaceChildren(secao('', el('div', { class: 'ev-espera' },
+      el('strong', {}, 'Roupa enviada!'), el('p', {}, texto))));
+    rodape.replaceChildren(botaoSair('Fechar'));
+  }
 
   lerLista();
 }
