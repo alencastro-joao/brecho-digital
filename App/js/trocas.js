@@ -20,9 +20,10 @@ import { TROCAS, RARIDADE } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, trocarImagem } from './catalog.js';
 import { el, toast } from './util.js';
 import { avisarTroca, avisarDesejoComAmiga, removerAvisoDeDesejo, aoTocarEmTroca, aoTocarEmTutorialTroca, aoTocarEmProposta } from './avisos.js';
-import { carregarPerfil, quemMeSegue, perfilDe } from './pessoas.js';
+import { carregarPerfil, quemMeSegue, perfilDe, roupasDoPerfil } from './pessoas.js';
 import { irPara } from './router.js';
 import { retratoDe } from './social.js';
+import { svgAvatar, aparenciaDoPerfil } from './avatar.js';
 import { contar as contarNoMural } from './mural.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
@@ -588,19 +589,76 @@ export async function abrirMinhasTrocas() {
   nova.addEventListener('click', () => { tela.fechar(); escolherAmiga(); });
 }
 
-// Troca nova: escolhe um amigo (segue e é seguido) e vai ao guarda-roupa dela.
-function escolherAmiga() {
+// Troca nova: passarela de amigos, de corpo inteiro. O do centro mostra o que dá
+// para trocar e o botão leva ao perfil dele (João, 18/11/2026).
+export function escolherAmiga(lista = null) {
   const seguem = new Set(quemMeSegue());
-  const amigas = (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
-  let tela;
-  tela = telaTroca('Trocar com quem?', [
-    secao('Seus amigos', amigas.length
-      ? el('div', { class: 'troca-amigos' }, ...amigas.map(a => el('button', {
-        type: 'button', class: 'troca-amigo',
-        onclick: () => { tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça e depois em ⇄.'); },
-      }, retratoDe(a.id, 76), el('strong', {}, a.nome), el('small', {}, handle(a.handle)))))
-      : vazio2('Só dá para trocar com quem você segue e também segue você.')),
-  ], [el('button', { type: 'button', class: 'btn-ghost', onclick: () => tela.fechar() }, 'Voltar')]);
+  const amigos = lista || (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
+  const voltar = el('button', { type: 'button', class: 'btn-ghost' }, 'Voltar');
+  if (!amigos.length) {
+    const t = telaTroca('Trocar com quem?', [secao('Seus amigos',
+      vazio2('Só dá para trocar com quem você segue e também segue você.'))], [voltar]);
+    voltar.addEventListener('click', () => t.fechar());
+    return;
+  }
+  const itens = amigos.map((a, i) => {
+    const corpo = el('div', { class: 'passarela-corpo' });
+    corpo.innerHTML = svgAvatar({ aparencia: aparenciaDoPerfil(a), roupas: roupasDoPerfil(a) });
+    return el('button', { type: 'button', class: 'passarela-item', 'aria-label': a.nome, onclick: () => ir(i) }, corpo);
+  });
+  const pista = el('div', { class: 'passarela' }, ...itens);
+  const nome = el('h3', { class: 'passarela-nome' });
+  const arroba = el('p', { class: 'passarela-arroba' });
+  const chips = el('div', { class: 'passarela-chips' });
+  const pos = el('p', { class: 'passarela-pos' });
+  const ir = (i) => {
+    const it = itens[i];
+    pista.scrollTo({ left: it.offsetLeft + it.offsetWidth / 2 - pista.clientWidth / 2, behavior: 'smooth' });
+  };
+  const chip = (texto) => el('span', { class: 'passarela-chip' }, texto);
+  let atual = -1;
+  const mostrar = async (i) => {
+    atual = i;
+    const a = amigos[i];
+    nome.textContent = a.nome;
+    arroba.textContent = handle(a.handle);
+    pos.textContent = `${i + 1} / ${amigos.length}`;
+    trocar.textContent = `⇄ Trocar com ${a.nome.split(' ')[0]}`;
+    chips.replaceChildren(chip('⇄ …'));
+    let p = a;
+    try { p = await carregarPerfil(a.id); } catch { /* fica com o que tem */ }
+    if (atual !== i) return;
+    const pecas = (p.guardaRoupa || []).map(id => pecaDoCatalogo(id)).filter(pc => pc && podeTrocar(pc, p));
+    const quer = pecas.filter(pc => db.naWishlist(pc.id)).length;
+    chips.replaceChildren(chip(`⇄ ${pecas.length} para trocar`), ...(quer ? [chip(`♥ ${quer} da sua wishlist`)] : []));
+  };
+  const trocar = el('button', { type: 'button', class: 'btn-ghost passarela-trocar' }, '⇄ Trocar');
+  const tela = telaTroca('Trocar com quem?', [
+    pista,
+    el('div', { class: 'passarela-info' }, nome, arroba, chips, pos),
+  ], [voltar, trocar]);
+  voltar.addEventListener('click', () => tela.fechar());
+  trocar.addEventListener('click', () => {
+    const a = amigos[atual];
+    tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça e depois em ⇄.');
+  });
+  // O do centro é grande; os vizinhos encolhem e esmaecem.
+  let quadro = 0;
+  const ajustar = () => {
+    quadro = 0;
+    const meio = pista.scrollLeft + pista.clientWidth / 2;
+    let melhor = 0, dist = Infinity;
+    itens.forEach((it, i) => {
+      const d = Math.abs(it.offsetLeft + it.offsetWidth / 2 - meio) / it.offsetWidth;
+      const f = Math.min(d, 1.6);
+      it.style.transform = `scale(${(1 - f * 0.3).toFixed(3)})`;
+      it.style.opacity = String(Math.max(0.35, 1 - f * 0.55).toFixed(2));
+      if (d < dist) { dist = d; melhor = i; }
+    });
+    if (melhor !== atual) mostrar(melhor);
+  };
+  pista.addEventListener('scroll', () => { if (!quadro) quadro = requestAnimationFrame(ajustar); }, { passive: true });
+  requestAnimationFrame(ajustar);
 }
 const vazio2 = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
 
