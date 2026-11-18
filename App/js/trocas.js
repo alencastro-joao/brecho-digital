@@ -23,7 +23,7 @@ import { avisarTroca, avisarDesejoComAmiga, removerAvisoDeDesejo, aoTocarEmTroca
 import { carregarPerfil, quemMeSegue, perfilDe, roupasDoPerfil } from './pessoas.js';
 import { irPara } from './router.js';
 import { retratoDe } from './social.js';
-import { svgAvatar, aparenciaDoPerfil } from './avatar.js';
+import { svgAvatar, aparenciaDoPerfil, aparenciaAtual } from './avatar.js';
 import { abrirListaDePecas } from './usuario.js';
 import { contar as contarNoMural } from './mural.js';
 import { esquecerHistorico } from './estoque.js';
@@ -329,6 +329,17 @@ function pilha(copias) {
 }
 
 // --------------------------- A oferta (as duas) ----------------------------
+// Os dois avatares da troca: você e o amigo (que flutua), com o ⇄ no meio.
+async function palcoDeAvatares(idAmigo) {
+  let amigo = perfilDe(idAmigo);
+  if (!amigo) { try { amigo = await carregarPerfil(idAmigo); } catch { return null; } }
+  const corpo = (svg, classe) => { const d = el('div', { class: 'palco-av ' + classe }); d.innerHTML = svg; return d; };
+  return el('div', { class: 'palco-avatares' },
+    corpo(svgAvatar({ aparencia: aparenciaAtual(), roupas: db.roupasEquipadas() }), 'eu'),
+    el('span', { class: 'palco-seta' }, '⇄'),
+    corpo(svgAvatar({ aparencia: aparenciaDoPerfil(amigo), roupas: roupasDoPerfil(amigo) }), 'amigo'));
+}
+
 export async function abrirOferta(trocaId) {
   let t = ultimas.find(x => x.id === trocaId);
   if (!t || t.estado === 'aberta') { await sincronizarTrocas(); t = ultimas.find(x => x.id === trocaId) || t; }
@@ -351,6 +362,7 @@ export async function abrirOferta(trocaId) {
     ? placar(outraFig, quero, { rotuloDou: 'Você oferece', rotuloRecebo: 'Você quer' })
     : placar(quero, outraFig);
   if (souDe && !escolhida) topo.trocarDou(pilha(t.opcoes));
+  const palco = await palcoDeAvatares(souDe ? t.para.id : t.de.id);
   const rodape = [];
   if (souDe && t.estado === 'aberta') {
     rodape.push(el('button', {
@@ -366,9 +378,9 @@ export async function abrirOferta(trocaId) {
       },
     }, 'Cancelar oferta'));
   }
-  rodape.push(el('button', { type: 'button', class: 'btn-dark', onclick: () => fechar() }, 'Fechar'));
+  rodape.push(el('button', { type: 'button', class: 'passarela-trocar', onclick: () => { tocar('toque'); fechar(); } }, 'Fechar'));
   const { fechar } = telaTroca(souDe ? `Sua oferta para ${handle(outra)}` : `Oferta de ${handle(outra)}`,
-    [topo,
+    [...(palco ? [palco] : []), topo,
       el('p', { class: 'troca-estado ' + t.estado }, estado),
       secao('Opções oferecidas', el('div', { class: 'troca-grade' }, ...t.opcoes.map((c, i) =>
         figura(c, { so: true, classe: t.escolhida === i ? 'escolhida' : '' }))))],
@@ -575,7 +587,7 @@ export async function abrirMinhasTrocas() {
 }
 export function escolherAmiga(lista = null) { abrirTrocas({ aba: 'amigos', lista }); }
 
-function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
+function abrirTrocas({ aba = 'amigos', lista = null, inicial = null } = {}) {
   const seguem = new Set(quemMeSegue());
   const amigos = lista || (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
   const andamento = ultimas.filter(t => t.estado === 'aberta');
@@ -630,7 +642,8 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     if (soWishlist) pecas = pecas.filter(pc => db.naWishlist(pc.id));
     tela.fechar();
     abrirListaDePecas(soWishlist ? `Da sua wishlist com ${a.nome.split(' ')[0]}` : `Para trocar com ${a.nome.split(' ')[0]}`, pecas,
-      { vazio: 'Nada para trocar agora', trocaCom: a.id });
+      { vazio: 'Nada para trocar agora', trocaCom: a.id,
+        aoFechar: () => abrirTrocas({ aba: 'amigos', lista, inicial: a.id }) });
   };
   trocar.addEventListener('click', () => abrirLista(false));
   let quadro = 0, parado = 0;
@@ -682,7 +695,12 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     for (const x in paineis) { paineis[x].hidden = x !== k; botoes[x].classList.toggle('ativa', x === k); botoes[x].setAttribute('aria-selected', String(x === k)); }
     const rodape = tela.caixa.querySelector('.troca-rodape');
     if (rodape) rodape.hidden = !(k === 'amigos' && n > 0);
-    if (k === 'amigos' && n) { atual = -1; centrar(copias > 1 ? n : 0, false); requestAnimationFrame(ajustar); }
+    if (k === 'amigos' && n) {
+      atual = -1;
+      const ini = Math.max(0, amigos.findIndex(a => a.id === inicial));
+      centrar((copias > 1 ? n : 0) + ini, false);
+      requestAnimationFrame(ajustar);
+    }
   };
   tela = telaTroca('Trocas', Object.values(paineis), [trocar], abas);
   mudar(aba);
