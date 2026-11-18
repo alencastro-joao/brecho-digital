@@ -231,14 +231,14 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 
 /* Destaque: botão colorido na ficha e selo ⇄ nas peças da amiga que dá para trocar. */
 .troca-btn {
-  background: #0b8aa6; color: #fff; border: 2px solid #086b82; cursor: pointer;
-  box-shadow: 0 2px 0 #086b82;
+  background: var(--wii); color: #fff; border: 2px solid var(--wii-borda); cursor: pointer;
+  box-shadow: 0 2px 0 var(--wii-borda);
 }
-.troca-btn:hover { background: #0e9ebf; }
+.troca-btn:hover { filter: brightness(1.08); }
 .pf-troca {
   position: absolute; z-index: 2; top: 7px; right: 7px;
   display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
-  background: #0b8aa6; color: #fff; font-size: 15px; font-weight: 800; line-height: 1;
+  background: var(--wii); color: #fff; font-size: 15px; font-weight: 800; line-height: 1;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
 }
 
@@ -247,7 +247,7 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 .pf-trocas-btn {
   position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; padding: 0 0 3px;
   display: grid; place-items: center; cursor: pointer;
-  background: #0b8aa6; color: #fff; border: 2px solid #086b82; box-shadow: 0 2px 0 #086b82;
+  background: var(--wii); color: #fff; border: 2px solid var(--wii-borda); box-shadow: 0 2px 0 var(--wii-borda);
   font-size: 22px; font-weight: 800; line-height: 1;
 }
 .pf-trocas-btn strong {
@@ -267,9 +267,53 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
   border-radius: 14px; background: var(--branco); border: 2px solid var(--linha);
   font: inherit; color: var(--tinta); text-align: left; cursor: pointer;
 }
-.troca-linha.aberta { border-color: #0b8aa6; }
+.troca-linha[data-estado="aberta"] { border-color: var(--wii); }
 .troca-linha .troca-fig { width: 64px; flex: none; padding: 2px; }
 .troca-linha .troca-fig img { max-width: none; }
 .troca-linha-texto { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .troca-linha-texto small { color: var(--tinta-suave); font-size: 12.5px; }
 .troca-vazio-texto { margin: 8px 0 0; color: var(--tinta-suave); font-size: 14px; }
+
+/* Mais alinhado: nada passa da largura, e o placar divide em partes iguais. */
+.troca-placar { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.troca-lado { min-width: 0; }
+.troca-fig-nome, .troca-fig em, .troca-fig small { max-width: 100%; overflow-wrap: anywhere; }
+.troca-corpo > * { min-width: 0; box-sizing: border-box; }
+.troca-topo h2 { padding-inline: 4px; }
+
+/* Minhas trocas: resumo no tema, linhas com avatar e selo de estado. */
+.troca-resumo {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 20px;
+  background: linear-gradient(135deg, var(--wii), color-mix(in srgb, var(--wii) 55%, #fff));
+  color: #fff; border: 2px solid var(--wii-borda); box-shadow: 0 3px 0 var(--wii-borda);
+}
+.troca-resumo-ico {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; flex: none;
+  background: rgba(255, 255, 255, .25); font-size: 30px; font-weight: 800; line-height: 1; padding-bottom: 3px;
+}
+.troca-resumo strong { display: block; font-size: 18px; font-weight: 900; }
+.troca-resumo small { font-size: 13px; font-weight: 700; opacity: .9; }
+.troca-linha { margin-top: 10px; padding: 8px 12px 8px 8px; box-shadow: 0 2px 0 var(--linha); }
+.troca-linha:first-of-type { margin-top: 8px; }
+.troca-linha .troca-fig { width: 72px; }
+.troca-linha-texto { gap: 6px; }
+.troca-linha-quem { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.troca-linha-quem strong { font-size: 15px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.troca-chip {
+  align-self: flex-start; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 800;
+  background: color-mix(in srgb, var(--tinta-suave) 16%, #fff); color: var(--tinta-suave);
+}
+.troca-linha[data-estado="aberta"] .troca-chip { background: var(--wii); color: #fff; }
+.troca-linha[data-estado="feita"] .troca-chip { background: #d8f3dc; color: #1b7a34; }
+.troca-linha[data-estado="recusada"] .troca-chip, .troca-linha[data-estado="invalida"] .troca-chip { background: #fde0e4; color: #b02a43; }
+
+/* Trocar com quem: avatares dos amigos em grade. */
+.troca-amigos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.troca-amigo {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px 12px;
+  border-radius: 18px; background: var(--branco); border: 2px solid var(--linha); box-shadow: 0 2px 0 var(--linha);
+  font: inherit; color: var(--tinta); cursor: pointer; min-width: 0;
+}
+.troca-amigo:hover { border-color: var(--wii); transform: translateY(-2px); }
+.troca-amigo strong { font-size: 15px; font-weight: 900; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.troca-amigo small { color: var(--tinta-suave); font-size: 12.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

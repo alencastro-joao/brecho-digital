@@ -146,6 +146,24 @@ function avisarTrocaLiberada() {
   avisar({ tipo: 'troca', ir: ['perfil'], tutorial: true, acao: 'Ver como funciona',
            texto: 'Você liberou a troca de peças com amigos!' });
 }
+// Avisos de antes das mudanças de 18/11/2026: "amiga" vira "amigo", e o aviso
+// da wishlist ganha a foto da peça e o texto curto.
+function atualizarAvisosAntigos() {
+  let mudou = false;
+  for (const x of avisos().lista) {
+    const novo = String(x.texto || '').replace(/\bamigas\b/g, 'amigos').replace(/\bamiga\b/g, 'amigo');
+    if (novo !== x.texto) { x.texto = novo; mudou = true; }
+    if (x.proposta && !x.peca) {
+      x.peca = x.proposta.peca;
+      const m = /^(.*), da sua wishlist, está com (.*?)\. Que tal trocar\?$/.exec(x.texto);
+      if (m) x.texto = `${m[1]} · com ${m[2].split(' ')[0]}`;
+      x.acao = null;
+      mudou = true;
+    }
+  }
+  if (mudou) gravar();
+}
+
 function conferirTrocaLiberada() {
   if (db.nivel() >= TROCAS.nivel) avisarTrocaLiberada();
 }
@@ -374,6 +392,7 @@ export function montarAvisos() {
   // Os seguidores o boot acabou de ler (sincronizarSocial); o feed, não.
   expirar();
   conferirDia();
+  atualizarAvisosAntigos();
   conferirTrocaLiberada();
   conferirWishlist();
   conferirFeed();

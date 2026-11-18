@@ -83,7 +83,7 @@
 .aviso-item.missao { --cor: #d98200; }
 .aviso-item.nivel { --cor: #c79a00; }
 .aviso-item.loja { --cor: #2f9e44; }
-.aviso-item.troca { --cor: #0b8aa6; }
+.aviso-item.troca { --cor: var(--wii); }
 .aviso-item.presente { --cor: #ff7a1a; }
 .aviso.novo { position: relative; background: color-mix(in srgb, var(--cor) 7%, var(--branco)); }
 .aviso.novo:hover { background: color-mix(in srgb, var(--cor) 16%, var(--branco)); }
@@ -121,7 +121,7 @@
 .aviso-icone.nivel { background: var(--premio-claro); color: var(--premio-texto); }
 .aviso-icone.loja { background: var(--loja); color: #2f6b34; }
 .aviso-icone.wishlist { background: var(--board); color: #b0285a; }
-.aviso-icone.troca { background: #c8ecf3; color: #0b6f86; }
+.aviso-icone.troca { background: color-mix(in srgb, var(--wii) 22%, #fff); color: var(--wii-borda); }
 .aviso-icone svg { width: 20px; height: 20px; }
 .aviso-icone.presente { background: #1d1a1f; color: #ff7a1a; }
 

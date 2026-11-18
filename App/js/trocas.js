@@ -22,6 +22,7 @@ import { el, toast } from './util.js';
 import { avisarTroca, avisarDesejoComAmiga, removerAvisoDeDesejo, aoTocarEmTroca, aoTocarEmTutorialTroca, aoTocarEmProposta } from './avisos.js';
 import { carregarPerfil, quemMeSegue, perfilDe } from './pessoas.js';
 import { irPara } from './router.js';
+import { retratoDe } from './social.js';
 import { contar as contarNoMural } from './mural.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
@@ -551,14 +552,15 @@ const ESTADO_CURTO = { aberta: 'Em andamento', feita: 'Feita', recusada: 'Recusa
 
 function linhaDeTroca(t, aoAbrir) {
   const souDe = t.souEu === 'de';
-  const outra = souDe ? t.para?.handle : t.de?.handle;
+  const outra = souDe ? t.para : t.de;
   const texto = t.estado === 'aberta'
-    ? (souDe ? `Esperando ${handle(outra)} escolher` : `${handle(outra)} quer a sua peça. Responda!`)
+    ? (souDe ? 'Esperando escolher' : 'Quer a sua peça. Responda!')
     : ESTADO_CURTO[t.estado] || '';
-  return el('button', { type: 'button', class: 'troca-linha' + (t.estado === 'aberta' ? ' aberta' : ''), onclick: aoAbrir },
+  return el('button', { type: 'button', class: 'troca-linha', dataset: { estado: t.estado }, onclick: aoAbrir },
     figura(t.quero, { so: true }),
     el('span', { class: 'troca-linha-texto' },
-      el('strong', {}, handle(outra)), el('small', {}, texto)),
+      el('span', { class: 'troca-linha-quem' }, retratoDe(outra?.id, 26), el('strong', {}, handle(outra?.handle))),
+      el('span', { class: 'troca-chip' }, texto)),
     ico('seta-dir'));
 }
 
@@ -571,7 +573,14 @@ export async function abrirMinhasTrocas() {
   const vazio = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
   let tela;
   const abrir = (t) => { tela.fechar(); abrirOferta(t.id); };
+  const feitas = ultimas.filter(t => t.estado === 'feita').length;
+  const resumo = el('div', { class: 'troca-resumo' },
+    el('span', { class: 'troca-resumo-ico' }, '⇄'),
+    el('div', {},
+      el('strong', {}, andamento.length ? `${andamento.length} em andamento` : 'Nada em andamento'),
+      el('small', {}, feitas ? `${feitas} troca${feitas === 1 ? '' : 's'} feita${feitas === 1 ? '' : 's'}` : 'Faça a sua primeira troca')));
   tela = telaTroca('Minhas trocas', [
+    resumo,
     secao('Em andamento', ...(andamento.length ? andamento.map(t => linhaDeTroca(t, () => abrir(t)))
       : [vazio('Nenhuma troca em andamento.')])),
     antigas.length ? secao('Últimas', ...antigas.map(t => linhaDeTroca(t, () => abrir(t)))) : null,
@@ -585,11 +594,12 @@ function escolherAmiga() {
   const amigas = (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
   let tela;
   tela = telaTroca('Trocar com quem?', [
-    secao('Seus amigos', ...(amigas.length ? amigas.map(a => el('button', {
-      type: 'button', class: 'troca-linha',
-      onclick: () => { tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça e depois em ⇄.'); },
-    }, el('span', { class: 'troca-linha-texto' }, el('strong', {}, a.nome), el('small', {}, handle(a.handle))),
-      ico('seta-dir'))) : [vazio2('Só dá para trocar com quem você segue e também segue você.')])),
+    secao('Seus amigos', amigas.length
+      ? el('div', { class: 'troca-amigos' }, ...amigas.map(a => el('button', {
+        type: 'button', class: 'troca-amigo',
+        onclick: () => { tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça e depois em ⇄.'); },
+      }, retratoDe(a.id, 76), el('strong', {}, a.nome), el('small', {}, handle(a.handle)))))
+      : vazio2('Só dá para trocar com quem você segue e também segue você.')),
   ], [el('button', { type: 'button', class: 'btn-ghost', onclick: () => tela.fechar() }, 'Voltar')]);
 }
 const vazio2 = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
