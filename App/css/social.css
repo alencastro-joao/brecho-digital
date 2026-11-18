@@ -68,8 +68,18 @@
    looks) as linhas não se alinham. A conta casa com DESNIVEL_COLUNA_PAR. */
 .mural-coluna:nth-child(even)::before { content: ''; aspect-ratio: 20 / 7; }
 .feed-vazio {
-  color: var(--tinta-suave); font-size: 14px; line-height: 1.6;
-  margin-top: 26px; max-width: 520px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+  color: var(--tinta-suave); font-size: var(--fs-nome); line-height: 1.6;
+  margin: 48px auto 0; max-width: 360px;
+}
+.feed-vazio-ico {
+  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--perola-painel); border: 1px solid var(--linha); color: var(--tinta-suave);
+}
+.feed-vazio-ico svg { width: 28px; height: 28px; }
+.feed-vazio-btn {
+  padding: 9px 22px; border-radius: 20px; font-size: var(--fs-texto); font-weight: 700;
+  background: var(--wii) var(--brilho-topo); border: 2px solid var(--wii-borda); color: #fff;
 }
 .feed-vazio .link-btn { font-size: 14px; }
 

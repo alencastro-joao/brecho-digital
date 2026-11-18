@@ -471,7 +471,10 @@ function renderFeed() {
   if (modo === 'desfile') medirDesfile();
 
   if (!posts.length) {
-    feed.replaceChildren(el('div', { class: 'feed-vazio' }, ...mensagemVazia()));
+    feed.replaceChildren(el('div', { class: 'feed-vazio' },
+      el('div', { class: 'feed-vazio-ico' }, ico('cabide')),
+      el('p', {}, ...mensagemVazia()),
+      el('button', { class: 'feed-vazio-btn', onclick: () => irPara('stylist') }, 'Publicar um look')));
     return;
   }
 
