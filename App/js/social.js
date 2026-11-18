@@ -323,10 +323,13 @@ function render() {
 
 function postsVisiveis() {
   const seguindo = db.state.usuario.seguindo;
-  return todosOsPosts().filter(p => {
+  const lista = todosOsPosts().filter(p => {
     if (aba === 'seguindo') return sou(p.autor) || seguindo.includes(p.autor);
     return true;
   });
+  // Pessoas de verdade primeiro; os posts de perfis de exemplo (gerado) vêm
+  // depois. O sort é estável: dentro de cada grupo segue o mais novo primeiro.
+  return lista.sort((a, b) => !!a.gerado - !!b.gerado);
 }
 
 function renderAbas() {
