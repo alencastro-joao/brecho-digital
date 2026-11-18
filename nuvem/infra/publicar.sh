@@ -42,8 +42,14 @@ versao() {
 versao "publicando-$(date +%s)"
 
 # --- O que o navegador tem de reler a cada visita -------------------------
-aws s3 cp "$APP/index.html" "s3://$SITE/index.html" \
+# O index.html sobe com a versão numa <meta>: é por ela que o js/versao.js sabe
+# em qual versão a aba abriu e recarrega sozinho quando sai outra.
+PAGINA="$(mktemp)"
+sed "s|</head>|<meta name=\"versao\" content=\"$VERSAO\">\n</head>|" "$FONTE/index.html" > "$PAGINA"
+grep -q "name=\"versao\" content=\"$VERSAO\"" "$PAGINA" || { echo "meta versao não entrou no index.html" >&2; exit 1; }
+aws s3 cp "$(win "$PAGINA")" "s3://$SITE/index.html" \
   --cache-control "$REVALIDA" --content-type 'text/html; charset=utf-8'
+rm -f "$PAGINA"
 
 aws s3 sync "$APP/css" "s3://$SITE/css" --delete \
   --cache-control "$REVALIDA" --content-type 'text/css; charset=utf-8'

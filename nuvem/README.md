@@ -47,6 +47,13 @@ com `no-cache`, então o CloudFront revalida por ETag e a
 mudança aparece na hora. As imagens das peças vão imutáveis por um ano, porque
 o nome do arquivo é o id da peça.
 
+Quem já está com o app aberto também pega a versão nova sozinho: o
+`index.html` sobe com `<meta name="versao">` e o `js/versao.js` confere o
+`versao.txt` ao voltar para o app e a cada 3 minutos; mudou, recarrega (o
+`retomar.js` devolve a tela). No fim, o `publicar.yml` roda
+`nuvem/infra/conferir-cache.sh`, que espera a versão nova no ar e falha se
+`index.html`, `sw.js`, JS ou CSS vierem sem `no-cache`.
+
 O `acervo.json` **não** sobe daqui: quem escreve nele é a Lambda, quando a
 esteira publica uma peça. Subir o do disco apagaria as peças publicadas depois
 do último `python App/tools/sincronizar.py`.
