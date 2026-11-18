@@ -1112,6 +1112,10 @@ export const MURAL = {
     { id: 'garimpar-cor2',  nivel: 'medio',   evento: 'garimpar', meta: 2, filtro: ['cor'] },
     { id: 'look-cor',       nivel: 'medio',   evento: 'look',     meta: 3, mesma: 'cor' },
     { id: 'colagem-cor',    nivel: 'medio',   evento: 'colagem',  meta: 3, mesma: 'cor' },
+    // Troca com amiga (só sorteadas a partir do nível da troca, TROCAS.nivel).
+    { id: 'trocar',         nivel: 'facil',   evento: 'trocar',   meta: 1 },
+    { id: 'trocar-tipo',    nivel: 'medio',   evento: 'trocar',   meta: 1, filtro: ['cat'] },
+    { id: 'trocar-cor-tipo', nivel: 'dificil', evento: 'trocar',  meta: 1, filtro: ['cor', 'cat'] },
     { id: 'garimpar-epica', nivel: 'dificil', evento: 'garimpar', meta: 1, raridade: 'epic' },
     { id: 'look-cor-tipo',  nivel: 'dificil', evento: 'look',     meta: 1, filtro: ['cor', 'cat'] },
     { id: 'colagem-cor-tipo', nivel: 'dificil', evento: 'colagem', meta: 1, filtro: ['cor', 'cat'] },

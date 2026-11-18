@@ -58,7 +58,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null, tutorial = false }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null, proposta = null, tutorial = false }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -69,7 +69,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = nu
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}), ...(tutorial ? { tutorial } : {}),
+    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}), ...(proposta ? { proposta } : {}), ...(tutorial ? { tutorial } : {}),
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -187,6 +187,21 @@ export const aoTocarEmTroca = (fn) => { abrirTroca = fn; };
 let abrirTutorialTroca = null;
 export const aoTocarEmTutorialTroca = (fn) => { abrirTutorialTroca = fn; };
 
+// Uma amiga ganhou uma peça da sua wishlist: tocar no aviso abre a proposta de
+// troca já com a peça dela. Cada par amiga+peça avisa uma vez só.
+let abrirProposta = null;
+export const aoTocarEmProposta = (fn) => { abrirProposta = fn; };
+export function avisarDesejoComAmiga({ amiga, peca, quem }) {
+  const a = avisos();
+  const chave = `${amiga}:${peca.id}`;
+  a.desejoAmiga ??= [];
+  if (a.desejoAmiga.includes(chave)) return;
+  a.desejoAmiga.push(chave);
+  avisar({ tipo: 'troca', ir: ['perfil'], quem, acao: 'Propor troca',
+           proposta: { amiga, peca: peca.id },
+           texto: `${nomeDaPeca(peca)}, da sua wishlist, está com ${perfilDe(amiga)?.nome || 'uma amiga'}. Que tal trocar?` });
+}
+
 export function avisarTroca({ texto, quem = null, troca, acao = null }) {
   avisar({ tipo: 'troca', ir: ['perfil'], texto, quem, troca, acao });
 }
@@ -245,6 +260,7 @@ function linha(a, visto) {
         fechar();
         if (a.tutorial && abrirTutorialTroca) abrirTutorialTroca();
         else if (a.troca && abrirTroca) abrirTroca(a.troca);
+        else if (a.proposta && abrirProposta) abrirProposta(a.proposta);
         else irPara(...a.ir);
       },
     },

@@ -10,7 +10,7 @@
 //   jogoVolta: ms em que a próxima missão de jogo chega,
 // }
 
-import { MURAL, BAUS, migrarCategoria } from './config.js';
+import { MURAL, BAUS, TROCAS, migrarCategoria } from './config.js';
 import { catalogo, itensDaLoja, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import { postitDoEvento, postitGarantido, contarNoPostit, premiarPostit, textoDoPostit, modeloDoEvento } from './eventos.js';
@@ -57,6 +57,7 @@ export function textoDa(m) {
   const a = m.alvo || {};
   switch (md.evento) {
     case 'curtir': return `Curtir ${m.meta} posts`;
+    case 'trocar': return md.filtro ? `Trocar ${coisa(a, 1, { artigo: true })} com uma amiga` : 'Fazer uma troca com uma amiga';
     case 'garimpar': return md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
     case 'publicar': return `Publicar ${m.onde === 'colagem' ? 'uma colagem' : 'um look'} com ${coisa(a, 1, { artigo: true })}`;
     case 'look': return md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;
@@ -69,7 +70,7 @@ export function textoDa(m) {
 export function telaDa(m) {
   const md = m.evento ? modeloDoEvento(m) : modeloDe(m);
   const ev = md?.evento === 'publicar' ? m.onde || 'look' : md?.evento;
-  return { curtir: 'social', garimpar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
+  return { curtir: 'social', trocar: 'social', garimpar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
 }
 
 export const NOMES_JOGO = { avaliar: 'Avaliar', ajustar: 'Ajustar', preencher: 'Preencher' };
@@ -108,7 +109,7 @@ function novaMissao(chegou, ocupadas) {
   const nivel = porChance(Object.fromEntries(Object.entries(MURAL.niveis).map(([k, n]) => [k, n.chance])));
   // Sem repetir o que já está no mural (mesmo modelo e mesmo alvo).
   for (let tentativa = 0; tentativa < 12; tentativa++) {
-    const md = umDe(MURAL.missoes.filter(m => m.nivel === nivel));
+    const md = umDe(MURAL.missoes.filter(m => m.nivel === nivel && (m.evento !== 'trocar' || db.nivel() >= TROCAS.nivel)));
     const alvo = alvoPara(md);
     if (!alvo) continue;
     const chave = md.id + JSON.stringify(alvo);

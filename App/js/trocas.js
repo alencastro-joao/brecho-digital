@@ -19,7 +19,9 @@ import * as db from './db.js';
 import { TROCAS, RARIDADE } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, trocarImagem } from './catalog.js';
 import { el, toast } from './util.js';
-import { avisarTroca, aoTocarEmTroca, aoTocarEmTutorialTroca } from './avisos.js';
+import { avisarTroca, avisarDesejoComAmiga, aoTocarEmTroca, aoTocarEmTutorialTroca, aoTocarEmProposta } from './avisos.js';
+import { carregarPerfil, quemMeSegue } from './pessoas.js';
+import { contar as contarNoMural } from './mural.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
 import { ico } from './icones.js';
@@ -451,6 +453,7 @@ function aplicarFeita(t) {
   if (!registro().cobradas[t.id]) db.state.fichas = Math.max(0, db.fichas() - custoDa(recebo.raridade));
   delete registro().cobradas[t.id];
   db.progredirMissao('trocar');
+  contarNoMural('trocar', { ids: [dou.id, recebo.id] });
   return { dou, recebo, perdidos };
 }
 
@@ -537,8 +540,42 @@ function animarTroca({ dou, recebo, perdidos }) {
   });
 }
 
+// ------------------------ Wishlist: a amiga ganhou ------------------------
+// De tempos em tempos lê o perfil das amigas (quem segue e é seguida) e avisa
+// quando alguém tem uma peça da sua wishlist que dá para trocar.
+const MAX_AMIGAS = 30;
+async function conferirDesejos() {
+  if (!online || document.hidden || db.nivel() < TROCAS.nivel) return;
+  const desejos = (db.state.wishlist ?? []).filter(id => !db.temPeca(id));
+  if (!desejos.length) return;
+  const seguem = new Set(quemMeSegue());
+  const amigas = (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).slice(0, MAX_AMIGAS);
+  for (const id of amigas) {
+    let p;
+    try { p = await carregarPerfil(id); } catch { continue; }
+    for (const pid of desejos) {
+      const peca = pecaDoCatalogo(pid);
+      if (peca && (p.guardaRoupa || []).includes(pid) && !bloqueio(peca, p)) {
+        avisarDesejoComAmiga({ amiga: id, peca, quem: id });
+      }
+    }
+  }
+}
+
+async function abrirPropostaDoAviso({ amiga, peca: pid }) {
+  const peca = pecaDoCatalogo(pid);
+  let p;
+  try { p = await carregarPerfil(amiga); } catch { return toast('Não consegui abrir a amiga agora.'); }
+  const motivo = peca && bloqueio(peca, p);
+  if (!peca || motivo) return toast(motivo || 'Essa peça não está mais aqui.');
+  abrirProposta(peca, p);
+}
+
 // --------------------------------- Boot ------------------------------------
 export function montarTrocas() {
+  aoTocarEmProposta(abrirPropostaDoAviso);
+  setTimeout(conferirDesejos, 8000);
+  setInterval(conferirDesejos, 10 * 60 * 1000);
   aoTocarEmTroca(abrirOferta);
   aoTocarEmTutorialTroca(abrirComoFunciona);
   sincronizarTrocas();
