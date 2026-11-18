@@ -63,7 +63,9 @@ const trazerParaFrente = (no) => { no.style.zIndex = String(++zTopo); };
 // senão a loja reposta voltava a ser a do dia no próximo login. `null` = loja do dia.
 // Os dois somem sozinhos na virada do dia, junto com o resto de `state.dia`.
 const novaSemente = () => (Math.random() * 0x100000000) >>> 0;
-let sementeArrumacao = novaSemente();
+// A arrumação segue a semente da loja (do turno, ou do repor): recarregar a
+// página mantém as roupas no mesmo lugar, senão parecia reposição do nada.
+const sementeArrumacao = () => ((sementeEstoque() ?? db.sementeDaLoja()) ^ 0xA77A) >>> 0;
 const sementeEstoque = () => db.state.dia.estoque ?? null;
 let posicoesLimpas = false;
 
@@ -107,7 +109,10 @@ export function poolDoDia(iso = hojeISO()) {
   }
   const lista = sortearArara(iso);
   if (doDia && lista.length) {
-    dia.vitrine = { marca, ids: lista.map(i => i.id) };
+    // Guarda o que já passou pela arara para as próximas trazerem outras peças.
+    const ids = lista.map(i => i.id);
+    db.state.vistasRecentes = [...new Set([...ids, ...(db.state.vistasRecentes ?? [])])].slice(0, 90);
+    dia.vitrine = { marca, ids };
     db.salvar();
   }
   return lista;
@@ -137,7 +142,12 @@ function sortearArara(iso) {
   // vaga da raridade dela, para a loja não ganhar uma rara a mais por isso.
   const presas = db.congeladas(iso);
   const congeladas = candidatas.filter(i => presas.includes(i.id));
-  for (const i of shuffle(candidatas, rnd)) if (!presas.includes(i.id)) grupos[raridade(i)].push(i);
+  // Peça que apareceu nas últimas araras vai para o fim da fila do grupo: só
+  // volta se faltar peça nova. Isso reduz a sensação de roupa repetida.
+  const vistas = new Set(db.state.vistasRecentes ?? []);
+  const embaralhadas = shuffle(candidatas, rnd);
+  for (const i of [...embaralhadas.filter(x => !vistas.has(x.id)), ...embaralhadas.filter(x => vistas.has(x.id))])
+    if (!presas.includes(i.id)) grupos[raridade(i)].push(i);
 
   // Efeitos de coleção e de cor vestidas (ver db.modificadoresDaLoja). Têm sorteio
   // próprio, com outra semente: sem efeito nenhum, a arara é exatamente a de
@@ -423,7 +433,7 @@ export function montarVitrine({ entrada = false } = {}) {
   ligarAdmin();
 
   const iso = db.state.dia.data;
-  const rnd = mulberry32(sementeArrumacao);
+  const rnd = mulberry32(sementeArrumacao());
 
   // Peça arrastada volta para o lugar sorteado quando a página recarrega: a
   // posição é em pixels da tela em que foi arrastada, e no celular ela cairia
@@ -965,7 +975,6 @@ export function reporLoja() {
   db.salvar();
   db.limparPosicoes();
   db.state.dia.estoque = novaSemente();
-  sementeArrumacao = novaSemente();
   db.salvar();
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
@@ -978,7 +987,6 @@ export function reporLoja() {
 function reporNaLoja() {
   db.limparPosicoes();
   db.state.dia.estoque = novaSemente();
-  sementeArrumacao = novaSemente();
   db.salvar();
 }
 
@@ -1010,7 +1018,6 @@ export function devolverRoupas() {
   estoque.devolver(db.state.inventario.map(p => ({ id: p.id, raridade: p.raridade })));
   const qtd = db.devolverTudoParaALoja();
   db.limparPosicoes();
-  sementeArrumacao = novaSemente();
   db.salvar();
   montarVitrine();
   toast(qtd
