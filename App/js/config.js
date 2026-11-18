@@ -1094,12 +1094,12 @@ export const MURAL = {
   // Post-its liberados por nível (sem contar o de jogo): [nível, missões no mural].
   liberacao: [[1, 2], [2, 3], [3, 4], [5, 5]],
   niveis: {
-    facil:   { nome: 'Fácil',   fichas: 3,  chance: 50, bau: 'incomum' },
-    medio:   { nome: 'Médio',   fichas: 5,  chance: 35, bau: 'raro' },
-    dificil: { nome: 'Difícil', fichas: 10, chance: 15, bau: 'epico' },
+    facil:   { nome: 'Fácil',   fichas: 2,  chance: 50, bau: 'incomum' },
+    medio:   { nome: 'Médio',   fichas: 3,  chance: 35, bau: 'raro' },
+    dificil: { nome: 'Difícil', fichas: 6,  chance: 15, bau: 'epico' },
   },
   // Dourada: paga as fichas do nível e mais o baú dele (`bau` acima).
-  dourada: 10,
+  dourada: 6,
   // evento: o que a tela avisa (mural.contar). filtro: o que a peça precisa ter
   // ('cor', 'cat' ou os dois); mesma: N peças da mesma cor no mesmo post.
   missoes: [
@@ -1126,15 +1126,16 @@ export const MURAL = {
   // bem mais peças por missão: as metas triplicaram e o `cada` subiu junto,
   // para o prêmio ficar o mesmo de antes (2/4/6, 2/4/6 e 3/5/8 fichas).
   // `extra`: fichas somadas a toda missão de jogo (João, 05/11/2026: +2),
-  // então fica 4/6/8, 4/6/8 e 5/7/10.
+  // então ficava 4/6/8, 4/6/8 e 5/7/10. Em 18/11/2026 o João pediu menos fichas:
+  // extra 1 e prêmios 2/3/4, 2/3/4 e 3/4/5 (mural 2/3/6, dourada 6).
   jogos: {
     esperaHoras: 1,   // era 2; João pediu de 1 em 1 hora (05/11/2026)
-    extra: 2,
+    extra: 1,
     // peso: chance relativa de a missão de jogo ser esse jogo. O Avaliar é o último
     // passo e não é preciso para postar a roupa (João, 04/11/2026): aparece pouco.
-    avaliar:   { metas: [15, 30, 45], cada: 15, fichas: 2, peso: 1 },
-    ajustar:   { metas: [9, 18, 27],  cada: 9,  fichas: 2, peso: 8 },
-    preencher: { metas: [9, 15, 24],  cada: 3,  fichas: 1, peso: 7.2 },
+    avaliar:   { metas: [15, 30, 45], cada: 15, fichas: 1, peso: 1 },
+    ajustar:   { metas: [9, 18, 27],  cada: 9,  fichas: 1, peso: 8 },
+    preencher: { metas: [9, 15, 24],  cada: 6,  fichas: 1, peso: 7.2 },
   },
 };
 
