@@ -183,3 +183,8 @@
                  - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 }
+
+/* Apagar um aviso: some deslizando e o resto sobe. */
+.aviso-item { transition: height .2s ease, opacity .16s ease, transform .2s ease, margin .2s ease; }
+.aviso-item.saindo { opacity: 0; transform: translateX(24px); overflow: hidden; margin-block: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .aviso-item { transition: none; } }

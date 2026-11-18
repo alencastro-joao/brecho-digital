@@ -304,9 +304,19 @@ function linha(a, visto) {
     ),
     el('button', {
       class: 'aviso-x', title: 'Apagar aviso', 'aria-label': 'Apagar aviso',
-      onclick: () => {
+      onclick: (e) => {
+        // Não deixa o clique chegar no "clique fora fecha o painel" (o botão
+        // some do DOM e o painel achava que foi fora).
+        e.stopPropagation();
+        const li = e.currentTarget.closest('li');
         avisos().lista = avisos().lista.filter(x => x.id !== a.id);
-        gravar(); pintarLista(); pintar();
+        gravar(); pintar();
+        if (!li) return pintarLista();
+        li.style.height = li.offsetHeight + 'px';
+        li.getBoundingClientRect();
+        li.classList.add('saindo');
+        li.style.height = '0px';
+        setTimeout(pintarLista, 220);
       },
     }, '✕'));
 }
