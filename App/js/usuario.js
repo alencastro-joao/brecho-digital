@@ -31,7 +31,7 @@ import { abaDeColecoes } from './perfil.js';
 import { deslizavel, trocarComSlide } from './deslizar.js';
 import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
-import { botaoTrocar, raridadeNaPagina } from './trocas.js';
+import { botaoTrocar, podeTrocar, raridadeNaPagina } from './trocas.js';
 import { irPara, lembrado, lembrar, paramAtual, viewAtual, voltar } from './router.js';
 import {
   cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed, irAoPost,
@@ -489,7 +489,8 @@ export function gradeDaPrevia(pecas, favoritas, abrirTudo, { minha = false } = {
     pecas.length > PREVIA_DE_ROUPAS ? PREVIA_DE_ROUPAS - 1 : PREVIA_DE_ROUPAS);
   const previa = escolhidas.slice(0, cabem);
   const celulas = gradeDePecas(previa, {
-    favoritas: marcadas, abrir: (i) => abrirFichaDePeca(previa, i, { minha }) });
+    favoritas: marcadas, dona: minha ? null : perfilPublico(idAtual),
+    abrir: (i) => abrirFichaDePeca(previa, i, { minha }) });
   const sobra = pecas.length - cabem;
   if (sobra > 0) {
     celulas.push(el('button', { type: 'button', class: 'up-peca pf-ver-todas', onclick: abrirTudo },
@@ -553,7 +554,7 @@ export function abrirListaDePecas(titulo, pecas, { vazio = '', aoFechar = null, 
   $('#lp-titulo').textContent = titulo;
   $('#lp-corpo').replaceChildren(pecas.length
     ? el('div', { class: 'pf-grade pf-grade-pecas' },
-      ...gradeDePecas(pecas, { abrir: (i) => abrirFichaDePeca(pecas, i, { minha }) }))
+      ...gradeDePecas(pecas, { dona: minha ? null : perfilPublico(idAtual), abrir: (i) => abrirFichaDePeca(pecas, i, { minha }) }))
     : el('p', { class: 'lp-vazio' }, vazio));
   $('#modal-lista').hidden = false;
   document.body.classList.add('com-modal');
@@ -776,7 +777,7 @@ function fecharPost() {
 // A célula é a mesma do guarda-roupa, sem aura. Tocar chama `abrir` com a
 // posição da peça (a ficha, com o ♡ da wishlist lá dentro). `favoritas` (ids)
 // ganham a estrela no canto.
-export const gradeDePecas = (pecas, { favoritas = null, abrir = null } = {}) => pecas.map((peca, i) =>
+export const gradeDePecas = (pecas, { favoritas = null, abrir = null, dona = null } = {}) => pecas.map((peca, i) =>
   el('button', {
     type: 'button', class: 'up-peca', dataset: { id: peca.id },
     title: `${nomeDaPeca(peca)} · ${rotuloCategoria(peca.cat)}`,
@@ -784,7 +785,8 @@ export const gradeDePecas = (pecas, { favoritas = null, abrir = null } = {}) => 
   },
     el('div', { class: 'peca-caixa', style: { '--esc': String(escalaGrade(peca)) } },
       el('img', { src: peca.src, alt: nomeDaPeca(peca), loading: 'lazy', draggable: 'false' })),
-    favoritas?.has(peca.id) ? el('span', { class: 'pf-estrela', title: 'Favorita' }, ico('estrela-cheia')) : null
+    favoritas?.has(peca.id) ? el('span', { class: 'pf-estrela', title: 'Favorita' }, ico('estrela-cheia')) : null,
+    dona && podeTrocar(peca, dona) ? el('span', { class: 'pf-troca', title: 'Dá para trocar' }, '⇄') : null
   ));
 
 // Um look ou colagem na grade: só a miniatura, no formato dela, como um post
