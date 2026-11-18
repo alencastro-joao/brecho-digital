@@ -250,6 +250,20 @@ function abrirAba(aba) {
   renderPrevia();
 }
 
+// Dadinho: sorteia corpo, pele, cabelo, cor do cabelo, nariz e sardas de uma vez.
+// A cor favorita fica como está: é da pessoa, não do boneco.
+function sortearAparencia() {
+  const um = lista => lista[Math.floor(Math.random() * lista.length)];
+  const semNada = k => k !== 'nenhum';
+  rascunho.corpo = um(Object.keys(catalogoCorpos()));
+  rascunho.pele = um(PELES).id;
+  rascunho.cabelo = um(Object.keys(catalogoCabelos()).filter(semNada));
+  rascunho.corCabelo = um(CORES_CABELO);
+  rascunho.nariz = um(Object.keys(catalogoNarizes()).filter(semNada));
+  rascunho.sardas = um(Object.keys(SARDAS));
+  renderTudo();
+}
+
 function salvar() {
   // A cor favorita é obrigatória: é ela que dá as três primeiras peças.
   if (!corFavorita) {
@@ -331,4 +345,5 @@ export function montarPersonagem() {
     rascunho = { ...APARENCIA_PADRAO };
     renderTudo();
   });
+  $('#pg-sortear').addEventListener('click', sortearAparencia);
 }
