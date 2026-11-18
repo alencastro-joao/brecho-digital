@@ -655,7 +655,6 @@ const tempoCurto = (iso) => tempoRelativo(iso).replace(/^há /, '').replace(/ (m
 function topoDoPost(post) {
   const meu = sou(post.autor);
   const autor = autorDe(post.autor);
-  const segue = db.state.usuario.seguindo.includes(post.autor);
   const n = post.comentarios.length;
   return el('header', { class: 'post-pe post-topo' },
     // O nível é um selinho no retrato, não um chip solto ao lado do nome.
@@ -671,12 +670,6 @@ function topoDoPost(post) {
         }, autor.nome)),
       el('small', { title: tempoRelativo(post.criadoEm) }, tempoCurto(post.criadoEm))
     ),
-    // Seguir só aparece para quem você ainda não segue: deixar de seguir
-    // fica no perfil da pessoa e na coluna ao lado.
-    meu || segue ? null : el('button', {
-      class: 'btn-seguir mini',
-      onclick: () => alternarSeguir(post.autor),
-    }, 'seguir'),
     el('button', {
       class: 'comentar-btn' + (expandidos.has(post.id) ? ' on' : ''),
       title: 'Comentários',
@@ -1125,6 +1118,9 @@ function menuDoPost(post, botao) {
     }));
   }
 
+  if (!meu && !db.state.usuario.seguindo.includes(post.autor)) {
+    itens.push(item('Seguir ' + autorDe(post.autor).nome, '#2f9e5b', () => alternarSeguir(post.autor)));
+  }
   itens.push(item('Baixar imagem', '#1a1a1a', () => baixarPost(post)));
 
   if (meu) {

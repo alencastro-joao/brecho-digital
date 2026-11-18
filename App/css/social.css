@@ -1,6 +1,10 @@
 /* Feed, sugestões e perfil. */
 
-.view-social { background: var(--papel); }
+.view-social {
+  background: var(--papel);
+  /* Três tamanhos de texto no feed: nome, texto e legenda. */
+  --fs-nome: 13px; --fs-texto: 12.5px; --fs-meta: 11px;
+}
 
 /* O cabeçalho fica parado enquanto o feed rola por baixo. */
 .feed-wrapper { flex: 1; min-width: 0; overflow-y: auto; padding: 0 34px 40px; }
@@ -9,9 +13,12 @@
   background: var(--papel); padding: 26px 0 14px; margin-bottom: 6px;
   border-bottom: 1px solid var(--linha);
 }
-.feed-titulo { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.feed-titulo { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 8px; }
+.feed-titulo h1 { grid-column: 1; }
+.feed-titulo p { grid-column: 1; margin-top: 2px; }
+.feed-titulo .feed-atualizar { grid-column: auto; grid-row: 1 / span 2; }
 .feed-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -.4px; }
-.feed-head p { font-size: 12.5px; color: var(--tinta-suave); flex: 1; min-width: 0; }
+.feed-head p { font-size: var(--fs-meta); color: var(--tinta-suave); min-width: 0; }
 #feed-estado.offline { color: #b7791f; }
 .feed-atualizar {
   width: 30px; height: 30px; border-radius: 50%; flex: none; align-self: center;
@@ -25,14 +32,32 @@
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px; flex-wrap: wrap; margin-top: 12px;
 }
-.feed-abas { display: flex; gap: 6px; }
-.feed-aba {
-  border: 1px solid var(--linha); background: #fff;
-  border-radius: 20px; padding: 6px 15px;
-  font-size: 12px; color: var(--tinta-suave);
+.feed-abas {
+  display: inline-flex; gap: 2px; padding: 3px; border-radius: 20px;
+  background: var(--perola-painel); border: 1px solid var(--linha);
 }
-.feed-aba:hover { border-color: var(--tinta); color: var(--tinta); }
-.feed-aba.ativa { background: var(--tinta); border-color: var(--tinta); color: #fff; font-weight: 700; }
+.feed-aba {
+  border: 1px solid transparent; background: transparent;
+  border-radius: 17px; padding: 6px 18px;
+  font-size: var(--fs-texto); color: var(--tinta-suave);
+}
+.feed-aba:hover { color: var(--tinta); }
+.feed-aba.ativa {
+  background: var(--perola) var(--brilho-topo); border-color: var(--wii-borda);
+  color: var(--tinta); font-weight: 700; box-shadow: 0 1px 3px rgba(60, 40, 20, .12);
+}
+
+/* Esqueleto: cards cinza enquanto o feed chega. */
+.mural-esqueleto { display: flex; gap: 18px; margin-top: 20px; }
+.mural-esqueleto > div { flex: 1; display: flex; flex-direction: column; gap: 22px; }
+.mural-esqueleto i {
+  display: block; border-radius: 14px; aspect-ratio: 3 / 4;
+  background: linear-gradient(100deg, var(--perola-painel) 30%, #fff 50%, var(--perola-painel) 70%) 0 0 / 200% 100%;
+  animation: esqueleto 1.4s linear infinite;
+}
+.mural-esqueleto > div:nth-child(even) i { aspect-ratio: 4 / 5; }
+@keyframes esqueleto { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .mural-esqueleto i { animation: none; } }
 
 /* O mural: as colunas vêm prontas do social.js (montarMural), cada card na
    altura da própria imagem — o desalinhado é o ritmo do feed. */
@@ -70,7 +95,7 @@
 .avatar-bolha {
   width: 32px; height: 32px; border-radius: 50%; flex: none;
   display: grid; place-items: center;
-  font-weight: 800; font-size: 13px; color: #fff;
+  font-weight: 800; font-size: var(--fs-nome); color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
 }
 
@@ -85,7 +110,7 @@
 .post-thumb img { display: block; width: 100%; height: auto; }
 .post-thumb .sem-thumb {
   aspect-ratio: 4 / 5; display: grid; place-items: center;
-  font-size: 12px; color: var(--tinta-suave);
+  font-size: var(--fs-texto); color: var(--tinta-suave);
 }
 .post:hover .post-thumb { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(60, 40, 20, .13); }
 .post.meu .post-thumb { box-shadow: 0 0 0 2px var(--wii-borda), 0 8px 22px rgba(60, 40, 20, .06); }
@@ -95,10 +120,10 @@
   position: absolute; right: 10px; top: 10px; z-index: 2;
   border: 0; border-radius: 99px; padding: 4px 10px;
   background: rgba(255, 255, 255, .92); box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-  font-size: 13px; color: var(--tinta);
+  font-size: var(--fs-nome); color: var(--tinta);
   display: flex; align-items: center; gap: 5px;
 }
-.post-thumb .curtir span { font-size: 11.5px; font-weight: 700; }
+.post-thumb .curtir span { font-size: var(--fs-meta); font-weight: 700; }
 .post-thumb .curtir.on { color: #d1345b; }
 
 /* Passando o mouse: as peças que foram usadas, por cima do pé da imagem. */
@@ -114,7 +139,7 @@
   opacity: 1; transform: none; pointer-events: auto;
 }
 .post-titulo {
-  font-size: 13px; font-weight: 700;
+  font-size: var(--fs-nome); font-weight: 700;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .post-pecas-lista { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -132,9 +157,9 @@
 }
 .peca-mini.mais {
   background: rgba(255, 255, 255, .2); border-color: transparent;
-  font-size: 12px; font-weight: 800; color: #fff;
+  font-size: var(--fs-texto); font-weight: 800; color: #fff;
 }
-.post-pecas small { font-size: 11.5px; font-weight: 600; }
+.post-pecas small { font-size: var(--fs-meta); font-weight: 600; }
 .post-pecas small b { color: #a5f0bd; }
 
 /* Quem postou, comentários e o menu: em cima da imagem, numa linha só, para
@@ -143,10 +168,10 @@
 .post-topo { padding: 0 2px 8px; }
 .post-pe > .autor-link { flex: none; }
 .post-autor { flex: 1; min-width: 0; }
-.post-autor strong { display: flex; align-items: center; min-width: 0; font-size: 12.5px; }
+.post-autor strong { display: flex; align-items: center; min-width: 0; font-size: var(--fs-texto); }
 .post-autor .nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.post-autor small { display: block; font-size: 11px; color: var(--tinta-suave); }
-.btn-seguir.mini { padding: 4px 10px; font-size: 10px; }
+.post-autor small { display: block; font-size: var(--fs-meta); color: var(--tinta-suave); }
+.btn-seguir.mini { padding: 4px 10px; font-size: var(--fs-meta); }
 .post-mais {
   border: 0; background: none; border-radius: 50%;
   width: 26px; height: 26px; flex: none;
@@ -163,14 +188,14 @@
   max-height: 320px; overflow-y: auto;
 }
 .comentario {
-  font-size: 12px; line-height: 1.5; color: var(--tinta);
+  font-size: var(--fs-texto); line-height: 1.5; color: var(--tinta);
   position: relative; padding-right: 16px;
 }
 .comentario strong { font-weight: 700; margin-right: 3px; }
-.comentario small { color: #b3aaa0; font-size: 10.5px; margin-left: 6px; }
+.comentario small { color: #b3aaa0; font-size: var(--fs-meta); margin-left: 6px; }
 .apagar-com {
   position: absolute; right: 0; top: 1px;
-  border: 0; background: none; color: #cfc6b9; font-size: 10px;
+  border: 0; background: none; color: #cfc6b9; font-size: var(--fs-meta);
 }
 .apagar-com:hover { color: #c0392b; }
 
@@ -181,20 +206,20 @@
 .campo-comentario {
   flex: 1; min-width: 0;
   border: 1px solid var(--linha); border-radius: 20px;
-  padding: 7px 12px; font-family: inherit; font-size: 12px; background: var(--papel);
+  padding: 7px 12px; font-family: inherit; font-size: var(--fs-texto); background: var(--papel);
 }
 .campo-comentario:focus { outline: none; border-color: var(--tinta); background: #fff; }
 .enviar-com {
   border: 1px solid var(--linha); background: #fff;
-  border-radius: 20px; padding: 0 13px; font-size: 11.5px; font-weight: 600;
+  border-radius: 20px; padding: 0 13px; font-size: var(--fs-meta); font-weight: 600;
 }
 .enviar-com:hover { border-color: var(--tinta); }
 
 .comentar-btn {
-  border: 0; background: none; font-size: 13px; color: var(--tinta-suave);
+  border: 0; background: none; font-size: var(--fs-nome); color: var(--tinta-suave);
   display: flex; align-items: center; gap: 5px;
 }
-.comentar-btn span { font-size: 12px; }
+.comentar-btn span { font-size: var(--fs-texto); }
 .comentar-btn:hover, .comentar-btn.on { color: var(--tinta); }
 
 /* ---------------------------- Menu compartilhar -------------------------- */
@@ -207,11 +232,11 @@
 .menu-item {
   width: 100%; display: flex; align-items: center; gap: 9px;
   border: 0; background: none; border-radius: 10px;
-  padding: 8px 10px; font-size: 12.5px; text-align: left; color: var(--tinta);
+  padding: 8px 10px; font-size: var(--fs-texto); text-align: left; color: var(--tinta);
 }
 .menu-item:hover { background: var(--perola-painel); }
 .menu-item .ponto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.menu-aviso { font-size: 11px; color: var(--tinta-suave); padding: 8px 10px; line-height: 1.5; }
+.menu-aviso { font-size: var(--fs-meta); color: var(--tinta-suave); padding: 8px 10px; line-height: 1.5; }
 .menu-item.perigo {
   color: #c0392b; border-top: 1px solid var(--linha);
   border-radius: 0 0 10px 10px; margin-top: 4px;
@@ -227,15 +252,15 @@
   display: flex; flex-direction: column; gap: 26px;
 }
 .feed-side h2 {
-  font-size: 12px; font-weight: 800; letter-spacing: .1em;
+  font-size: var(--fs-texto); font-weight: 800; letter-spacing: .1em;
   text-transform: uppercase; color: var(--tinta-suave); margin-bottom: 12px;
 }
 .sugestao { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
 .sug-info { flex: 1; min-width: 0; }
 .sug-info .autor-link.nome { text-align: left; }
-.sug-info strong { display: block; font-size: 13px; }
+.sug-info strong { display: block; font-size: var(--fs-nome); }
 .sug-info small {
-  font-size: 11px; color: var(--tinta-suave);
+  font-size: var(--fs-meta); color: var(--tinta-suave);
   /* A bio de uma conta real é texto livre (até 140 letras): duas linhas, e o
      resto some, senão uma bio longa estica a coluna inteira. */
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -243,7 +268,7 @@
 }
 .btn-seguir {
   border: 1px solid var(--tinta); background: var(--tinta); color: #fff;
-  font-size: 11px; font-weight: 700; border-radius: 20px; padding: 5px 12px;
+  font-size: var(--fs-meta); font-weight: 700; border-radius: 20px; padding: 5px 12px;
 }
 .btn-seguir.seguindo { background: transparent; color: var(--tinta-suave); border-color: var(--linha); }
 
@@ -252,7 +277,7 @@
 .busca-caixa { position: relative; }
 .busca-caixa input, .bp-corpo input[type="text"] {
   width: 100%; border: 1px solid var(--linha); border-radius: 20px;
-  padding: 8px 32px 8px 14px; font-family: inherit; font-size: 12.5px;
+  padding: 8px 32px 8px 14px; font-family: inherit; font-size: var(--fs-texto);
   background: var(--papel); color: var(--tinta);
 }
 .busca-caixa input:focus, .bp-corpo input[type="text"]:focus {
@@ -261,11 +286,11 @@
 .busca-limpar {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   width: 22px; height: 22px; border-radius: 50%;
-  border: 0; background: none; font-size: 10px; color: var(--tinta-suave);
+  border: 0; background: none; font-size: var(--fs-meta); color: var(--tinta-suave);
 }
 .busca-limpar:hover { color: var(--tinta); background: var(--perola-painel); }
-.busca-resumo { font-size: 11px; color: var(--tinta-suave); margin: 8px 0 4px; }
-.busca-vazio { font-size: 12.5px; color: var(--tinta-suave); line-height: 1.5; padding: 10px 0; }
+.busca-resumo { font-size: var(--fs-meta); color: var(--tinta-suave); margin: 8px 0 4px; }
+.busca-vazio { font-size: var(--fs-texto); color: var(--tinta-suave); line-height: 1.5; padding: 10px 0; }
 
 /* O selo de quem segue você de volta, ao lado do nome. */
 .chip-amigo {
@@ -281,19 +306,19 @@
 .bp-lista { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .bp-lista .sugestao { border-bottom: 1px solid var(--linha); }
 .bp-lista .sugestao:last-child { border-bottom: 0; }
-.btn-buscar { width: auto; margin: 0 0 14px; padding: 8px 18px; font-size: 12px; }
+.btn-buscar { width: auto; margin: 0 0 14px; padding: 8px 18px; font-size: var(--fs-texto); }
 
 /* ------------------- Pedaços dos perfis (o desenho: perfil.css) --------- */
 /* O avatar dos cartões de perfil e o .stat que a tela de Tarefas usa. */
 .avatar-svg { max-width: 100%; max-height: 100%; }
 .avatar-svg svg { width: auto; height: 172px; }
-.perfil-handle { font-size: 13px; color: var(--tinta-suave); margin-bottom: 14px; }
+.perfil-handle { font-size: var(--fs-nome); color: var(--tinta-suave); margin-bottom: 14px; }
 .stat {
   background: #fff; border: 1px solid var(--linha); border-radius: 14px;
   padding: 9px 14px; min-width: 76px;
 }
 .stat strong { display: block; font-size: 18px; }
-.stat small { font-size: 10.5px; color: var(--tinta-suave); }
+.stat small { font-size: var(--fs-meta); color: var(--tinta-suave); }
 
 /* Redes de fora, embaixo da bio. Selo, não link: ver chipsDeRedes. */
 .perfil-redes { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 14px; }
@@ -305,11 +330,11 @@
   border: 1px solid color-mix(in srgb, var(--servico) 30%, var(--linha));
 }
 .rede-chip .conexao-ponto { width: 8px; height: 8px; box-shadow: none; }
-.rede-chip strong { font-size: 11px; font-weight: 700; }
-.rede-chip small { font-size: 11px; color: var(--tinta-suave); }
+.rede-chip strong { font-size: var(--fs-meta); font-weight: 700; }
+.rede-chip small { font-size: var(--fs-meta); color: var(--tinta-suave); }
 
 /* Subtítulo de seção — perfil, perfil público e tarefas usam o mesmo. */
-.missoes-sub { font-size: 12.5px; color: var(--tinta-suave); margin-bottom: 14px; }
+.missoes-sub { font-size: var(--fs-texto); color: var(--tinta-suave); margin-bottom: 14px; }
 /* ---------------------------- Contas conectadas -------------------------- */
 .conexoes h2 { font-size: 16px; margin-bottom: 4px; }
 .conexao-lista {
@@ -332,7 +357,7 @@
 .conexao-nome { flex: 1; min-width: 0; }
 .conexao-nome strong { display: block; font-size: 14px; }
 .conexao-nome small {
-  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  font-size: var(--fs-meta); font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--tinta-suave);
 }
 .conexao-selo {
@@ -340,17 +365,17 @@
   background: color-mix(in srgb, var(--servico) 14%, #fff);
   color: var(--servico); border-radius: 20px; padding: 3px 9px;
 }
-.conexao-resumo { font-size: 12px; color: var(--tinta-suave); line-height: 1.55; flex: 1; }
+.conexao-resumo { font-size: var(--fs-texto); color: var(--tinta-suave); line-height: 1.55; flex: 1; }
 .conexao-acoes { display: flex; gap: 8px; }
-.conexao-acoes .btn-dark, .conexao-acoes .btn-ghost { margin: 0; padding: 8px 14px; font-size: 12px; }
+.conexao-acoes .btn-dark, .conexao-acoes .btn-ghost { margin: 0; padding: 8px 14px; font-size: var(--fs-texto); }
 
 /* Modal de conexão */
 .modal-caixa.estreita { width: min(460px, 100%); }
 .cx-corpo { padding: 20px 26px; display: flex; flex-direction: column; gap: 14px; }
-.cx-resumo { font-size: 13px; color: var(--tinta); }
+.cx-resumo { font-size: var(--fs-nome); color: var(--tinta); }
 .cx-beneficios { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .cx-beneficios li {
-  font-size: 12.5px; color: var(--tinta-suave); line-height: 1.5;
+  font-size: var(--fs-texto); color: var(--tinta-suave); line-height: 1.5;
   padding-left: 18px; position: relative;
 }
 .cx-beneficios li::before {
@@ -359,11 +384,11 @@
 }
 .cx-corpo input[type="text"] {
   border: 1px solid var(--linha); border-radius: 12px;
-  padding: 9px 12px; font-family: inherit; font-size: 13px; width: 100%;
+  padding: 9px 12px; font-family: inherit; font-size: var(--fs-nome); width: 100%;
 }
 .cx-corpo input:focus { outline: none; border-color: var(--tinta); }
 .cx-nota {
-  font-size: 11px; color: #a9a196; line-height: 1.55;
+  font-size: var(--fs-meta); color: #a9a196; line-height: 1.55;
   background: var(--perola-painel); border-radius: 12px; padding: 10px 12px;
 }
 
@@ -384,12 +409,12 @@
 /* "♥ Rafa e mais 2", embaixo da imagem. */
 .post-curtiram {
   display: flex; align-items: center; gap: 5px; margin: 7px 2px 0;
-  font-size: 11px; color: var(--tinta-suave); min-width: 0;
+  font-size: var(--fs-meta); color: var(--tinta-suave); min-width: 0;
 }
-.post-curtiram-ico { flex: none; color: #e0466e; font-size: 11px; display: flex; }
+.post-curtiram-ico { flex: none; color: #e0466e; font-size: var(--fs-meta); display: flex; }
 .post-curtiram > span:not(.post-curtiram-ico) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .post-curtiram .nome { font-weight: 700; color: var(--tinta); }
-.post-curtiram.completo { font-size: 12.5px; margin: 6px 0 0; }
+.post-curtiram.completo { font-size: var(--fs-texto); margin: 6px 0 0; }
 
 /* O coração que estoura no meio da imagem no toque duplo. */
 .coracao-estouro {
@@ -416,13 +441,13 @@
 .look-autor { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .look-autor .post-autor { flex: 1; min-width: 0; }
 .look-autor .post-autor strong { font-size: 15px; }
-.look-autor .post-autor small { font-size: 12px; }
+.look-autor .post-autor small { font-size: var(--fs-texto); }
 .look-corpo { overflow-y: auto; padding: 16px 20px 22px; }
 .look-foto { border-radius: 18px; }
 .look-foto img { max-height: 64vh; width: 100%; object-fit: contain; }
 .look-nome { margin: 12px 0 0; font-size: 16px; font-weight: 800; }
 .look-secao { margin-top: 18px; }
-.look-secao h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; }
+.look-secao h4 { margin: 0 0 8px; font-size: var(--fs-nome); font-weight: 800; }
 .look-secao h4 small { font-weight: 700; color: #2f9e5a; }
 /* As peças em cima da imagem: uma fileira só, que desliza para o lado quando
    não cabe; cada uma com uns 70 px, 30% menor que a grade de antes. */
@@ -465,9 +490,9 @@
 .ig-comentario-texto { min-width: 0; }
 .ig-comentario-texto p { margin: 0; font-size: 13.5px; line-height: 1.4; color: var(--tinta); overflow-wrap: anywhere; }
 .ig-comentario-texto .nome { font-weight: 800; margin-right: 2px; }
-.ig-comentario-texto small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--tinta-suave); }
+.ig-comentario-texto small { display: block; margin-top: 2px; font-size: var(--fs-meta); color: var(--tinta-suave); }
 .ig-comentario .apagar-com { top: 4px; }
-.ig-vazio { margin: 0; font-size: 13px; color: var(--tinta-suave); }
+.ig-vazio { margin: 0; font-size: var(--fs-nome); color: var(--tinta-suave); }
 .ig-campo {
   display: flex; align-items: center; gap: 10px;
   padding-top: 12px; border-top: 1px solid var(--linha);
@@ -534,7 +559,7 @@
 .desfile-topo .post-autor { flex: 1; min-width: 0; display: grid; }
 .desfile-topo .post-autor strong { font-size: 14px; }
 .desfile-topo .post-autor small {
-  font-size: 11.5px; color: var(--tinta-suave);
+  font-size: var(--fs-meta); color: var(--tinta-suave);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -555,11 +580,11 @@
   background: var(--vidro-desfile); box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
   font-size: 21px; color: var(--tinta); display: flex; align-items: center;
 }
-.desfile-lado span { font-size: 11px; font-weight: 700; }
+.desfile-lado span { font-size: var(--fs-meta); font-weight: 700; }
 .desfile-lado .curtir.on { color: #d1345b; }
 
 .desfile-info { flex: none; display: grid; gap: 4px; max-width: 560px; padding: 0 4px; }
 .desfile-info .post-curtiram { margin: 0; }
-.desfile-conversa { display: grid; gap: 2px; font-size: 13px; }
+.desfile-conversa { display: grid; gap: 2px; font-size: var(--fs-nome); }
 .desfile-conversa p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.desfile-conversa .link-btn { justify-self: start; font-size: 12px; color: var(--tinta-suave); }
+.desfile-conversa .link-btn { justify-self: start; font-size: var(--fs-texto); color: var(--tinta-suave); }
