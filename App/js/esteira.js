@@ -396,7 +396,17 @@ const jaFeita = (item) => {
   return !!(f.cat && f.cor && f.nome);
 };
 const éPronta = (item) => prontasJogos.has(item.id) || jaFeita(item);
-const naVista = (item) => (verProntas ? éPronta(item) : nosJogos.has(item.id) === verJogos);
+// As roupas que os jogadores mandaram pela engrenagem (esteira.py, "Roupas
+// dos jogadores") também ficam à parte, atrás de "Enviadas", até o João
+// publicar, descartar ou mandar para os jogos.
+let verEnviadas = false;
+const doJogador = (item) => item.origem === 'jogador';
+const naVista = (item) => {
+  if (verProntas) return éPronta(item);
+  if (nosJogos.has(item.id)) return verJogos;
+  if (verJogos) return false;
+  return doJogador(item) === verEnviadas;
+};
 
 const fichaDe = (item) => {
   // Raridade começa vazia (05/11/2026, João): quem escolhe é ele, peça por peça.
@@ -463,6 +473,7 @@ function desenhar() {
   const vazio = $('#es-vazio');
   vazio.hidden = visiveis.length > 0 || (!verJogos && chegando > 0);   // com peça chegando, a contagem já diz
   vazio.textContent = verProntas ? 'Nenhuma peça pronta ainda.' : verJogos ? 'Nenhuma peça nos mini games.'
+    : verEnviadas ? 'Nenhuma roupa enviada pelos jogadores.'
     : itens.length ? 'As peças prontas estão todas nos mini games.' : 'Nada na esteira. As fotos que você mandar aparecem aqui.';
   const nJogos = itens.filter(i => nosJogos.has(i.id)).length;
   const ver = $('#es-ver-jogos');
@@ -471,7 +482,12 @@ function desenhar() {
   const nProntas = itens.filter(éPronta).length;
   verP.hidden = !nProntas && !verProntas;
   ver.hidden = !nJogos && !verJogos;
-  $('#es-vista').hidden = ver.hidden && verP.hidden;
+  const verE = $('#es-ver-enviadas');
+  const nEnviadas = itens.filter(i => aparece(i) && doJogador(i) && !nosJogos.has(i.id)).length;
+  verE.hidden = !nEnviadas && !verEnviadas;
+  verE.setAttribute('aria-pressed', String(verEnviadas));
+  verE.textContent = verEnviadas ? '← Voltar à esteira' : `📬 Enviadas ${nEnviadas}`;
+  $('#es-vista').hidden = ver.hidden && verP.hidden && verE.hidden;
   verP.setAttribute('aria-pressed', String(verProntas));
   verP.textContent = verProntas ? '← Voltar à esteira' : `✅ Prontas ${nProntas}`;
   ver.textContent = verJogos ? '← Voltar à esteira' : `🎲 Nos jogos ${nJogos}`;
@@ -533,7 +549,9 @@ function cartao(item) {
       }, '⇔ fileira') : null,
       el('span', { class: `es-selo ${item.estado}` }, ROTULO[item.estado] || item.estado),
       item.medida ? el('span', { class: 'es-medido', title: 'já tem medida no molde' }, 'medida ✓') : null,
-      nosJogos.has(item.id) ? el('span', { class: 'es-nos-jogos', title: 'está nos mini games' }, '🎲 jogos') : null),
+      nosJogos.has(item.id) ? el('span', { class: 'es-nos-jogos', title: 'está nos mini games' }, '🎲 jogos') : null,
+      doJogador(item) ? el('span', { class: 'es-nos-jogos', title: `enviada por ${item.enviadoPor?.nome || 'um jogador'}` },
+        `📬 ${item.enviadoPor?.handle || 'jogador'}`) : null),
 
     item.estado === 'erro'
       ? el('p', { class: 'es-erro' }, item.erro || 'falhou')
@@ -1359,6 +1377,15 @@ function ligarLote() {
   $('#es-ver-jogos').addEventListener('click', () => {
     verJogos = !verJogos;
     verProntas = false;
+    verEnviadas = false;
+    selecionadas.clear();
+    desenhar();
+    window.scrollTo(0, 0);
+  });
+  $('#es-ver-enviadas').addEventListener('click', () => {
+    verEnviadas = !verEnviadas;
+    verJogos = false;
+    verProntas = false;
     selecionadas.clear();
     desenhar();
     window.scrollTo(0, 0);
@@ -1366,6 +1393,7 @@ function ligarLote() {
   $('#es-ver-prontas').addEventListener('click', () => {
     verProntas = !verProntas;
     verJogos = false;
+    verEnviadas = false;
     selecionadas.clear();
     desenhar();
     window.scrollTo(0, 0);

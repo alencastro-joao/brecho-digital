@@ -126,10 +126,11 @@ function janela(...conteudo) {
 // As telas da troca (propor, ver e responder) ocupam a tela toda, no
 // acabamento do jogo: barra pérola em cima (voltar, título, "i"), o corpo em
 // painéis e os botões presos embaixo. Só o "i" abre janelinha.
-function telaTroca(titulo, corpo, rodape, centro = null, aoSair = null) {
+// Exportada: outras telas cheias no mesmo acabamento (enviar.js) usam sem o "i".
+export function telaTroca(titulo, corpo, rodape, centro = null, aoSair = null, { info = true } = {}) {
   const voltar = el('button', { type: 'button', class: 'troca-voltar', title: 'Voltar', 'aria-label': 'Voltar' }, ico('seta-esq'));
   const caixa = el('div', { class: 'troca-tela-caixa', role: 'dialog', 'aria-modal': 'true', 'aria-label': titulo },
-    el('header', { class: centro ? 'troca-topo sem-faixa' : 'troca-topo' }, voltar, centro || el('h2', {}, titulo), botaoInfo()),
+    el('header', { class: centro ? 'troca-topo sem-faixa' : 'troca-topo' }, voltar, centro || el('h2', {}, titulo), info ? botaoInfo() : el('span', { class: 'troca-voltar', style: { visibility: 'hidden' } })),
     el('div', { class: 'troca-corpo' }, ...corpo),
     el('footer', { class: 'troca-rodape' }, ...rodape));
   const fundo = el('div', { class: 'modal troca-janela troca-tela' }, caixa);
@@ -155,7 +156,7 @@ function telaTroca(titulo, corpo, rodape, centro = null, aoSair = null) {
 }
 
 // Um painel com rótulo, como os do resto do jogo.
-const secao = (rotulo, ...conteudo) =>
+export const secao = (rotulo, ...conteudo) =>
   el('section', { class: 'troca-secao' }, rotulo ? el('h3', { class: 'troca-secao-rotulo' }, rotulo) : null, ...conteudo);
 
 // O topo da troca: a peça que vai, as setas e a que vem (ou o lugar dela).
