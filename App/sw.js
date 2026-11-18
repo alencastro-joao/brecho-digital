@@ -15,7 +15,12 @@ const CASCA = 'bd-casca';
 const CHAVE_VERSAO = new URL('__versao__', self.registration.scope).href;
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+// Limpeza forçada (18/11/2026): este sw novo, ao ativar, apaga tudo que os sws
+// anteriores guardaram, para quem estava preso numa versão velha.
+self.addEventListener('activate', e => e.waitUntil((async () => {
+  await Promise.all((await caches.keys()).map(k => caches.delete(k)));
+  await self.clients.claim();
+})()));
 
 // A versão publicada agora, ou null quando não dá para confiar em nenhuma.
 async function versaoPublicada() {
