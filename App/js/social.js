@@ -491,6 +491,11 @@ function renderFeed() {
     return;
   }
 
+  // Três jeitos de mostrar o card, para comparar: #/social/cartao-a, -b ou -c.
+  const cartao = /^cartao-([abc])$/.exec(paramAtual() || '')?.[1];
+  const vista = $('.view-social');
+  for (const x of 'abc') vista?.classList.toggle('cartao-' + x, x === cartao);
+
   const prototipo = /^vitrine-([abc])$/.exec(paramAtual() || '')?.[1];
   if (prototipo) {
     feed.replaceChildren(renderVitrines(posts, prototipo, renderFeed));
