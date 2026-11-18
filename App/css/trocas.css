@@ -222,3 +222,16 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 }
 .troca-desejo svg { width: 14px; height: 14px; }
 .troca-tela .troca-grade { max-height: none; overflow: visible; }   /* uma rolagem só: a do corpo */
+
+/* Destaque: botão colorido na ficha e selo ⇄ nas peças da amiga que dá para trocar. */
+.troca-btn {
+  background: #0b8aa6; color: #fff; border: 2px solid #086b82; cursor: pointer;
+  box-shadow: 0 2px 0 #086b82;
+}
+.troca-btn:hover { background: #0e9ebf; }
+.pf-troca {
+  position: absolute; z-index: 2; top: 7px; right: 7px;
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: #0b8aa6; color: #fff; font-size: 15px; font-weight: 800; line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+}

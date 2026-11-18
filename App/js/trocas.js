@@ -78,13 +78,17 @@ function bloqueio(peca, p) {
   return null;
 }
 
+// Dá para oferecer troca por essa peça? (o selo ⇄ nas grades da amiga)
+export const podeTrocar = (peca, p) =>
+  !!p?.real && !db.temPeca(peca.id) && (p.guardaRoupa || []).includes(peca.id) && !bloqueio(peca, p);
+
 // O botão da ficha. Só aparece quando dá para trocar: sem botão apagado nem
 // texto de motivo (pedido do João, 04/11/2026).
 export function botaoTrocar(peca, p, { antes = null } = {}) {
   if (!p?.real || db.temPeca(peca.id) || !(p.guardaRoupa || []).includes(peca.id)) return null;
   if (bloqueio(peca, p)) return null;
   return el('button', {
-    type: 'button', class: 'btn-dark troca-btn',
+    type: 'button', class: 'troca-btn',
     title: 'Oferecer uma troca',
     onclick: (e) => {
       e.stopPropagation();
