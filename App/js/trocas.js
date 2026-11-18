@@ -114,7 +114,12 @@ function janela(...conteudo) {
     document.removeEventListener('keydown', tecla, true);
     if (!tinha && !document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
   };
-  const tecla = (e) => { if (e.key === 'Escape') { e.stopPropagation(); fechar(); } };
+  // Um Esc (ou o voltar do aparelho, que chega como Esc: modais.js) fecha só a
+  // janela de cima: as de baixo também ouvem e veem a marca no evento.
+  const tecla = (e) => {
+    if (e.key !== 'Escape' || e.janelaFechada || fundo !== [...document.querySelectorAll('.troca-janela')].pop()) return;
+    e.janelaFechada = true; e.stopPropagation(); fechar();
+  };
   fundo.addEventListener('click', (e) => { if (e.target === fundo) fechar(); });
   document.addEventListener('keydown', tecla, true);
   document.body.append(fundo);
@@ -145,7 +150,10 @@ export function telaTroca(titulo, corpo, rodape, centro = null, aoSair = null, {
     aoSair?.();
   };
   const tecla = (e) => {
-    if (e.key === 'Escape' && fundo === [...document.querySelectorAll('.troca-janela')].pop()) { e.stopPropagation(); fechar(); }
+    // Sem a marca, a tela de baixo virava "a de cima" assim que esta saía e
+    // fechava no mesmo Esc: o Recortar fechava junto o Enviar roupa.
+    if (e.key !== 'Escape' || e.janelaFechada || fundo !== [...document.querySelectorAll('.troca-janela')].pop()) return;
+    e.janelaFechada = true; e.stopPropagation(); fechar();
   };
   voltar.addEventListener('click', () => { tocar('desfazer'); fechar(); });
   document.addEventListener('keydown', tecla, true);
