@@ -7,7 +7,9 @@
 //   * seguidores quem passou a seguir você;
 //   * nível      nível novo (db.onXP);
 //   * loja       a vitrine que virou o dia, ou que o admin repôs;
-//   * wishlist   peça da sua wishlist pendurada na sua loja hoje.
+//   * wishlist   peça da sua wishlist pendurada na sua loja hoje;
+//   * envios     roupa que você mandou pela engrenagem e o João aprovou
+//                (enviar.js; a lista vem de GET /api/envios).
 //
 // A foto e a lista moram no save (`state.avisos`), então o que já foi visto no
 // computador chega visto no celular. A primeira olhada de cada fonte só tira a
@@ -259,18 +261,38 @@ export function conferirWishlist() {
   }
 }
 
+// Roupa enviada pelo jogador que entrou no jogo: o aviso traz a foto da peça.
+// Cada envio avisa uma vez só (`envios` no save guarda os já avisados).
+async function conferirEnvios() {
+  let envios;
+  try {
+    const r = await fetch('/api/envios', { credentials: 'include' });
+    if (!r.ok) return;
+    envios = (await r.json()).envios || [];
+  } catch { return; }
+  const a = avisos();
+  a.envios ??= [];
+  for (const e of envios.filter(x => x.estado === 'publicada' && x.peca && !a.envios.includes(x.id)).reverse()) {
+    a.envios.push(e.id);
+    avisar({ tipo: 'envio', ir: ['perfil'], peca: e.peca,
+             texto: `Sua roupa “${e.nome || 'enviada'}” foi aprovada e entrou no jogo!` });
+  }
+  a.envios = a.envios.slice(-60);
+}
+
 // O feed e os seguidores só chegam relendo o servidor. Com a aba escondida não
 // há quem veja o sino, e não se gasta requisição.
 function reler() {
   if (document.hidden) return;
   carregarFeed();
   sincronizarSocial();
+  conferirEnvios();
 }
 
 // -------------------------------- Tela -------------------------------------
 const ICONE = {
   curtida: 'coracao-cheio', comentario: '“', seguidor: '+', missao: 'ok', nivel: 'estrela-cheia', loja: 'atualizar',
-  wishlist: 'coracao', presente: 'abobora', troca: '⇄',
+  wishlist: 'coracao', presente: 'abobora', troca: '⇄', envio: 'camiseta',
 };
 
 let botao, painel, contador, listaEl;
@@ -278,7 +300,10 @@ let botao, painel, contador, listaEl;
 function linha(a, visto) {
   const novo = a.em > visto;
   const peca = a.peca ? pecaDoCatalogo(a.peca) : null;
-  const foto = peca && el('span', { class: 'aviso-foto' }, (() => { const img = el('img', { alt: '', loading: 'lazy' }); trocarImagem(img, peca, 80); return img; })());
+  // Peça recém-publicada que o catálogo desta sessão ainda não tem: a foto vem direto.
+  const foto = peca ? el('span', { class: 'aviso-foto' }, (() => { const img = el('img', { alt: '', loading: 'lazy' }); trocarImagem(img, peca, 80); return img; })())
+    : a.tipo === 'envio' && a.peca ? el('span', { class: 'aviso-foto' }, el('img', { alt: '', loading: 'lazy', src: `assets/cloths/${a.peca}.webp` }))
+    : null;
   const marca = foto
     ? el('span', { class: 'aviso-marcas' }, a.quem ? retratoDe(a.quem, 38) : null, foto)
     : a.quem
@@ -409,6 +434,7 @@ export function montarAvisos() {
   conferirWishlist();
   conferirFeed();
   carregarFeed();
+  conferirEnvios();
   setInterval(() => { conferirDia(); conferirWishlist(); reler(); }, INTERVALO);
   // A virada da meia-noite com a aba parada: não espera os três minutos.
   setInterval(conferirDia, 60e3);
