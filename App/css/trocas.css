@@ -362,3 +362,22 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 html body .troca-janela.troca-tela { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .troca-tela-caixa, .troca-corpo { min-width: 0; }
 .troca-rodape .btn-ghost { min-height: 50px; }
+
+/* Tela única: abas no lugar do título, sem a faixa de cima (João, 18/11/2026). */
+.troca-topo.sem-faixa { background: none; border-bottom: 0; box-shadow: none; }
+.troca-abas { flex: 1; min-width: 0; display: flex; gap: 6px; }
+.troca-aba {
+  flex: 1; min-width: 0; min-height: 40px; padding: 0 6px; border-radius: 14px; cursor: pointer; font: inherit;
+  font-size: 13px; font-weight: 900; color: var(--tinta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau);
+}
+.troca-aba.ativa { color: #fff; background: var(--brilho-topo), var(--wii); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18); }
+.troca-aba-amigos { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; gap: 10px; }
+.troca-aba-amigos[hidden], .troca-aba-lista[hidden], .troca-rodape[hidden] { display: none; }
+.troca-aba-lista { display: flex; flex-direction: column; }
+/* O histórico com o amigo do centro: discreto, embaixo. */
+.troca-recentes { flex: none; opacity: .85; }
+.troca-recentes-rotulo { display: block; color: var(--tinta-suave); font-size: 12px; font-weight: 800; text-align: center; }
+.troca-recentes .troca-linha { margin-top: 6px; padding: 4px 10px 4px 6px; }
+.troca-recentes .troca-linha .troca-fig { width: 40px; }

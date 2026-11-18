@@ -126,10 +126,10 @@ function janela(...conteudo) {
 // As telas da troca (propor, ver e responder) ocupam a tela toda, no
 // acabamento do jogo: barra pérola em cima (voltar, título, "i"), o corpo em
 // painéis e os botões presos embaixo. Só o "i" abre janelinha.
-function telaTroca(titulo, corpo, rodape) {
+function telaTroca(titulo, corpo, rodape, centro = null) {
   const voltar = el('button', { type: 'button', class: 'troca-voltar', title: 'Voltar', 'aria-label': 'Voltar' }, ico('seta-esq'));
   const caixa = el('div', { class: 'troca-tela-caixa', role: 'dialog', 'aria-modal': 'true', 'aria-label': titulo },
-    el('header', { class: 'troca-topo' }, voltar, el('h2', {}, titulo), botaoInfo()),
+    el('header', { class: centro ? 'troca-topo sem-faixa' : 'troca-topo' }, voltar, centro || el('h2', {}, titulo), botaoInfo()),
     el('div', { class: 'troca-corpo' }, ...corpo),
     el('footer', { class: 'troca-rodape' }, ...rodape));
   const fundo = el('div', { class: 'modal troca-janela troca-tela' }, caixa);
@@ -566,77 +566,65 @@ function linhaDeTroca(t, aoAbrir) {
     ico('seta-dir'));
 }
 
-// A tela cheia do perfil: trocas em andamento, as últimas e o botão de nova.
+// Tela única das trocas (João, 18/11/2026): abas no topo (Amigos, Andamento, Histórico).
+// Em Amigos fica a passarela infinita de corpo inteiro e, discreto embaixo, o histórico
+// das trocas com o amigo do centro. O botão leva ao pop-up das peças dele.
 export async function abrirMinhasTrocas() {
   await sincronizarTrocas();
-  const andamento = ultimas.filter(t => t.estado === 'aberta');
-  const antigas = ultimas.filter(t => t.estado !== 'aberta').slice(0, 10);
-  const nova = el('button', { type: 'button', class: 'btn-dark troca-aceitar' }, '⇄ Fazer uma troca');
-  const vazio = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
-  let tela;
-  const abrir = (t) => { tela.fechar(); abrirOferta(t.id); };
-  const feitas = ultimas.filter(t => t.estado === 'feita').length;
-  const resumo = el('div', { class: 'troca-resumo' },
-    el('span', { class: 'troca-resumo-ico' }, '⇄'),
-    el('div', {},
-      el('strong', {}, andamento.length ? `${andamento.length} em andamento` : 'Nada em andamento'),
-      el('small', {}, feitas ? `${feitas} troca${feitas === 1 ? '' : 's'} feita${feitas === 1 ? '' : 's'}` : 'Faça a sua primeira troca')));
-  tela = telaTroca('Minhas trocas', [
-    resumo,
-    secao('Em andamento', ...(andamento.length ? andamento.map(t => linhaDeTroca(t, () => abrir(t)))
-      : [vazio('Nenhuma troca em andamento.')])),
-    antigas.length ? secao('Últimas', ...antigas.map(t => linhaDeTroca(t, () => abrir(t)))) : null,
-  ].filter(Boolean), [el('button', { type: 'button', class: 'btn-ghost', onclick: () => tela.fechar() }, 'Fechar'), nova]);
-  nova.addEventListener('click', () => { tela.fechar(); escolherAmiga(); });
+  abrirTrocas({ aba: trocasEmAndamento() ? 'andamento' : 'amigos' });
 }
+export function escolherAmiga(lista = null) { abrirTrocas({ aba: 'amigos', lista }); }
 
-// Troca nova: passarela de amigos, de corpo inteiro. O do centro mostra o que dá
-// para trocar e o botão leva ao perfil dele (João, 18/11/2026).
-export function escolherAmiga(lista = null) {
+function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   const seguem = new Set(quemMeSegue());
   const amigos = lista || (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
-  if (!amigos.length) {
-    telaTroca('Trocar com quem?', [secao('Seus amigos',
-      vazio2('Só dá para trocar com quem você segue e também segue você.'))], []);
-    return;
-  }
-  const itens = amigos.map((a, i) => {
+  const andamento = ultimas.filter(t => t.estado === 'aberta');
+  const historico = ultimas.filter(t => t.estado !== 'aberta').slice(0, 20);
+  let tela;
+  const abrir = (t) => { tela.fechar(); abrirOferta(t.id); };
+
+  // --- Amigos: passarela infinita (três cópias da fila; ao sair da do meio, pula de volta).
+  const n = amigos.length;
+  const copias = n > 1 ? 3 : 1;
+  const itens = [];
+  for (let c = 0; c < copias; c++) amigos.forEach((a, k) => {
     const corpo = el('div', { class: 'passarela-corpo' });
     corpo.innerHTML = svgAvatar({ aparencia: aparenciaDoPerfil(a), roupas: roupasDoPerfil(a) });
-    return el('button', { type: 'button', class: 'passarela-item', 'aria-label': a.nome, onclick: () => ir(i) }, corpo);
+    const i = itens.length;
+    itens.push(el('button', { type: 'button', class: 'passarela-item', 'aria-label': a.nome, onclick: () => ir(i) }, corpo));
   });
   const pista = el('div', { class: 'passarela' }, ...itens);
   const nome = el('h3', { class: 'passarela-nome' });
   const arroba = el('p', { class: 'passarela-arroba' });
   const chips = el('div', { class: 'passarela-chips' });
-  const pos = el('p', { class: 'passarela-pos' });
-  const ir = (i) => {
+  const recentes = el('div', { class: 'troca-recentes' });
+  const centrar = (i, suave) => {
     const it = itens[i];
-    pista.scrollTo({ left: it.offsetLeft + it.offsetWidth / 2 - pista.clientWidth / 2, behavior: 'smooth' });
+    pista.scrollTo({ left: it.offsetLeft + it.offsetWidth / 2 - pista.clientWidth / 2, behavior: suave ? 'smooth' : 'auto' });
   };
+  const ir = (i) => centrar(i, true);
   const chip = (texto) => el('span', { class: 'passarela-chip' }, texto);
+  const trocar = el('button', { type: 'button', class: 'passarela-trocar' }, '⇄ Trocar');
   let atual = -1;
-  const mostrar = async (i) => {
-    atual = i;
-    const a = amigos[i];
+  const mostrar = async (k) => {
+    atual = k;
+    const a = amigos[k];
     nome.textContent = a.nome;
     arroba.textContent = handle(a.handle);
-    pos.textContent = `${i + 1} / ${amigos.length}`;
     trocar.textContent = `⇄ Trocar com ${a.nome.split(' ')[0]}`;
     chips.replaceChildren(chip('⇄ …'));
+    const com = ultimas.filter(t => t.de?.id === a.id || t.para?.id === a.id).slice(0, 3);
+    recentes.replaceChildren(...(com.length
+      ? [el('span', { class: 'troca-recentes-rotulo' }, `Trocas com ${a.nome.split(' ')[0]}`),
+         ...com.map(t => linhaDeTroca(t, () => abrir(t)))]
+      : []));
     let p = a;
     try { p = await carregarPerfil(a.id); } catch { /* fica com o que tem */ }
-    if (atual !== i) return;
+    if (atual !== k) return;
     const pecas = (p.guardaRoupa || []).map(id => pecaDoCatalogo(id)).filter(pc => pc && podeTrocar(pc, p));
     const quer = pecas.filter(pc => db.naWishlist(pc.id)).length;
     chips.replaceChildren(chip(`⇄ ${pecas.length} para trocar`), ...(quer ? [chip(`♥ ${quer} da sua wishlist`)] : []));
   };
-  const trocar = el('button', { type: 'button', class: 'passarela-trocar' }, '⇄ Trocar');
-  const tela = telaTroca('Trocar com quem?', [
-    pista,
-    el('div', { class: 'passarela-info' }, nome, arroba, chips, pos),
-  ], [trocar]);
-  // Trocar abre o pop-up das peças dele que dá para trocar (as da sua wishlist primeiro).
   trocar.addEventListener('click', async () => {
     const a = amigos[atual];
     let p = a;
@@ -645,23 +633,60 @@ export function escolherAmiga(lista = null) {
     tela.fechar();
     abrirListaDePecas(`Para trocar com ${a.nome.split(' ')[0]}`, pecas, { vazio: 'Nada para trocar agora', trocaCom: a.id });
   });
-  // O do centro é grande; os vizinhos encolhem e esmaecem.
-  let quadro = 0;
+  let quadro = 0, parado = 0;
   const ajustar = () => {
     quadro = 0;
     const meio = pista.scrollLeft + pista.clientWidth / 2;
     let melhor = 0, dist = Infinity;
     itens.forEach((it, i) => {
       const d = Math.abs(it.offsetLeft + it.offsetWidth / 2 - meio) / it.offsetWidth;
-      const f = Math.min(d, 1.6);
-      it.style.opacity = String(Math.max(0.3, 1 - f * 0.6).toFixed(2));
+      it.style.opacity = String(Math.max(0.3, 1 - Math.min(d, 1.6) * 0.6).toFixed(2));
       if (d < dist) { dist = d; melhor = i; }
     });
-    if (melhor !== atual) mostrar(melhor);
+    if (melhor % n !== atual) mostrar(melhor % n);
+    // Parou de rolar fora da cópia do meio: volta para ela sem ninguém perceber.
+    clearTimeout(parado);
+    if (copias > 1 && (melhor < n || melhor >= 2 * n)) {
+      parado = setTimeout(() => {
+        const passo = itens[n].offsetLeft - itens[0].offsetLeft;
+        pista.style.scrollSnapType = 'none';
+        pista.scrollLeft += melhor < n ? passo : -passo;
+        requestAnimationFrame(() => { pista.style.scrollSnapType = ''; });
+      }, 140);
+    }
   };
   pista.addEventListener('scroll', () => { if (!quadro) quadro = requestAnimationFrame(ajustar); }, { passive: true });
-  requestAnimationFrame(ajustar);
+
+  const painelAmigos = n
+    ? el('div', { class: 'troca-aba-amigos' }, pista, el('div', { class: 'passarela-info' }, nome, arroba, chips), recentes)
+    : el('div', { class: 'troca-aba-amigos' }, secao('Seus amigos',
+        el('p', { class: 'troca-vazio-texto' }, 'Só dá para trocar com quem você segue e também segue você.')));
+
+  // --- Andamento e Histórico: listas.
+  const vazio = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
+  const painelAndamento = el('div', { class: 'troca-aba-lista' },
+    ...(andamento.length ? andamento.map(t => linhaDeTroca(t, () => abrir(t))) : [vazio('Nenhuma troca em andamento.')]));
+  const painelHistorico = el('div', { class: 'troca-aba-lista' },
+    ...(historico.length ? historico.map(t => linhaDeTroca(t, () => abrir(t))) : [vazio('As trocas feitas e recusadas aparecem aqui.')]));
+
+  // --- Abas no topo, no lugar do título.
+  const paineis = { amigos: painelAmigos, andamento: painelAndamento, historico: painelHistorico };
+  const rotulos = { amigos: 'Amigos', andamento: andamento.length ? `Em curso · ${andamento.length}` : 'Em curso', historico: 'Histórico' };
+  const botoes = {};
+  const abas = el('div', { class: 'troca-abas', role: 'tablist' }, ...Object.keys(paineis).map(k => {
+    botoes[k] = el('button', { type: 'button', role: 'tab', class: 'troca-aba', onclick: () => mudar(k) }, rotulos[k]);
+    return botoes[k];
+  }));
+  const mudar = (k) => {
+    for (const x in paineis) { paineis[x].hidden = x !== k; botoes[x].classList.toggle('ativa', x === k); botoes[x].setAttribute('aria-selected', String(x === k)); }
+    const rodape = tela.caixa.querySelector('.troca-rodape');
+    if (rodape) rodape.hidden = !(k === 'amigos' && n > 0);
+    if (k === 'amigos' && n) { atual = -1; centrar(copias > 1 ? n : 0, false); requestAnimationFrame(ajustar); }
+  };
+  tela = telaTroca('Trocas', Object.values(paineis), [trocar], abas);
+  mudar(aba);
 }
+
 const vazio2 = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
 
 // ------------------------ Wishlist: o amigo ganhou ------------------------
