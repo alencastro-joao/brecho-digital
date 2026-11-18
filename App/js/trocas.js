@@ -142,7 +142,7 @@ function telaTroca(titulo, corpo, rodape, centro = null) {
   const tecla = (e) => {
     if (e.key === 'Escape' && fundo === [...document.querySelectorAll('.troca-janela')].pop()) { e.stopPropagation(); fechar(); }
   };
-  voltar.addEventListener('click', () => fechar());
+  voltar.addEventListener('click', () => { tocar('desfazer'); fechar(); });
   document.addEventListener('keydown', tecla, true);
   document.body.append(fundo);
   document.body.classList.add('com-modal');
@@ -581,7 +581,7 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   const andamento = ultimas.filter(t => t.estado === 'aberta');
   const historico = ultimas.filter(t => t.estado !== 'aberta').slice(0, 20);
   let tela;
-  const abrir = (t) => { tela.fechar(); abrirOferta(t.id); };
+  const abrir = (t) => { tocar('toque'); tela.fechar(); abrirOferta(t.id); };
 
   // --- Amigos: passarela infinita (três cópias da fila; ao sair da do meio, pula de volta).
   const n = amigos.length;
@@ -619,6 +619,7 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     chips.replaceChildren(chip(`⇄ ${pecas.length} para trocar`), ...(quer ? [chip(`♥ ${quer} da sua wishlist`)] : []));
   };
   trocar.addEventListener('click', async () => {
+    tocar('toque');
     const a = amigos[atual];
     let p = a;
     try { p = await carregarPerfil(a.id); } catch { /* usa o que tem */ }
@@ -636,7 +637,8 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
       it.style.opacity = String(Math.max(0.3, 1 - Math.min(d, 1.6) * 0.6).toFixed(2));
       if (d < dist) { dist = d; melhor = i; }
     });
-    if (melhor % n !== atual) mostrar(melhor % n);
+    itens.forEach((it, i) => it.classList.toggle('foco', i === melhor));
+    if (melhor % n !== atual) { if (atual !== -1) tocar('escolha'); mostrar(melhor % n); }
     // Parou de rolar fora da cópia do meio: volta para ela sem ninguém perceber.
     clearTimeout(parado);
     if (copias > 1 && (melhor < n || melhor >= 2 * n)) {
@@ -667,7 +669,7 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   const rotulos = { andamento: andamento.length ? `Em curso · ${andamento.length}` : 'Em curso', amigos: 'Amigos', historico: 'Histórico' };
   const botoes = {};
   const abas = el('div', { class: 'troca-abas', role: 'tablist' }, ...Object.keys(paineis).map(k => {
-    botoes[k] = el('button', { type: 'button', role: 'tab', class: 'troca-aba', onclick: () => mudar(k) }, rotulos[k]);
+    botoes[k] = el('button', { type: 'button', role: 'tab', class: 'troca-aba', onclick: () => { if (!botoes[k].classList.contains('ativa')) tocar('toque'); mudar(k); } }, rotulos[k]);
     return botoes[k];
   }));
   const mudar = (k) => {

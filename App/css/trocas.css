@@ -385,3 +385,22 @@ html body .troca-janela.troca-tela { grid-template-columns: minmax(0, 1fr); grid
 /* Ajustes de 18/11: rodapé sem faixa, histórico de altura fixa, peças em 4 colunas. */
 .troca-tela-caixa:has(.troca-aba-amigos:not([hidden])) .troca-rodape { background: none; border-top: 0; box-shadow: none; padding-top: 0; }
 .pf-grade.lp-quatro { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+
+/* Só o botão principal e a aba ativa levam a cor do tema; o resto é pérola. */
+.passarela-chip, .troca-chip, .troca-linha[data-estado="aberta"] .troca-chip {
+  background: var(--perola); color: var(--tinta); border: 2px solid var(--linha);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau);
+}
+.troca-chip { border-width: 1.5px; padding: 2px 10px; }
+.troca-linha[data-estado="aberta"] { border-color: var(--linha); }
+.troca-linha[data-estado="feita"] .troca-chip { color: #1b7a34; }
+.troca-linha[data-estado="recusada"] .troca-chip, .troca-linha[data-estado="invalida"] .troca-chip { color: #b02a43; }
+/* O corpo e as informações ficam juntos, no meio, sem buracos. */
+.troca-aba-amigos { justify-content: center; gap: 6px; }
+.troca-aba-amigos .passarela { flex: 0 1 auto !important; height: min(58vh, 520px); min-height: 260px; }
+.passarela-chips { margin-top: 6px; min-height: 0; }
+.passarela-pos { display: none; }
+/* Quem está em foco flutua de leve. */
+.passarela-item.foco .passarela-corpo { animation: passarela-flutua 3.2s ease-in-out infinite; }
+@keyframes passarela-flutua { 50% { transform: translateY(-7px); } }
+@media (prefers-reduced-motion: reduce) { .passarela-item.foco .passarela-corpo { animation: none; } }
