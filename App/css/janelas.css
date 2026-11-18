@@ -211,4 +211,8 @@ html:root body :is(#btn-salvar, #bd-salvar, #pg-salvar, #mp-salvar, #btn-publica
 }
 
 .instalar-cartao { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.instalar-passos { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.instalar-passo { display: flex; gap: 10px; align-items: center; font-size: 14px; line-height: 1.4; }
+.instalar-num { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  font-weight: 800; font-size: 13px; color: #fff; background: var(--wii) var(--brilho-topo); border: 2px solid var(--wii-borda); }
 .instalar-logo { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
