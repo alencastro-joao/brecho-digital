@@ -381,3 +381,7 @@ html body .troca-janela.troca-tela { grid-template-columns: minmax(0, 1fr); grid
 .troca-recentes-rotulo { display: block; color: var(--tinta-suave); font-size: 12px; font-weight: 800; text-align: center; }
 .troca-recentes .troca-linha { margin-top: 6px; padding: 4px 10px 4px 6px; }
 .troca-recentes .troca-linha .troca-fig { width: 40px; }
+
+/* Ajustes de 18/11: rodapé sem faixa, histórico de altura fixa, peças em 4 colunas. */
+.troca-tela-caixa:has(.troca-aba-amigos:not([hidden])) .troca-rodape { background: none; border-top: 0; box-shadow: none; padding-top: 0; }
+.pf-grade.lp-quatro { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }

@@ -571,7 +571,7 @@ function linhaDeTroca(t, aoAbrir) {
 // das trocas com o amigo do centro. O botão leva ao pop-up das peças dele.
 export async function abrirMinhasTrocas() {
   await sincronizarTrocas();
-  abrirTrocas({ aba: trocasEmAndamento() ? 'andamento' : 'amigos' });
+  abrirTrocas({ aba: 'amigos' });
 }
 export function escolherAmiga(lista = null) { abrirTrocas({ aba: 'amigos', lista }); }
 
@@ -597,7 +597,6 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   const nome = el('h3', { class: 'passarela-nome' });
   const arroba = el('p', { class: 'passarela-arroba' });
   const chips = el('div', { class: 'passarela-chips' });
-  const recentes = el('div', { class: 'troca-recentes' });
   const centrar = (i, suave) => {
     const it = itens[i];
     pista.scrollTo({ left: it.offsetLeft + it.offsetWidth / 2 - pista.clientWidth / 2, behavior: suave ? 'smooth' : 'auto' });
@@ -611,13 +610,7 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     const a = amigos[k];
     nome.textContent = a.nome;
     arroba.textContent = handle(a.handle);
-    trocar.textContent = `⇄ Trocar com ${a.nome.split(' ')[0]}`;
-    chips.replaceChildren(chip('⇄ …'));
-    const com = ultimas.filter(t => t.de?.id === a.id || t.para?.id === a.id).slice(0, 3);
-    recentes.replaceChildren(...(com.length
-      ? [el('span', { class: 'troca-recentes-rotulo' }, `Trocas com ${a.nome.split(' ')[0]}`),
-         ...com.map(t => linhaDeTroca(t, () => abrir(t)))]
-      : []));
+        chips.replaceChildren(chip('⇄ …'));
     let p = a;
     try { p = await carregarPerfil(a.id); } catch { /* fica com o que tem */ }
     if (atual !== k) return;
@@ -658,7 +651,7 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
   pista.addEventListener('scroll', () => { if (!quadro) quadro = requestAnimationFrame(ajustar); }, { passive: true });
 
   const painelAmigos = n
-    ? el('div', { class: 'troca-aba-amigos' }, pista, el('div', { class: 'passarela-info' }, nome, arroba, chips), recentes)
+    ? el('div', { class: 'troca-aba-amigos' }, pista, el('div', { class: 'passarela-info' }, nome, arroba, chips))
     : el('div', { class: 'troca-aba-amigos' }, secao('Seus amigos',
         el('p', { class: 'troca-vazio-texto' }, 'Só dá para trocar com quem você segue e também segue você.')));
 
@@ -670,8 +663,8 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     ...(historico.length ? historico.map(t => linhaDeTroca(t, () => abrir(t))) : [vazio('As trocas feitas e recusadas aparecem aqui.')]));
 
   // --- Abas no topo, no lugar do título.
-  const paineis = { amigos: painelAmigos, andamento: painelAndamento, historico: painelHistorico };
-  const rotulos = { amigos: 'Amigos', andamento: andamento.length ? `Em curso · ${andamento.length}` : 'Em curso', historico: 'Histórico' };
+  const paineis = { andamento: painelAndamento, amigos: painelAmigos, historico: painelHistorico };
+  const rotulos = { andamento: andamento.length ? `Em curso · ${andamento.length}` : 'Em curso', amigos: 'Amigos', historico: 'Histórico' };
   const botoes = {};
   const abas = el('div', { class: 'troca-abas', role: 'tablist' }, ...Object.keys(paineis).map(k => {
     botoes[k] = el('button', { type: 'button', role: 'tab', class: 'troca-aba', onclick: () => mudar(k) }, rotulos[k]);
