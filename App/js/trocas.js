@@ -126,7 +126,7 @@ function janela(...conteudo) {
 // As telas da troca (propor, ver e responder) ocupam a tela toda, no
 // acabamento do jogo: barra pérola em cima (voltar, título, "i"), o corpo em
 // painéis e os botões presos embaixo. Só o "i" abre janelinha.
-function telaTroca(titulo, corpo, rodape, centro = null) {
+function telaTroca(titulo, corpo, rodape, centro = null, aoSair = null) {
   const voltar = el('button', { type: 'button', class: 'troca-voltar', title: 'Voltar', 'aria-label': 'Voltar' }, ico('seta-esq'));
   const caixa = el('div', { class: 'troca-tela-caixa', role: 'dialog', 'aria-modal': 'true', 'aria-label': titulo },
     el('header', { class: centro ? 'troca-topo sem-faixa' : 'troca-topo' }, voltar, centro || el('h2', {}, titulo), botaoInfo()),
@@ -134,10 +134,14 @@ function telaTroca(titulo, corpo, rodape, centro = null) {
     el('footer', { class: 'troca-rodape' }, ...rodape));
   const fundo = el('div', { class: 'modal troca-janela troca-tela' }, caixa);
   const tinha = document.body.classList.contains('com-modal');
+  let saiu = false;
   const fechar = () => {
+    if (saiu) return;
+    saiu = true;
     fundo.remove();
     document.removeEventListener('keydown', tecla, true);
     if (!tinha && !document.querySelector('.modal:not([hidden])')) document.body.classList.remove('com-modal');
+    aoSair?.();
   };
   const tecla = (e) => {
     if (e.key === 'Escape' && fundo === [...document.querySelectorAll('.troca-janela')].pop()) { e.stopPropagation(); fechar(); }
@@ -161,7 +165,7 @@ function placar(dou, recebo, { rotuloDou = 'Você dá', rotuloRecebo = 'Você re
   const slotDou = lado(rotuloDou, dou || vazio('escolha'));
   const slotRecebo = lado(rotuloRecebo, recebo || vazio('escolha'));
   const no = el('div', { class: 'troca-placar' }, slotDou,
-    el('span', { class: 'troca-setas', 'aria-hidden': 'true' }, ico('atualizar')), slotRecebo);
+    el('span', { class: 'troca-setas', 'aria-hidden': 'true' }, '⇄'), slotRecebo);
   no.trocarDou = (fig, texto = 'escolha') => slotDou.lastChild.replaceWith(fig || vazio(texto));
   no.trocarRecebo = (fig, texto = 'escolha') => slotRecebo.lastChild.replaceWith(fig || vazio(texto));
   return no;
@@ -323,7 +327,8 @@ export function abrirProposta(peca, p) {
 
 // As opções marcadas, empilhadas no lado "Você oferece".
 function pilha(copias) {
-  return el('div', { class: 'troca-fig troca-pilha' },
+  const r = RARIDADE[copias[0]?.raridade];
+  return el('div', { class: 'troca-fig troca-pilha', style: { '--rar': r?.aura && r.aura !== 'arco-iris' ? r.aura : r?.cor || '#ccc' } },
     el('div', { class: `troca-pilha-fotos n${Math.min(copias.length, 4)}` }, ...copias.slice(0, 4).map(c => figura(c, { so: true }))),
     el('small', {}, `${copias.length} opç${copias.length === 1 ? 'ão' : 'ões'}`));
 }
@@ -336,15 +341,14 @@ async function palcoDeAvatares(idAmigo) {
   const corpo = (svg, classe) => { const d = el('div', { class: 'palco-av ' + classe }); d.innerHTML = svg; return d; };
   return el('div', { class: 'palco-avatares' },
     corpo(svgAvatar({ aparencia: aparenciaAtual(), roupas: db.roupasEquipadas() }), 'eu'),
-    el('span', { class: 'palco-seta' }, '⇄'),
     corpo(svgAvatar({ aparencia: aparenciaDoPerfil(amigo), roupas: roupasDoPerfil(amigo) }), 'amigo'));
 }
 
-export async function abrirOferta(trocaId) {
+export async function abrirOferta(trocaId, { volta = null } = {}) {
   let t = ultimas.find(x => x.id === trocaId);
   if (!t || t.estado === 'aberta') { await sincronizarTrocas(); t = ultimas.find(x => x.id === trocaId) || t; }
   if (!t) return toast('Essa troca não está mais aqui.');
-  if (t.souEu === 'para' && t.estado === 'aberta') return janelaDeResposta(t);
+  if (t.souEu === 'para' && t.estado === 'aberta') return janelaDeResposta(t, volta);
   const souDe = t.souEu === 'de';
   const outra = souDe ? t.para.handle : t.de.handle;
   const estado = {
@@ -356,7 +360,7 @@ export async function abrirOferta(trocaId) {
     invalida: `Não deu certo${t.motivo ? ': ' + t.motivo : ''}`,
   }[t.estado] || '';
   const escolhida = t.opcoes[t.escolhida];
-  const quero = figura(t.quero, { rotulo: souDe ? `de ${handle(t.para.handle)}` : '' });
+  const quero = figura(t.quero);
   const outraFig = escolhida ? figura(escolhida) : null;
   const topo = souDe
     ? placar(outraFig, quero, { rotuloDou: 'Você oferece', rotuloRecebo: 'Você quer' })
@@ -379,15 +383,16 @@ export async function abrirOferta(trocaId) {
     }, 'Cancelar oferta'));
   }
   rodape.push(el('button', { type: 'button', class: 'passarela-trocar', onclick: () => { tocar('toque'); fechar(); } }, 'Fechar'));
-  const { fechar } = telaTroca(souDe ? `Sua oferta para ${handle(outra)}` : `Oferta de ${handle(outra)}`,
+  const nomeOutra = perfilDe(souDe ? t.para.id : t.de.id)?.nome || handle(outra);
+  const { fechar } = telaTroca(souDe ? `Sua oferta para ${nomeOutra}` : `Oferta de ${nomeOutra}`,
     [...(palco ? [palco] : []), topo,
       el('p', { class: 'troca-estado ' + t.estado }, estado),
       secao('Opções oferecidas', el('div', { class: 'troca-grade' }, ...t.opcoes.map((c, i) =>
         figura(c, { so: true, classe: t.escolhida === i ? 'escolhida' : '' }))))],
-    rodape);
+    rodape, null, volta);
 }
 
-function janelaDeResposta(t) {
+function janelaDeResposta(t, volta = null) {
   const rar = t.quero.raridade;
   const minha = db.pecaDoInventario(t.quero.id);
   let escolhida = null;
@@ -402,7 +407,7 @@ function janelaDeResposta(t) {
           aceitar.disabled = escolhida === null;
           topo.trocarRecebo(escolhida === null ? null : figura(t.opcoes[escolhida]));
         }, { desejadas: new Set(db.state.wishlist || []) }))],
-    [recusar, aceitar]);
+    [recusar, aceitar], null, volta);
   recusar.addEventListener('click', async () => {
     try {
       guardar((await chamar(`/api/trocas/${t.id}/recusar`, {})).troca);
@@ -593,7 +598,11 @@ function abrirTrocas({ aba = 'amigos', lista = null, inicial = null } = {}) {
   const andamento = ultimas.filter(t => t.estado === 'aberta');
   const historico = ultimas.filter(t => t.estado !== 'aberta').slice(0, 20);
   let tela;
-  const abrir = (t) => { tocar('toque'); tela.fechar(); abrirOferta(t.id); };
+  let abaAtual = aba;
+  const abrir = (t) => {
+    tocar('toque'); tela.fechar();
+    abrirOferta(t.id, { volta: () => abrirTrocas({ aba: abaAtual, lista, inicial: amigos[Math.max(0, atual)]?.id ?? inicial }) });
+  };
 
   // --- Amigos: passarela infinita (três cópias da fila; ao sair da do meio, pula de volta).
   const n = amigos.length;
@@ -692,6 +701,7 @@ function abrirTrocas({ aba = 'amigos', lista = null, inicial = null } = {}) {
     return botoes[k];
   }));
   const mudar = (k) => {
+    abaAtual = k;
     for (const x in paineis) { paineis[x].hidden = x !== k; botoes[x].classList.toggle('ativa', x === k); botoes[x].setAttribute('aria-selected', String(x === k)); }
     const rodape = tela.caixa.querySelector('.troca-rodape');
     if (rodape) rodape.hidden = !(k === 'amigos' && n > 0);
