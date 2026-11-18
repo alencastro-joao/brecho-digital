@@ -406,3 +406,5 @@ html body .troca-janela.troca-tela { grid-template-columns: minmax(0, 1fr); grid
 @media (prefers-reduced-motion: reduce) { .passarela-item.foco .passarela-corpo { animation: none; } }
 .passarela-chip.clicavel { font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .passarela-chip.clicavel:active { transform: translateY(1px); box-shadow: inset 0 1px 0 #fff; }
+/* O botão Trocar sobe um pouco, longe da borda de baixo. */
+.troca-tela-caixa:has(.troca-aba-amigos:not([hidden])) .troca-rodape { padding-bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px)); }
