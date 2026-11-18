@@ -576,7 +576,7 @@ function listaDeTroca(titulo, pecas, { vazio, trocaCom }) {
         && (!q || [nomeDaPeca(pc), pc.marca, pc.cor, pc.nome].some(t => String(t || '').toLowerCase().includes(q))));
     const lista = vez.map(pc => pecas[pc._i]);
     grade.replaceChildren(lista.length
-      ? el('div', { class: 'pf-grade pf-grade-pecas' },
+      ? el('div', { class: 'pf-grade pf-grade-pecas lp-quatro' },
         ...gradeDePecas(lista, { dona, abrir: (i) => abrirFichaDePeca(lista, i, { dono: trocaCom }) }))
       : el('p', { class: 'lp-vazio' }, vazio || 'Nada por aqui'));
   };
