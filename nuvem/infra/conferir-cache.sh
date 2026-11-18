@@ -22,7 +22,8 @@ echo "== versao.txt no ar: $no_ar"
 [ "$no_ar" = "$VERSAO" ] || { echo "versao.txt não chegou à versão nova" >&2; exit 1; }
 
 pagina="$(curl -fsS "$SITE_URL/index.html")"
-printf '%s' "$pagina" | grep -q "name=\"versao\" content=\"$VERSAO\"" \
+# Sem pipe para o grep -q: com pipefail, o printf leva "Broken pipe" e falha.
+[[ "$pagina" == *"name=\"versao\" content=\"$VERSAO\""* ]] \
   || { echo "index.html no ar não traz a versão nova" >&2; exit 1; }
 
 falhou=0
