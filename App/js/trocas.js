@@ -602,7 +602,9 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     pista.scrollTo({ left: it.offsetLeft + it.offsetWidth / 2 - pista.clientWidth / 2, behavior: suave ? 'smooth' : 'auto' });
   };
   const ir = (i) => centrar(i, true);
-  const chip = (texto) => el('span', { class: 'passarela-chip' }, texto);
+  const chip = (texto, aoClicar) => aoClicar
+    ? el('button', { type: 'button', class: 'passarela-chip clicavel', onclick: aoClicar }, texto)
+    : el('span', { class: 'passarela-chip' }, texto);
   const trocar = el('button', { type: 'button', class: 'passarela-trocar' }, '⇄ Trocar');
   let atual = -1;
   const mostrar = async (k) => {
@@ -616,17 +618,21 @@ function abrirTrocas({ aba = 'amigos', lista = null } = {}) {
     if (atual !== k) return;
     const pecas = (p.guardaRoupa || []).map(id => pecaDoCatalogo(id)).filter(pc => pc && podeTrocar(pc, p));
     const quer = pecas.filter(pc => db.naWishlist(pc.id)).length;
-    chips.replaceChildren(chip(`⇄ ${pecas.length} para trocar`), ...(quer ? [chip(`♥ ${quer} da sua wishlist`)] : []));
+    chips.replaceChildren(chip(`⇄ ${pecas.length} para trocar`, () => abrirLista(false)), ...(quer ? [chip(`♥ ${quer} da sua wishlist`, () => abrirLista(true))] : []));
   };
-  trocar.addEventListener('click', async () => {
+  // Abre o pop-up das peças dele que dá para trocar (só as da wishlist, se pedido).
+  const abrirLista = async (soWishlist = false) => {
     tocar('toque');
     const a = amigos[atual];
     let p = a;
     try { p = await carregarPerfil(a.id); } catch { /* usa o que tem */ }
-    const pecas = (p.guardaRoupa || []).map(id => pecaDoCatalogo(id)).filter(pc => pc && podeTrocar(pc, p));
+    let pecas = (p.guardaRoupa || []).map(id => pecaDoCatalogo(id)).filter(pc => pc && podeTrocar(pc, p));
+    if (soWishlist) pecas = pecas.filter(pc => db.naWishlist(pc.id));
     tela.fechar();
-    abrirListaDePecas(`Para trocar com ${a.nome.split(' ')[0]}`, pecas, { vazio: 'Nada para trocar agora', trocaCom: a.id });
-  });
+    abrirListaDePecas(soWishlist ? `Da sua wishlist com ${a.nome.split(' ')[0]}` : `Para trocar com ${a.nome.split(' ')[0]}`, pecas,
+      { vazio: 'Nada para trocar agora', trocaCom: a.id });
+  };
+  trocar.addEventListener('click', () => abrirLista(false));
   let quadro = 0, parado = 0;
   const ajustar = () => {
     quadro = 0;
