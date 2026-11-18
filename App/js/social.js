@@ -492,7 +492,7 @@ function renderFeed() {
   }
 
   // Três jeitos de mostrar o card, para comparar: #/social/cartao-a, -b ou -c.
-  const cartao = /^cartao-([abc])$/.exec(paramAtual() || '')?.[1];
+  const cartao = /^cartao-([abc])$/.exec(paramAtual() || '')?.[1] || 'b';
   const vista = $('.view-social');
   for (const x of 'abc') vista?.classList.toggle('cartao-' + x, x === cartao);
 
