@@ -10,7 +10,7 @@
 // onde se resolve.
 //
 // O que é da conta e não da página — cores, contas conectadas, senha, sair,
-// testes — mora na engrenagem ao lado dos botões e abre por cima, num modal, uma
+// enviar uma roupa sua, testes — mora na engrenagem ao lado dos botões e abre por cima, num modal, uma
 // seção por vez.
 //
 // O que é progresso — missões do dia, XP, ferramentas por nível e a cápsula —
@@ -19,6 +19,7 @@
 import { catalogo, item as pecaDoCatalogo } from './catalog.js';
 import * as db from './db.js';
 import { abrirAssinaturas } from './assinaturas.js';
+import { abrirEnviarRoupa } from './enviar.js';
 import * as auth from './auth.js';
 import { cabeca, aparenciaAtual } from './avatar.js';
 import { miniaturaSoltaAtual, miniaturaSoltaPronta } from './render.js';
@@ -350,6 +351,8 @@ function montarAjustes() {
   menu.querySelectorAll('[data-ajuste]').forEach(b =>
     b.addEventListener('click', () => { mostrarMenu(false); abrirAjustes(b.dataset.ajuste); }));
   $('#pf-menu-assinaturas').addEventListener('click', () => { mostrarMenu(false); abrirAssinaturas(); });
+  // Roupa do jogador: vai para a esteira do João, na vista "Enviadas" (enviar.js).
+  $('#pf-menu-enviar').addEventListener('click', () => { mostrarMenu(false); abrirEnviarRoupa(); });
   // Administração é uma tela, não um ajuste: só aparece para o dono da loja.
   $('#pf-menu-admin').addEventListener('click', () => { mostrarMenu(false); irPara('admin'); });
   $('#pf-menu-esteira').addEventListener('click', () => { location.href = 'esteira.html'; });

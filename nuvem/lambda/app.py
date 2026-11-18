@@ -41,6 +41,7 @@ esta função só responde `/api/*`.
     GET  /api/admin/painel     admin: os números do dia (ver painel.py)
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
+    GET|POST /api/envios       jogador: manda roupa dele para a esteira
     GET  /api/admin/contas     admin: todas as contas e o que cada uma tem
     POST /api/admin/contas/limpar  admin: apaga as outras contas (ver limpeza.py)
 
@@ -575,6 +576,19 @@ def rotas_de_esteira(pedido):
     return None
 
 
+def rotas_de_envios(pedido):
+    """Roupa que o jogador manda pela engrenagem: vai para a esteira."""
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para mandar roupas'})
+    import esteira
+    if pedido.metodo == 'GET':
+        return responder(200, esteira.envios_do_jogador(usuario))
+    if pedido.metodo == 'POST':
+        return responder(200, esteira.enviar_do_jogador(usuario, pedido.corpo(LIMITE_LOGIN)))
+    return None
+
+
 def rotas_de_estoque(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -734,6 +748,8 @@ def despachar(pedido):
         return rotas_de_roupas(pedido)
     if ROTA_ESTEIRA.match(rota):
         return rotas_de_esteira(pedido)
+    if rota == '/api/envios':
+        return rotas_de_envios(pedido)
 
     # O recorte de fundo saiu do pedido-resposta: foto nova entra pela esteira
     # (fila + trabalhador). 503 é o que o modal de edição trata como "siga sem

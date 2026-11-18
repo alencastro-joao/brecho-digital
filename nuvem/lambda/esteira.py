@@ -11,6 +11,11 @@ A esteira de peças — o lado da API. Só o administrador chega aqui.
     POST   /api/esteira/<id>/refazer    processa a foto de novo
     DELETE /api/esteira/<id>            descarta
 
+E uma porta para qualquer jogador com conta (ver "Roupas dos jogadores"):
+
+    GET    /api/envios                  as roupas que eu mandei e como estão
+    POST   /api/envios                  mando uma roupa minha, com a ficha toda
+
 **A foto não passa por aqui.** A Function URL para em 6 MB e foto de celular
 passa disso; mais importante, uma Lambda esperando upload é Lambda cobrando
 por espera. A API só assina um POST para o S3 (`entrada/<id>.<ext>`, com
@@ -27,6 +32,7 @@ Tudo o que é da esteira mora no bucket de dados, que é privado:
     esteira/pins/<pin>            marca de "esse pin já entrou" (ver Pinterest)
     esteira/config/pinterest.json as pastas do Pinterest vinculadas
     esteira/config/ajustes.json   preenchimento automático da ficha e fundo dos cartões
+    esteira/jogadores/<conta>.json  as roupas que aquele jogador mandou
 
 A prévia chega à tela por URL assinada de leitura, que vence em uma hora.
 """
@@ -112,7 +118,8 @@ def _para_tela(dados):
     """O que a tela recebe: sem caminhos internos, com a prévia assinada."""
     saida = {k: dados.get(k) for k in (
         'id', 'estado', 'arquivo', 'erro', 'criadoEm', 'processadoEm', 'apareceuEm', 'w', 'h',
-        'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'corte', 'origem')}
+        'fundoRemovido', 'segundos', 'sugestao', 'ficha', 'medida', 'corte', 'origem',
+        'enviadoPor')}
     if dados.get('estado') == 'enviando' and _idade(dados.get('criadoEm')) > ENVIO_ABANDONADO:
         saida['estado'] = 'erro'
         saida['erro'] = 'a foto não chegou ao servidor (envio interrompido)'
@@ -772,6 +779,7 @@ def publicar(item_id, corpo):
             dados.get('mestre'), dados.get('entrada'))
     print('esteira %s publicada como %s (%s)' % (item_id, peca_id, item['cat']))
     _sair_dos_jogos(item_id)
+    _avisar_jogador(dados, 'publicada', peca_id)
     return {'item': item}
 
 
@@ -796,6 +804,7 @@ def descartar(item_id):
     _apagar('esteira/%s.json' % dados['id'], dados.get('previa'),
             dados.get('previaG'), dados.get('mestre'), dados.get('entrada'))
     _sair_dos_jogos(dados['id'])
+    _avisar_jogador(dados, 'recusada')
     return {'ok': True}
 
 
@@ -808,3 +817,121 @@ def _sair_dos_jogos(item_id):
         ajudas.tirar(item_id)
     except Exception as e:                       # noqa: BLE001
         print('esteira %s: não saiu dos jogos: %r' % (item_id, e))
+
+
+# --- Roupas dos jogadores ------------------------------------------------------
+# Pela engrenagem do perfil, qualquer jogador com conta manda uma roupa dele:
+# a foto e a ficha inteira (nome, tipo, cor, marca e raridade). Ela entra na
+# esteira como as outras — a foto sobe direto para o S3 e o trabalhador tira
+# o fundo —, mas com `origem: jogador` e quem mandou, e a tela da esteira a
+# guarda à parte, na vista "Enviadas" (como "Nos jogos"). O que o jogador
+# escreveu vale como mexido à mão: nem o palpite da IA nem os mini games
+# trocam. Publicar ou descartar avisa o jogador pela lista dele.
+JOGADORES = 'esteira/jogadores/'
+MAX_ENVIOS_DIA = 5               # por conta, em 24 h
+MAX_FOTO_JOGADOR = 15 * 1024 * 1024
+LISTA_JOGADOR = 30               # quantos envios a lista do jogador guarda
+
+
+def _chave_jogador(conta):
+    conta = re.sub(r'[^A-Za-z0-9_-]', '', str(conta or ''))[:64]
+    if not conta:
+        raise ValueError('conta inválida')
+    return JOGADORES + conta + '.json'
+
+
+def _envios_de(conta):
+    try:
+        r = _s3.get_object(Bucket=DADOS, Key=_chave_jogador(conta))
+    except ClientError as e:
+        if e.response['Error']['Code'] in ('NoSuchKey', '404'):
+            return []
+        raise
+    lista = json.loads(r['Body'].read())
+    return lista if isinstance(lista, list) else []
+
+
+def _gravar_envios(conta, lista):
+    _s3.put_object(Bucket=DADOS, Key=_chave_jogador(conta),
+                   Body=json.dumps(lista[:LISTA_JOGADOR], ensure_ascii=False).encode('utf-8'),
+                   ContentType='application/json; charset=utf-8')
+
+
+def _hoje(lista):
+    return sum(1 for e in lista if _idade(e.get('em')) < 86400)
+
+
+def envios_do_jogador(usuario):
+    """GET /api/envios — as roupas que o jogador mandou, mais novas primeiro."""
+    lista = _envios_de(usuario['id'])
+    return {'envios': lista, 'limite': MAX_ENVIOS_DIA,
+            'restam': max(0, MAX_ENVIOS_DIA - _hoje(lista))}
+
+
+def enviar_do_jogador(usuario, corpo):
+    """POST /api/envios — {arquivo: {nome, tipo, bytes}, ficha: {nome, cat,
+    cor, marca, raridade}}. Devolve onde subir a foto, como `reservar`."""
+    a = corpo.get('arquivo') or {}
+    tipo = str(a.get('tipo') or '').lower()
+    if tipo not in TIPOS:
+        raise ValueError('a foto precisa ser JPG, PNG ou WebP')
+    if int(a.get('bytes') or 0) > MAX_FOTO_JOGADOR:
+        raise ValueError('a foto passa de %d MB' % (MAX_FOTO_JOGADOR >> 20))
+
+    f = corpo.get('ficha') or {}
+    cat = acervo.categoria(f.get('cat'))
+    nome = str(f.get('nome') or '').strip()[:60]
+    cor = str(f.get('cor') or '').strip()[:24]
+    marca = str(f.get('marca') or '').strip()[:40]
+    raridade = f.get('raridade')
+    if len(nome) < 2:
+        raise ValueError('dê um nome para a peça')
+    if cat not in acervo.CATS:
+        raise ValueError('escolha o tipo da peça')
+    if not cor:
+        raise ValueError('escolha a cor da peça')
+    if raridade not in acervo.RARIDADES:
+        raise ValueError('escolha a raridade da peça')
+
+    lista = _envios_de(usuario['id'])
+    if _hoje(lista) >= MAX_ENVIOS_DIA:
+        raise ValueError('você já mandou %d roupas hoje; amanhã tem mais' % MAX_ENVIOS_DIA)
+
+    item_id = _novo_id()
+    chave = 'entrada/%s.%s' % (item_id, TIPOS[tipo])
+    ficha = {'cat': cat, 'cor': cor, 'nome': nome, 'marca': marca, 'raridade': raridade,
+             'tema': '', 'manual': ['cat', 'cor', 'marca', 'raridade']}
+    _gravar({'id': item_id, 'estado': 'enviando', 'criadoEm': _agora(),
+             'arquivo': str(a.get('nome') or '')[:120], 'origem': 'jogador',
+             'entrada': chave, 'ficha': ficha,
+             'enviadoPor': {'conta': usuario['id'], 'handle': usuario.get('handle') or '',
+                            'nome': usuario.get('nome') or ''}})
+    envio = _s3.generate_presigned_post(
+        DADOS, chave,
+        Fields={'Content-Type': tipo},
+        Conditions=[{'Content-Type': tipo},
+                    ['content-length-range', 1, MAX_FOTO_JOGADOR]],
+        ExpiresIn=900)
+    lista.insert(0, {'id': item_id, 'em': _agora(), 'nome': nome, 'cat': cat,
+                     'cor': cor, 'marca': marca, 'raridade': raridade, 'estado': 'analise'})
+    _gravar_envios(usuario['id'], lista)
+    return {'envio': {'id': item_id, 'url': envio['url'], 'campos': envio['fields']},
+            'restam': max(0, MAX_ENVIOS_DIA - _hoje(lista))}
+
+
+def _avisar_jogador(dados, estado, peca=''):
+    """Publicada ou recusada: a lista do jogador mostra. Falhar aqui não
+    desfaz a publicação nem o descarte."""
+    conta = (dados.get('enviadoPor') or {}).get('conta')
+    if not conta:
+        return
+    try:
+        lista = _envios_de(conta)
+        for e in lista:
+            if e.get('id') == dados.get('id'):
+                e.update(estado=estado, avaliadaEm=_agora())
+                if peca:
+                    e['peca'] = peca
+        _gravar_envios(conta, lista)
+    except Exception as e:                       # noqa: BLE001
+        print('esteira %s: jogador não foi avisado: %r' % (dados.get('id'), e))
