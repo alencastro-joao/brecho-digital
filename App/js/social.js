@@ -423,6 +423,17 @@ function vigiarFim(fim) {
   vigiaDoFim.observe(fim);
 }
 
+// "Você viu tudo": fecha o mural em vez de ele terminar seco.
+function fimDoFeed(posts) {
+  if (modo === 'desfile' || posts.length < 4) return null;
+  return el('div', { class: 'feed-acabou' },
+    el('span', {}, 'Você viu tudo por aqui'),
+    el('button', {
+      class: 'feed-topo',
+      onclick: () => (caixaQueRola($('#feed')) || window).scrollTo?.({ top: 0, behavior: 'smooth' }),
+    }, 'Voltar ao topo'));
+}
+
 function mostrarMais() {
   const m = muralAtual;
   if (!m?.no.isConnected) return;
@@ -436,6 +447,8 @@ function mostrarMais() {
   if (m.feitos >= m.posts.length && !temMaisNoFeed()) {
     m.fim.remove();
     vigiarFim(null);
+    const acabou = fimDoFeed(m.posts);
+    if (acabou) $('#feed').append(acabou);
   } else {
     // O vigia só avisa quando muda: se o fim continua perto, observa de novo
     // para ele avisar outra vez.
@@ -496,7 +509,7 @@ function renderFeed() {
   const fim = feitos < posts.length || temMaisNoFeed()
     ? el('div', { class: 'mural-fim', 'aria-hidden': 'true' }) : null;
   muralAtual = { ...mural, posts, feitos, fim };
-  feed.replaceChildren(mural.no, ...(fim ? [fim] : []));
+  feed.replaceChildren(mural.no, ...(fim ? [fim] : [fimDoFeed(posts)].filter(Boolean)));
   vigiarFim(fim);
   cascataDoFeed(feed);
 
