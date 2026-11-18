@@ -20,7 +20,8 @@ import { TROCAS, RARIDADE } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, trocarImagem } from './catalog.js';
 import { el, toast } from './util.js';
 import { avisarTroca, avisarDesejoComAmiga, aoTocarEmTroca, aoTocarEmTutorialTroca, aoTocarEmProposta } from './avisos.js';
-import { carregarPerfil, quemMeSegue } from './pessoas.js';
+import { carregarPerfil, quemMeSegue, perfilDe } from './pessoas.js';
+import { irPara } from './router.js';
 import { contar as contarNoMural } from './mural.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
@@ -319,7 +320,7 @@ export function abrirProposta(peca, p) {
 // As opções marcadas, empilhadas no lado "Você oferece".
 function pilha(copias) {
   return el('div', { class: 'troca-fig troca-pilha' },
-    el('div', { class: 'troca-pilha-fotos' }, ...copias.slice(0, 4).map(c => figura(c, { so: true }))),
+    el('div', { class: `troca-pilha-fotos n${Math.min(copias.length, 4)}` }, ...copias.slice(0, 4).map(c => figura(c, { so: true }))),
     el('small', {}, `${copias.length} opç${copias.length === 1 ? 'ão' : 'ões'}`));
 }
 
@@ -539,6 +540,58 @@ function animarTroca({ dou, recebo, perdidos }) {
     requestAnimationFrame(() => fundo.classList.add('rodando'));
   });
 }
+
+// ------------------------- Minhas trocas (perfil) --------------------------
+export const trocasEmAndamento = () => ultimas.filter(t => t.estado === 'aberta').length;
+export const trocaLiberada = () => db.nivel() >= TROCAS.nivel;
+
+const ESTADO_CURTO = { aberta: 'Em andamento', feita: 'Feita', recusada: 'Recusada', cancelada: 'Cancelada',
+  vencida: 'Venceu', invalida: 'Não deu certo' };
+
+function linhaDeTroca(t, aoAbrir) {
+  const souDe = t.souEu === 'de';
+  const outra = souDe ? t.para?.handle : t.de?.handle;
+  const texto = t.estado === 'aberta'
+    ? (souDe ? `Esperando ${handle(outra)} escolher` : `${handle(outra)} quer a sua peça. Responda!`)
+    : ESTADO_CURTO[t.estado] || '';
+  return el('button', { type: 'button', class: 'troca-linha' + (t.estado === 'aberta' ? ' aberta' : ''), onclick: aoAbrir },
+    figura(t.quero, { so: true }),
+    el('span', { class: 'troca-linha-texto' },
+      el('strong', {}, handle(outra)), el('small', {}, texto)),
+    ico('seta-dir'));
+}
+
+// A tela cheia do perfil: trocas em andamento, as últimas e o botão de nova.
+export async function abrirMinhasTrocas() {
+  await sincronizarTrocas();
+  const andamento = ultimas.filter(t => t.estado === 'aberta');
+  const antigas = ultimas.filter(t => t.estado !== 'aberta').slice(0, 10);
+  const nova = el('button', { type: 'button', class: 'btn-dark troca-aceitar' }, '⇄ Fazer uma troca');
+  const vazio = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
+  let tela;
+  const abrir = (t) => { tela.fechar(); abrirOferta(t.id); };
+  tela = telaTroca('Minhas trocas', [
+    secao('Em andamento', ...(andamento.length ? andamento.map(t => linhaDeTroca(t, () => abrir(t)))
+      : [vazio('Nenhuma troca em andamento.')])),
+    antigas.length ? secao('Últimas', ...antigas.map(t => linhaDeTroca(t, () => abrir(t)))) : null,
+  ].filter(Boolean), [el('button', { type: 'button', class: 'btn-ghost', onclick: () => tela.fechar() }, 'Fechar'), nova]);
+  nova.addEventListener('click', () => { tela.fechar(); escolherAmiga(); });
+}
+
+// Troca nova: escolhe uma amiga (segue e é seguida) e vai ao guarda-roupa dela.
+function escolherAmiga() {
+  const seguem = new Set(quemMeSegue());
+  const amigas = (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
+  let tela;
+  tela = telaTroca('Trocar com quem?', [
+    secao('Suas amigas', ...(amigas.length ? amigas.map(a => el('button', {
+      type: 'button', class: 'troca-linha',
+      onclick: () => { tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça dela e em ⇄ Trocar.'); },
+    }, el('span', { class: 'troca-linha-texto' }, el('strong', {}, a.nome), el('small', {}, handle(a.handle))),
+      ico('seta-dir'))) : [vazio2('Só dá para trocar com quem você segue e também segue você.')])),
+  ], [el('button', { type: 'button', class: 'btn-ghost', onclick: () => tela.fechar() }, 'Voltar')]);
+}
+const vazio2 = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
 
 // ------------------------ Wishlist: a amiga ganhou ------------------------
 // De tempos em tempos lê o perfil das amigas (quem segue e é seguida) e avisa

@@ -31,7 +31,7 @@ import { abaDeColecoes } from './perfil.js';
 import { deslizavel, trocarComSlide } from './deslizar.js';
 import { reordenavel } from './reordenar.js';
 import { favoritasPrimeiro } from './minhavitrine.js';
-import { botaoTrocar, podeTrocar, raridadeNaPagina } from './trocas.js';
+import { botaoTrocar, podeTrocar, raridadeNaPagina, abrirMinhasTrocas, trocasEmAndamento, trocaLiberada } from './trocas.js';
 import { irPara, lembrado, lembrar, paramAtual, viewAtual, voltar } from './router.js';
 import {
   cardDoPost, alternarSeguir, gerarPostsDe, aoAtualizarFeed, postsDoAutor, garantirFeed, irAoPost,
@@ -536,11 +536,16 @@ export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar 
     type: 'button', class: 'pf-lista-btn',
     onclick: () => abrirListaDePecas(titulo, lista, { vazio, aoFechar, minha }),
   }, ico(icone), el('span', {}, rotulo), el('strong', {}, String(lista.length)));
+  const trocas = minha && trocaLiberada() ? el('button', {
+    type: 'button', class: 'pf-lista-btn pf-trocas-btn', onclick: abrirMinhasTrocas,
+  }, el('span', { class: 'pf-troca-ico' }, '⇄'), el('span', {}, 'Trocas'),
+    trocasEmAndamento() ? el('strong', {}, String(trocasEmAndamento())) : null) : null;
   return [
     botao('cabide', 'Guarda-roupa', roupas, minha ? 'Seu guarda-roupa' : `Guarda-roupa de ${dono}`,
       'Nenhuma peça ainda'),
     botao('coracao', 'Wishlist', desejos, minha ? 'Sua wishlist' : `Wishlist de ${dono}`,
       minha ? 'Abra uma peça na Loja ou no perfil de alguém e toque no ♡' : 'Nada na wishlist ainda'),
+    trocas,
   ].filter(Boolean);
 }
 
