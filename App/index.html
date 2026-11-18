@@ -1423,6 +1423,7 @@
 <script type="module" src="js/app.js"></script>
 <script type="module" src="js/puxar.js"></script>
 <script type="module" src="js/animacoes.js"></script>
+<script type="module" src="js/versao.js"></script>
 <script>
   // Quem revela o app agora e o js/app.js, depois de saber quem entrou: mostrar
   // a vitrine antes disso seria mostrar o guarda-roupa de ninguem.
@@ -1435,7 +1436,7 @@
   // Deixa o app instalável e abre mais rápido: o sw.js guarda CSS e JS da versão
   // publicada e joga tudo fora quando sai uma versão nova (versao.txt).
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
   }
 </script>
 </body>

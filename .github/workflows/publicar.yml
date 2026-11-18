@@ -49,6 +49,7 @@ jobs:
               - 'App/assets/icones/**'
               - 'App/assets/fontes/**'
               - 'nuvem/infra/publicar.sh'
+              - 'nuvem/infra/conferir-cache.sh'
             api:
               - 'nuvem/lambda/**'
               - 'App/tools/pipeline.py'
@@ -95,3 +96,6 @@ jobs:
       - name: Site
         if: needs.o-que-mudou.outputs.site == 'true'
         run: bash nuvem/infra/publicar.sh
+      - name: Conferir versão no ar e cabeçalhos de cache
+        if: needs.o-que-mudou.outputs.site == 'true'
+        run: bash nuvem/infra/conferir-cache.sh
