@@ -16,7 +16,8 @@
 .feed-titulo { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 8px; }
 .feed-titulo h1 { grid-column: 1; }
 .feed-titulo p { grid-column: 1; margin-top: 2px; }
-.feed-titulo .feed-atualizar { grid-column: auto; grid-row: 1 / span 2; }
+.feed-titulo .feed-atualizar { grid-row: 1 / span 2; grid-column: 2; }
+.feed-titulo .feed-modo { grid-column: 3; }
 .feed-head h1 { font-size: 21px; font-weight: 800; letter-spacing: -.4px; }
 .feed-head p { font-size: var(--fs-meta); color: var(--tinta-suave); min-width: 0; }
 #feed-estado.offline { color: #b7791f; }
@@ -610,12 +611,9 @@
 }
 
 /* ----- Três jeitos de mostrar o card (#/social/cartao-a, -b, -c) -----
-   Em todos: a imagem se mistura (multiply) com o fundo do card, então o tom
-   mais claro do desenho some; e nada é cortado, a imagem inteira cabe. */
-.cartao-a .post-thumb img, .cartao-b .post-thumb img, .cartao-c .post-thumb img {
-  mix-blend-mode: multiply;
-}
-.cartao-a .post-thumb.colagem, .cartao-b .post-thumb.colagem { background: var(--papel); }
+   A imagem do look traz o próprio papel (tom quente) e nada é cortado: cada
+   jeito dá uma moldura a esse papel, para ele parecer escolhido e não um
+   bloco de outra cor sobre o fundo. */
 
 /* A — Moldura pérola: o look como uma foto emoldurada, com respiro em volta. */
 .cartao-a .post-thumb {
@@ -623,24 +621,40 @@
   border: 2px solid var(--wii-borda); box-shadow: none;
 }
 .cartao-a .post-thumb img { border-radius: calc(var(--raio) - 8px); }
-.cartao-a .post-thumb.colagem { background: #fff; padding: 8px; }
+.cartao-a .post-thumb.colagem { padding: 8px; }
 
-/* B — Solto no papel: sem caixa, o look flutua direto no fundo da tela. */
-.cartao-b .post-thumb { background: transparent; box-shadow: none; overflow: visible; }
-.cartao-b .post:hover .post-thumb { box-shadow: none; transform: translateY(-3px); }
-.cartao-b .post-thumb img { filter: drop-shadow(0 10px 14px rgba(60, 40, 20, .14)); }
-.cartao-b .post-thumb.colagem {
-  background: #fff; padding: 8px; border-radius: 6px; transform: rotate(-.8deg);
-  box-shadow: 0 8px 20px rgba(60, 40, 20, .14);
+/* B — Polaroid: papel branco com borda larga embaixo, um pouco torto. */
+.cartao-b .post-thumb {
+  background: #fff; padding: 10px 10px 30px; border-radius: 4px;
+  box-shadow: 0 8px 20px rgba(60, 40, 20, .16); transform: rotate(-.7deg);
 }
-.cartao-b .mural-coluna:nth-child(even) .post-thumb.colagem { transform: rotate(.8deg); }
+.cartao-b .mural-coluna:nth-child(even) .post-thumb { transform: rotate(.7deg); }
+.cartao-b .post:hover .post-thumb { transform: rotate(0) translateY(-3px); box-shadow: 0 14px 28px rgba(60, 40, 20, .2); }
 
-/* C — Tamanhos próprios: look em pé (4:5), colagem quadrada e mais baixa. */
-.cartao-c .post-thumb { aspect-ratio: 4 / 5; display: grid; place-items: center; background: var(--papel); border: 1px solid var(--linha); box-shadow: none; }
-.cartao-c .post-thumb img { width: auto; max-width: 100%; height: auto; max-height: 100%; object-fit: contain; }
-.cartao-c .post-thumb.colagem { aspect-ratio: 1 / 1; background: #fff; border: 2px solid var(--wii-borda); }
+/* C — Tamanhos próprios: o look usa a largura toda; a colagem é menor, centrada,
+   com moldura e etiqueta, para não parecer o mesmo card. */
+.cartao-c .post-thumb { border: 1px solid var(--linha); box-shadow: none; }
+.cartao-c .post:has(.post-thumb.colagem) { width: 84%; margin: 0 auto; }
+.cartao-c .post-thumb.colagem { border: 2px solid var(--wii-borda); padding: 6px; }
 .cartao-c .post-thumb.colagem::after {
-  content: 'colagem'; position: absolute; left: 8px; top: 8px; z-index: 2;
+  content: 'colagem'; position: absolute; left: 8px; bottom: 8px; z-index: 2;
   font-size: var(--fs-meta); font-weight: 700; padding: 2px 9px; border-radius: 20px;
   background: var(--perola) var(--brilho-topo); border: 1px solid var(--wii-borda); color: var(--tinta);
+}
+
+/* Desfile no estilo polaroid (B): a foto num papel branco, e curtir e comentar
+   na borda de baixo do papel, sem cobrir o chapéu nem o cabelo. */
+.view-social.em-desfile .desfile-foto {
+  background: #fff; padding: 12px 12px 56px; border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(60, 40, 20, .18); transform: rotate(-.5deg);
+}
+.view-social.em-desfile .desfile-foto img {
+  inset: 12px 12px 56px; width: calc(100% - 24px); height: calc(100% - 68px);
+}
+.view-social.em-desfile .desfile-lado {
+  right: 10px; bottom: 8px; flex-direction: row; gap: 6px;
+}
+.view-social.em-desfile .desfile-lado :is(.curtir, .desfile-comentar) {
+  flex-direction: row; gap: 5px; min-width: 0; padding: 6px 12px; font-size: 18px;
+  background: var(--perola-painel); box-shadow: none; border-radius: 16px;
 }
