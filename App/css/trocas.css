@@ -420,3 +420,12 @@ html body .troca-janela.troca-tela { grid-template-columns: minmax(0, 1fr); grid
   box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau);
 }
 @media (prefers-reduced-motion: reduce) { .palco-av.amigo { animation: none; } }
+
+/* Os dois avatares flutuam (o do amigo um pouco depois); o ⇄ branco fica entre as peças. */
+.palco-av.eu { animation: passarela-flutua 3.2s ease-in-out -1.6s infinite; }
+@media (prefers-reduced-motion: reduce) { .palco-av.eu { animation: none; } }
+.troca-setas {
+  color: var(--tinta); font-size: 20px; font-weight: 900; background: var(--perola); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 var(--perola-degrau);
+}
+.troca-lado > .troca-pilha, .troca-lado > .troca-fig { border-width: 3px; }
