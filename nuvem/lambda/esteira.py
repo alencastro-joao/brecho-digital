@@ -15,6 +15,8 @@ E uma porta para qualquer jogador com conta (ver "Roupas dos jogadores"):
 
     GET    /api/envios                  as roupas que eu mandei e como estão
     POST   /api/envios                  mando uma roupa minha, com a ficha toda
+    GET    /api/envios/<id>             a minha, já sem fundo (para ajustar)
+    PUT    /api/envios/<id>             a medida que eu ajustei no corpo
 
 **A foto não passa por aqui.** A Function URL para em 6 MB e foto de celular
 passa disso; mais importante, uma Lambda esperando upload é Lambda cobrando
@@ -826,9 +828,10 @@ def _sair_dos_jogos(item_id):
 # o fundo —, mas com `origem: jogador` e quem mandou, e a tela da esteira a
 # guarda à parte, na vista "Enviadas" (como "Nos jogos"). O que o jogador
 # escreveu vale como mexido à mão: nem o palpite da IA nem os mini games
-# trocam. Publicar ou descartar avisa o jogador pela lista dele.
+# trocam. Sem limite de envios (João, 18/11/2026). Depois que o trabalhador
+# tira o fundo, o jogador ajusta a peça no corpo e a medida vai junto.
+# Publicar ou descartar avisa o jogador pela lista dele.
 JOGADORES = 'esteira/jogadores/'
-MAX_ENVIOS_DIA = 5               # por conta, em 24 h
 MAX_FOTO_JOGADOR = 15 * 1024 * 1024
 LISTA_JOGADOR = 30               # quantos envios a lista do jogador guarda
 
@@ -857,15 +860,44 @@ def _gravar_envios(conta, lista):
                    ContentType='application/json; charset=utf-8')
 
 
-def _hoje(lista):
-    return sum(1 for e in lista if _idade(e.get('em')) < 86400)
-
-
 def envios_do_jogador(usuario):
     """GET /api/envios — as roupas que o jogador mandou, mais novas primeiro."""
-    lista = _envios_de(usuario['id'])
-    return {'envios': lista, 'limite': MAX_ENVIOS_DIA,
-            'restam': max(0, MAX_ENVIOS_DIA - _hoje(lista))}
+    return {'envios': _envios_de(usuario['id'])}
+
+
+def _do_jogador(usuario, item_id):
+    """A ficha da esteira, só se foi esse jogador que mandou."""
+    try:
+        dados = _ler(_id(item_id))
+    except ValueError:
+        raise ValueError('essa roupa já foi avaliada')
+    if (dados.get('enviadoPor') or {}).get('conta') != usuario['id']:
+        raise ValueError('essa roupa não é sua')
+    return dados
+
+
+def envio_do_jogador(usuario, item_id):
+    """GET /api/envios/<id> — como está a foto: o fundo já saiu? A tela
+    pergunta de tempos em tempos e, pronta, abre o ajuste no corpo."""
+    t = _para_tela(_do_jogador(usuario, item_id))
+    return {'envio': {k: t.get(k) for k in ('id', 'estado', 'erro', 'previa', 'w', 'h', 'medida')}
+            | {'cat': (t.get('ficha') or {}).get('cat') or ''}}
+
+
+def ajustar_do_jogador(usuario, item_id, corpo):
+    """PUT /api/envios/<id> — {medida: {x, y, w, rot}}, já no molde."""
+    dados = _do_jogador(usuario, item_id)
+    m = corpo.get('medida')
+    if not isinstance(m, dict):
+        raise ValueError('falta a medida')
+    medida = {k: round(float(m.get(k, 0)), 1) for k in ('x', 'y', 'w')}
+    if medida['w'] <= 0:
+        raise ValueError('medida inválida')
+    if m.get('rot'):
+        medida['rot'] = round(max(-180.0, min(180.0, float(m['rot']))), 1)
+    dados['medida'] = medida
+    _gravar(dados)
+    return {'ok': True}
 
 
 def enviar_do_jogador(usuario, corpo):
@@ -894,9 +926,6 @@ def enviar_do_jogador(usuario, corpo):
         raise ValueError('escolha a raridade da peça')
 
     lista = _envios_de(usuario['id'])
-    if _hoje(lista) >= MAX_ENVIOS_DIA:
-        raise ValueError('você já mandou %d roupas hoje; amanhã tem mais' % MAX_ENVIOS_DIA)
-
     item_id = _novo_id()
     chave = 'entrada/%s.%s' % (item_id, TIPOS[tipo])
     ficha = {'cat': cat, 'cor': cor, 'nome': nome, 'marca': marca, 'raridade': raridade,
@@ -915,8 +944,7 @@ def enviar_do_jogador(usuario, corpo):
     lista.insert(0, {'id': item_id, 'em': _agora(), 'nome': nome, 'cat': cat,
                      'cor': cor, 'marca': marca, 'raridade': raridade, 'estado': 'analise'})
     _gravar_envios(usuario['id'], lista)
-    return {'envio': {'id': item_id, 'url': envio['url'], 'campos': envio['fields']},
-            'restam': max(0, MAX_ENVIOS_DIA - _hoje(lista))}
+    return {'envio': {'id': item_id, 'url': envio['url'], 'campos': envio['fields']}}
 
 
 def _avisar_jogador(dados, estado, peca=''):

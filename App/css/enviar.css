@@ -1,6 +1,6 @@
 /* Enviar roupa (js/enviar.js): a tela cheia das trocas com os blocos do
    mini game Preencher (ajudas.css). As variáveis curtas são as de lá. */
-.troca-tela:has(.ev-blocos) {
+.troca-tela:has(.ev-blocos, .ev-espera, .ev-ajuste) {
   --bb: var(--wii-borda); --pn: var(--perola-painel); --pb: var(--perola-bloco);
 }
 
@@ -47,8 +47,20 @@ html body .troca-rodape .ev-enviar {
 html body .troca-rodape .ev-enviar.incompleto { opacity: .55; }
 .ev-enviar .ico { width: 18px; height: 18px; }
 
+/* Depois de enviar: a espera do fundo e o ajuste no corpo (ajudas.css). */
+.ev-espera { display: grid; justify-items: center; gap: 8px; padding: 18px 8px; text-align: center; }
+.ev-espera strong { font-size: 17px; }
+.ev-espera p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--tinta-suave); }
+.ev-girando {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 4px solid var(--perola-bloco); border-top-color: var(--wii);
+  animation: ev-gira .9s linear infinite;
+}
+@keyframes ev-gira { to { transform: rotate(360deg); } }
+.ev-ajuste { display: grid; gap: 10px; justify-items: center; }
+.ev-ajuste .mg-botoes-voto { width: 100%; display: flex; justify-content: center; }
+
 /* O que a pessoa já mandou. */
-.ev-restam { display: block; margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
 .ev-lista { display: grid; gap: 6px; }
 .ev-vazio { margin: 4px 0; font-size: 13px; color: var(--tinta-suave); text-align: center; }
 .ev-envio {
