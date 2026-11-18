@@ -91,7 +91,7 @@ def _copia(c, raridade):
     try:
         numero = int(c.get('numero'))
     except (TypeError, ValueError):
-        raise ValueError('essa peça não tem número: abra a ficha dela e tente de novo')
+        raise ValueError('essa peça não tem número: abra a ficha da peça e tente de novo')
     if not 0 < numero <= estoque.LIMITES[rar]:
         raise ValueError('número da cópia inválido')
     return {'id': pid, 'raridade': rar, 'numero': numero,
@@ -200,7 +200,7 @@ def propor(usuario, corpo):
     (qid, rar), = estoque._validar([quero])
     dela, minhas = _guarda_roupa(outra), _guarda_roupa(eu)
     if dela.get(qid) != rar:
-        raise ValueError('essa peça não está mais no guarda-roupa dela')
+        raise ValueError('essa peça não está mais no guarda-roupa dessa pessoa')
     if qid in minhas:
         raise ValueError('você já tem essa peça')
 
@@ -213,7 +213,7 @@ def propor(usuario, corpo):
         if c['id'] in vistas or c['id'] == qid:
             raise ValueError('peça repetida na oferta')
         if c['id'] in dela:
-            raise ValueError('ela já tem uma das peças que você ofereceu')
+            raise ValueError('a pessoa já tem uma das peças que você ofereceu')
         if not _e_dona(usuario, c):
             raise ValueError('uma das peças oferecidas não é mais sua')
         vistas.add(c['id'])
@@ -231,7 +231,7 @@ def propor(usuario, corpo):
     abertas_dela = [t for t in pegar_varios(['TROCA#' + i for i in _caixa(outra['id'])]).values()
                     if t['estado'] == 'aberta' and not _vencida(t, agora) and t['para'] == outra['id']]
     if len(abertas_dela) >= ABERTAS_RECEBIDAS:
-        raise ValueError('ela já tem muitas ofertas para responder; tente mais tarde')
+        raise ValueError('a pessoa já tem muitas ofertas para responder; tente mais tarde')
 
     troca_id = _novo_id()
     t = {

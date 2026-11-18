@@ -1,7 +1,7 @@
-// Troca de peças entre amigas.
+// Troca de peças entre amigos.
 //
 // Como funciona (regras do João, 04/11/2026; números em TROCAS, config.js):
-//   1. Na ficha de uma peça de uma amiga aparece o botão Trocar.
+//   1. Na ficha de uma peça de um amigo aparece o botão Trocar.
 //   2. Você marca de 1 a `maxOpcoes` peças suas da mesma raridade e envia.
 //   3. Ela recebe no sino, escolhe uma das suas (ou recusa).
 //   4. Quem envia já separa as fichas (pela raridade, não pelo número de
@@ -19,7 +19,7 @@ import * as db from './db.js';
 import { TROCAS, RARIDADE } from './config.js';
 import { item as pecaDoCatalogo, nomeDaPeca, trocarImagem } from './catalog.js';
 import { el, toast } from './util.js';
-import { avisarTroca, avisarDesejoComAmiga, aoTocarEmTroca, aoTocarEmTutorialTroca, aoTocarEmProposta } from './avisos.js';
+import { avisarTroca, avisarDesejoComAmiga, removerAvisoDeDesejo, aoTocarEmTroca, aoTocarEmTutorialTroca, aoTocarEmProposta } from './avisos.js';
 import { carregarPerfil, quemMeSegue, perfilDe } from './pessoas.js';
 import { irPara } from './router.js';
 import { contar as contarNoMural } from './mural.js';
@@ -81,7 +81,7 @@ function bloqueio(peca, p) {
   return null;
 }
 
-// Dá para oferecer troca por essa peça? (o selo ⇄ nas grades da amiga)
+// Dá para oferecer troca por essa peça? (o selo ⇄ nas grades do amigo)
 export const podeTrocar = (peca, p) =>
   !!p?.real && !db.temPeca(peca.id) && (p.guardaRoupa || []).includes(peca.id) && !bloqueio(peca, p);
 
@@ -92,13 +92,13 @@ export function botaoTrocar(peca, p, { antes = null } = {}) {
   if (bloqueio(peca, p)) return null;
   return el('button', {
     type: 'button', class: 'troca-btn',
-    title: 'Oferecer uma troca',
+    title: 'Oferecer uma troca', 'aria-label': 'Trocar',
     onclick: (e) => {
       e.stopPropagation();
       antes?.();
       abrirProposta(peca, p);
     },
-  }, '⇄ Trocar');
+  }, '⇄');
 }
 
 // --------------------------------- Janelas ---------------------------------
@@ -307,6 +307,7 @@ export function abrirProposta(peca, p) {
       db.salvar();
       ultimas = [troca, ...ultimas.filter(t => t.id !== troca.id)];
       fechar();
+      removerAvisoDeDesejo(p.id, peca.id);
       tocar('gastar');
       toast(`Oferta enviada para ${handle(p.handle)}. ${custo} ficha${custo === 1 ? '' : 's'} separada${custo === 1 ? '' : 's'}.`, 'ok');
     } catch (e) {
@@ -578,23 +579,23 @@ export async function abrirMinhasTrocas() {
   nova.addEventListener('click', () => { tela.fechar(); escolherAmiga(); });
 }
 
-// Troca nova: escolhe uma amiga (segue e é seguida) e vai ao guarda-roupa dela.
+// Troca nova: escolhe um amigo (segue e é seguido) e vai ao guarda-roupa dela.
 function escolherAmiga() {
   const seguem = new Set(quemMeSegue());
   const amigas = (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
   let tela;
   tela = telaTroca('Trocar com quem?', [
-    secao('Suas amigas', ...(amigas.length ? amigas.map(a => el('button', {
+    secao('Seus amigos', ...(amigas.length ? amigas.map(a => el('button', {
       type: 'button', class: 'troca-linha',
-      onclick: () => { tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça dela e em ⇄ Trocar.'); },
+      onclick: () => { tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça e depois em ⇄.'); },
     }, el('span', { class: 'troca-linha-texto' }, el('strong', {}, a.nome), el('small', {}, handle(a.handle))),
       ico('seta-dir'))) : [vazio2('Só dá para trocar com quem você segue e também segue você.')])),
   ], [el('button', { type: 'button', class: 'btn-ghost', onclick: () => tela.fechar() }, 'Voltar')]);
 }
 const vazio2 = (txt) => el('p', { class: 'troca-vazio-texto' }, txt);
 
-// ------------------------ Wishlist: a amiga ganhou ------------------------
-// De tempos em tempos lê o perfil das amigas (quem segue e é seguida) e avisa
+// ------------------------ Wishlist: o amigo ganhou ------------------------
+// De tempos em tempos lê o perfil dos amigos (quem segue e é seguido) e avisa
 // quando alguém tem uma peça da sua wishlist que dá para trocar.
 const MAX_AMIGAS = 30;
 async function conferirDesejos() {
@@ -609,7 +610,7 @@ async function conferirDesejos() {
     for (const pid of desejos) {
       const peca = pecaDoCatalogo(pid);
       if (peca && (p.guardaRoupa || []).includes(pid) && !bloqueio(peca, p)) {
-        avisarDesejoComAmiga({ amiga: id, peca, quem: id });
+        avisarDesejoComAmiga({ amiga: id, peca });
       }
     }
   }
@@ -618,7 +619,7 @@ async function conferirDesejos() {
 async function abrirPropostaDoAviso({ amiga, peca: pid }) {
   const peca = pecaDoCatalogo(pid);
   let p;
-  try { p = await carregarPerfil(amiga); } catch { return toast('Não consegui abrir a amiga agora.'); }
+  try { p = await carregarPerfil(amiga); } catch { return toast('Não consegui abrir o perfil agora.'); }
   const motivo = peca && bloqueio(peca, p);
   if (!peca || motivo) return toast(motivo || 'Essa peça não está mais aqui.');
   abrirProposta(peca, p);

@@ -57,7 +57,7 @@ export function textoDa(m) {
   const a = m.alvo || {};
   switch (md.evento) {
     case 'curtir': return `Curtir ${m.meta} posts`;
-    case 'trocar': return md.filtro ? `Trocar ${coisa(a, 1, { artigo: true })} com uma amiga` : 'Fazer uma troca com uma amiga';
+    case 'trocar': return md.filtro ? `Trocar ${coisa(a, 1, { artigo: true })} com um amigo` : 'Fazer uma troca com um amigo';
     case 'garimpar': return md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
     case 'publicar': return `Publicar ${m.onde === 'colagem' ? 'uma colagem' : 'um look'} com ${coisa(a, 1, { artigo: true })}`;
     case 'look': return md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;

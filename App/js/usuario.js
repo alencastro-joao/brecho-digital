@@ -268,7 +268,7 @@ function renderUsuario() {
   // versão antiga do app, que não mandou a lista, fica sem o botão.
   const roupas = guardaRoupaDe(p);
   const desejos = wishlistDe(p);
-  $('#up-listas').replaceChildren(...botoesDeListas(p.nome.split(' ')[0], roupas, desejos));
+  $('#up-listas').replaceChildren(...botoesDeListas(p.nome.split(' ')[0], roupas, desejos, { perfil: p }));
 
   const abas = p.real && (p.obras || p.favoritos) ? abasDaVitrine(p) : abasDosPosts(p, posts);
   abas.push(abaDeColecoesDe(p), abaDePessoas(p));
@@ -531,15 +531,20 @@ export function wishlistDe(p) {
 
 // Os dois botões embaixo dos outros: abrem a lista inteira num modal. Lista
 // nula (conta que não mandou) não tem botão.
-export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar = null } = {}) {
+export function botoesDeListas(dono, roupas, desejos, { minha = false, aoFechar = null, perfil = null } = {}) {
   const botao = (icone, rotulo, lista, titulo, vazio) => lista && el('button', {
     type: 'button', class: 'pf-lista-btn',
     onclick: () => abrirListaDePecas(titulo, lista, { vazio, aoFechar, minha }),
   }, ico(icone), el('span', {}, rotulo), el('strong', {}, String(lista.length)));
-  const trocas = minha && trocaLiberada() ? el('button', {
-    type: 'button', class: 'pf-lista-btn pf-trocas-btn', onclick: abrirMinhasTrocas,
-  }, el('span', { class: 'pf-troca-ico' }, '⇄'), el('span', {}, 'Trocas'),
-    trocasEmAndamento() ? el('strong', {}, String(trocasEmAndamento())) : null) : null;
+  // Só o símbolo ⇄. No seu perfil abre as suas trocas; no de um amigo, as
+  // peças dele que dá para trocar (João, 18/11/2026).
+  const paraTrocar = !minha && perfil && roupas ? roupas.filter(pc => podeTrocar(pc, perfil)) : [];
+  const simbolo = (titulo, aoTocar, n) => el('button', {
+    type: 'button', class: 'pf-trocas-btn', title: titulo, 'aria-label': titulo, onclick: aoTocar,
+  }, '⇄', n ? el('strong', {}, String(n)) : null);
+  const trocas = minha ? (trocaLiberada() ? simbolo('Minhas trocas', abrirMinhasTrocas, trocasEmAndamento()) : null)
+    : paraTrocar.length ? simbolo(`Peças para trocar (${paraTrocar.length})`, () =>
+      abrirListaDePecas(`Para trocar com ${dono}`, paraTrocar, { vazio: 'Nada para trocar agora' }), paraTrocar.length) : null;
   return [
     botao('cabide', 'Guarda-roupa', roupas, minha ? 'Seu guarda-roupa' : `Guarda-roupa de ${dono}`,
       'Nenhuma peça ainda'),
