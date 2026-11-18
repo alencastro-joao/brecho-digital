@@ -15,11 +15,16 @@ const CASCA = 'bd-casca';
 const CHAVE_VERSAO = new URL('__versao__', self.registration.scope).href;
 
 self.addEventListener('install', () => self.skipWaiting());
-// Limpeza forçada (18/11/2026): este sw novo, ao ativar, apaga tudo que os sws
-// anteriores guardaram, para quem estava preso numa versão velha.
+// Limpeza forçada (18/11/2026, rodada 2): este sw novo, ao ativar, apaga tudo que
+// os sws anteriores guardaram e recarrega as abas abertas, para quem estava preso
+// numa versão velha. Mudar esta data faz o navegador instalar o sw de novo.
+const LIMPEZA = '2026-11-18b';
 self.addEventListener('activate', e => e.waitUntil((async () => {
   await Promise.all((await caches.keys()).map(k => caches.delete(k)));
   await self.clients.claim();
+  for (const c of await self.clients.matchAll({ type: 'window' })) {
+    try { await c.navigate(c.url); } catch { /* aba que não deixa recarregar */ }
+  }
 })()));
 
 // A versão publicada agora, ou null quando não dá para confiar em nenhuma.
