@@ -20,7 +20,7 @@ import { aoLerSeguidores, sincronizarSocial, perfilDe } from './pessoas.js';
 import { retratoDe } from './social.js';
 import { irPara } from './router.js';
 import { CONFIG, TROCAS } from './config.js';
-import { item as pecaDoCatalogo, nomeDaPeca } from './catalog.js';
+import { item as pecaDoCatalogo, nomeDaPeca, trocarImagem } from './catalog.js';
 import { el, $, hojeISO, tempoRelativo } from './util.js';
 import { ico } from './icones.js';
 import { balancarSino } from './movimento.js';
@@ -58,7 +58,7 @@ const naoLidos = () => {
 // --------------------------------- Lista -----------------------------------
 // `junta`: um aviso ainda não lido com a mesma chave é atualizado em vez de
 // virar outro. É o que faz cinco curtidas no mesmo look serem uma linha só.
-function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null, proposta = null, tutorial = false }) {
+function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = null, troca = null, proposta = null, peca = null, tutorial = false }) {
   const a = avisos();
   const agora = new Date().toISOString();
   const visto = a.vistoEm || '';
@@ -69,7 +69,7 @@ function avisar({ tipo, texto, ir, quem = null, junta = null, qtd = 1, acao = nu
   }
   a.lista.unshift({
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}), ...(proposta ? { proposta } : {}), ...(tutorial ? { tutorial } : {}),
+    tipo, em: agora, ir, quem, junta, qtd, acao, ...(troca ? { troca } : {}), ...(proposta ? { proposta } : {}), ...(peca ? { peca } : {}), ...(tutorial ? { tutorial } : {}),
     texto: typeof texto === 'function' ? texto(qtd) : texto,
   });
   a.lista.length = Math.min(a.lista.length, MAXIMO);
@@ -144,7 +144,7 @@ function avisarTrocaLiberada() {
   if (a.trocaLiberada) return;
   a.trocaLiberada = true;
   avisar({ tipo: 'troca', ir: ['perfil'], tutorial: true, acao: 'Ver como funciona',
-           texto: 'Você liberou a troca de peças com amigas!' });
+           texto: 'Você liberou a troca de peças com amigos!' });
 }
 function conferirTrocaLiberada() {
   if (db.nivel() >= TROCAS.nivel) avisarTrocaLiberada();
@@ -187,19 +187,27 @@ export const aoTocarEmTroca = (fn) => { abrirTroca = fn; };
 let abrirTutorialTroca = null;
 export const aoTocarEmTutorialTroca = (fn) => { abrirTutorialTroca = fn; };
 
-// Uma amiga ganhou uma peça da sua wishlist: tocar no aviso abre a proposta de
+// Um amigo ganhou uma peça da sua wishlist: tocar no aviso abre a proposta de
 // troca já com a peça dela. Cada par amiga+peça avisa uma vez só.
 let abrirProposta = null;
 export const aoTocarEmProposta = (fn) => { abrirProposta = fn; };
-export function avisarDesejoComAmiga({ amiga, peca, quem }) {
+export function avisarDesejoComAmiga({ amiga, peca }) {
   const a = avisos();
   const chave = `${amiga}:${peca.id}`;
   a.desejoAmiga ??= [];
   if (a.desejoAmiga.includes(chave)) return;
   a.desejoAmiga.push(chave);
-  avisar({ tipo: 'troca', ir: ['perfil'], quem, acao: 'Propor troca',
-           proposta: { amiga, peca: peca.id },
-           texto: `${nomeDaPeca(peca)}, da sua wishlist, está com ${perfilDe(amiga)?.nome || 'uma amiga'}. Que tal trocar?` });
+  // Só a foto da peça e o essencial: "Camisa branco · com Lia".
+  avisar({ tipo: 'troca', ir: ['perfil'], peca: peca.id, proposta: { amiga, peca: peca.id },
+           texto: `${nomeDaPeca(peca)} · com ${perfilDe(amiga)?.nome?.split(' ')[0] || 'um amigo'}` });
+}
+
+// Mandou a proposta: o aviso daquela peça sai do sino.
+export function removerAvisoDeDesejo(amiga, pecaId) {
+  const a = avisos();
+  const antes = a.lista.length;
+  a.lista = a.lista.filter(x => !(x.proposta && x.proposta.amiga === amiga && x.proposta.peca === pecaId));
+  if (a.lista.length !== antes) { gravar(); pintarLista(); pintar(); }
 }
 
 export function avisarTroca({ texto, quem = null, troca, acao = null }) {
@@ -250,7 +258,10 @@ let botao, painel, contador, listaEl;
 
 function linha(a, visto) {
   const novo = a.em > visto;
-  const marca = a.quem
+  const peca = a.peca ? pecaDoCatalogo(a.peca) : null;
+  const marca = peca
+    ? el('span', { class: 'aviso-foto' }, (() => { const img = el('img', { alt: nomeDaPeca(peca), loading: 'lazy' }); trocarImagem(img, peca, 80); return img; })())
+    : a.quem
     ? retratoDe(a.quem, 38)
     : el('span', { class: `aviso-icone ${a.tipo}` }, ICONE[a.tipo]?.length > 1 ? ico(ICONE[a.tipo]) : ICONE[a.tipo] || '•');
   return el('li', { class: `aviso-item ${a.tipo}` },
