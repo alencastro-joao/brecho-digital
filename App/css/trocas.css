@@ -326,7 +326,7 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 /* Trocar com quem: passarela de amigos de corpo inteiro. */
 .passarela {
   display: flex; align-items: flex-end; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory;
-  --w: clamp(120px, 40vw, 170px); height: min(54vh, 460px); padding-inline: calc(50% - var(--w) / 2); box-sizing: border-box; scrollbar-width: none;
+  --w: clamp(150px, 52vw, 240px); flex: 1 1 0 !important; min-height: 260px; height: auto; padding-inline: calc(50% - var(--w) / 2); box-sizing: border-box; scrollbar-width: none;
   max-width: none !important; width: calc(100% + 28px) !important; margin-inline: -14px !important;
 }
 .passarela::-webkit-scrollbar { display: none; }
@@ -341,11 +341,24 @@ html body .troca-janela.troca-tela { padding: 0; place-items: stretch; backdrop-
 .passarela-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; min-height: 28px; }
 .passarela-chip {
   padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; color: var(--tinta);
-  background: var(--perola); border: 2px solid var(--wii-borda);
+  background: color-mix(in srgb, var(--wii) 16%, #fff); border: 2px solid color-mix(in srgb, var(--wii) 45%, #fff);
 }
+.passarela-info { flex: none; }
 .passarela-pos { margin: 8px 0 0; color: var(--tinta-suave); font-size: 12.5px; font-weight: 700; }
-.passarela-trocar { flex: 1; font-weight: 900; }
-.troca-rodape .btn-ghost { background: var(--perola); border-color: var(--wii-borda); }
+
+.passarela-trocar {
+  flex: 1; max-width: none; min-height: 52px; border-radius: 16px; cursor: pointer; font: inherit; font-size: 17px; font-weight: 900;
+  color: #fff; background: var(--brilho-topo), var(--wii); border: 2px solid var(--wii-borda);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18), 0 3px 0 var(--wii-borda);
+}
+.passarela-trocar:active { transform: translateY(1px); }
+.passarela-item { transform: none !important; }
+/* A lista de peças trocáveis do amigo (pop-up do guarda-roupa com ferramentas). */
+.lp-troca .troca-ferramentas { margin-top: 0; }
+.lp-busca {
+  width: 100%; box-sizing: border-box; margin: 10px 0 12px; padding: 10px 14px; font: inherit; font-size: 15px;
+  border-radius: 12px; border: 2px solid var(--wii-borda); background: #fff; color: var(--tinta);
+}
 html body .troca-janela.troca-tela { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .troca-tela-caixa, .troca-corpo { min-width: 0; }
 .troca-rodape .btn-ghost { min-height: 50px; }

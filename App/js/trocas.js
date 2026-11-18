@@ -24,6 +24,7 @@ import { carregarPerfil, quemMeSegue, perfilDe, roupasDoPerfil } from './pessoas
 import { irPara } from './router.js';
 import { retratoDe } from './social.js';
 import { svgAvatar, aparenciaDoPerfil } from './avatar.js';
+import { abrirListaDePecas } from './usuario.js';
 import { contar as contarNoMural } from './mural.js';
 import { esquecerHistorico } from './estoque.js';
 import { tocar } from './sons.js';
@@ -594,11 +595,9 @@ export async function abrirMinhasTrocas() {
 export function escolherAmiga(lista = null) {
   const seguem = new Set(quemMeSegue());
   const amigos = lista || (db.state.usuario?.seguindo || []).filter(id => seguem.has(id)).map(id => perfilDe(id)).filter(Boolean);
-  const voltar = el('button', { type: 'button', class: 'btn-ghost' }, 'Voltar');
   if (!amigos.length) {
-    const t = telaTroca('Trocar com quem?', [secao('Seus amigos',
-      vazio2('Só dá para trocar com quem você segue e também segue você.'))], [voltar]);
-    voltar.addEventListener('click', () => t.fechar());
+    telaTroca('Trocar com quem?', [secao('Seus amigos',
+      vazio2('Só dá para trocar com quem você segue e também segue você.'))], []);
     return;
   }
   const itens = amigos.map((a, i) => {
@@ -632,15 +631,19 @@ export function escolherAmiga(lista = null) {
     const quer = pecas.filter(pc => db.naWishlist(pc.id)).length;
     chips.replaceChildren(chip(`⇄ ${pecas.length} para trocar`), ...(quer ? [chip(`♥ ${quer} da sua wishlist`)] : []));
   };
-  const trocar = el('button', { type: 'button', class: 'btn-ghost passarela-trocar' }, '⇄ Trocar');
+  const trocar = el('button', { type: 'button', class: 'passarela-trocar' }, '⇄ Trocar');
   const tela = telaTroca('Trocar com quem?', [
     pista,
     el('div', { class: 'passarela-info' }, nome, arroba, chips, pos),
-  ], [voltar, trocar]);
-  voltar.addEventListener('click', () => tela.fechar());
-  trocar.addEventListener('click', () => {
+  ], [trocar]);
+  // Trocar abre o pop-up das peças dele que dá para trocar (as da sua wishlist primeiro).
+  trocar.addEventListener('click', async () => {
     const a = amigos[atual];
-    tela.fechar(); irPara('usuario', a.id); toast('Toque numa peça e depois em ⇄.');
+    let p = a;
+    try { p = await carregarPerfil(a.id); } catch { /* usa o que tem */ }
+    const pecas = (p.guardaRoupa || []).map(id => pecaDoCatalogo(id)).filter(pc => pc && podeTrocar(pc, p));
+    tela.fechar();
+    abrirListaDePecas(`Para trocar com ${a.nome.split(' ')[0]}`, pecas, { vazio: 'Nada para trocar agora', trocaCom: a.id });
   });
   // O do centro é grande; os vizinhos encolhem e esmaecem.
   let quadro = 0;
@@ -651,8 +654,7 @@ export function escolherAmiga(lista = null) {
     itens.forEach((it, i) => {
       const d = Math.abs(it.offsetLeft + it.offsetWidth / 2 - meio) / it.offsetWidth;
       const f = Math.min(d, 1.6);
-      it.style.transform = `scale(${(1 - f * 0.3).toFixed(3)})`;
-      it.style.opacity = String(Math.max(0.35, 1 - f * 0.55).toFixed(2));
+      it.style.opacity = String(Math.max(0.3, 1 - f * 0.6).toFixed(2));
       if (d < dist) { dist = d; melhor = i; }
     });
     if (melhor !== atual) mostrar(melhor);
