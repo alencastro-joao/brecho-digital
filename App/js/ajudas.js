@@ -119,7 +119,9 @@ const falta = (it, entrada) => (faltam[it.id] ?? TUDO).includes(entrada);
 const faltaNoJogo = (it, j = jogo) => {
   const preenchendo = ENTRADAS_DO_JOGO.preencher.some(e => falta(it, e));
   if (j === 'preencher') return preenchendo;
-  if (j === 'ajustar') return !preenchendo && falta(it, 'ajuste');
+  // O Ajustar só precisa da categoria (é dela o lugar no corpo); cor e marca
+  // faltando não o travam, senão a missão de Ajustar caía sempre no Preencher.
+  if (j === 'ajustar') return !falta(it, 'cat') && falta(it, 'ajuste');
   return !preenchendo && !falta(it, 'ajuste') && votar.has(it.id);
 };
 
