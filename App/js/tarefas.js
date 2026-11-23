@@ -28,6 +28,7 @@ import { abrirFichaDePeca } from './usuario.js';
 import { animarBau, animando } from './movimento.js';
 import { tocar } from './sons.js';
 import * as mural from './mural.js';
+import { abrirMinhasTrocas } from './trocas.js';
 import { nomeDoEvento, bauDoEvento } from './eventos.js';
 import { JOGO } from './ajudas.js';
 
@@ -150,7 +151,9 @@ function renderPontinho() {
 // As missões em post-its, a de jogo primeiro, e as vagas que faltam. A
 // primeira vaga vazia diz quando chega a próxima.
 const COR_DO_NIVEL = { facil: 'var(--stylist)', medio: 'var(--inventario)', dificil: 'var(--board)' };
-const ICONE_DO_EVENTO = { curtir: 'coracao', garimpar: 'sacola', publicar: 'camera', look: 'varinha', colagem: 'quadro' };
+const ICONE_DO_EVENTO = { curtir: 'coracao', garimpar: 'sacola', publicar: 'camera', look: 'varinha', colagem: 'quadro', trocar: 'trocar' };
+// A missão de troca abre a tela de troca (trocas.js), não uma rota.
+const irParaMissao = (tela) => tela === 'trocar' ? abrirMinhasTrocas() : irPara(tela);
 const giro = (uid) => ((parseInt(String(uid).slice(-3), 36) || 0) % 5 - 2) * 0.8;   // cada papel torto de um jeito
 const prazo = (ms) => {
   const h = Math.floor(ms / 3600e3), m = Math.floor(ms / 60e3) % 60;
@@ -226,7 +229,7 @@ function papelDeEvento(m, agora, sons) {
     rot: giro(m.uid), tempo: prazo(m.vence - agora), classe: ` evento ev-${bau} ${corDoPapel(m.uid)}`, nivel: nomeDoEvento(m),
     alfinete: iconeDoBau(bau),
     premio: el('span', { class: 'tf-premio-n' }, ico(iconeDoBau(bau)), 'Baú'),
-    abrir: md ? () => irPara(md) : null,
+    abrir: md ? () => irParaMissao(md) : null,
     efeito: efeitoDo(m.uid, mural.completa(m), sons),
     resgatar: () => {
       const r = mural.resgatar(m.uid);
@@ -270,7 +273,7 @@ function renderMural() {
       texto: mural.textoDa(m), feito: m.feito, meta: m.meta, rot: giro(m.uid),
       premio: premioEmFichas(nivel.fichas, m.dourada), tempo: prazo(m.vence - agora),
       classe: m.dourada ? ' dourada' : '', nivel: m.dourada ? `${nivel.nome} · dourada` : nivel.nome,
-      abrir: mural.telaDa(m) ? () => irPara(mural.telaDa(m)) : null,
+      abrir: mural.telaDa(m) ? () => irParaMissao(mural.telaDa(m)) : null,
       efeito: efeitoDo(m.uid, mural.completa(m), sons),
       resgatar: () => {
         const r = mural.resgatar(m.uid);
