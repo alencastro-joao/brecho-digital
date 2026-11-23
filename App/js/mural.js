@@ -70,7 +70,7 @@ export function textoDa(m) {
 export function telaDa(m) {
   const md = m.evento ? modeloDoEvento(m) : modeloDe(m);
   const ev = md?.evento === 'publicar' ? m.onde || 'look' : md?.evento;
-  return { curtir: 'social', trocar: 'social', garimpar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
+  return { curtir: 'social', trocar: 'trocar', garimpar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
 }
 
 export const NOMES_JOGO = { avaliar: 'Avaliar', ajustar: 'Ajustar', preencher: 'Preencher' };
