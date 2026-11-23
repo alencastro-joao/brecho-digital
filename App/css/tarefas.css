@@ -443,8 +443,6 @@
 .tf-papel-tempo .ico { width: 13px; height: 13px; }
 .tf-papel.pronta { outline: 3px solid var(--premio-borda); animation: premio 1.8s ease-in-out infinite; }
 .tf-papel.dourada { --cor: linear-gradient(135deg, #ffe58a, #ffd04d 55%, #ffeaa8); background: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 40%), linear-gradient(135deg, #ffe58a, #f7c63c 55%, #ffeaa8); }
-.tf-papel.relampago { --cor: #ff8fa8; background: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, 0) 40%), linear-gradient(135deg, #ffb3c4, #ff7f9b); }
-.tf-papel.sortuda { --cor: #8fe0b0; background: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, 0) 40%), linear-gradient(135deg, #b4f0cc, #6fd49b); }
 .tf-papel.jogo { outline: 2px dashed rgba(0, 0, 0, .18); outline-offset: 3px; }
 .tf-papel.jogo.pronta { outline: 3px solid var(--premio-borda); }
 .tf-papel.vazio {

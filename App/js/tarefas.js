@@ -269,11 +269,10 @@ function renderMural() {
     const md = mural.modeloDe(m);
     const nivel = MURAL.niveis[m.nivel];
     papeis.push(papel({
-      cor: COR_DO_NIVEL[m.nivel], icone: m.relampago ? 'relogio' : m.sortuda ? 'brilho' : md.raridade ? 'brilho' : ICONE_DO_EVENTO[md.evento] || 'estrela',
+      cor: COR_DO_NIVEL[m.nivel], icone: md.raridade ? 'brilho' : ICONE_DO_EVENTO[md.evento] || 'estrela',
       texto: mural.textoDa(m), feito: m.feito, meta: m.meta, rot: giro(m.uid),
-      premio: premioEmFichas(m.sortuda ? `${nivel.fichas}+?` : mural.fichasDoPostit(m), m.dourada), tempo: prazo(m.vence - agora),
-      classe: m.dourada ? ' dourada' : m.relampago ? ' relampago' : m.sortuda ? ' sortuda' : '',
-      nivel: m.dourada ? `${nivel.nome} · dourada` : m.relampago ? `${nivel.nome} · relâmpago` : m.sortuda ? `${nivel.nome} · sortuda` : nivel.nome,
+      premio: premioEmFichas(nivel.fichas, m.dourada), tempo: prazo(m.vence - agora),
+      classe: m.dourada ? ' dourada' : '', nivel: m.dourada ? `${nivel.nome} · dourada` : nivel.nome,
       abrir: mural.telaDa(m) ? () => irParaMissao(mural.telaDa(m)) : null,
       efeito: efeitoDo(m.uid, mural.completa(m), sons),
       resgatar: () => {

@@ -1100,10 +1100,6 @@ export const MURAL = {
   },
   // Dourada: paga as fichas do nível e mais o baú dele (`bau` acima).
   dourada: 6,
-  // Outros tipos de post-it (chance em %, sem juntar com a dourada): o relâmpago
-  // some em `horas` e paga `vezes` as fichas; a sortuda paga de 1 a `extraMax` fichas a mais.
-  relampago: { chance: 8, horas: 4, vezes: 2 },
-  sortuda: { chance: 8, extraMax: 3 },
   // evento: o que a tela avisa (mural.contar). filtro: o que a peça precisa ter
   // ('cor', 'cat' ou os dois); mesma: N peças da mesma cor no mesmo post.
   missoes: [
