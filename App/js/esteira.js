@@ -403,7 +403,8 @@ let verEnviadas = false;
 const doJogador = (item) => item.origem === 'jogador';
 const naVista = (item) => {
   if (verProntas) return éPronta(item);
-  if (nosJogos.has(item.id)) return verJogos;
+  // Pronta (tipo, cor e ajuste fechados) mora só na aba "Prontas".
+  if (nosJogos.has(item.id)) return verJogos && !éPronta(item);
   if (verJogos) return false;
   return doJogador(item) === verEnviadas;
 };
@@ -475,7 +476,7 @@ function desenhar() {
   vazio.textContent = verProntas ? 'Nenhuma peça pronta ainda.' : verJogos ? 'Nenhuma peça nos mini games.'
     : verEnviadas ? 'Nenhuma roupa enviada pelos jogadores.'
     : itens.length ? 'As peças prontas estão todas nos mini games.' : 'Nada na esteira. As fotos que você mandar aparecem aqui.';
-  const nJogos = itens.filter(i => nosJogos.has(i.id)).length;
+  const nJogos = itens.filter(i => nosJogos.has(i.id) && !éPronta(i)).length;
   const ver = $('#es-ver-jogos');
   ver.setAttribute('aria-pressed', String(verJogos));
   const verP = $('#es-ver-prontas');
@@ -814,7 +815,8 @@ async function lerJogos() {
     if (!r.ok) return;
     const dados = await r.json();
     nosJogos = new Set(dados.nosJogos || []);
-    prontasJogos = new Set((dados.pecas || []).filter(p => nosJogos.has(p.peca) && !(p.faltam || []).length).map(p => p.peca));
+    // Pronta = tipo, cor e ajuste fechados; a marca não segura a peça (João, 23/11/2026).
+    prontasJogos = new Set((dados.pecas || []).filter(p => nosJogos.has(p.peca) && !(p.faltam || []).some(e => e !== 'marca')).map(p => p.peca));
     await atualizarComJogos(dados.pecas || []);
     desenhar();
   } catch { /* sem o selo, segue */ }

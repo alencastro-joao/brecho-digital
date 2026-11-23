@@ -119,9 +119,9 @@ const falta = (it, entrada) => (faltam[it.id] ?? TUDO).includes(entrada);
 const faltaNoJogo = (it, j = jogo) => {
   const preenchendo = ENTRADAS_DO_JOGO.preencher.some(e => falta(it, e));
   if (j === 'preencher') return preenchendo;
-  // O Ajustar só precisa da categoria (é dela o lugar no corpo); cor e marca
-  // faltando não o travam, senão a missão de Ajustar caía sempre no Preencher.
-  if (j === 'ajustar') return !falta(it, 'cat') && falta(it, 'ajuste');
+  // Fila do Ajustar (João, 23/11/2026): a peça entra assim que tem tipo e cor
+  // fechados; a marca não trava. Fechou o ajuste, ela sai da fila.
+  if (j === 'ajustar') return !falta(it, 'cat') && !falta(it, 'cor') && falta(it, 'ajuste');
   return !preenchendo && !falta(it, 'ajuste') && votar.has(it.id);
 };
 
