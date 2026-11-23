@@ -27,6 +27,7 @@ const COMO = {
   collab:         ['brilho',   'Veio da cápsula do mês'],
   propria:        ['camera',   'Subiu a peça'],
   teste:          ['varinha',  'Peça de teste'],
+  troca:          ['atualizar', 'Trocou'],
 };
 
 let aberta = null;      // a peça na janela, para a resposta atrasada não pintar outra
@@ -82,7 +83,10 @@ function pintar(peca, donos) {
   }
 
   donos.forEach((d, i) => {
-    const [icone, texto] = COMO[d.como] || COMO.vitrine;
+    const [icone, base] = COMO[d.como] || COMO.vitrine;
+    // Na troca, quem estava com a peça antes é com quem se trocou.
+    const de = d.como === 'troca' && i > 0 ? donos[i - 1].handle : '';
+    const texto = de ? `${base} com ${de}` : base;
     const atual = i === donos.length - 1;
     linhas.push(linha(atual ? 'dono atual' : 'dono', ico(icone),
       el('span', {}, d.handle, d.voce ? el('em', { class: 'hp-voce' }, 'você') : null),
