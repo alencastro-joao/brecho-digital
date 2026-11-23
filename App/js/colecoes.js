@@ -236,7 +236,8 @@ export function renderColecoes() {
   // depois as mais perto de fechar, as que nem começaram e, no fim, as
   // completas e os temas ainda sem peças.
   const peso = (c) => c.livres > 0 ? 0 : !c.total ? 4 : c.completa ? 3 : c.tem ? 1 : 2;
-  const lista = [...todas].sort((a, b) => peso(a) - peso(b) || b.pct - a.pct);
+  // Temas seguem a ordem de config.ESTILOS (gerais, seleções, clubes, evento).
+  const lista = grupo === 'estilos' ? todas : [...todas].sort((a, b) => peso(a) - peso(b) || b.pct - a.pct);
 
   const grade = $('#col-lista');
   const nos = lista.map(cartaoDaColecao);
