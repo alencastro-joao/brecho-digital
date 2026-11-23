@@ -57,6 +57,8 @@ export function textoDa(m) {
   const a = m.alvo || {};
   switch (md.evento) {
     case 'congelar': return 'Congelar uma peça na vitrine';
+    case 'repor': return 'Repor a loja';
+    case 'favoritar': return 'Favoritar uma peça';
     case 'curtir': return `Curtir ${m.meta} posts`;
     case 'trocar': return md.filtro ? `Trocar ${coisa(a, 1, { artigo: true })} com um amigo` : 'Fazer uma troca com um amigo';
     case 'garimpar': return md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
@@ -71,7 +73,7 @@ export function textoDa(m) {
 export function telaDa(m) {
   const md = m.evento ? modeloDoEvento(m) : modeloDe(m);
   const ev = md?.evento === 'publicar' ? m.onde || 'look' : md?.evento;
-  return { curtir: 'social', trocar: 'trocar', garimpar: 'vitrine', congelar: 'vitrine', look: 'stylist', colagem: 'board' }[ev] || null;
+  return { curtir: 'social', trocar: 'trocar', garimpar: 'vitrine', congelar: 'vitrine', repor: 'vitrine', favoritar: 'closet', look: 'stylist', colagem: 'board' }[ev] || null;
 }
 
 export const NOMES_JOGO = { avaliar: 'Avaliar', ajustar: 'Ajustar', preencher: 'Preencher' };
@@ -238,7 +240,7 @@ export function contar(evento, { peca = null, raridade = null, ids = [] } = {}) 
     }
     const md = modeloDe(m);
     if (!md) continue;
-    if ((md.evento === 'curtir' || md.evento === 'congelar') && evento === md.evento) m.feito += 1;
+    if (['curtir', 'congelar', 'repor', 'favoritar'].includes(md.evento) && evento === md.evento) m.feito += 1;
     else if (md.evento === 'garimpar' && evento === 'garimpar') {
       const ok = md.raridade ? ['epic', 'legendary'].includes(raridade) : pecaCombina(peca, m.alvo);
       if (ok) m.feito += 1;

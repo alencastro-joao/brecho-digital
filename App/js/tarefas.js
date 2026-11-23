@@ -151,7 +151,7 @@ function renderPontinho() {
 // As missões em post-its, a de jogo primeiro, e as vagas que faltam. A
 // primeira vaga vazia diz quando chega a próxima.
 const COR_DO_NIVEL = { facil: 'var(--stylist)', medio: 'var(--inventario)', dificil: 'var(--board)' };
-const ICONE_DO_EVENTO = { curtir: 'coracao', garimpar: 'sacola', publicar: 'camera', look: 'varinha', colagem: 'quadro', trocar: 'trocar', congelar: 'floco' };
+const ICONE_DO_EVENTO = { curtir: 'coracao', garimpar: 'sacola', publicar: 'camera', look: 'varinha', colagem: 'quadro', trocar: 'trocar', congelar: 'floco', repor: 'atualizar', favoritar: 'estrela' };
 // A missão de troca abre a tela de troca (trocas.js), não uma rota.
 const irParaMissao = (tela) => tela === 'trocar' ? abrirMinhasTrocas() : irPara(tela);
 const giro = (uid) => ((parseInt(String(uid).slice(-3), 36) || 0) % 5 - 2) * 0.8;   // cada papel torto de um jeito

@@ -1116,6 +1116,8 @@ export const MURAL = {
     { id: 'trocar',         nivel: 'facil',   evento: 'trocar',   meta: 1 },
     { id: 'trocar-tipo',    nivel: 'medio',   evento: 'trocar',   meta: 1, filtro: ['cat'] },
     { id: 'trocar-cor-tipo', nivel: 'dificil', evento: 'trocar',  meta: 1, filtro: ['cor', 'cat'] },
+    { id: 'repor',          nivel: 'facil',   evento: 'repor',    meta: 1 },
+    { id: 'favoritar',      nivel: 'facil',   evento: 'favoritar', meta: 1 },
     { id: 'congelar',       nivel: 'facil',   evento: 'congelar', meta: 1 },
     { id: 'garimpar-epica', nivel: 'dificil', evento: 'garimpar', meta: 1, raridade: 'epic' },
     { id: 'look-cor-tipo',  nivel: 'dificil', evento: 'look',     meta: 1, filtro: ['cor', 'cat'] },
