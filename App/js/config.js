@@ -1514,6 +1514,30 @@ export const ESTILOS = {
     libera: [],
     pecas: [],
   },
+  'sao-paulo': {
+    nome: 'São Paulo', brilho: '#e30613', icone: 'assets/temas/sao-paulo.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  vasco: {
+    nome: 'Vasco', brilho: '#222222', icone: 'assets/temas/vasco.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  palmeiras: {
+    nome: 'Palmeiras', brilho: '#006437', icone: 'assets/temas/palmeiras.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  santos: {
+    nome: 'Santos', brilho: '#222222', icone: 'assets/temas/santos.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
   // Halloween (João, 01/11/2026): marque o tema "Halloween" na esteira ou no
   // editor da peça. `exclusivo` tira a peça da vitrine, dos outros baús e dos
   // presentes (catalog.itensDaLoja): ela só sai do Baú de Halloween. A
