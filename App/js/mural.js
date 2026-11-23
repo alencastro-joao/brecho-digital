@@ -74,6 +74,8 @@ export function telaDa(m) {
 }
 
 export const NOMES_JOGO = { avaliar: 'Avaliar', ajustar: 'Ajustar', preencher: 'Preencher' };
+// Os post-its de jogo só sorteiam Ajustar e Preencher (João, 23/11/2026); o Avaliar saiu.
+const JOGOS_ATIVOS = ['ajustar', 'preencher'];
 export const textoDoJogo = (j) => j.jogo === 'preencher'
   ? `Preencher ${j.meta} campos` : `${NOMES_JOGO[j.jogo]} ${j.meta} peças`;
 
@@ -129,7 +131,7 @@ function novaMissao(chegou, ocupadas) {
 const fichasDoJogo = (jogo, meta) =>
   Math.max(1, Math.round(meta / MURAL.jogos[jogo].cada * MURAL.jogos[jogo].fichas)) + (MURAL.jogos.extra || 0);
 
-function novoJogo(jogos = Object.keys(NOMES_JOGO)) {
+function novoJogo(jogos = JOGOS_ATIVOS) {
   // Sorteio com peso: preencher e ajustar saem bem mais que o avaliar.
   const total = jogos.reduce((t, j) => t + (MURAL.jogos[j].peso ?? 1), 0);
   let ponto = Math.random() * total;
@@ -146,7 +148,7 @@ export function caberNoQueTem(livres) {
   const j = mural().jogo;
   if (!j || j.feito > 0 || j.feito >= j.meta) return false;
   if ((livres[j.jogo] ?? 0) > 0) return false;
-  const outros = Object.keys(NOMES_JOGO).filter(k => (livres[k] ?? 0) > 0);
+  const outros = JOGOS_ATIVOS.filter(k => (livres[k] ?? 0) > 0);
   if (!outros.length) return false;
   mural().jogo = novoJogo(outros);
   db.salvar();
@@ -196,6 +198,8 @@ export function atualizar(agora = Date.now()) {
       mudou = true;
     }
   }
+  // Missão de Avaliar que ficou no save e ainda não foi feita vira outra; a feita espera o resgate.
+  if (mu.jogo?.jogo === 'avaliar' && mu.jogo.feito < mu.jogo.meta) { mu.jogo = novoJogo(); mudou = true; }
   if (!mu.jogo && agora >= mu.jogoVolta) { mu.jogo = novoJogo(); mudou = true; }
   return mudou;
 }
