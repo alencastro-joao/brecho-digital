@@ -996,6 +996,7 @@ export function reporComFicha() {
   if (!db.gastarFichaDeRepor()) return;
   reporNaLoja();
   db.progredirMissao('repor');
+  contarNoMural('repor');
   montarVitrine({ entrada: true });
   falarDe('boasVindas');
 }

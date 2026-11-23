@@ -5,6 +5,7 @@
 // slots é persistida quando você arrasta.
 
 import { ADMIN, CATEGORIAS, RARIDADE, escalaGrade, iconeDoBau } from './config.js';
+import { contar as contarNoMural } from './mural.js';
 import { eventoDaPeca, nomeComAno } from './eventos.js';
 import { item as pecaDoCatalogo, nomeDaPeca, proporcao, trocarImagem } from './catalog.js';
 import {
@@ -122,7 +123,7 @@ export function montarCloset() {
     if (!selecionada) return;
     const agora = db.alternarFavorito('peca', selecionada);
     rotularFavorito();
-    if (agora) festejar(e.currentTarget);
+    if (agora) { festejar(e.currentTarget); contarNoMural('favoritar'); }
     // A estrelinha do slot acompanha sem repintar a grade inteira.
     document.querySelector(`.item-slot[data-id="${selecionada}"]`)
       ?.classList.toggle('favorita', agora);
