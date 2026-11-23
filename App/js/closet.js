@@ -185,30 +185,15 @@ function montarRail() {
     );
     rail.insertBefore(botao, divisor());
   }
-
-  // Filtro das peças de evento (João, 11/11/2026): só aparece quando há
-  // alguma, com o ícone do baú do evento mais recente entre elas.
-  const doEvento = db.state.inventario.map(eventoDaPeca).filter(Boolean);
-  if (doEvento.length) {
-    const ultimo = doEvento.reduce((a, b) => (b.desde > a.desde ? b : a));
-    rail.insertBefore(el('button', {
-      class: 'cat-btn eventos' + (categoriaAtual === EVENTOS_CAT ? ' active' : ''),
-      dataset: { cat: EVENTOS_CAT }, title: 'Peças de eventos',
-      onclick: () => carregarCategoria(EVENTOS_CAT),
-    },
-      el('span', { class: 'cat-icone' }, ico(iconeDoBau(ultimo.bau))),
-      el('span', { class: 'cat-qtd' }, String(doEvento.length))
-    ), divisor());
-  }
+  // A aba da abóbora (peças de evento) saiu (João, 23/11/2026); as peças seguem
+  // marcadas com o selo do baú (selo-evento).
 }
-
-const EVENTOS_CAT = 'eventos';   // o filtro do trilho, fora dos grupos
 
 let pecasDaVista = [];           // as peças da categoria aberta, já ordenadas
 
 export function carregarCategoria(cat, { manterPagina = false, apenas = null } = {}) {
   const grupos = agrupamento().grupos;
-  if (!grupos[cat] && cat !== EVENTOS_CAT) cat = 'todas';
+  if (!grupos[cat]) cat = 'todas';
   if (cat !== categoriaAtual || !manterPagina) { pagina = 0; gradeEntra = true; }
   categoriaAtual = cat;
   document.querySelectorAll('.cat-btn').forEach(b =>
@@ -217,7 +202,7 @@ export function carregarCategoria(cat, { manterPagina = false, apenas = null } =
   limparPreview();
 
   const tudo = cat === 'todas';
-  const doGrupo = cat === EVENTOS_CAT ? (p) => !!eventoDaPeca(p) : (p) => grupoDe(p) === cat;
+  const doGrupo = (p) => grupoDe(p) === cat;
   // Peça órfã (no inventário mas fora do catálogo) não ocupa quadrado.
   pecasDaVista = db.state.inventario
     .filter(p => (tudo || doGrupo(p)) && pecaDoCatalogo(p.id)
@@ -226,7 +211,7 @@ export function carregarCategoria(cat, { manterPagina = false, apenas = null } =
 
   const n = pecasDaVista.length;
   const qtd = `${n} ${n === 1 ? 'peça' : 'peças'}`;
-  const nomeDaVista = cat === EVENTOS_CAT ? 'Eventos' : grupos[cat]?.nome;
+  const nomeDaVista = grupos[cat]?.nome;
   $('#closet-sub').textContent = tudo ? qtd : `${nomeDaVista} · ${qtd}`;
 
   desenharPagina();
