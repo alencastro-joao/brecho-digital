@@ -1116,6 +1116,11 @@ export const MURAL = {
     { id: 'trocar',         nivel: 'facil',   evento: 'trocar',   meta: 1 },
     { id: 'trocar-tipo',    nivel: 'medio',   evento: 'trocar',   meta: 1, filtro: ['cat'] },
     { id: 'trocar-cor-tipo', nivel: 'dificil', evento: 'trocar',  meta: 1, filtro: ['cor', 'cat'] },
+    // Tarefas novas (sem filtro): looks e colagens livres, mais curtidas e peças raras.
+    { id: 'look-livre',     nivel: 'facil',   evento: 'look',     meta: 1 },
+    { id: 'colagem-livre',  nivel: 'facil',   evento: 'colagem',  meta: 1 },
+    { id: 'curtir-muito',   nivel: 'medio',   evento: 'curtir',   meta: 12 },
+    { id: 'garimpar-rara',  nivel: 'medio',   evento: 'garimpar', meta: 2, raridade: 'rare' },
     { id: 'garimpar-epica', nivel: 'dificil', evento: 'garimpar', meta: 1, raridade: 'epic' },
     { id: 'look-cor-tipo',  nivel: 'dificil', evento: 'look',     meta: 1, filtro: ['cor', 'cat'] },
     { id: 'colagem-cor-tipo', nivel: 'dificil', evento: 'colagem', meta: 1, filtro: ['cor', 'cat'] },
