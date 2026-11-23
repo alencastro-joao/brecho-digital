@@ -58,10 +58,10 @@ export function textoDa(m) {
   switch (md.evento) {
     case 'curtir': return `Curtir ${m.meta} posts`;
     case 'trocar': return md.filtro ? `Trocar ${coisa(a, 1, { artigo: true })} com um amigo` : 'Fazer uma troca com um amigo';
-    case 'garimpar': return md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
+    case 'garimpar': return md.raridade === 'rare' ? `Garimpar ${m.meta} peças raras ou melhores` : md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
     case 'publicar': return `Publicar ${m.onde === 'colagem' ? 'uma colagem' : 'um look'} com ${coisa(a, 1, { artigo: true })}`;
-    case 'look': return md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;
-    case 'colagem': return md.mesma ? `Publicar uma colagem com ${m.meta} peças da mesma cor` : `Publicar uma colagem com ${coisa(a, 1, { artigo: true })}`;
+    case 'look': return !md.mesma && !md.filtro ? 'Publicar um look' : md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;
+    case 'colagem': return !md.mesma && !md.filtro ? 'Publicar uma colagem' : md.mesma ? `Publicar uma colagem com ${m.meta} peças da mesma cor` : `Publicar uma colagem com ${coisa(a, 1, { artigo: true })}`;
     default: return '';
   }
 }
@@ -101,16 +101,6 @@ function alvoPara(md) {
   return alvo;
 }
 
-// Sorteia o tipo do post-it: dourada, relâmpago ou sortuda (ou comum).
-function tipoEspecial() {
-  const r = Math.random() * 100;
-  const { relampago, sortuda } = MURAL;
-  if (r < MURAL.dourada) return { dourada: true };
-  if (r < MURAL.dourada + relampago.chance) return { relampago: true };
-  if (r < MURAL.dourada + relampago.chance + sortuda.chance) return { sortuda: true };
-  return {};
-}
-
 function novaMissao(chegou, ocupadas) {
   // Data comemorativa: às vezes o post-it é do evento (eventos.js).
   const doEvento = postitDoEvento(ocupadas);
@@ -126,14 +116,13 @@ function novaMissao(chegou, ocupadas) {
     if (!alvo) continue;
     const chave = md.id + JSON.stringify(alvo);
     if (ocupadas.has(chave)) continue;
-    const especial = tipoEspecial();
     return {
       uid: chegou.toString(36) + Math.random().toString(36).slice(2, 5),
       id: md.id, nivel, meta: md.meta, feito: 0, alvo,
       // 'publicar' sorteia onde: look ou colagem.
       ...(md.evento === 'publicar' ? { onde: umDe(['look', 'colagem']) } : {}),
-      ...especial,
-      chegou, vence: chegou + (especial.relampago ? MURAL.relampago.horas : MURAL.duraHoras) * HORA,
+      dourada: Math.random() * 100 < MURAL.dourada,
+      chegou, vence: chegou + MURAL.duraHoras * HORA,
     };
   }
   return null;
@@ -250,7 +239,7 @@ export function contar(evento, { peca = null, raridade = null, ids = [] } = {}) 
     if (!md) continue;
     if (md.evento === 'curtir' && evento === 'curtir') m.feito += 1;
     else if (md.evento === 'garimpar' && evento === 'garimpar') {
-      const ok = md.raridade ? ['epic', 'legendary'].includes(raridade) : pecaCombina(peca, m.alvo);
+      const ok = md.raridade ? (md.raridade === 'rare' ? ['rare', 'epic', 'legendary'] : ['epic', 'legendary']).includes(raridade) : pecaCombina(peca, m.alvo);
       if (ok) m.feito += 1;
     } else if (md.evento === evento || (md.evento === 'publicar' && evento === (m.onde || evento))) {
       if (md.mesma) m.feito = Math.max(m.feito, Math.min(m.meta, maiorGrupoDeCor(pecas)));
@@ -269,14 +258,6 @@ export function contarJogo(jogo, n = 1) {
 }
 
 // --- Resgate ---------------------------------------------------------------
-// Fichas do post-it: o relâmpago paga em dobro; a sortuda sorteia o extra uma vez
-// só (fica guardado em m.extra para a tela mostrar o mesmo valor).
-export function fichasDoPostit(m) {
-  const base = MURAL.niveis[m.nivel].fichas;
-  if (m.relampago) return base * MURAL.relampago.vezes;
-  if (m.sortuda) return base + (m.extra ??= 1 + Math.floor(Math.random() * MURAL.sortuda.extraMax));
-  return base;
-}
 // Devolve { fichas, bau } do que pagou, ou null.
 export function resgatar(uid) {
   const m = mural().missoes.find(x => x.uid === uid);
@@ -291,12 +272,11 @@ export function resgatar(uid) {
   }
   const n = MURAL.niveis[m.nivel];
   m.pega = true;
-  const fichas = fichasDoPostit(m);
-  db.ganharFicha(fichas);
+  db.ganharFicha(n.fichas);
   if (m.dourada) db.guardarBau(n.bau, 'mural', 'Missão dourada');
   mural().missoes = mural().missoes.filter(x => x !== m);
   db.salvar();
-  return { fichas, bau: m.dourada ? BAUS[n.bau].nome : null };
+  return { fichas: n.fichas, bau: m.dourada ? BAUS[n.bau].nome : null };
 }
 
 export function resgatarJogo() {
