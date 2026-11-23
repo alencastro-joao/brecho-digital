@@ -742,6 +742,7 @@ function renderCongelar(peca, possuida, no) {
     if (sem) { irPara('tarefas'); return; }
     if (!db.congelarPeca(peca.id)) return;
     db.progredirMissao('congelar');
+    contarNoMural('congelar');
     no.querySelector('.peca-flutua')?.append(seloDeCongelada());
     renderCongelar(peca, possuida, no);
     atualizarBadge();
