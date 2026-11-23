@@ -1474,6 +1474,18 @@ export const ESTILOS = {
       'tops-murfehjt0d',                                       // manga longa por baixo
     ],
   },
+  animal: {
+    nome: 'Animal print', brilho: '#c8893a', icone: 'assets/temas/animal.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
+  militar: {
+    nome: 'Militar print', brilho: '#6b7340', icone: 'assets/temas/militar.svg',
+    itens: [],
+    libera: [],
+    pecas: [],
+  },
   // Peças a escolher pelo João; os itens que libera vêm junto com elas.
   brasil: {
     nome: 'Brasil', brilho: '#e6b800', icone: 'assets/temas/brasil.svg',
@@ -1491,18 +1503,6 @@ export const ESTILOS = {
     nome: 'Jamaica', brilho: '#009b3a', icone: 'assets/temas/jamaica.svg',
     itens: ['camisa-jamaica-bandeira', 'camisa-jamaica-preta', 'cropped-jamaica-bandeira'],
     libera: ['camisa-jamaica-bandeira', 'camisa-jamaica-preta', 'cropped-jamaica-bandeira'],
-    pecas: [],
-  },
-  animal: {
-    nome: 'Animal print', brilho: '#c8893a', icone: 'assets/temas/animal.svg',
-    itens: [],
-    libera: [],
-    pecas: [],
-  },
-  militar: {
-    nome: 'Militar print', brilho: '#6b7340', icone: 'assets/temas/militar.svg',
-    itens: [],
-    libera: [],
     pecas: [],
   },
   flamengo: {
