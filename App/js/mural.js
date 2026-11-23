@@ -58,10 +58,10 @@ export function textoDa(m) {
   switch (md.evento) {
     case 'curtir': return `Curtir ${m.meta} posts`;
     case 'trocar': return md.filtro ? `Trocar ${coisa(a, 1, { artigo: true })} com um amigo` : 'Fazer uma troca com um amigo';
-    case 'garimpar': return md.raridade === 'rare' ? `Garimpar ${m.meta} peças raras ou melhores` : md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
+    case 'garimpar': return md.raridade ? 'Garimpar 1 peça épica' : `Garimpar ${coisa(a, m.meta)}`;
     case 'publicar': return `Publicar ${m.onde === 'colagem' ? 'uma colagem' : 'um look'} com ${coisa(a, 1, { artigo: true })}`;
-    case 'look': return !md.mesma && !md.filtro ? 'Publicar um look' : md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;
-    case 'colagem': return !md.mesma && !md.filtro ? 'Publicar uma colagem' : md.mesma ? `Publicar uma colagem com ${m.meta} peças da mesma cor` : `Publicar uma colagem com ${coisa(a, 1, { artigo: true })}`;
+    case 'look': return md.mesma ? `Publicar um look com ${m.meta} peças da mesma cor` : `Publicar um look com ${coisa(a, 1, { artigo: true })}`;
+    case 'colagem': return md.mesma ? `Publicar uma colagem com ${m.meta} peças da mesma cor` : `Publicar uma colagem com ${coisa(a, 1, { artigo: true })}`;
     default: return '';
   }
 }
@@ -239,7 +239,7 @@ export function contar(evento, { peca = null, raridade = null, ids = [] } = {}) 
     if (!md) continue;
     if (md.evento === 'curtir' && evento === 'curtir') m.feito += 1;
     else if (md.evento === 'garimpar' && evento === 'garimpar') {
-      const ok = md.raridade ? (md.raridade === 'rare' ? ['rare', 'epic', 'legendary'] : ['epic', 'legendary']).includes(raridade) : pecaCombina(peca, m.alvo);
+      const ok = md.raridade ? ['epic', 'legendary'].includes(raridade) : pecaCombina(peca, m.alvo);
       if (ok) m.feito += 1;
     } else if (md.evento === evento || (md.evento === 'publicar' && evento === (m.onde || evento))) {
       if (md.mesma) m.feito = Math.max(m.feito, Math.min(m.meta, maiorGrupoDeCor(pecas)));
