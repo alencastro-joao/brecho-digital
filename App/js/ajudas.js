@@ -147,9 +147,15 @@ function ajudasLivres() {
 
 // A próxima peça: as mais novas primeiro, pulando as que a pessoa já ajudou
 // e as que já fecharam o que este jogo pergunta.
+// Pré-carregamento: a próxima peça já é sorteada e a imagem baixa enquanto a
+// pessoa responde a atual (guardamos o Image para o navegador não descartar).
+let seguinte = null;
+let precarga = null;
 function escolherPeca() {
   // Só o Ajustar precisa da categoria (é dela o lugar padrão no corpo).
   const cands = candidatas(jogo);
+  if (seguinte && cands.includes(seguinte)) { const s = seguinte; seguinte = null; return s; }
+  seguinte = null;
   cands.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
   // Entre as 10 mais novas, uma qualquer: duas pessoas ao mesmo tempo não
   // ficam votando sempre na mesma.
@@ -169,6 +175,13 @@ function proxima() {
       'Não tem peça nova para este jogo agora. Volte mais tarde!'));
   }
   ({ avaliar: jogoAvaliar, ajustar: jogoAjustar, preencher: jogoPreencher })[jogo]();
+  precarregarProxima();
+}
+
+function precarregarProxima() {
+  const outras = candidatas(jogo).filter(i => i.id !== peca.id);
+  seguinte = outras.length ? outras[Math.floor(Math.random() * Math.min(10, outras.length))] : null;
+  if (seguinte?.src) { precarga = new Image(); precarga.src = seguinte.src; }
 }
 
 async function enviar(corpo) {
