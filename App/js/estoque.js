@@ -12,6 +12,7 @@
 // continua valendo — o limite só existe onde existe quem conte.
 
 import { RARIDADE } from './config.js';
+import { buscar } from './prepedidos.js';
 
 let mapa = {};
 let online = false;
@@ -32,7 +33,7 @@ export const esgotada = (id, raridade) => restantes(id, raridade) <= 0;
 export const temContador = () => online;
 
 async function chamar(rota, corpo) {
-  const r = await fetch(rota, {
+  const r = await (corpo ? fetch : buscar)(rota, {
     method: corpo ? 'POST' : 'GET',
     credentials: 'include',
     headers: corpo ? { 'Content-Type': 'application/json' } : undefined,

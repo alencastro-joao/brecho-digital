@@ -6,8 +6,9 @@
 // acervo não descer duas vezes na abertura.
 
 import { CONFIG } from './config.js';
+import { buscar } from './prepedidos.js';
 
-let primeiro = fetch(CONFIG.ACERVO, { cache: 'no-cache' })
+let primeiro = buscar(CONFIG.ACERVO, { cache: 'no-cache' })
   .then(r => (r.ok ? r.json() : null))
   .catch(() => null);
 
