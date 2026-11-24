@@ -301,6 +301,7 @@ export function iniciarEstado(conta) {
 export function encerrarEstado() {
   // O que estava por subir sobe agora: sair da conta não é motivo para perder
   // os últimos segundos. Depois a trava volta — sem conta não se escreve nada.
+  gravarNoDisco();
   despedir();
   clearTimeout(timerEnvio);
   sincronizado = false;
@@ -319,9 +320,23 @@ export function encerrarEstado() {
 let semRetomada = false;
 export const chaveDaRetomada = () => (chave && !semRetomada ? chave + ':retomar' : null);
 
-export function salvar() {
-  if (!chave) return;               // ninguém logado: não há onde gravar
-  state.atualizadoEm = new Date().toISOString();
+// Gravar no disco é JSON.stringify do save inteiro (megabytes em quem joga
+// muito), e arrastar uma peça chama salvar() dezenas de vezes: gravando a
+// cada chamada, o celular engasgava no meio do gesto. Agora junta: grava
+// ESPERA_DISCO depois da última chamada, nunca mais que TETO_DISCO depois da
+// primeira, e na hora quando a aba some (gravarNoDisco no visibilitychange e
+// no pagehide, lá embaixo). A memória (state) continua mudando na hora.
+const ESPERA_DISCO = 400;
+const TETO_DISCO = 2000;
+let timerDisco = null;
+let pendenteDesde = 0;
+
+function gravarNoDisco() {
+  clearTimeout(timerDisco);
+  timerDisco = null;
+  if (!pendenteDesde) return;
+  pendenteDesde = 0;
+  if (!chave) return;
   try {
     localStorage.setItem(chave, JSON.stringify(state));
   } catch (e) {
@@ -332,6 +347,22 @@ export function salvar() {
     state.feed.forEach(p => { if (p.autor === state.usuario.id) delete p.thumb; });
     try { localStorage.setItem(chave, JSON.stringify(state)); } catch {}
   }
+}
+
+// O que está esperando para ir ao disco não vai mais (save apagado, conta trocada).
+function esquecerGravacao() {
+  clearTimeout(timerDisco);
+  timerDisco = null;
+  pendenteDesde = 0;
+}
+
+export function salvar() {
+  if (!chave) return;               // ninguém logado: não há onde gravar
+  state.atualizadoEm = new Date().toISOString();
+  const agora = Date.now();
+  if (!pendenteDesde) pendenteDesde = agora;
+  clearTimeout(timerDisco);
+  timerDisco = setTimeout(gravarNoDisco, agora - pendenteDesde >= TETO_DISCO ? 0 : ESPERA_DISCO);
   agendarEnvio();
   ouvintes.forEach(fn => fn(state));
 }
@@ -482,6 +513,7 @@ export async function descarregar() {
 // `carregar()` é quem sabe migrar save antigo (missões, vestiário, slots
 // renomeados). Trazer da nuvem sem ele seria reimplementar essas migrações.
 function adotar(nuvem) {
+  esquecerGravacao();   // o daqui perdeu para o da nuvem
   localStorage.setItem(chave, JSON.stringify(nuvem.estado));
   anotar(chave, nuvem.versao, false);
   const trazido = carregar();
@@ -566,9 +598,9 @@ export async function conferirNuvem() {
 if (typeof window !== 'undefined') {
   // pagehide, e não unload: é o único que o Safari e o iOS respeitam, e é o
   // que não impede a página de entrar no cache de navegação.
-  window.addEventListener('pagehide', despedir);
+  window.addEventListener('pagehide', () => { gravarNoDisco(); despedir(); });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') despedir();
+    if (document.visibilityState === 'hidden') { gravarNoDisco(); despedir(); }
     else conferirNuvem();
   });
 }
@@ -653,6 +685,7 @@ export function resetar({ manterAcervo = true } = {}) {
   const guardado = manterAcervo
     ? Object.fromEntries(ACERVO_DO_ADMIN.map(k => [k, state[k]]))
     : null;
+  esquecerGravacao();
   if (chave) localStorage.removeItem(chave);
   // O look e a colagem em andamento eram da partida apagada: não voltam.
   if (chave) localStorage.removeItem(chave + ':retomar');
