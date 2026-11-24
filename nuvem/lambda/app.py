@@ -38,6 +38,9 @@ esta função só responde `/api/*`.
     GET  /api/trocas           as trocas de peça em que estou (ver trocas.py)
     POST /api/trocas           propõe uma troca a uma amiga
     POST /api/trocas/<id>/(aceitar|recusar|cancelar|aplicada)
+    GET  /api/push/chave       a chave VAPID dos avisos no celular (ver notificacoes.py)
+    POST /api/push/(inscrever|sair|agenda)  liga/desliga os avisos; quando chega o post-it
+    POST /api/push/aviso       o sw pede o texto do aviso que acabou de chegar
     GET  /api/admin/painel     admin: os números do dia (ver painel.py)
     POST /api/fundo            503: o recorte agora é da esteira (ver esteira.py)
     /api/esteira[/<id>[/...]]  admin: a esteira de peças (ver esteira.py)
@@ -70,6 +73,7 @@ import contas
 import estado as save
 import estoque
 import feed
+import notificacoes
 import logingoogle
 import pessoas
 import redes
@@ -93,6 +97,7 @@ ROTAS_DE_PESSOAS = ('/api/usuarios', '/api/seguir', '/api/social', '/api/perfil'
                     '/api/perfil/miniatura')
 ROTA_REDE = re.compile(r'^/api/redes/(instagram|pinterest)/(entrar|volta|sair)$')
 ROTA_AJUDA = re.compile(r'^/api/ajudas(?:/(avaliar|ajustar|preencher))?$')
+ROTA_PUSH = re.compile(r'^/api/push/(chave|inscrever|sair|agenda|aviso)$')
 ROTA_TROCA = re.compile(r'^/api/trocas(?:/([^/]+)/(aceitar|recusar|cancelar|aplicada))?$')
 ROTA_FEED = re.compile(r'^/api/feed(?:/([^/]+)(?:/(curtir|comentarios)(?:/([^/]+))?)?)?$')
 
@@ -641,6 +646,25 @@ def rotas_de_trocas(pedido):
     return None
 
 
+def rotas_de_push(pedido):
+    acao = ROTA_PUSH.match(pedido.rota).group(1)
+    if acao == 'chave' and pedido.metodo == 'GET':
+        return responder(200, notificacoes.chave_publica())
+    if pedido.metodo != 'POST':
+        return None
+    if acao == 'aviso':          # o sw não manda biscoito: quem prova é o endpoint
+        return responder(200, notificacoes.aviso_do_aparelho(pedido.corpo(LIMITE_LOGIN)))
+    usuario = contas.usuario_da_sessao(pedido.token())
+    if not usuario:
+        return responder(401, {'erro': 'entre na sua conta para continuar'})
+    corpo = pedido.corpo(LIMITE_LOGIN)
+    if acao == 'inscrever':
+        return responder(200, notificacoes.inscrever(usuario, corpo))
+    if acao == 'sair':
+        return responder(200, notificacoes.desinscrever(usuario, corpo))
+    return responder(200, notificacoes.agenda(usuario, corpo))
+
+
 def rotas_de_ajudas(pedido):
     usuario = contas.usuario_da_sessao(pedido.token())
     if not usuario:
@@ -746,6 +770,8 @@ def despachar(pedido):
         return rotas_de_estoque(pedido)
     if ROTA_TROCA.match(rota):
         return rotas_de_trocas(pedido)
+    if ROTA_PUSH.match(rota):
+        return rotas_de_push(pedido)
     if ROTA_AJUDA.match(rota) or rota == '/api/admin/ajudas':
         return rotas_de_ajudas(pedido)
     if ROTA_FEED.match(rota):
@@ -780,6 +806,14 @@ def handler(evento, _contexto):
     # Mesma porta: a leitura das pastas do Pinterest com o site fechado
     # (infra/esteira.yaml), e a rodada que ela mesma encadeia.
     if 'requestContext' not in evento and evento.get('agendado') == 'reler-pinterest':
+        # A mesma agenda de 15 minutos manda os avisos no celular de hora
+        # marcada (post-it, vitrine). Só na primeira rodada, e falha aqui não
+        # atrapalha o Pinterest.
+        if not evento.get('rodada'):
+            try:
+                print('push: %r' % (notificacoes.rodar_agendado(),))
+            except Exception as e:               # noqa: BLE001
+                print('push: agenda falhou: %r' % (e,))
         import esteira
         feito = esteira.rodar_agendado([str(f) for f in evento.get('feitas') or []][:200],
                                        int(evento.get('rodada') or 0))
