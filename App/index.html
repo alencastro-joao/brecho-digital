@@ -10,34 +10,6 @@
 <link rel="apple-touch-icon" href="assets/app/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Brechó">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/vitrine.css">
-<link rel="stylesheet" href="css/closet.css">
-<link rel="stylesheet" href="css/stylist.css">
-<link rel="stylesheet" href="css/board.css">
-<link rel="stylesheet" href="css/social.css">
-<link rel="stylesheet" href="css/vitrines.css">
-<link rel="stylesheet" href="css/editar.css">
-<link rel="stylesheet" href="css/personagem.css">
-<link rel="stylesheet" href="css/usuario.css">
-<link rel="stylesheet" href="css/tarefas.css">
-<link rel="stylesheet" href="css/ajudas.css">
-<link rel="stylesheet" href="css/colecoes.css">
-<link rel="stylesheet" href="css/vestiario.css">
-<link rel="stylesheet" href="css/auth.css">
-<link rel="stylesheet" href="css/perfil.css">
-<link rel="stylesheet" href="css/avisos.css">
-<link rel="stylesheet" href="css/barrapos.css">
-<link rel="stylesheet" href="css/mobile.css">
-<link rel="stylesheet" href="css/icones.css">
-<link rel="stylesheet" href="css/alcamover.css">
-<link rel="stylesheet" href="css/puxar.css">
-<link rel="stylesheet" href="css/tutorial.css">
-<link rel="stylesheet" href="css/animacoes.css">
-<link rel="stylesheet" href="css/janelas.css">
-<link rel="stylesheet" href="css/praca.css">
-<link rel="stylesheet" href="css/trocas.css">
-<link rel="stylesheet" href="css/enviar.css">
 <!-- CSS da abertura aqui mesmo, e não no base.css: ela cobre a tela antes de
      tudo, e não pode depender de um CSS que chegue velho ou cortado (aí o
      cabide aparecia preto, no canto, empurrando a vitrine para baixo). -->
@@ -81,6 +53,40 @@
     if (/^#[0-9a-f]{6}$/i.test(cor || '')) document.documentElement.style.setProperty('--splash-cor', cor);
   } catch {}
 </script>
+
+<!-- O CSS do app vem DEPOIS da abertura, e não no <head>: folha no <head>
+     segura a primeira pintura até todas as 28 chegarem (uma ida à AWS cada), e
+     até lá o celular fica na tela branca. Aqui, o cabide acima já pinta com o
+     CSS dele mesmo (inline no <head>) enquanto o resto baixa; o que vem depois
+     (o app) só aparece com o CSS pronto, por baixo da abertura. -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/vitrine.css">
+<link rel="stylesheet" href="css/closet.css">
+<link rel="stylesheet" href="css/stylist.css">
+<link rel="stylesheet" href="css/board.css">
+<link rel="stylesheet" href="css/social.css">
+<link rel="stylesheet" href="css/vitrines.css">
+<link rel="stylesheet" href="css/editar.css">
+<link rel="stylesheet" href="css/personagem.css">
+<link rel="stylesheet" href="css/usuario.css">
+<link rel="stylesheet" href="css/tarefas.css">
+<link rel="stylesheet" href="css/ajudas.css">
+<link rel="stylesheet" href="css/colecoes.css">
+<link rel="stylesheet" href="css/vestiario.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/perfil.css">
+<link rel="stylesheet" href="css/avisos.css">
+<link rel="stylesheet" href="css/barrapos.css">
+<link rel="stylesheet" href="css/mobile.css">
+<link rel="stylesheet" href="css/icones.css">
+<link rel="stylesheet" href="css/alcamover.css">
+<link rel="stylesheet" href="css/puxar.css">
+<link rel="stylesheet" href="css/tutorial.css">
+<link rel="stylesheet" href="css/animacoes.css">
+<link rel="stylesheet" href="css/janelas.css">
+<link rel="stylesheet" href="css/praca.css">
+<link rel="stylesheet" href="css/trocas.css">
+<link rel="stylesheet" href="css/enviar.css">
 
 <!-- Aviso de file:// (o app precisa de http para ler o catálogo e exportar imagem) -->
 <div id="file-warning" hidden>
