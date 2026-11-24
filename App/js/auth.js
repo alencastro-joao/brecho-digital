@@ -16,6 +16,8 @@
 // token em localStorage.
 
 // Mesma origem: o servidor.py serve a página e a API. Na nuvem vira a URL da API.
+import { prePedido, descartarPrePedidosDaApi } from './prepedidos.js';
+
 const API = '';
 
 export class ErroDeAuth extends Error {
@@ -35,10 +37,10 @@ const ouvintes = new Set();
 export function onConta(fn) { ouvintes.add(fn); return () => ouvintes.delete(fn); }
 const avisar = () => ouvintes.forEach(fn => fn(atual));
 
-async function pedir(rota, { metodo = 'GET', corpo = null } = {}) {
+async function pedir(rota, { metodo = 'GET', corpo = null, pre = null } = {}) {
   let resposta;
   try {
-    resposta = await fetch(API + rota, {
+    resposta = (pre && await pre) || await fetch(API + rota, {
       method: metodo,
       credentials: 'include',              // o cookie da sessão
       headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
@@ -61,12 +63,17 @@ async function pedir(rota, { metodo = 'GET', corpo = null } = {}) {
 // deve pedir senha de novo.
 export async function carregarSessao() {
   try {
-    const { usuario } = await pedir('/api/auth/eu');
+    // O pré-pedido do index.html (js/prepedidos.js) já saiu com a página.
+    const { usuario } = await pedir('/api/auth/eu', { pre: prePedido('/api/auth/eu') });
     atual = usuario || null;
+    // Sem sessão, os outros pré-pedidos da API voltaram vazios: quem entrar
+    // agora pela tela de login pede de novo.
+    if (!atual) descartarPrePedidosDaApi();
   } catch (e) {
     // Sem servidor não dá para saber: fica deslogado, e a tela de entrada diz
     // o que houve. Silenciar aqui seria entrar sem conta e gravar por cima.
     atual = null;
+    descartarPrePedidosDaApi();
     if (e.codigo !== 0) throw e;
   }
   avisar();

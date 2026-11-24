@@ -24,6 +24,7 @@
 // Nada aqui é chamado no carregamento do módulo — só em tempo de execução.
 
 import { PERFIS_MOCK } from './config.js';
+import { buscar } from './prepedidos.js';
 import * as db from './db.js';
 import { LIMITE_FAVORITOS } from './favoritos.js';
 import { roupasSorteadas } from './roupinhas.js';
@@ -101,7 +102,7 @@ function guardar(cartao) {
 export const guardarCartao = guardar;
 
 async function chamar(rota, opcoes = {}) {
-  const r = await fetch(rota, {
+  const r = await (opcoes.method && opcoes.method !== 'GET' ? fetch : buscar)(rota, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     ...opcoes,

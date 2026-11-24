@@ -22,6 +22,7 @@
 // continuam fazendo `import * as db from './db.js'` e não sabem da divisão.
 
 import { hojeISO, semanaISO } from './util.js';
+import { buscar } from './prepedidos.js';
 import {
   MISSOES, MISSOES_SEMANA, COLLAB, ASSINATURA_PADRAO, APARENCIA_PADRAO, migrarCategoria,
 } from './config.js';
@@ -493,7 +494,7 @@ function adotar(nuvem) {
 }
 
 async function lerDaNuvem() {
-  const r = await fetch('/api/estado', { credentials: 'include' });
+  const r = await buscar('/api/estado', { credentials: 'include' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }

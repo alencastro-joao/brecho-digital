@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Brechó Digital</title>
+<script>
+  // Pré-pedidos da abertura (js/prepedidos.js): saem já, junto com os módulos,
+  // em vez de um depois do outro quando cada módulo roda.
+  (function () {
+    if (location.protocol === 'file:') return;
+    var p = {};
+    var pedir = function (rota, opcoes) { p[rota] = fetch(rota, opcoes).catch(function () { return null; }); };
+    pedir('assets/acervo.json', { cache: 'no-cache' });
+    ['/api/auth/eu', '/api/estado', '/api/estoque', '/api/social'].forEach(function (rota) {
+      pedir(rota, { credentials: 'include' });
+    });
+    window.__prePedidos = p;
+  })();
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f7fafb">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/app/favicon-32.png">
