@@ -323,6 +323,24 @@ EventBridge Scheduler (opcional, gerador.yaml)  →  {"agendado": "gerar-posts"}
 - O servidor local (`App/tools`) não tem o gerador: lá o botão de teste cai no
   jeito antigo, posts só no navegador.
 
+## Avisos no celular (Web Push) — 24/11/2026
+
+O jogo avisa fora do app: proposta de troca (na hora), post-it novo no mural e
+a vitrine do dia (a partir das 9h, só para quem ainda não abriu o jogo). No
+máximo 1 aviso a cada 3 horas, nada das 22h às 8h (Brasília). Código em
+`lambda/notificacoes.py`, `App/js/notificacoes.js` e no fim do `App/sw.js`.
+
+- O jogador liga no botão "Avisar no celular", no rodapé do sino. No iPhone só
+  funciona com o jogo instalado na tela inicial.
+- Push sem conteúdo (cifrar pede AES, que a Lambda não tem): o sw pede o texto
+  em `POST /api/push/aviso`. A assinatura VAPID é ES256 em Python puro; a chave
+  nasce no primeiro uso, no item `PUSHCHAVE` do DynamoDB.
+- Post-it e vitrine saem pela agenda de 15 min do Pinterest (`reler-pinterest`,
+  `infra/pinterest.yaml`): se essa agenda for desligada, só o aviso de troca
+  continua saindo.
+- Custo: só alguns GetItem/UpdateItem a cada 15 min; os serviços de push dos
+  navegadores são de graça.
+
 ## O que ficou de fora
 
 **Confirmação de e-mail e "esqueci a senha"** continuam pendentes, como no

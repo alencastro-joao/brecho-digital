@@ -90,3 +90,39 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (guardavel(url)) e.respondWith(arquivo(e.request));
 });
+
+// --- Avisos no celular (js/notificacoes.js, nuvem/lambda/notificacoes.py) ---
+// O push chega vazio: o texto vem de /api/push/aviso, que reconhece o aparelho
+// pelo endpoint. Sem rede, sai um aviso genérico (o navegador exige mostrar
+// algo a cada push).
+const AVISO_PADRAO = { titulo: 'Brechó Digital', texto: 'Tem novidade esperando por você.', url: '#/vitrine' };
+self.addEventListener('push', e => e.waitUntil((async () => {
+  let a = AVISO_PADRAO;
+  try {
+    const sub = await self.registration.pushManager.getSubscription();
+    const r = await fetch(new URL('api/push/aviso', self.registration.scope), {
+      method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub?.endpoint || '' }) });
+    if (r.ok) a = { ...AVISO_PADRAO, ...(await r.json()) };
+  } catch { /* fica o genérico */ }
+  // Só endereço do próprio jogo: '#/...' ou '?...#/...'.
+  const url = typeof a.url === 'string' && /^[#?]/.test(a.url) ? a.url : AVISO_PADRAO.url;
+  await self.registration.showNotification(String(a.titulo), {
+    body: String(a.texto), icon: 'assets/app/icone-192.png', badge: 'assets/app/icone-192.png',
+    tag: 'brecho-aviso', renotify: true, data: { url } });
+})()));
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const destino = new URL(e.notification.data?.url || '#/vitrine', self.registration.scope).href;
+  e.waitUntil((async () => {
+    const abertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const aba = abertas.find(c => c.url.startsWith(self.registration.scope));
+    if (aba) {
+      await aba.focus();
+      try { await aba.navigate(destino); } catch { /* aba que não deixa navegar */ }
+      return;
+    }
+    await self.clients.openWindow(destino);
+  })());
+});

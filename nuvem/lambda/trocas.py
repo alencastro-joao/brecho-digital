@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 from botocore.exceptions import ClientError
 
 import estoque
+import notificacoes
 from contas import ErroDeConta, TABELA, _dynamo, _pegar, _put, _transacao, pegar_varios
 
 RARIDADES = tuple(estoque.LIMITES)
@@ -249,6 +250,9 @@ def propor(usuario, corpo):
     put['ConditionExpression'] = 'attribute_not_exists(pk)'
     _transacao([{'Put': put}, _pondo_na_caixa(eu['id'], troca_id),
                 _pondo_na_caixa(outra['id'], troca_id)])
+    # Aviso no celular de quem recebe (se ligou). Nunca derruba a troca.
+    notificacoes.avisar(outra['id'], 'troca',
+                        {'texto': '@%s quer trocar uma peça com você.' % eu['handle']})
     return {'troca': _publica(t, eu['id'])}
 
 

@@ -76,6 +76,12 @@
 .avisos-botoes .link-btn { font-size: 11.5px; font-weight: 700; color: var(--tinta-suave); text-decoration: none; padding: 4px 9px; border-radius: 99px; background: var(--perola-painel); }
 .avisos-botoes .link-btn:hover { color: var(--tinta); }
 .avisos-grupo { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); padding: 12px 12px 4px; }
+.avisos-celular { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 18px 0; border-top: 1px solid var(--linha); }
+.avisos-celular:not(:has(:not([hidden]))) { display: none; }
+.avisos-celular .link-btn { font-size: 12px; font-weight: 700; color: var(--tinta); text-decoration: none; padding: 7px 14px; border-radius: 99px; background: var(--perola-painel); }
+.avisos-celular .link-btn.ligado { color: var(--tinta-suave); font-weight: 600; }
+.avisos-celular .link-btn:disabled { opacity: .6; }
+.avisos-celular-dica { font-size: 11px; color: var(--tinta-suave); text-align: center; line-height: 1.35; }
 .avisos-rodape { padding: 8px 18px 12px; font-size: 10.5px; color: var(--tinta-suave); opacity: .75; text-align: center; }
 .aviso-item { position: relative; --cor: var(--wii); }
 .aviso-item.curtida, .aviso-item.wishlist { --cor: #d6336c; }
