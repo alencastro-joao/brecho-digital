@@ -69,6 +69,12 @@ Resources:
                   - arn:aws:s3:::brecho-dados-108826053014
                   - arn:aws:s3:::brecho-dados-108826053014/deploy/*
                   - arn:aws:s3:::brecho-dados-108826053014/mestres/*
+              - Sid: Borda
+                Effect: Allow
+                # publicar.sh: HTML/CSS/JS ficam guardados na borda e a
+                # publicação invalida /* no fim (e espera terminar).
+                Action: [cloudfront:CreateInvalidation, cloudfront:GetInvalidation]
+                Resource: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/EENWH23ZOF7U2
               - Sid: Api
                 Effect: Allow
                 Action: [lambda:UpdateFunctionCode, lambda:GetFunction, lambda:GetFunctionConfiguration]
