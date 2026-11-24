@@ -67,6 +67,7 @@ import json
 import os
 import re
 import secrets
+import time
 from http import cookies as _cookies
 
 import contas
@@ -828,6 +829,13 @@ def handler(evento, _contexto):
             return responder(403, {'erro': 'rota desconhecida'})
 
     pedido = Pedido(evento)
+    inicio = time.perf_counter()
+    resposta = atender(pedido)
+    medir(pedido, resposta, inicio)
+    return resposta
+
+
+def atender(pedido):
     try:
         resposta = despachar(pedido)
     except contas.ErroDeConta as e:
@@ -841,3 +849,30 @@ def handler(evento, _contexto):
         return responder(500, {'erro': 'falha no servidor'})
 
     return comprimir(resposta or responder(404, {'erro': 'rota desconhecida'}), pedido)
+
+
+# Uma linha por pedido no log, para achar a rota lenta (o REPORT da Lambda só
+# diz o tempo, não a rota): "pedido GET /api/estado 200 812ms 64KB frio".
+# Só método, caminho (sem a consulta), código, tempo e tamanho: nada de quem é.
+# Filtro no CloudWatch: "pedido" (ou "frio" para as partidas a frio).
+_frio = True
+
+
+def rota_sem_ids(rota):
+    """/api/usuario/u-3f9a -> /api/usuario/:id (pedaço com algarismo vira :id)."""
+    partes = (rota or '').split('?')[0].split('/')[:5]
+    return '/'.join(':id' if re.search(r'\d', p) else p for p in partes)[:60]
+
+
+def medir(pedido, resposta, inicio):
+    global _frio
+    try:
+        ms = (time.perf_counter() - inicio) * 1000
+        corpo = (resposta or {}).get('body') or ''
+        print('pedido %s %s %s %dms %dKB%s' % (
+            pedido.metodo, rota_sem_ids(pedido.rota),
+            (resposta or {}).get('statusCode'), ms, len(corpo) // 1024,
+            ' frio' if _frio else ''))
+    except Exception:                            # noqa: BLE001
+        pass
+    _frio = False
