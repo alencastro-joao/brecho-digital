@@ -3,8 +3,10 @@
 // No celular o <body> não rola (css/mobile.css): cada tela rola por dentro, e
 // por isso o gesto nativo do navegador não acontece. Aqui ele é refeito à mão:
 // com a tela no topo, arrastar o dedo para baixo puxa uma bolinha; soltar
-// depois do limite recarrega a página, que volta na mesma tela (a hash fica) e
-// com a mesma conta (a sessão é cookie).
+// depois do limite atualiza a tela sem recarregar a página: o app.js registra
+// em aoPuxar o que reler (save de outro aparelho, estoque, quem você segue) e
+// a tela aberta entra de novo. Recarregar a página inteira só quando saiu
+// versão nova do jogo (js/versao.js): antes, todo puxão era a tela do cabide.
 //
 // Fica de fora:
 // - Stylist e Colagem, onde arrastar é editar e recarregar perderia o trabalho;
@@ -13,9 +15,10 @@
 //   o ouvinte do document, que roda depois deles, enxerga isso;
 // - modal aberto.
 import { ico } from './icones.js';
+import { atualizarSeHouverVersao } from './versao.js';
 
-const LIMITE = 70;          // px de puxão (já amortecido) que disparam a atualização
-const MAXIMO = 110;         // até onde a bolinha desce
+const LIMITE = 100;         // px de puxão (já amortecido) que disparam a atualização
+const MAXIMO = 140;         // até onde a bolinha desce
 const TELAS_FORA = new Set(['stylist', 'board']);
 
 const celular = matchMedia('(max-width: 900px)');
@@ -75,13 +78,28 @@ function soltar() {
   setTimeout(() => bolinha?.classList.remove('voltando'), 220);
 }
 
-function atualizar() {
+// O que reler ao puxar (registrado pelo js/app.js depois do boot).
+let releitura = null;
+export function aoPuxar(fn) { releitura = fn; }
+
+async function atualizar() {
   atualizando = true;
   bolinha.classList.add('voltando', 'girando');
   bolinha.style.transform = `translate(-50%, ${LIMITE - 50}px)`;
   bolinha.style.opacity = '1';
-  // Um respiro para a bolinha girar antes de a página sumir.
-  setTimeout(() => location.reload(), 250);
+  const inicio = Date.now();
+  try {
+    if (await atualizarSeHouverVersao()) return;   // a página vai recarregar
+    if (releitura) await releitura();
+    else { location.reload(); return; }            // boot ainda não terminou
+  } catch (err) {
+    console.warn('atualizar falhou', err);
+  }
+  // A bolinha gira pelo menos um instante, para o gesto ter resposta.
+  await new Promise(ok => setTimeout(ok, Math.max(0, 400 - (Date.now() - inicio))));
+  bolinha.classList.remove('girando');
+  soltar();
+  atualizando = false;
 }
 
 function aoTocar(e) {

@@ -17,7 +17,8 @@ import * as db from './db.js';
 import { carregarEstoque, numerarAntigas } from './estoque.js';
 import { darPresente } from './presente.js';
 import { montarNPC, falarDe } from './npc.js';
-import { iniciarRouter, onEnter } from './router.js';
+import { iniciarRouter, onEnter, irPara, viewAtual, paramAtual } from './router.js';
+import { aoPuxar } from './puxar.js';
 import { montarVitrine, aoEntrarNaVitrine, atualizarBadge, precarregarVitrine } from './vitrine.js';
 import { montarCloset, aoEntrarNoCloset } from './closet.js';
 import { montarStylist, aoEntrarNoStylist, rascunhoDoStylist, retomarStylist } from './stylist.js';
@@ -220,6 +221,15 @@ async function iniciar() {
   iniciarRouter();
   montarPaineis();   // depois do router: as colunas já têm largura real
   splash(false);
+
+  // Puxar para atualizar (js/puxar.js): relê o que pode ter mudado lá fora e
+  // entra de novo na tela aberta, sem recarregar a página. O save de outro
+  // aparelho, se houver, vem pelo onConflito acima.
+  aoPuxar(async () => {
+    await db.conferirNuvem();
+    await Promise.all([carregarEstoque(), sincronizarSocial()]);
+    irPara(viewAtual(), paramAtual());
+  });
 
   // Depois do router: entrar na vitrine faz o dono da loja falar, e a fala do
   // presente é a que tem de ficar na tela na primeira abertura.

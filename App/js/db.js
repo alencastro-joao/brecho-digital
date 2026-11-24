@@ -546,7 +546,7 @@ async function perderParaANuvem(perdeu) {
 
 // Voltar para a aba é o momento de perguntar se a nuvem andou: antes de a
 // pessoa mexer em qualquer coisa, e só a versão (o save inteiro são megabytes).
-async function conferirNuvem() {
+export async function conferirNuvem() {
   if (!chave || !sincronizado || versao === undefined) return;
   // O que esta aba mandou ao ser escondida volta com a versão nova; sem esperar,
   // a própria escrita pareceria a de outro aparelho.

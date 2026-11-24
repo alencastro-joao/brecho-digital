@@ -4,10 +4,14 @@
 #     bash nuvem/infra/publicar.sh
 #
 # Só sobe o que mudou (é o que o `s3 sync` faz), então republicar é rápido e
-# quase de graça. Não invalida o CloudFront: o HTML, o CSS e o JS
-# sobem com `no-cache`, então o CloudFront revalida por ETag e a mudança
-# aparece na hora, sem gastar invalidação. As imagens das peças sobem imutáveis
-# por um ano porque o nome do arquivo é o id da peça.
+# quase de graça. O HTML, o CSS e o JS sobem com `max-age=0` para o navegador
+# (ele sempre confere) e `s-maxage` longo para o CloudFront, que guarda tudo na
+# borda de São Paulo; no fim, uma invalidação de `/*` faz a borda pegar a versão
+# nova. Antes era `no-cache` também para a borda, e cada arquivo, até o
+# versao.txt de 16 bytes, custava uma ida ao S3 nos EUA (~0,5 s medidos do
+# Brasil, contra ~0,1 s servindo da borda). Sem permissão de invalidar, volta
+# ao `no-cache` de antes, sem quebrar nada. As imagens das peças sobem
+# imutáveis por um ano porque o nome do arquivo é o id da peça.
 set -euo pipefail
 
 export PATH="$PATH:/c/Program Files/Amazon/AWSCLIV2"
@@ -22,10 +26,29 @@ DADOS=brecho-dados-108826053014
 win() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else echo "$1"; fi; }
 APP="$(win "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../App" && pwd)")"
 
-REVALIDA='no-cache, must-revalidate'
+DISTRIBUICAO=EENWH23ZOF7U2
 ETERNO='public, max-age=31536000, immutable'
 
 echo "== app em $APP"
+
+# --- Cache na borda (CloudFront) -------------------------------------------
+# Só guarda na borda se este publicador consegue invalidar: sem a invalidação
+# do fim, a borda serviria a versão velha por um ano. O teste é uma invalidação
+# de verdade de um caminho só (o versao.txt), que conta pouco na franquia de
+# 1.000 caminhos por mês.
+invalidar() {   # caminhos... -> id da invalidação, ou falha
+  aws cloudfront create-invalidation --distribution-id "$DISTRIBUICAO" \
+    --paths "$@" --query 'Invalidation.Id' --output text
+}
+if invalidar /versao.txt >/dev/null 2>&1; then
+  REVALIDA='public, max-age=0, must-revalidate, s-maxage=31536000'
+  NA_BORDA=1
+  echo "== cache na borda: ligado (invalida /* no fim)"
+else
+  REVALIDA='no-cache, must-revalidate'
+  NA_BORDA=0
+  echo "::warning::Sem permissão para invalidar o CloudFront: HTML, CSS e JS sobem com no-cache (cada arquivo vai ao S3). Rode nuvem/infra/ligar-github.sh para dar a permissão."
+fi
 
 # --- Versão publicada (lida pelo App/sw.js) -------------------------------
 # O sw.js guarda CSS e JS no celular e joga tudo fora quando o versao.txt muda.
@@ -44,9 +67,23 @@ versao "publicando-$(date +%s)"
 # --- O que o navegador tem de reler a cada visita -------------------------
 # O index.html sobe com a versão numa <meta>: é por ela que o js/versao.js sabe
 # em qual versão a aba abriu e recarrega sozinho quando sai outra.
+# Junto, um <link rel="modulepreload"> por módulo (App/tools/precarregar.py):
+# sem eles o navegador descobre os imports nível por nível, 8 idas à AWS em fila.
 PAGINA="$(mktemp)"
-sed "s|</head>|<meta name=\"versao\" content=\"$VERSAO\">\n</head>|" "$FONTE/index.html" > "$PAGINA"
+PRECARGA="$(mktemp)"
+python "$(win "$FONTE/tools/precarregar.py")" "$(win "$FONTE")" > "$PRECARGA"
+[ "$(wc -l < "$PRECARGA")" -gt 20 ] || { echo "precarregar.py listou poucos módulos" >&2; exit 1; }
+{ printf '<meta name="versao" content="%s">\n' "$VERSAO"; cat "$PRECARGA"; } > "$PRECARGA.head"
+python - "$(win "$FONTE/index.html")" "$(win "$PRECARGA.head")" "$(win "$PAGINA")" <<'PY'
+import sys
+pagina = open(sys.argv[1], encoding='utf-8').read()
+extra = open(sys.argv[2], encoding='utf-8').read()
+assert pagina.count('</head>') == 1, 'index.html sem um </head> só'
+open(sys.argv[3], 'w', encoding='utf-8', newline='\n').write(pagina.replace('</head>', extra + '</head>'))
+PY
+rm -f "$PRECARGA" "$PRECARGA.head"
 grep -q "name=\"versao\" content=\"$VERSAO\"" "$PAGINA" || { echo "meta versao não entrou no index.html" >&2; exit 1; }
+grep -q 'rel="modulepreload" href="js/app.js"' "$PAGINA" || { echo "modulepreload não entrou no index.html" >&2; exit 1; }
 aws s3 cp "$(win "$PAGINA")" "s3://$SITE/index.html" \
   --cache-control "$REVALIDA" --content-type 'text/html; charset=utf-8'
 rm -f "$PAGINA"
@@ -76,6 +113,19 @@ aws s3 sync "$APP/assets/app" "s3://$SITE/assets/app" --delete \
 # Tudo o que o sw.js guarda já está no ar: agora a versão nova vale.
 versao "$VERSAO"
 echo "== versão $VERSAO"
+
+# A borda larga o que guardou e pega a versão nova do S3. Espera terminar (uns
+# minutos): o conferir-cache.sh, que roda depois, confere o versao.txt no ar.
+if [ "$NA_BORDA" = 1 ]; then
+  if ID="$(invalidar '/*')"; then
+    echo "== invalidação $ID (/*): esperando a borda"
+    aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUICAO" --id "$ID" \
+      || echo "::warning::Não consegui esperar a invalidação $ID; ela segue sozinha."
+  else
+    echo "invalidação do CloudFront falhou: a borda ficaria com a versão velha" >&2
+    exit 1
+  fi
+fi
 
 # O acervo.json NÃO sobe daqui: quem escreve nele é a Lambda, quando a esteira
 # publica uma peça. Subir o do disco apagaria as peças publicadas desde o último

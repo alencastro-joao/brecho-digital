@@ -42,15 +42,20 @@ valendo em `js/auth.js`: site e API na mesma origem significa **sem CORS**, sem
 bash nuvem/infra/publicar.sh
 ```
 
-Sobe só o que mudou. Não precisa invalidar cache: HTML, CSS e JS vão
-com `no-cache`, então o CloudFront revalida por ETag e a
-mudança aparece na hora. As imagens das peças vão imutáveis por um ano, porque
-o nome do arquivo é o id da peça.
+Sobe só o que mudou. HTML, CSS e JS vão com `max-age=0` para o navegador e
+`s-maxage` de um ano para o CloudFront, que serve da borda de São Paulo (~0,1 s
+por arquivo, contra ~0,5 s indo ao S3 nos EUA); no fim, o script invalida `/*`
+e espera a borda pegar a versão nova. Sem a permissão `cloudfront:CreateInvalidation`
+(pilha `brecho-github`, `ligar-github.sh`), volta sozinho ao `no-cache` de antes.
+O `index.html` sobe com um `<link rel="modulepreload">` por módulo
+(`App/tools/precarregar.py`), para o navegador pedir os 87 de uma vez. As
+imagens das peças vão imutáveis por um ano, porque o nome do arquivo é o id da peça.
 
 Quem já está com o app aberto também pega a versão nova sozinho: o
 `index.html` sobe com `<meta name="versao">` e o `js/versao.js` confere o
-`versao.txt` ao voltar para o app e a cada 3 minutos; mudou, recarrega (o
-`retomar.js` devolve a tela). No fim, o `publicar.yml` roda
+`versao.txt` ao voltar para o app e a cada 3 minutos. Mudou: recarrega só ao
+voltar depois de 30 min no fundo ou no puxar para atualizar; senão a versão
+entra na próxima abertura (recarregar a cada volta era o "sempre no loading"). No fim, o `publicar.yml` roda
 `nuvem/infra/conferir-cache.sh`, que espera a versão nova no ar e falha se
 `index.html`, `sw.js`, JS ou CSS vierem sem `no-cache`.
 
