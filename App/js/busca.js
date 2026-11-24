@@ -301,7 +301,7 @@ export function montarBusca() {
   const modal = $('#modal-busca');
   if (!modal) return;
 
-  $('#bp-fechar').addEventListener('click', () => fechar());
+  $('#busca-fechar').addEventListener('click', () => fechar());
   $('#bp-campo').addEventListener('input', () => {
     esperarNoModal($('#bp-campo').value, renderModal);
     renderModal();
