@@ -1186,7 +1186,7 @@ export const TROCAS = {
   nivel: 6,
   porDia: 2,
   maxOpcoes: 4,
-  custo: { common: 1, uncommon: 2, rare: 4, epic: 8, legendary: 16 },
+  custo: { common: 1, uncommon: 2, rare: 5, epic: 10, legendary: 19 },
 };
 
 // ------------------------------- Níveis -----------------------------------
