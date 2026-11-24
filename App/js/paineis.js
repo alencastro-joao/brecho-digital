@@ -58,11 +58,18 @@ function aplicar(cfg, painel, px, { salvar = true } = {}) {
   return largura;
 }
 
+// Arrastar a largura é coisa de tela larga (no celular o puxador nem aparece,
+// css/mobile.css). No celular a instalação para no position: relative, sem o
+// getComputedStyle, que forçava o recálculo do CSS inteiro no meio do boot
+// (~200 ms num celular médio); se a tela alargar, o resto entra na hora.
+const largo = matchMedia('(min-width: 901px)');
+
 function instalar(cfg) {
   const painel = document.querySelector(cfg.sel);
   if (!painel || painel.dataset.redimensionavel) return;
-  painel.dataset.redimensionavel = '1';
   painel.style.position = 'relative';
+  if (!largo.matches) return;
+  painel.dataset.redimensionavel = '1';
 
   // O padrão vem do CSS (funciona mesmo com a tela escondida), não do rect.
   const padrao = parseFloat(getComputedStyle(painel).width) || cfg.min;
@@ -111,6 +118,7 @@ function instalar(cfg) {
 // Janela menor não pode deixar uma lateral salva espremendo o miolo: aqui as
 // laterais devolvem o que falta, uma de cada vez, até o meio voltar ao mínimo.
 function reavaliar() {
+  if (!largo.matches) return;
   for (const cfg of PAINEIS) {
     const painel = document.querySelector(cfg.sel);
     if (!painel || !painel.offsetParent) continue;
@@ -126,6 +134,7 @@ function reavaliar() {
 
 export function montarPaineis() {
   PAINEIS.forEach(instalar);
+  largo.addEventListener('change', () => { if (largo.matches) { PAINEIS.forEach(instalar); reavaliar(); } });
   let t;
   window.addEventListener('resize', () => {
     clearTimeout(t);
