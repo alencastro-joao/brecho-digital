@@ -30,7 +30,7 @@ O corpo masculino manda no enquadramento: o topo da cabeça vai para y=38 e a
 sola para y=1147 (o chão do molde, mais a linha), centrado em x=300. Os outros
 desenhos usam a mesma conta, para continuarem alinhados com ele.
 """
-import base64
+import hashlib
 import io
 import re
 import sys
@@ -57,6 +57,7 @@ RES_CABELO = 1.2               # menos no cabelo: são doze, e o fio crespo não
 R_PELE, R_LINHA = 196, 122     # canal vermelho do preenchimento e do traço
 R_CABELO, R_FIO = 100, 53      # o mesmo, no cabelo
 SAIDA = Path(__file__).resolve().parent.parent / 'js' / 'corpo-artista.js'
+PASTA_PNG = Path(__file__).resolve().parent.parent / 'assets' / 'corpo'
 
 
 def enquadramento(alfa):
@@ -67,9 +68,16 @@ def enquadramento(alfa):
 
 
 def png64(mascara):
+    """Grava a máscara em assets/corpo/ com o resumo do conteúdo no nome (o
+    site guarda essas imagens por um ano) e devolve o caminho. Antes ia em
+    base64 dentro do JS, que voltava a baixar inteiro a cada publicação."""
     buf = io.BytesIO()
     mascara.save(buf, 'PNG', optimize=True)
-    return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()
+    dados = buf.getvalue()
+    PASTA_PNG.mkdir(exist_ok=True)
+    nome = 'corpo-%s.png' % hashlib.sha1(dados).hexdigest()[:12]
+    (PASTA_PNG / nome).write_bytes(dados)
+    return 'assets/corpo/' + nome
 
 
 def mascaras(caminho, k, dx, dy, cores=(R_PELE, R_LINHA), parte=None, res=RES):

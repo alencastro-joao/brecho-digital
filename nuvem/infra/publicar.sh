@@ -64,6 +64,14 @@ versao() {
 }
 versao "publicando-$(date +%s)"
 
+# Corpo, nariz e cabelo desenhados pela artista (App/tools/corpo.py): o nome
+# leva o resumo do conteúdo, então ficam um ano no cache e nunca mudam.
+# Sobem antes do JS que aponta para eles.
+if [ -d "$APP/assets/corpo" ]; then
+  aws s3 sync "$APP/assets/corpo" "s3://$SITE/assets/corpo" \
+    --cache-control "$ETERNO" --content-type 'image/png' --exclude '*' --include '*.png'
+fi
+
 # --- O que o navegador tem de reler a cada visita -------------------------
 # O index.html sobe com a versão numa <meta>: é por ela que o js/versao.js sabe
 # em qual versão a aba abriu e recarrega sozinho quando sai outra.
