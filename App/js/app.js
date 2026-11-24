@@ -50,7 +50,7 @@ import { montarTutorial, comecar as comecarIntro, pediuTutorialNaUrl } from './t
 import { lembrarDeInstalar } from './instalar.js';
 import { toast } from './util.js';
 import { PROPORCAO_EM_TESTE, CORPO_EM_TESTE } from './proporcao.js';
-import { usarCorpoDesenhado } from './avatar.js';
+import { carregarCorpoDesenhado } from './avatar.js';
 
 const AVISO_DE_CONFLITO = 'bd:aviso-conflito';
 
@@ -109,10 +109,13 @@ async function iniciar() {
     tag.style.cssText = 'position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9999;padding:4px 12px;border-radius:999px;background:#1c2530;color:#fff;font:600 12px system-ui;pointer-events:none;opacity:.85';
     document.body.append(tag);
   }
-  if (CORPO_EM_TESTE) {
-    try { usarCorpoDesenhado((await import(`./corpo-${CORPO_EM_TESTE}.js`)).default); }
-    catch (err) { console.warn('corpo de teste não carregou', err); }
-  }
+  // O corpo desenhado (js/corpo-artista.js + assets/corpo/) baixa junto com o
+  // login, e não antes dele: só as telas precisam dele, lá embaixo.
+  const corpo = CORPO_EM_TESTE
+    ? import(`./corpo-${CORPO_EM_TESTE}.js`)
+      .then(m => carregarCorpoDesenhado(m.default))
+      .catch(err => console.warn('corpo de teste não carregou', err))
+    : null;
   const { conta, nova } = await entrar();
   montarPaleta();                 // a cor do site é a do save de quem entrou
 
@@ -128,7 +131,7 @@ async function iniciar() {
     location.reload();
   });
   const [, sync] = await Promise.all([
-    carregarCatalogo(), db.sincronizarDaNuvem(), carregarEstoque()]);
+    carregarCatalogo(), db.sincronizarDaNuvem(), carregarEstoque(), corpo]);
   db.esquecerPecas(catalogo.removidas);
   // Com o catálogo e o save na mão, as roupas da loja já podem baixar enquanto
   // o resto do boot acontece.

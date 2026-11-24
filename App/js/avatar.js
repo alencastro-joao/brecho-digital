@@ -37,6 +37,38 @@ import { el, mulberry32, escolher, sementeDoTexto } from './util.js';
 let corpoDesenhado = null;
 export function usarCorpoDesenhado(desenho) { corpoDesenhado = desenho; }
 
+// O corpo-artista.js traz os desenhos como arquivos (assets/corpo/*.png, nome
+// com o resumo do conteúdo, cache de um ano), não mais em base64 dentro do JS:
+// assim não voltam a baixar a cada publicação. Aqui eles viram data: URL de
+// novo, em paralelo, porque o avatar exportado (avatarDataURLPronto) é um SVG
+// desenhado num canvas, e SVG como imagem não carrega arquivo de fora.
+export async function carregarCorpoDesenhado(desenho) {
+  const paraDataURL = async (src) => {
+    const r = await fetch(src);
+    if (!r.ok) throw new Error(`${src}: HTTP ${r.status}`);
+    const blob = await r.blob();
+    return new Promise((ok, erro) => {
+      const leitor = new FileReader();
+      leitor.onload = () => ok(leitor.result);
+      leitor.onerror = () => erro(leitor.error);
+      leitor.readAsDataURL(blob);
+    });
+  };
+  const pedidos = [];
+  const trocar = (no) => {
+    for (const [chave, valor] of Object.entries(no)) {
+      if (typeof valor === 'string' && /\.png$/.test(valor)) {
+        pedidos.push(paraDataURL(valor).then(url => { no[chave] = url; }));
+      } else if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
+        trocar(valor);
+      }
+    }
+  };
+  trocar(desenho);
+  await Promise.all(pedidos);
+  usarCorpoDesenhado(desenho);
+}
+
 // Os corpos e narizes que dá para escolher: os da artista quando ela está no
 // palco, senão os de código (config.js). Os dois têm `nome`, e o id padrão
 // (masculino, botao) existe nos dois.
