@@ -43,10 +43,23 @@ export function usarCorpoDesenhado(desenho) { corpoDesenhado = desenho; }
 // novo, em paralelo, porque o avatar exportado (avatarDataURLPronto) é um SVG
 // desenhado num canvas, e SVG como imagem não carrega arquivo de fora.
 export async function carregarCorpoDesenhado(desenho) {
+  // Um desenho que não baixa (rede, borda devolvendo outra coisa no lugar do
+  // PNG) tenta de novo e, se falhar, só esse fica de fora: os outros 58 não
+  // podem cair junto e deixar o avatar sem corpo.
+  const baixar = async (src, tentativa = 0) => {
+    try {
+      const r = await fetch(tentativa ? `${src}?t=${tentativa}` : src);
+      if (!r.ok) throw new Error(`${src}: HTTP ${r.status}`);
+      const blob = await r.blob();
+      if (!/^image\//.test(blob.type)) throw new Error(`${src}: veio ${blob.type || 'sem tipo'}`);
+      return blob;
+    } catch (err) {
+      if (tentativa >= 2) throw err;
+      return baixar(src, tentativa + 1);
+    }
+  };
   const paraDataURL = async (src) => {
-    const r = await fetch(src);
-    if (!r.ok) throw new Error(`${src}: HTTP ${r.status}`);
-    const blob = await r.blob();
+    const blob = await baixar(src);
     return new Promise((ok, erro) => {
       const leitor = new FileReader();
       leitor.onload = () => ok(leitor.result);
@@ -58,7 +71,8 @@ export async function carregarCorpoDesenhado(desenho) {
   const trocar = (no) => {
     for (const [chave, valor] of Object.entries(no)) {
       if (typeof valor === 'string' && /\.png$/.test(valor)) {
-        pedidos.push(paraDataURL(valor).then(url => { no[chave] = url; }));
+        pedidos.push(paraDataURL(valor).then(url => { no[chave] = url; })
+          .catch(err => console.warn('desenho do corpo não baixou', err)));
       } else if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
         trocar(valor);
       }
